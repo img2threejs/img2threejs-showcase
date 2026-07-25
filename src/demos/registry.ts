@@ -99,8 +99,13 @@ export const demos: DemoEntry[] = [
       'that side, projected through one shared planar UV map, so the violet tip, the magenta and ' +
       'amber bands, the wavy lower-zone boundary, the grind tonal break, the gold beaded ferrule, ' +
       'the diamond-quilted grip and all four bolster screws land exactly where the references put ' +
-      'them. Roughness, metalness, AO and normal are separate authored channels. Blade thickness ' +
-      'is inferred — both supplied views are broadside. Live: a slow studio rock.',
+      'them. Roughness, metalness, AO and normal are separate authored channels. Every part is a ' +
+      'watertight solid rather than a plate with a picture on it: a through-tang runs the handle ' +
+      'and the furniture is tenoned onto it, cross-sections roll over a finite-radius edge, and ' +
+      'the four countersunk screws, the perforated lanyard bore, the beaded ferrule and the ' +
+      'quilt relief are real geometry at the measured coordinates. Blade thickness, interior ' +
+      'joinery and bead layout are inferred — both supplied views are broadside. Live: a slow ' +
+      'studio rock.',
     referenceImage: `${BASE}references/classic-fade.png`,
     sourcePath: 'src/demos/classic-fade/createClassicFadeModel.ts',
     sourceUrl: `${REPO}/src/demos/classic-fade/createClassicFadeModel.ts`,
@@ -108,8 +113,8 @@ export const demos: DemoEntry[] = [
     author: 'kokorolx',
     authorUrl: 'https://github.com/kokorolx',
     status: 'final',
-    // -Z side: a camera here reproduces the FRONT reference framing (tip to the left).
-    cameraPosition: [0, 0.78, -5.3],
+    // +Z side: a camera here reproduces the FRONT reference framing (blade to the right).
+    cameraPosition: [0, 0.78, 5.3],
     cameraTarget: [0, -0.02, 0],
     cameraFov: 30,
     accent: '#c4426b',

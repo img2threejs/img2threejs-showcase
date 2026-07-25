@@ -4,21 +4,24 @@
  "sourceViews": [
   {
    "role": "front",
-   "path": "/private/tmp/claude-501/-Users-tamlh-workspaces-self-AI-img2threejs-showcase/7ff00ad0-86ff-482b-8241-4a9cf57db444/scratchpad/classic/front.png",
-   "hash": 14543871599726438251,
-   "width": 2000,
-   "height": 1125,
-   "coverage": 0.1559,
-   "duplicate": false
-  },
-  {
-   "role": "back",
    "path": "/private/tmp/claude-501/-Users-tamlh-workspaces-self-AI-img2threejs-showcase/7ff00ad0-86ff-482b-8241-4a9cf57db444/scratchpad/classic/back.png",
    "hash": 14754410570245501503,
    "width": 2000,
    "height": 1125,
    "coverage": 0.1559,
    "duplicate": false,
+   "admitted": true,
+   "bladeDirection": "right"
+  },
+  {
+   "role": "back",
+   "path": "/private/tmp/claude-501/-Users-tamlh-workspaces-self-AI-img2threejs-showcase/7ff00ad0-86ff-482b-8241-4a9cf57db444/scratchpad/classic/front.png",
+   "hash": 14543871599726438251,
+   "width": 2000,
+   "height": 1125,
+   "coverage": 0.1559,
+   "duplicate": false,
+   "bladeDirection": "left",
    "admitted": true
   }
  ],
@@ -91,7 +94,8 @@
  "camera": {
   "status": "orthographic-broadside",
   "provenance": "observed",
-  "note": "both views are flat broadside product renders, negligible perspective"
+  "note": "both views are flat broadside product renders, negligible perspective",
+  "heroSide": "+Z"
  },
  "provenance": {
   "reference": "user-supplied",
@@ -121,6 +125,11 @@
     "topEdgeMean": 0.7,
     "bottomEdgeMean": 0.82
    }
+  },
+  "roleCorrection": {
+   "correctedOn": "2026-07-25",
+   "reason": "the prior manifest labelled the blade-LEFT view as front; the supplied prompt labels the blade-RIGHT view (7.png) as FRONT. Texture-to-face assignment was already correct (+Z carries the blade-right pixels); only the role labels, the albedo filenames and the hero camera were wrong, so the hero view framed the back.",
+   "heroCamera": "+Z"
   }
  },
  "classification": {

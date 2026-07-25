@@ -6537,15 +6537,28 @@
   }
  },
  "thickness": {
-  "blade": 0.03,
-  "guard": 0.072,
-  "ferrule": 0.088,
-  "foreBolster": 0.094,
-  "grip": 0.1,
-  "rearBolster": 0.094,
-  "buttPlate": 0.078,
+  "blade": 0.038,
+  "guard": 0.078,
+  "ferrule": 0.112,
+  "foreBolster": 0.14,
+  "grip": 0.153,
+  "rearBolster": 0.14,
+  "buttPlate": 0.126,
   "confidence": 0.45,
-  "basis": "inferred from the width of the guard's visible Z side face and typical fixed-blade proportions; no supplied view resolves depth"
+  "basis": "guard half-thickness stays anchored to the one measurable Z side face in the references; every other part is INFERRED by scaling the handle stack so the grip slab reaches the real Classic Knife ratio of ~1:13 (thickness:overall length). No supplied view resolves depth. Previous values put the grip at 1:19.9, which read as sheet metal when orbited.",
+  "bladeDistalTaper": 0.58,
+  "tang": 0.052,
+  "priorValues": {
+   "blade": 0.03,
+   "guard": 0.072,
+   "ferrule": 0.088,
+   "foreBolster": 0.094,
+   "grip": 0.1,
+   "rearBolster": 0.094,
+   "buttPlate": 0.078,
+   "confidence": 0.45,
+   "basis": "inferred from the width of the guard's visible Z side face and typical fixed-blade proportions; no supplied view resolves depth"
+  }
  },
  "features": {
   "jimping": {
@@ -6649,5 +6662,26 @@
    "confidence": 0.82,
    "note": "wedge grind inferred from the straight tonal break across the blade face"
   }
+ },
+ "chamfer": {
+  "handleRollFrac": 0.18,
+  "handleEdgeFrac": 0.3,
+  "chamferRingFrac": 0.92,
+  "bladeSpineRollFrac": 0.05,
+  "bladeSpineEdgeFrac": 0.55,
+  "basis": "the previous superellipse profile returned z=0 at t=0 and t=1, so every furniture part feathered to a zero-thickness knife edge along its whole outline -- the cause of the 'bent sheet metal' read at grazing angles. Edge thickness is inferred."
+ },
+ "joinery": {
+  "tenonInsetY": 0.012,
+  "tenonLength": {
+   "default": 0.05,
+   "grip": 0.1
+  },
+  "tangXRange": [
+   -1.962,
+   -0.452
+  ],
+  "tangInsetY": 0.055,
+  "basis": "interior joinery is INFERRED -- neither view shows inside the handle. Tenons are inset in Y from the traced outline so the extended stubs stay strictly inside the neighbouring part's silhouette and cannot change silhouette IoU."
  }
 }
