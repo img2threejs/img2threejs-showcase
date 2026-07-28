@@ -1,0 +1,87 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "status": "authoritative",
+  "confidence": 0.746,
+  "estimatedFidelity": 0.746,
+  "targetThreshold": 0.7,
+  "materialId": "loincloth-purple",
+  "sourceImage": "/private/tmp/dragon-pbr/masked-crops/loincloth-purple-alpha.png",
+  "outDir": "/private/tmp/dragon-pbr/masked-v3/cloth",
+  "palette": [
+    "#16132C",
+    "#131127",
+    "#110F21",
+    "#2E3D4F",
+    "#1C1B34"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/cloth/loincloth-purple_albedo.png",
+      "url": "loincloth-purple_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/cloth/loincloth-purple_roughness.png",
+      "url": "loincloth-purple_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/cloth/loincloth-purple_height.png",
+      "url": "loincloth-purple_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/cloth/loincloth-purple_normal.png",
+      "url": "loincloth-purple_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/cloth/loincloth-purple_ao.png",
+      "url": "loincloth-purple_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 460,
+    "sourceHeight": 460,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 211,
+      "y": 41,
+      "width": 74,
+      "height": 148
+    },
+    "mask": {
+      "backgroundColor": "#FFFFFF",
+      "backgroundNoise": 0.0,
+      "transparentPixelFraction": 0.9583,
+      "foregroundCoverage": 0.0417
+    },
+    "mapStats": {
+      "valueRange": 0.1718,
+      "heightP90Gradient": 0.01475,
+      "roughnessBase": 0.688,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.174,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#16132C",
+      "#131127",
+      "#110F21",
+      "#2E3D4F",
+      "#1C1B34"
+    ]
+  },
+  "warnings": [
+    "foreground mask is very small",
+    "low value range weakens height/roughness inference"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

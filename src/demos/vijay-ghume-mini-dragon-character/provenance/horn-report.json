@@ -1,0 +1,85 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "status": "current",
+  "evidenceRole": "admitted-alpha-masked-evidence",
+  "confidence": 0.917,
+  "estimatedFidelity": 0.917,
+  "targetThreshold": 0.7,
+  "materialId": "horn-black",
+  "sourceImage": "/private/tmp/dragon-details/zone-r0c1.png",
+  "outDir": "/private/tmp/dragon-pbr/horn",
+  "palette": [
+    "#1F2833",
+    "#E27D69",
+    "#BD2838",
+    "#524453",
+    "#1E0D11"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "/private/tmp/dragon-pbr/horn/horn-black_albedo.png",
+      "url": "horn-black_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "/private/tmp/dragon-pbr/horn/horn-black_roughness.png",
+      "url": "horn-black_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "/private/tmp/dragon-pbr/horn/horn-black_height.png",
+      "url": "horn-black_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "/private/tmp/dragon-pbr/horn/horn-black_normal.png",
+      "url": "horn-black_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "/private/tmp/dragon-pbr/horn/horn-black_ao.png",
+      "url": "horn-black_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 640,
+    "sourceHeight": 640,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 0,
+      "y": 0,
+      "width": 640,
+      "height": 640
+    },
+    "mask": {
+      "backgroundColor": "#544A59",
+      "backgroundNoise": 179.204,
+      "transparentPixelFraction": 0.0,
+      "foregroundCoverage": 0.879
+    },
+    "mapStats": {
+      "valueRange": 0.5197,
+      "heightP90Gradient": 0.04275,
+      "roughnessBase": 0.69,
+      "roughnessVariation": 0.079,
+      "normalStrength": 0.206,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#1F2833",
+      "#E27D69",
+      "#BD2838",
+      "#524453",
+      "#1E0D11"
+    ]
+  },
+  "warnings": [],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

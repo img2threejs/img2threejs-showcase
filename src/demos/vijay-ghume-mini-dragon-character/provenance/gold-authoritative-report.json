@@ -1,0 +1,86 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "status": "authoritative",
+  "confidence": 0.84,
+  "estimatedFidelity": 0.84,
+  "targetThreshold": 0.7,
+  "materialId": "gold-ornament",
+  "sourceImage": "/private/tmp/dragon-pbr/masked-crops/gold-ornament-alpha.png",
+  "outDir": "/private/tmp/dragon-pbr/masked-v3/gold",
+  "palette": [
+    "#6B4D02",
+    "#B59515",
+    "#8E6E05",
+    "#D9C13B",
+    "#F4EA8C"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/gold/gold-ornament_albedo.png",
+      "url": "gold-ornament_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/gold/gold-ornament_roughness.png",
+      "url": "gold-ornament_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/gold/gold-ornament_height.png",
+      "url": "gold-ornament_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/gold/gold-ornament_normal.png",
+      "url": "gold-ornament_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/gold/gold-ornament_ao.png",
+      "url": "gold-ornament_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 420,
+    "sourceHeight": 420,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 131,
+      "y": 192,
+      "width": 158,
+      "height": 155
+    },
+    "mask": {
+      "backgroundColor": "#FFFFFF",
+      "backgroundNoise": 0.0,
+      "transparentPixelFraction": 0.9457,
+      "foregroundCoverage": 0.0543
+    },
+    "mapStats": {
+      "valueRange": 0.639,
+      "heightP90Gradient": 0.01755,
+      "roughnessBase": 0.681,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.177,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#6B4D02",
+      "#B59515",
+      "#8E6E05",
+      "#D9C13B",
+      "#F4EA8C"
+    ]
+  },
+  "warnings": [
+    "foreground mask is very small"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import {
+  createVijayGhumeMiniDragonCharacterModel,
+  createVijayGhumeMiniDragonCharacterLookDevLights,
+} from './vijay-ghume-mini-dragon-character/createVijayGhumeMiniDragonCharacterModel';
+import {
   createM9DopplerModel,
   createM9DopplerLookDevLights,
   makeM9DopplerBackground,
@@ -90,6 +94,49 @@ const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/hoainho/img2threejs-showcase/blob/main';
 
 export const demos: DemoEntry[] = [
+  {
+    id: 'vijay-ghume-mini-dragon-character',
+    title: 'Vijay Ghume Mini Dragon',
+    subjectClass: 'character',
+    blurb:
+      'A hovering mini dragon rebuilt in code from five admitted views — front, ' +
+      'front and rear three-quarter, side and rear. Organic anatomy is now one welded, ' +
+      'watertight implicit surface instead of disconnected primitives, driven by a real ' +
+      '30-bone THREE.SkinnedMesh rig with four normalized influences per body vertex. ' +
+      'The wings are subdivided skinned membranes; jaw, spars, cuffs, hooves, jewelry and ' +
+      'tail hardware are bone-owned attachments. The complete 30-map extraction bundle ' +
+      'remains attached as provenance evidence, while fitted procedural physical materials ' +
+      'avoid painting unrelated anatomy with crop seams. Hidden cross-sections remain inferred.',
+    referenceImage: `${BASE}references/vijay-ghume-mini-dragon-character.jpg`,
+    sourcePath: 'src/demos/vijay-ghume-mini-dragon-character/createVijayGhumeMiniDragonCharacterModel.ts',
+    sourceUrl: `${REPO}/src/demos/vijay-ghume-mini-dragon-character/createVijayGhumeMiniDragonCharacterModel.ts`,
+    generatedWith: 'v1.5 gates + topology-first Three.js rig rebuild',
+    author: 'hoainho',
+    authorUrl: 'https://github.com/hoainho',
+    // Keep placeholder until a human accepts the new multi-view visual match. Build,
+    // topology and rig gates passing are necessary but do not substitute for likeness.
+    status: 'placeholder',
+    // Capture mode derives framing from current geometry bounds; this camera is the
+    // regular interactive showcase view.
+    cameraPosition: [5.6, 1.8, 26.1],
+    cameraTarget: [0, -0.5, 0],
+    cameraFov: 35,
+    accent: '#c65c43',
+    backgroundGradient: { inner: '#2b1b2e', outer: '#0a0709' },
+    installLights: (scene) => {
+      scene.add(createVijayGhumeMiniDragonCharacterLookDevLights('reference'));
+    },
+    build: (scene) => {
+      const group = createVijayGhumeMiniDragonCharacterModel();
+      const reviewView = new URLSearchParams(window.location.search).get('view');
+      if (reviewView === 'front-three-quarter') group.rotation.y = -Math.PI / 6;
+      else if (reviewView === 'rear-three-quarter') group.rotation.y = Math.PI * 0.72;
+      else if (reviewView === 'side') group.rotation.y = -Math.PI / 2;
+      else if (reviewView === 'rear') group.rotation.y = Math.PI;
+      scene.add(group);
+      return group;
+    },
+  },
   {
     id: 'glock-ghost-protocol',
     title: 'Glock-18 | Ghost Protocol (Well-Worn)',

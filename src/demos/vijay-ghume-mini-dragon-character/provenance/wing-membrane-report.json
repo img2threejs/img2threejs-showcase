@@ -1,0 +1,90 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "confidence": 0.776,
+  "estimatedFidelity": 0.776,
+  "targetThreshold": 0.7,
+  "materialId": "wing-membrane-pink",
+  "evidenceRole": "historical-source-report",
+  "status": "superseded",
+  "pathRole": "historical-provenance-only",
+  "sourceImage": "/private/tmp/dragon-wing-membrane-crop.png",
+  "outDir": "/private/tmp/dragon-pbr/wing-membrane",
+  "palette": [
+    "#1F2732",
+    "#C32C54",
+    "#2C3A4B",
+    "#24303E",
+    "#120D12"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "/private/tmp/dragon-pbr/wing-membrane/wing-membrane-pink_albedo.png",
+      "url": "wing-membrane-pink_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "/private/tmp/dragon-pbr/wing-membrane/wing-membrane-pink_roughness.png",
+      "url": "wing-membrane-pink_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "/private/tmp/dragon-pbr/wing-membrane/wing-membrane-pink_height.png",
+      "url": "wing-membrane-pink_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "/private/tmp/dragon-pbr/wing-membrane/wing-membrane-pink_normal.png",
+      "url": "wing-membrane-pink_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "/private/tmp/dragon-pbr/wing-membrane/wing-membrane-pink_ao.png",
+      "url": "wing-membrane-pink_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 730,
+    "sourceHeight": 576,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 0,
+      "y": 0,
+      "width": 730,
+      "height": 576
+    },
+    "mask": {
+      "backgroundColor": "#253444",
+      "backgroundNoise": 29.547,
+      "transparentPixelFraction": 0.0,
+      "foregroundCoverage": 0.9934
+    },
+    "mapStats": {
+      "valueRange": 0.288,
+      "heightP90Gradient": 0.0425,
+      "roughnessBase": 0.685,
+      "roughnessVariation": 0.076,
+      "normalStrength": 0.206,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#1F2732",
+      "#C32C54",
+      "#2C3A4B",
+      "#24303E",
+      "#120D12"
+    ]
+  },
+  "warnings": [
+    "source image was converted to PNG with macOS sips before pixel extraction",
+    "image is not clearly isolated from background; using most pixels as material evidence",
+    "object/background separation is weak"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

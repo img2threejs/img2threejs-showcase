@@ -1,0 +1,1309 @@
+{
+  "targetName": "Vijay Ghume Mini Dragon Character",
+  "sourceImage": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-2.jpg",
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryType": "stylized mini-dragon character",
+      "primaryDomain": "character",
+      "formLanguage": [
+        "stylized muscular creature",
+        "oversized-head silhouette",
+        "bat-wing negative spaces",
+        "curved appendages"
+      ],
+      "structureKind": [
+        "anatomical core",
+        "paired appendages",
+        "articulated accessories",
+        "membrane-and-bone wings"
+      ],
+      "motionPotential": [
+        "hover",
+        "lunge",
+        "wing flap",
+        "tail sway",
+        "claw pose"
+      ],
+      "materialFamilies": [
+        "painted creature skin and pink/magenta tail-tip",
+        "black grooved horn/bone",
+        "pink/red smooth wing membrane",
+        "purple ragged loincloth",
+        "gold metal ornament",
+        "white ivory fang, amber eye, and purple face-mask fallback inserts"
+      ],
+      "notes": "Classified from the supplied multi-view character set; mood reference is excluded from measured geometry."
+    },
+    "complexity": {
+      "tier": "ultra-complex",
+      "scores": {
+        "silhouetteComplexity": 3,
+        "componentCount": 3,
+        "hierarchyDepth": 3,
+        "repetitionDensity": 2,
+        "materialLayerCount": 3,
+        "localDetailDensity": 3,
+        "occlusionRisk": 3,
+        "actionReadinessNeed": 3
+      },
+      "estimatedCounts": {
+        "macroComponents": 6,
+        "mesoComponents": 21,
+        "microFeatureGroups": 30,
+        "materialLayers": 9,
+        "repetitionSystems": 2
+      },
+      "reasoning": [
+        "Five measured viewpoints expose head, torso, paired wings, limbs, tail, and accessories.",
+        "Identity depends on horns, wing tears/bones, face mask/fangs, jewelry, cloth edge, tail ring, and spade tip.",
+        "Hover/lunge behavior requires stable pivots, sockets, colliders, and detachable groups before runtime code."
+      ]
+    },
+    "specDepthDecision": {
+      "requiredDepth": "ultra-complex",
+      "minimumComponentLevels": [
+        "macro",
+        "meso",
+        "micro"
+      ],
+      "needsRepetitionSystems": true,
+      "needsMaterialLocalOverrides": true,
+      "needsMultipleReviewViews": true,
+      "needsActionReadyHierarchy": true,
+      "rationale": "The multi-view dragon has multiple independently readable appendages, accessory groups, and material regimes."
+    },
+    "unknownsToResolveBeforeImplementation": [],
+    "detailInventory": {
+      "scanMethod": "component-localized multi-view evidence reconciliation",
+      "targetMinDetails": 30,
+      "note": "Normalized regions are localized to the referenced image; side/rear evidence is not relabeled as front-primary.",
+      "details": [
+        {
+          "id": "horn-grooves-l",
+          "kind": "groove",
+          "description": "horn grooves l",
+          "region": {
+            "x": 0.28,
+            "y": 0.04,
+            "width": 0.18,
+            "height": 0.3,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "horn-l/horn-l-grooves"
+          },
+          "evidenceRef": "front-three-quarter",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "horn-grooves-r",
+          "kind": "groove",
+          "description": "horn grooves r",
+          "region": {
+            "x": 0.54,
+            "y": 0.04,
+            "width": 0.18,
+            "height": 0.3,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "horn-r/horn-r-grooves"
+          },
+          "evidenceRef": "front-three-quarter",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "ear-gradient-l",
+          "kind": "contour",
+          "description": "ear gradient l",
+          "region": {
+            "x": 0.1,
+            "y": 0.2,
+            "width": 0.18,
+            "height": 0.26,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "ear-l/ear-l-gradient"
+          },
+          "evidenceRef": "front-three-quarter",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "ear-gradient-r",
+          "kind": "contour",
+          "description": "ear gradient r",
+          "region": {
+            "x": 0.72,
+            "y": 0.2,
+            "width": 0.18,
+            "height": 0.26,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "ear-r/ear-r-gradient"
+          },
+          "evidenceRef": "front-three-quarter",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "left-earring",
+          "kind": "fastener",
+          "description": "left earring",
+          "region": {
+            "x": 0.14,
+            "y": 0.43,
+            "width": 0.09,
+            "height": 0.13,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "earring-l/earring-l-gold"
+          },
+          "evidenceRef": "front-three-quarter",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "eye-highlight-l",
+          "kind": "gloss",
+          "description": "eye highlight l",
+          "region": {
+            "x": 0.31,
+            "y": 0.33,
+            "width": 0.11,
+            "height": 0.08,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "eye-l/eye-l-highlight"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "eye-highlight-r",
+          "kind": "gloss",
+          "description": "eye highlight r",
+          "region": {
+            "x": 0.58,
+            "y": 0.33,
+            "width": 0.11,
+            "height": 0.08,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "eye-r/eye-r-highlight"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "purple-mask",
+          "kind": "linework",
+          "description": "purple mask",
+          "region": {
+            "x": 0.27,
+            "y": 0.29,
+            "width": 0.46,
+            "height": 0.17,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "eye-mask/purple-eye-mask"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "nostril-l",
+          "kind": "hole",
+          "description": "nostril l",
+          "region": {
+            "x": 0.4,
+            "y": 0.48,
+            "width": 0.06,
+            "height": 0.05,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "nostril-l/nostril-l-dark"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "nostril-r",
+          "kind": "hole",
+          "description": "nostril r",
+          "region": {
+            "x": 0.54,
+            "y": 0.48,
+            "width": 0.06,
+            "height": 0.05,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "nostril-r/nostril-r-dark"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "fang-l",
+          "kind": "bevel",
+          "description": "fang l",
+          "region": {
+            "x": 0.39,
+            "y": 0.56,
+            "width": 0.08,
+            "height": 0.11,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "fang-l/fang-l-white"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "fang-r",
+          "kind": "bevel",
+          "description": "fang r",
+          "region": {
+            "x": 0.53,
+            "y": 0.56,
+            "width": 0.08,
+            "height": 0.11,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "fang-r/fang-r-white"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "arm-marking-l",
+          "kind": "linework",
+          "description": "arm marking l",
+          "region": {
+            "x": 0.08,
+            "y": 0.48,
+            "width": 0.17,
+            "height": 0.25,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "upper-arm-l/arm-l-markings"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "arm-marking-r",
+          "kind": "linework",
+          "description": "arm marking r",
+          "region": {
+            "x": 0.75,
+            "y": 0.48,
+            "width": 0.17,
+            "height": 0.25,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "upper-arm-r/arm-r-markings"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "wing-tears-l",
+          "kind": "contour",
+          "description": "wing tears l",
+          "region": {
+            "x": 0.06,
+            "y": 0.24,
+            "width": 0.29,
+            "height": 0.47,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "wing-membrane-l/wing-l-tears"
+          },
+          "evidenceRef": "rear-three-quarter",
+          "confidence": 0.78,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "wing-tears-r",
+          "kind": "contour",
+          "description": "wing tears r",
+          "region": {
+            "x": 0.65,
+            "y": 0.24,
+            "width": 0.29,
+            "height": 0.47,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "wing-membrane-r/wing-r-tears"
+          },
+          "evidenceRef": "rear-three-quarter",
+          "confidence": 0.78,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "wing-bones-l",
+          "kind": "groove",
+          "description": "wing bones l",
+          "region": {
+            "x": 0.03,
+            "y": 0.18,
+            "width": 0.35,
+            "height": 0.55,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "wing-l/wing-l-bone-grooves"
+          },
+          "evidenceRef": "rear",
+          "confidence": 0.78,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "wing-bones-r",
+          "kind": "groove",
+          "description": "wing bones r",
+          "region": {
+            "x": 0.62,
+            "y": 0.18,
+            "width": 0.35,
+            "height": 0.55,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "wing-r/wing-r-bone-grooves"
+          },
+          "evidenceRef": "rear",
+          "confidence": 0.78,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "cuff-rim-l",
+          "kind": "bevel",
+          "description": "cuff rim l",
+          "region": {
+            "x": 0.12,
+            "y": 0.64,
+            "width": 0.13,
+            "height": 0.12,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "cuff-l/cuff-l-rim"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "cuff-rim-r",
+          "kind": "bevel",
+          "description": "cuff rim r",
+          "region": {
+            "x": 0.75,
+            "y": 0.64,
+            "width": 0.13,
+            "height": 0.12,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "cuff-r/cuff-r-rim"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "collar",
+          "kind": "bevel",
+          "description": "collar",
+          "region": {
+            "x": 0.41,
+            "y": 0.58,
+            "width": 0.18,
+            "height": 0.1,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "collar/collar-gold-rim"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "pendant-ring",
+          "kind": "fastener",
+          "description": "pendant ring",
+          "region": {
+            "x": 0.45,
+            "y": 0.63,
+            "width": 0.1,
+            "height": 0.1,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "pendant-ring/pendant-ring-gold"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "pendant-disk",
+          "kind": "contour",
+          "description": "pendant disk",
+          "region": {
+            "x": 0.44,
+            "y": 0.69,
+            "width": 0.12,
+            "height": 0.12,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "pendant-disk/pendant-disk-gold"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "ragged-cloth",
+          "kind": "contour",
+          "description": "ragged cloth",
+          "region": {
+            "x": 0.34,
+            "y": 0.72,
+            "width": 0.32,
+            "height": 0.23,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "loincloth/loincloth-ragged-edge"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "ankle-band-l",
+          "kind": "fastener",
+          "description": "ankle band l",
+          "region": {
+            "x": 0.32,
+            "y": 0.77,
+            "width": 0.13,
+            "height": 0.12,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "ankle-band-l/ankle-band-l-gold"
+          },
+          "evidenceRef": "side",
+          "confidence": 0.78,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "ankle-band-r",
+          "kind": "fastener",
+          "description": "ankle band r",
+          "region": {
+            "x": 0.55,
+            "y": 0.77,
+            "width": 0.13,
+            "height": 0.12,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "ankle-band-r/ankle-band-r-gold"
+          },
+          "evidenceRef": "side",
+          "confidence": 0.78,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "tail-ring",
+          "kind": "fastener",
+          "description": "tail ring",
+          "region": {
+            "x": 0.68,
+            "y": 0.56,
+            "width": 0.1,
+            "height": 0.12,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "tail-ring/tail-ring-gold"
+          },
+          "evidenceRef": "side",
+          "confidence": 0.78,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "tail-spade",
+          "kind": "contour",
+          "description": "tail spade",
+          "region": {
+            "x": 0.76,
+            "y": 0.68,
+            "width": 0.17,
+            "height": 0.22,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "tail-tip/tail-tip-facets"
+          },
+          "evidenceRef": "side",
+          "confidence": 0.78,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "claw-curve-l",
+          "kind": "contour",
+          "description": "claw curve l",
+          "region": {
+            "x": 0.05,
+            "y": 0.73,
+            "width": 0.17,
+            "height": 0.12,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "claw-set-l/claw-l-curvature-detail"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        },
+        {
+          "id": "claw-curve-r",
+          "kind": "contour",
+          "description": "claw curve r",
+          "region": {
+            "x": 0.78,
+            "y": 0.73,
+            "width": 0.17,
+            "height": 0.12,
+            "units": "normalized"
+          },
+          "scale": "micro",
+          "affects": "identity silhouette or close-up material read",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "ref": "claw-set-r/claw-r-curvature-detail"
+          },
+          "evidenceRef": "front-primary",
+          "confidence": 0.84,
+          "realization": "geometry-or-material-override"
+        }
+      ]
+    },
+    "anatomy": {
+      "applies": true,
+      "styleHeads": 3.1,
+      "proportions": {
+        "headUnit": 1.0,
+        "torso": 1.18,
+        "legs": 0.78,
+        "shoulderWidth": 1.52,
+        "hipWidth": 0.86
+      },
+      "pose": {
+        "type": "hovering-lunge",
+        "jointAngles": {
+          "neck": [
+            8,
+            0,
+            0
+          ],
+          "leftShoulder": [
+            18,
+            0,
+            24
+          ],
+          "rightShoulder": [
+            18,
+            0,
+            -24
+          ],
+          "leftElbow": [
+            48,
+            0,
+            18
+          ],
+          "rightElbow": [
+            48,
+            0,
+            -18
+          ],
+          "leftHip": [
+            -24,
+            0,
+            12
+          ],
+          "rightHip": [
+            -24,
+            0,
+            -12
+          ],
+          "leftKnee": [
+            64,
+            0,
+            0
+          ],
+          "rightKnee": [
+            64,
+            0,
+            0
+          ],
+          "tailBase": [
+            14,
+            0,
+            0
+          ]
+        }
+      },
+      "faceLandmarks": {
+        "eyeLine": 0.57,
+        "eyeSpacing": 0.38,
+        "noseBase": 0.42,
+        "mouthLine": 0.31,
+        "hairline": 0.84,
+        "earTop": 0.94,
+        "earBottom": 0.54
+      },
+      "features": [
+        "swept horns",
+        "pointed ears",
+        "yellow-orange eyes",
+        "purple eye mask",
+        "orange-yellow muzzle",
+        "white lower fangs"
+      ],
+      "confidence": 0.86,
+      "note": "Measured as stylized creature head units from visible front and three-quarter views; hidden depth is intentionally uncertain."
+    },
+    "sourceImage": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-2.jpg",
+    "pipelineRouting": {
+      "version": 1,
+      "track": "character-v1.5",
+      "source": "explicit",
+      "status": "resolved",
+      "classification": {
+        "kind": "character",
+        "confidence": 0.98,
+        "evidenceRefs": [
+          "front-primary",
+          "front-three-quarter",
+          "rear-three-quarter",
+          "side",
+          "rear"
+        ],
+        "provider": "user-specified-multi-view-classification",
+        "version": "1.0"
+      },
+      "conflicts": []
+    }
+  },
+  "qualityContract": {
+    "qualityBar": "ultra-complex",
+    "definitionOfDone": [
+      "A future render must match the multi-view mini-dragon silhouette, creature proportions, face identity, wing/tail structure, accessories, and independent PBR response without claiming unperformed review."
+    ],
+    "minimumSpecDepth": {
+      "macroComponents": 5,
+      "mesoComponents": 16,
+      "microFeatureGroups": 8,
+      "materialLayers": 4,
+      "repetitionSystems": 2,
+      "reviewViewpoints": 5
+    },
+    "featureGroups": [
+      {
+        "id": "dragon-silhouette",
+        "name": "Dragon silhouette",
+        "required": true,
+        "qualityCriteria": [
+          "oversized head, compact torso, wings, tail, and hovering negative spaces read in five views"
+        ],
+        "evidenceRefs": [
+          "front-primary",
+          "side",
+          "rear"
+        ],
+        "failureModes": [
+          "generic humanoid scaffold",
+          "flat wings or straight tail"
+        ]
+      },
+      {
+        "id": "dragon-face",
+        "name": "Face identity",
+        "required": true,
+        "qualityCriteria": [
+          "horns, ears, mask, eyes, muzzle, nostrils, and fangs are independently placed"
+        ],
+        "evidenceRefs": [
+          "front-primary",
+          "front-three-quarter"
+        ],
+        "failureModes": [
+          "human hair/glasses retained",
+          "muzzle lacks fangs"
+        ]
+      },
+      {
+        "id": "wing-tail-accessories",
+        "name": "Wing tail and accessory structure",
+        "required": true,
+        "qualityCriteria": [
+          "bone/membrane wings, tail ring/spade, cuffs, collar, belt, cloth, and ankle bands have named pivots"
+        ],
+        "evidenceRefs": [
+          "rear-three-quarter",
+          "side"
+        ],
+        "failureModes": [
+          "floating appendages",
+          "accessories only prose"
+        ]
+      },
+      {
+        "id": "lookdev",
+        "name": "Independent look development",
+        "required": true,
+        "qualityCriteria": [
+          "each non-utility visible material uses independent extracted maps plus macro/meso/micro response bands; utility fallbacks declare unusable reference evidence and independent procedural channels"
+        ],
+        "evidenceRefs": [
+          "front-primary"
+        ],
+        "failureModes": [
+          "albedo reused as PBR channels",
+          "fabric and metal response collapsed"
+        ]
+      }
+    ],
+    "visualDeltaChecks": [
+      "front silhouette",
+      "three-quarter horn/ear/muzzle depth",
+      "rear wing membrane and tail continuity",
+      "side tail S-curve and leg tuck",
+      "material relighting response"
+    ],
+    "antiShallowSpecRules": [
+      "No generic human components remain.",
+      "No pass can be marked complete without real render evidence.",
+      "No PBR map is claimed usable unless its actual extraction report passed 0.7."
+    ],
+    "mustNotDo": [
+      "Do not invent solved camera values.",
+      "Do not claim completed review screenshots or scores.",
+      "Do not reuse albedo for roughness, height, normal, or AO."
+    ]
+  },
+  "pipelineRouting": {
+    "version": 1,
+    "track": "character-v1.5",
+    "source": "explicit",
+    "status": "resolved",
+    "classification": {
+      "kind": "character",
+      "confidence": 0.98,
+      "evidenceRefs": [
+        "front-primary",
+        "front-three-quarter",
+        "rear-three-quarter",
+        "side",
+        "rear"
+      ],
+      "provider": "user-specified-multi-view-classification",
+      "version": "1.0"
+    },
+    "conflicts": []
+  },
+  "localSpecSearch": {
+    "collection": "core_3d",
+    "query": "stylized mini dragon creature wings horns tail accessory PBR",
+    "index": {
+      "status": "not-used-for-identity",
+      "reason": "current-session authoritative visual evidence governs this artifact"
+    },
+    "matches": []
+  },
+  "materialEvidence": {
+    "primaryImageCrops": {
+      "dragon-skin": "/private/tmp/dragon-skin-crop.png",
+      "horn-black": "/private/tmp/dragon-horn-crop.png",
+      "loincloth-purple": "/private/tmp/dragon-cloth-crop.png",
+      "gold-ornament": "/private/tmp/dragon-gold-crop.png",
+      "wing-membrane-pink": "/private/tmp/dragon-wing-membrane-crop.png",
+      "fang-ivory": "/private/tmp/dragon-fang-crop.png",
+      "eye-amber": "/private/tmp/dragon-eye-crop.png",
+      "mask-purple": "/private/tmp/dragon-eye-crop.png"
+    },
+    "extractionReports": {
+      "dragon-skin": "/private/tmp/dragon-pbr/skin-v2-report.json",
+      "horn-black": "/private/tmp/dragon-pbr/horn-v2-report.json",
+      "loincloth-purple": "/private/tmp/dragon-pbr/cloth-v2-report.json",
+      "gold-ornament": "/private/tmp/dragon-pbr/gold-v2-report.json",
+      "wing-membrane-pink": "/private/tmp/dragon-pbr/wing-membrane-report.json",
+      "fang-ivory": "/private/tmp/dragon-pbr/fang-ivory-report.json",
+      "eye-amber": "/private/tmp/dragon-pbr/eye-amber-report.json",
+      "mask-purple": "/private/tmp/dragon-pbr/eye-amber-report.json"
+    },
+    "note": "Each crop was visually checked for dominant material content before extraction.",
+    "fallbackLimitations": [
+      "Fang, eye, and mask remain independent procedural fallbacks: tested reference crops were too small or face-contaminated to claim reliable material-local PBR maps.",
+      "Core skin, horn, cloth, gold, and membrane PBR claims now originate only from inspected alpha-masked semantic crops."
+    ],
+    "alphaMaskedCrops": {
+      "horn-black": {
+        "materialId": "horn-black",
+        "sourceCrop": "/private/tmp/dragon-horn-crop.png",
+        "maskedCrop": "/private/tmp/dragon-pbr/masked-crops/horn-black-alpha.png",
+        "alphaCoverage": 0.0226,
+        "semanticRule": "charcoal horn pixels with purple-gray highlights; skin, ears, eyes, fangs, gold, and background transparent",
+        "sourceLoadWarnings": [
+          "source image was converted to PNG with macOS sips before pixel extraction"
+        ]
+      },
+      "loincloth-purple": {
+        "materialId": "loincloth-purple",
+        "sourceCrop": "/private/tmp/dragon-cloth-crop.png",
+        "maskedCrop": "/private/tmp/dragon-pbr/masked-crops/loincloth-purple-alpha.png",
+        "alphaCoverage": 0.0417,
+        "semanticRule": "deep navy/indigo cloth; skin, gold, background, and foot edges transparent",
+        "sourceLoadWarnings": [
+          "source image was converted to PNG with macOS sips before pixel extraction"
+        ]
+      },
+      "gold-ornament": {
+        "materialId": "gold-ornament",
+        "sourceCrop": "/private/tmp/dragon-gold-crop.png",
+        "maskedCrop": "/private/tmp/dragon-pbr/masked-crops/gold-ornament-alpha.png",
+        "alphaCoverage": 0.0543,
+        "semanticRule": "gold/yellow ornament pixels; skin, orange belly, brown strap, cloth, shadows, and background transparent",
+        "sourceLoadWarnings": [
+          "source image was converted to PNG with macOS sips before pixel extraction"
+        ]
+      },
+      "wing-membrane-pink": {
+        "materialId": "wing-membrane-pink",
+        "sourceCrop": "/private/tmp/dragon-wing-membrane-crop.png",
+        "maskedCrop": "/private/tmp/dragon-pbr/masked-crops/wing-membrane-pink-alpha.png",
+        "alphaCoverage": 0.205,
+        "semanticRule": "saturated pink/red membrane pixels; black bones, background, gold cuff, and body edge transparent",
+        "sourceLoadWarnings": [
+          "source image was converted to PNG with macOS sips before pixel extraction"
+        ]
+      },
+      "dragon-tail-skin": {
+        "materialId": "dragon-skin",
+        "sourceView": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-3.jpg",
+        "sourceCrop": "/private/tmp/dragon-skin-tail-source-3.png",
+        "maskedCrop": "/private/tmp/dragon-pbr/masked-crops/dragon-skin-alpha-v2.png",
+        "preview": "/private/tmp/dragon-pbr/masked-crops/dragon-skin-alpha-v2-preview.png",
+        "alphaCoverage": 0.2439,
+        "polygon": [
+          [
+            0.42,
+            0.03
+          ],
+          [
+            0.69,
+            0.02
+          ],
+          [
+            0.88,
+            0.18
+          ],
+          [
+            0.96,
+            0.43
+          ],
+          [
+            0.94,
+            0.7
+          ],
+          [
+            0.82,
+            0.88
+          ],
+          [
+            0.6,
+            0.82
+          ],
+          [
+            0.64,
+            0.62
+          ],
+          [
+            0.62,
+            0.42
+          ],
+          [
+            0.55,
+            0.2
+          ]
+        ],
+        "semanticRule": "Rear-three-quarter tail-only polygon selects broad continuous magenta skin and excludes background, upper-left body fragment, lower edge highlight, orange muzzle, eyes, horns, fangs, mask, cloth, gold, and wings.",
+        "loadWarnings": [
+          "source image was converted to PNG with macOS sips before pixel extraction"
+        ]
+      }
+    },
+    "maskedExtractionReports": {
+      "horn-black": "/private/tmp/dragon-pbr/masked-v3/horn-report.json",
+      "loincloth-purple": "/private/tmp/dragon-pbr/masked-v3/cloth-report.json",
+      "gold-ornament": "/private/tmp/dragon-pbr/masked-v3/gold-report.json",
+      "wing-membrane-pink": "/private/tmp/dragon-pbr/masked-v3/wing-report.json",
+      "dragon-tail-skin": "/private/tmp/dragon-pbr/masked-v4/skin-report.json"
+    },
+    "tailSkinScope": {
+      "materialId": "dragon-tail-skin",
+      "components": [
+        "tail",
+        "tail-tip"
+      ],
+      "source": "/private/tmp/dragon-pbr/masked-crops/dragon-skin-alpha-v2.png"
+    },
+    "bodySkinExtraction": {
+      "mask": {
+        "materialId": "dragon-body-skin",
+        "sourceView": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-2.jpg",
+        "sourceCrop": "/private/tmp/dragon-pbr/body-skin/dragon-body-arm-source.png",
+        "maskedCrop": "/private/tmp/dragon-pbr/body-skin/dragon-body-skin-alpha.png",
+        "preview": "/private/tmp/dragon-pbr/body-skin/dragon-body-skin-alpha-preview.png",
+        "alphaCoverage": 0.159,
+        "polygon": [
+          [
+            0.356,
+            0.083
+          ],
+          [
+            0.511,
+            0.081
+          ],
+          [
+            0.672,
+            0.108
+          ],
+          [
+            0.792,
+            0.169
+          ],
+          [
+            0.865,
+            0.253
+          ],
+          [
+            0.884,
+            0.333
+          ],
+          [
+            0.832,
+            0.358
+          ],
+          [
+            0.758,
+            0.353
+          ],
+          [
+            0.661,
+            0.326
+          ],
+          [
+            0.611,
+            0.27
+          ],
+          [
+            0.638,
+            0.225
+          ],
+          [
+            0.731,
+            0.222
+          ],
+          [
+            0.814,
+            0.269
+          ],
+          [
+            0.842,
+            0.353
+          ],
+          [
+            0.803,
+            0.453
+          ],
+          [
+            0.714,
+            0.544
+          ],
+          [
+            0.603,
+            0.617
+          ],
+          [
+            0.475,
+            0.653
+          ],
+          [
+            0.358,
+            0.622
+          ],
+          [
+            0.289,
+            0.528
+          ],
+          [
+            0.277,
+            0.433
+          ],
+          [
+            0.249,
+            0.35
+          ],
+          [
+            0.258,
+            0.253
+          ],
+          [
+            0.294,
+            0.161
+          ]
+        ],
+        "semanticRule": "Front-primary admitted arm/hand crop; magenta body skin only. Gold cuff, black claws, dark finger gaps, background, and adjacent limb excluded.",
+        "loadWarnings": []
+      },
+      "reportPath": "/private/tmp/dragon-pbr/body-skin/dragon-body-skin-report.json",
+      "analysisPath": "/private/tmp/dragon-pbr/body-skin/dragon-body-skin-texture-analysis.json"
+    }
+  },
+  "referenceAdmission": {
+    "schemaVersion": 1,
+    "admissionManifestPath": "/private/tmp/dragon-reference-admission/admission-manifest.json",
+    "geometryViewIds": [
+      "front-three-quarter",
+      "front-primary",
+      "rear-three-quarter",
+      "side",
+      "rear"
+    ],
+    "reports": {
+      "front-three-quarter": {
+        "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-1.jpg",
+        "originalSourceSha256": "2e9cc8ac2ccccf385702cfa15ecf2228ee0e8c013f8a3b15428d958fcc3b3cd3",
+        "admittedCropPath": "/private/tmp/dragon-reference-admission/front-three-quarter-admitted.png",
+        "previewPath": "/private/tmp/dragon-reference-admission/front-three-quarter-preview.png",
+        "admissionReportPath": "/private/tmp/dragon-reference-admission/reports/front-three-quarter.json",
+        "admitted": true,
+        "reasons": [],
+        "viewpoint": "front-three-quarter",
+        "width": 1920,
+        "height": 1920,
+        "foregroundCoverage": 0.2715,
+        "largestComponentFraction": 1.0,
+        "pHash": "10863642626748217404",
+        "duplicateOfHash": null
+      },
+      "front-primary": {
+        "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-2.jpg",
+        "originalSourceSha256": "7b7bf3db3a8420f1d6a9f9770b647c5f27da18802208cbd5d63da550ede44d92",
+        "admittedCropPath": "/private/tmp/dragon-reference-admission/front-primary-admitted.png",
+        "previewPath": "/private/tmp/dragon-reference-admission/front-primary-preview.png",
+        "admissionReportPath": "/private/tmp/dragon-reference-admission/reports/front-primary.json",
+        "admitted": true,
+        "reasons": [],
+        "viewpoint": "front-primary",
+        "width": 1920,
+        "height": 1920,
+        "foregroundCoverage": 0.3075,
+        "largestComponentFraction": 1.0,
+        "pHash": "10867817472369380246",
+        "duplicateOfHash": null
+      },
+      "rear-three-quarter": {
+        "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-3.jpg",
+        "originalSourceSha256": "29f48d55d6fe9ee47dd3485ffa9c40a02970c414fe3c6ee8437e2eb5ef9de2a1",
+        "admittedCropPath": "/private/tmp/dragon-reference-admission/rear-three-quarter-admitted.png",
+        "previewPath": "/private/tmp/dragon-reference-admission/rear-three-quarter-preview.png",
+        "admissionReportPath": "/private/tmp/dragon-reference-admission/reports/rear-three-quarter.json",
+        "admitted": true,
+        "reasons": [],
+        "viewpoint": "rear-three-quarter",
+        "width": 1920,
+        "height": 1920,
+        "foregroundCoverage": 0.2415,
+        "largestComponentFraction": 1.0,
+        "pHash": "14385689599639697089",
+        "duplicateOfHash": null
+      },
+      "side": {
+        "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-4.jpg",
+        "originalSourceSha256": "a92666a18b666a3f7967c52cdcd8116755e8590e30991bea980d1bfef5d4706f",
+        "admittedCropPath": "/private/tmp/dragon-reference-admission/side-admitted.png",
+        "previewPath": "/private/tmp/dragon-reference-admission/side-preview.png",
+        "admissionReportPath": "/private/tmp/dragon-reference-admission/reports/side.json",
+        "admitted": true,
+        "reasons": [],
+        "viewpoint": "side",
+        "width": 1920,
+        "height": 1920,
+        "foregroundCoverage": 0.1628,
+        "largestComponentFraction": 1.0,
+        "pHash": "14886141939514434450",
+        "duplicateOfHash": null
+      },
+      "rear": {
+        "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-5.jpg",
+        "originalSourceSha256": "f6a3084b59cd11b325e66f0c73808c303f1c4500ed17eaf186205c58079d4425",
+        "admittedCropPath": "/private/tmp/dragon-reference-admission/rear-admitted.png",
+        "previewPath": "/private/tmp/dragon-reference-admission/rear-preview.png",
+        "admissionReportPath": "/private/tmp/dragon-reference-admission/reports/rear.json",
+        "admitted": true,
+        "reasons": [],
+        "viewpoint": "rear",
+        "width": 1920,
+        "height": 1920,
+        "foregroundCoverage": 0.2841,
+        "largestComponentFraction": 1.0,
+        "pHash": "10575979397893528721",
+        "duplicateOfHash": null
+      }
+    }
+  },
+  "moodReferenceProvenance": {
+    "id": "mood-only",
+    "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-ref.jpg",
+    "role": "color/mood only",
+    "admissionRequired": false,
+    "reason": "Flame is fused into the foreground in the available mood image, so it is excluded from geometry, camera solving, comparison, anatomy, and component evidence rather than being forced through silhouette admission."
+  },
+  "nonGroundTruthReferences": [
+    {
+      "id": "mood-only",
+      "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-ref.jpg",
+      "role": "color/mood only",
+      "admissionRequired": false,
+      "reason": "Flame is fused into the foreground in the available mood image, so it is excluded from geometry, camera solving, comparison, anatomy, and component evidence rather than being forced through silhouette admission."
+    }
+  ],
+  "materialEvidenceContract": {
+    "nonUtilityVisibleMaterials": "Require successful isolated extraction unless an explicit visible procedural fallback documents why no usable reference PBR exists.",
+    "utilityFallbacks": "Must declare evidenceLimitation, usableReferencePbr:false, referencePbr:null, and independent procedural channels."
+  }
+}

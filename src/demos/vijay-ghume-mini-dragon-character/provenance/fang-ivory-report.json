@@ -1,0 +1,89 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "status": "current",
+  "evidenceRole": "procedural-fallback",
+  "confidence": 0.794,
+  "estimatedFidelity": 0.794,
+  "targetThreshold": 0.7,
+  "materialId": "fang-ivory",
+  "sourceImage": "/private/tmp/dragon-fang-crop.png",
+  "outDir": "/private/tmp/dragon-pbr/fang-ivory",
+  "palette": [
+    "#B66D14",
+    "#D14B47",
+    "#A23A14",
+    "#F28C8C",
+    "#2F060B"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "/private/tmp/dragon-pbr/fang-ivory/fang-ivory_albedo.png",
+      "url": "fang-ivory_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "/private/tmp/dragon-pbr/fang-ivory/fang-ivory_roughness.png",
+      "url": "fang-ivory_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "/private/tmp/dragon-pbr/fang-ivory/fang-ivory_height.png",
+      "url": "fang-ivory_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "/private/tmp/dragon-pbr/fang-ivory/fang-ivory_normal.png",
+      "url": "fang-ivory_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "/private/tmp/dragon-pbr/fang-ivory/fang-ivory_ao.png",
+      "url": "fang-ivory_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 422,
+    "sourceHeight": 134,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 0,
+      "y": 0,
+      "width": 422,
+      "height": 134
+    },
+    "mask": {
+      "backgroundColor": "#CF113A",
+      "backgroundNoise": 191.39,
+      "transparentPixelFraction": 0.0,
+      "foregroundCoverage": 0.9682
+    },
+    "mapStats": {
+      "valueRange": 0.64,
+      "heightP90Gradient": 0.02492,
+      "roughnessBase": 0.686,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.185,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#B66D14",
+      "#D14B47",
+      "#A23A14",
+      "#F28C8C",
+      "#2F060B"
+    ]
+  },
+  "warnings": [
+    "source image was converted to PNG with macOS sips before pixel extraction",
+    "image is not clearly isolated from background; using most pixels as material evidence",
+    "object/background separation is weak"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

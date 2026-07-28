@@ -1,0 +1,567 @@
+{
+  "schemaVersion": 1,
+  "targetName": "Vijay Ghume Mini Dragon Character",
+  "targetId": "vijay-ghume-mini-dragon-character",
+  "track": "character-v1.5",
+  "referenceCamera": {
+    "solved": false,
+    "note": "No camera is solved yet. Keep the continuation honest until a render is compared to the front-primary reference."
+  },
+  "buildPassState": {
+    "blockout": {
+      "completed": 0,
+      "review": "unreviewed"
+    }
+  },
+  "provenancePolicy": {
+    "runtimeEvidencePaths": "repository-local admitted or alpha-masked assets only",
+    "historicalTmpPaths": "historical-provenance-only",
+    "historicalReportsAreAuditOnly": true
+  },
+  "textureStemAliases": {
+    "dragon-tail-skin": "dragon-skin"
+  },
+  "textureStemAliasRecords": {
+    "dragon-tail-skin": {
+      "materialId": "dragon-tail-skin",
+      "reportMaterialId": "dragon-skin",
+      "textureStem": "dragon-skin",
+      "aliasDirection": "material-to-textureStem",
+      "scope": "runtime-texture-selection",
+      "channel": "pbr-map-set",
+      "channels": [
+        "albedo",
+        "roughness",
+        "height",
+        "normal",
+        "ao"
+      ]
+    }
+  },
+  "pipelineRouting": {
+    "version": 1,
+    "track": "character-v1.5",
+    "source": "explicit",
+    "status": "resolved",
+    "localEvidencePath": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-routing-report.json",
+    "classification": {
+      "kind": "character",
+      "confidence": 0.98,
+      "evidenceRefs": [
+        "front-primary",
+        "front-three-quarter",
+        "rear-three-quarter",
+        "side",
+        "rear"
+      ],
+      "provider": "user-specified-multi-view-classification",
+      "version": "1.0"
+    },
+    "conflicts": []
+  },
+  "referenceAdmission": {
+    "schemaVersion": 1,
+    "localEvidencePath": "src/demos/vijay-ghume-mini-dragon-character/provenance/admission-manifest.json",
+    "views": [
+      {
+        "id": "front-three-quarter",
+        "evidenceRef": "front-three-quarter",
+        "provenance": {
+          "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-1.jpg",
+          "originalSourceSha256": "2e9cc8ac2ccccf385702cfa15ecf2228ee0e8c013f8a3b15428d958fcc3b3cd3",
+          "admitted": true,
+          "viewpoint": "front-three-quarter"
+        }
+      },
+      {
+        "id": "front-primary",
+        "evidenceRef": "front-primary",
+        "provenance": {
+          "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-2.jpg",
+          "originalSourceSha256": "7b7bf3db3a8420f1d6a9f9770b647c5f27da18802208cbd5d63da550ede44d92",
+          "admitted": true,
+          "viewpoint": "front-primary"
+        }
+      },
+      {
+        "id": "rear-three-quarter",
+        "evidenceRef": "rear-three-quarter",
+        "provenance": {
+          "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-3.jpg",
+          "originalSourceSha256": "29f48d55d6fe9ee47dd3485ffa9c40a02970c414fe3c6ee8437e2eb5ef9de2a1",
+          "admitted": true,
+          "viewpoint": "rear-three-quarter"
+        }
+      },
+      {
+        "id": "side",
+        "evidenceRef": "side",
+        "provenance": {
+          "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-4.jpg",
+          "originalSourceSha256": "a92666a18b666a3f7967c52cdcd8116755e8590e30991bea980d1bfef5d4706f",
+          "admitted": true,
+          "viewpoint": "side"
+        }
+      },
+      {
+        "id": "rear",
+        "evidenceRef": "rear",
+        "provenance": {
+          "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-5.jpg",
+          "originalSourceSha256": "f6a3084b59cd11b325e66f0c73808c303f1c4500ed17eaf186205c58079d4425",
+          "admitted": true,
+          "viewpoint": "rear"
+        }
+      }
+    ]
+  },
+  "materials": [
+    {
+      "materialId": "dragon-body-skin",
+      "textureStem": "dragon-body-skin",
+      "evidenceRole": "admitted-alpha-masked-evidence",
+      "confidence": 0.852,
+      "limitation": "Single-image PBR extraction is an estimate; 70%+ confidence still needs render screenshot review.",
+      "localReportPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-body-skin-report.json",
+      "localAnalysisPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-body-skin-texture-analysis.json",
+      "localTexturePaths": {
+        "albedo": "src/demos/vijay-ghume-mini-dragon-character/dragon-body-skin_albedo.png",
+        "roughness": "src/demos/vijay-ghume-mini-dragon-character/dragon-body-skin_roughness.png",
+        "height": "src/demos/vijay-ghume-mini-dragon-character/dragon-body-skin_height.png",
+        "normal": "src/demos/vijay-ghume-mini-dragon-character/dragon-body-skin_normal.png",
+        "ao": "src/demos/vijay-ghume-mini-dragon-character/dragon-body-skin_ao.png"
+      },
+      "provenance": {
+        "sourceCropPath": "/private/tmp/dragon-pbr/body-skin/dragon-body-skin-alpha.png",
+        "reportSourcePath": "/private/tmp/dragon-pbr/body-skin/dragon-body-skin-report.json",
+        "analysisSourcePath": "/private/tmp/dragon-pbr/body-skin/dragon-body-skin-texture-analysis.json"
+      }
+    },
+    {
+      "materialId": "dragon-tail-skin",
+      "textureStem": "dragon-skin",
+      "evidenceRole": "admitted-alpha-masked-evidence",
+      "confidence": 0.75,
+      "limitation": "Low value range weakens height and roughness inference; tail skin remains a single-image estimate.",
+      "localReportPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-tail-skin-report.json",
+      "localTexturePaths": {
+        "albedo": "src/demos/vijay-ghume-mini-dragon-character/dragon-skin_albedo.png",
+        "roughness": "src/demos/vijay-ghume-mini-dragon-character/dragon-skin_roughness.png",
+        "height": "src/demos/vijay-ghume-mini-dragon-character/dragon-skin_height.png",
+        "normal": "src/demos/vijay-ghume-mini-dragon-character/dragon-skin_normal.png",
+        "ao": "src/demos/vijay-ghume-mini-dragon-character/dragon-skin_ao.png"
+      },
+      "provenance": {
+        "sourceCropPath": "/private/tmp/dragon-pbr/masked-crops/dragon-skin-alpha-v2.png",
+        "reportSourcePath": "/private/tmp/dragon-pbr/masked-v4/skin-report.json"
+      }
+    },
+    {
+      "materialId": "horn-black",
+      "textureStem": "horn-black",
+      "evidenceRole": "admitted-alpha-masked-evidence",
+      "confidence": 0.917,
+      "limitation": "The extraction is still a single-image estimate and remains render-review dependent.",
+      "localReportPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/horn-report.json",
+      "localTexturePaths": {
+        "albedo": "src/demos/vijay-ghume-mini-dragon-character/horn-black_albedo.png",
+        "roughness": "src/demos/vijay-ghume-mini-dragon-character/horn-black_roughness.png",
+        "height": "src/demos/vijay-ghume-mini-dragon-character/horn-black_height.png",
+        "normal": "src/demos/vijay-ghume-mini-dragon-character/horn-black_normal.png",
+        "ao": "src/demos/vijay-ghume-mini-dragon-character/horn-black_ao.png"
+      },
+      "provenance": {
+        "sourceCropPath": "/private/tmp/dragon-details/zone-r0c1.png",
+        "reportSourcePath": "/private/tmp/dragon-pbr/horn-report.json"
+      }
+    },
+    {
+      "materialId": "wing-membrane-pink",
+      "textureStem": "wing-membrane-pink",
+      "evidenceRole": "authoritative-admitted-alpha-masked-evidence",
+      "confidence": 0.861,
+      "limitation": "Current authoritative report is repository-local and alpha-masked; single-image extraction still needs render screenshot review.",
+      "localReportPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/wing-authoritative-report.json",
+      "localTexturePaths": {
+        "albedo": "src/demos/vijay-ghume-mini-dragon-character/wing-membrane-pink_albedo.png",
+        "roughness": "src/demos/vijay-ghume-mini-dragon-character/wing-membrane-pink_roughness.png",
+        "height": "src/demos/vijay-ghume-mini-dragon-character/wing-membrane-pink_height.png",
+        "normal": "src/demos/vijay-ghume-mini-dragon-character/wing-membrane-pink_normal.png",
+        "ao": "src/demos/vijay-ghume-mini-dragon-character/wing-membrane-pink_ao.png"
+      },
+      "provenance": {
+        "sourceCropPath": "/private/tmp/dragon-wing-membrane-crop.png",
+        "reportSourcePath": "/private/tmp/dragon-pbr/wing-membrane-report.json"
+      }
+    },
+    {
+      "materialId": "loincloth-purple",
+      "textureStem": "loincloth-purple",
+      "evidenceRole": "authoritative-admitted-alpha-masked-evidence",
+      "confidence": 0.746,
+      "limitation": "Current authoritative report is repository-local and alpha-masked; single-image extraction is still an estimate.",
+      "localReportPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/cloth-authoritative-report.json",
+      "localTexturePaths": {
+        "albedo": "src/demos/vijay-ghume-mini-dragon-character/loincloth-purple_albedo.png",
+        "roughness": "src/demos/vijay-ghume-mini-dragon-character/loincloth-purple_roughness.png",
+        "height": "src/demos/vijay-ghume-mini-dragon-character/loincloth-purple_height.png",
+        "normal": "src/demos/vijay-ghume-mini-dragon-character/loincloth-purple_normal.png",
+        "ao": "src/demos/vijay-ghume-mini-dragon-character/loincloth-purple_ao.png"
+      },
+      "provenance": {
+        "sourceCropPath": "/private/tmp/dragon-details/zone-r2c1.png",
+        "reportSourcePath": "/private/tmp/dragon-pbr/cloth-report.json"
+      }
+    },
+    {
+      "materialId": "gold-ornament",
+      "textureStem": "gold-ornament",
+      "evidenceRole": "authoritative-admitted-alpha-masked-evidence",
+      "confidence": 0.84,
+      "limitation": "Current authoritative report is repository-local and alpha-masked; the crop remains partially isolated.",
+      "localReportPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/gold-authoritative-report.json",
+      "localTexturePaths": {
+        "albedo": "src/demos/vijay-ghume-mini-dragon-character/gold-ornament_albedo.png",
+        "roughness": "src/demos/vijay-ghume-mini-dragon-character/gold-ornament_roughness.png",
+        "height": "src/demos/vijay-ghume-mini-dragon-character/gold-ornament_height.png",
+        "normal": "src/demos/vijay-ghume-mini-dragon-character/gold-ornament_normal.png",
+        "ao": "src/demos/vijay-ghume-mini-dragon-character/gold-ornament_ao.png"
+      },
+      "provenance": {
+        "sourceCropPath": "/private/tmp/dragon-details/zone-r2c0.png",
+        "reportSourcePath": "/private/tmp/dragon-pbr/gold-report.json"
+      }
+    },
+    {
+      "materialId": "fang-ivory",
+      "evidenceRole": "procedural-fallback",
+      "confidence": 0.794,
+      "limitation": "The crop is dominated by surrounding muzzle and mask pixels, so the ivory insert stays a procedural fallback.",
+      "localReportPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/fang-ivory-report.json",
+      "localTexturePaths": null,
+      "provenance": {
+        "sourceCropPath": "/private/tmp/dragon-fang-crop.png",
+        "reportSourcePath": "/private/tmp/dragon-pbr/fang-ivory-report.json"
+      }
+    },
+    {
+      "materialId": "eye-amber",
+      "evidenceRole": "procedural-fallback",
+      "confidence": 0.794,
+      "limitation": "The eye crop is contaminated by surrounding face pixels, so the eye insert remains a procedural fallback.",
+      "localReportPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/eye-amber-report.json",
+      "localTexturePaths": null,
+      "provenance": {
+        "sourceCropPath": "/private/tmp/dragon-eye-crop.png",
+        "reportSourcePath": "/private/tmp/dragon-pbr/eye-amber-report.json"
+      }
+    },
+    {
+      "materialId": "mask-purple",
+      "evidenceRole": "shared-contaminated-evidence",
+      "confidence": 0.794,
+      "limitation": "This fallback shares the eye crop evidence and remains face-contaminated; keep it procedural until a cleaner crop exists.",
+      "localReportPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/eye-amber-report.json",
+      "localTexturePaths": null,
+      "provenance": {
+        "sourceCropPath": "/private/tmp/dragon-eye-crop.png",
+        "reportSourcePath": "/private/tmp/dragon-pbr/eye-amber-report.json",
+        "sharedEvidenceWith": "eye-amber"
+      }
+    }
+  ],
+  "provenanceBundle": {
+    "localRoot": "src/demos/vijay-ghume-mini-dragon-character/provenance",
+    "files": [
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/admission-manifest.json",
+        "sourcePath": "/private/tmp/dragon-reference-admission/admission-manifest.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-routing-report.json",
+        "sourcePath": "/private/tmp/dragon-routing-report.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-character-spec.json",
+        "sourcePath": "/private/tmp/dragon-character-spec.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-assessment-enriched.json",
+        "sourcePath": "/private/tmp/dragon-assessment-enriched.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-body-skin-report.json",
+        "sourcePath": "/private/tmp/dragon-pbr/body-skin/dragon-body-skin-report.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-body-skin-texture-analysis.json",
+        "sourcePath": "/private/tmp/dragon-pbr/body-skin/dragon-body-skin-texture-analysis.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-tail-skin-report.json",
+        "sourcePath": "/private/tmp/dragon-pbr/masked-v4/skin-report.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/horn-report.json",
+        "sourcePath": "/private/tmp/dragon-pbr/horn-report.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/wing-membrane-report.json",
+        "sourcePath": "/private/tmp/dragon-pbr/wing-membrane-report.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/wing-authoritative-report.json",
+        "sourcePath": "/private/tmp/dragon-pbr/masked-v3/wing-report.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/cloth-report.json",
+        "sourcePath": "/private/tmp/dragon-pbr/cloth-report.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/cloth-authoritative-report.json",
+        "sourcePath": "/private/tmp/dragon-pbr/masked-v3/cloth-report.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/gold-report.json",
+        "sourcePath": "/private/tmp/dragon-pbr/gold-report.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/gold-authoritative-report.json",
+        "sourcePath": "/private/tmp/dragon-pbr/masked-v3/gold-report.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/fang-ivory-report.json",
+        "sourcePath": "/private/tmp/dragon-pbr/fang-ivory-report.json"
+      },
+      {
+        "localPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/eye-amber-report.json",
+        "sourcePath": "/private/tmp/dragon-pbr/eye-amber-report.json"
+      }
+    ]
+  },
+  "notes": [
+    "No geometry, registry, or factory behavior was changed.",
+    "No browser QA, solved camera, or final fidelity is claimed.",
+    "All manifest runtime and evidence paths are repository-local; the copied provenance files carry the original source paths."
+  ],
+  "portabilityPolicy": {
+    "activeRuntimePaths": "repo-relative only",
+    "activeEvidencePaths": "repo-relative only",
+    "historicalAbsolutePaths": "historical-provenance-only",
+    "sourceHistoryFieldsPreserved": true
+  },
+  "materialAliasRecords": {
+    "mask-purple": {
+      "materialId": "mask-purple",
+      "reportMaterialId": "eye-amber",
+      "evidenceRole": "procedural-fallback",
+      "aliasDirection": "material-to-report",
+      "scope": "evidence-only",
+      "channel": "report",
+      "sharedReportPath": "src/demos/vijay-ghume-mini-dragon-character/provenance/eye-amber-report.json",
+      "limitation": "Mask-purple remains a procedural fallback and shares contaminated eye-amber report evidence only."
+    }
+  },
+  "integrity": {
+    "sha256": {
+      "algorithm": "SHA-256",
+      "provenanceJson": [
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/admission-manifest.json",
+          "sha256": "da66d5852ce1e12f7da71038e71f45809c7e95dee120870bfef85968861784f3"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/cloth-authoritative-report.json",
+          "sha256": "4332d61573e50f4a5940cc4a5d9e39a09b7ccab68089a6b7749df6b48ec6b53c"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/cloth-report.json",
+          "sha256": "a455c82a84a00a60459b47a0eca10beaa362cff9f942412a297dbc463bff96f8"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-assessment-enriched.json",
+          "sha256": "ddf9672fd7830ec2dae4129ca3ef9a80d2acdecd86613cf0806937821609edcf"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-body-skin-report.json",
+          "sha256": "f534227ca93f118a94be6731aeb852cb860eacbaa402a51dd9ab80d7dd6aa92f"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-body-skin-texture-analysis.json",
+          "sha256": "2b3231761eea025d6ab8e3a9c11e0646763f3b658441c24f3453941d95774d37"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-character-spec.json",
+          "sha256": "bf4f97b1195a737303b4363ddaaa7b3b8a4da5314a3dd40fe3840da3c5e4f16a"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-routing-report.json",
+          "sha256": "d3dcbc16d1b8b928925691d8d124ef20666b22ceb7328007627c593b776dc48f"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/dragon-tail-skin-report.json",
+          "sha256": "550ae981bd9978a4788fb98d377da22bc86ee0704a776d9e7543e7bbd25ce64c"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/eye-amber-report.json",
+          "sha256": "3084243cdb3916a51871393ff62b433da46d9814f52be442f5dd7702bdc44f2d"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/fang-ivory-report.json",
+          "sha256": "12711b888334b76c1f9f8533b210eff87522715404d42f96c4ae237961288322"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/gold-authoritative-report.json",
+          "sha256": "5a9e7f754554951c8591e8a610cb832fcd1af7911fcd9c502398100bca356353"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/gold-report.json",
+          "sha256": "b5376788d8085f62c04196e8ca3405b20e65c5ac6a0d758b911f6d9ddbea3a60"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/horn-report.json",
+          "sha256": "7c9cc3706684055cea3c261cb9f2fe0df2c5bf1d17c6f10c1cc55538abb94b94"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/wing-authoritative-report.json",
+          "sha256": "72acb749fcf271540524475124b51306c262f818702d61ac8b326074b500ec1d"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/provenance/wing-membrane-report.json",
+          "sha256": "23eb38ffe01170038fd58ad83da0d582a64b5071d75344e715a3545d27ca2347"
+        }
+      ],
+      "runtimeAssets": [
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/dragon-body-skin_albedo.png",
+          "sha256": "aed3919f9e4a94b6af99956b1d4ffe5a5e06af367247d06ca051ef0a1676ebba"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/dragon-body-skin_ao.png",
+          "sha256": "a42658d3794d658119a2ce3c8d5e4f3e6ebd05311478e22e78f3f88dd6f69407"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/dragon-body-skin_height.png",
+          "sha256": "d04257b21bb4f697d9117f2b13e2a3c938c0c7d16fb8ccb5044ea20dd124f99f"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/dragon-body-skin_normal.png",
+          "sha256": "e3d84692d74c1a634c105e7d371fbcf9828382c4b8aa6c8f779113a6aa5481c0"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/dragon-body-skin_roughness.png",
+          "sha256": "f1847c918fdb69350745ef1f3d66d98975169802c3169423f80fb5324281ad88"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/dragon-skin_albedo.png",
+          "sha256": "3eece63905317afa85491926d82b5b4fedb88f38726762b7703aad6e0f0e73cd"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/dragon-skin_ao.png",
+          "sha256": "2619ed220d12a63c7e09c4678f4d7e177f660719367e784553b5d462f3194614"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/dragon-skin_height.png",
+          "sha256": "b186853cb9301e03c5ecff26ac9042a5e169eacaf0c8022fbc9ca2964557bbd8"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/dragon-skin_normal.png",
+          "sha256": "5a166c86880bacec0864804bb944c703a040c476496fdb4056829e50c3be86c8"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/dragon-skin_roughness.png",
+          "sha256": "843f65ebfaed97ae00330040e7eb84ba5a6ab1b656ada1aa7f92a5fe5be8bd32"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/gold-ornament_albedo.png",
+          "sha256": "6333539c89b5c320545afd92cf6b5fa3728262b208b6a6bfa24f135803bcfa3c"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/gold-ornament_ao.png",
+          "sha256": "5c79f03b71d1ea82594d165a500dc64e8cdd2ae7632cf696ffcfc1171733a331"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/gold-ornament_height.png",
+          "sha256": "28ef02b917db9efde1d019378e000ba3876352977b16a10f71eb971708b97ef8"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/gold-ornament_normal.png",
+          "sha256": "3b8a1756ef164f5149bf8c50e0a6df40386144c3069f19654ff1317d3535c2ab"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/gold-ornament_roughness.png",
+          "sha256": "a2cc865bb91607fb610dc6e61d1ec0efdd2ecacb9a8bfdb120f376dd1c7042ff"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/horn-black_albedo.png",
+          "sha256": "a0d553e24b46b030ca2edd825c78092a69e091ca66a04ecc590c050b3bc8c94c"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/horn-black_ao.png",
+          "sha256": "c63a2cb9b362e4d4889d404b7f302044048ec705a7bd91f2e7f87fd7c8168425"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/horn-black_height.png",
+          "sha256": "842a975f1c971a5b3dfda4da713ea75a98ca21a909666a8435b3f32cd11ac332"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/horn-black_normal.png",
+          "sha256": "1da4afffa2a943e4c317471c0e6f5b2fdaeb5b6d4aa263775bc302cff8409a83"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/horn-black_roughness.png",
+          "sha256": "bd86f2fca2ce0401f9ed0ae64f15e60f6c6d00124076b1d7bcde66e3fe702f1b"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/loincloth-purple_albedo.png",
+          "sha256": "bcdde0e0eb4ebe3d8f37c9fd52f9ef79f567d5d82a02b9b460392c22ba0668d7"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/loincloth-purple_ao.png",
+          "sha256": "b3c06e81aeb850145a75e2f8de1a88dd45374f6fed5e4ffa3e6eadf2de777d15"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/loincloth-purple_height.png",
+          "sha256": "b79418bf2df3212c32d8d7ad57d4ff835e8a856ae1b1f00618048d75bc0c7c56"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/loincloth-purple_normal.png",
+          "sha256": "164c8b4cc09b11db9120658f00c094fa73030c25ffe0e7abc84fb45fc632fd41"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/loincloth-purple_roughness.png",
+          "sha256": "efee850fe753bcbd1793e6785d733b39ad334686ac20d74e7731e607238a2e17"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/wing-membrane-pink_albedo.png",
+          "sha256": "fb88e61cbd02d1002c6d0a26a7567af8eb49c563f0336018396f03a65bb0e3a0"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/wing-membrane-pink_ao.png",
+          "sha256": "e388a71c1da3e7b5e286a7c2d0a82cdcecba2df8deeee029fb8c5857c7ca3541"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/wing-membrane-pink_height.png",
+          "sha256": "83b6645a4887bac35ce0e9a48ed178814118122497fdd80a47393576809d66c7"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/wing-membrane-pink_normal.png",
+          "sha256": "0bd04232380081a85ca5debb2db92c8a86f774f671c3180b9561a1260cc3ca74"
+        },
+        {
+          "path": "src/demos/vijay-ghume-mini-dragon-character/wing-membrane-pink_roughness.png",
+          "sha256": "de4a2d1831fc331d35ab92303320094fd60943a6f4fafc53d448d8b17f03b22e"
+        },
+        {
+          "path": "public/references/vijay-ghume-mini-dragon-character.jpg",
+          "sha256": "7b7bf3db3a8420f1d6a9f9770b647c5f27da18802208cbd5d63da550ede44d92"
+        }
+      ]
+    }
+  },
+  "integrityVerification": {
+    "purpose": "drift detection, not a signature",
+    "procedure": "Run a deterministic Python hashlib pass over the repo-relative files listed in integrity.sha256 and compare the computed SHA-256 digests to the manifest values.",
+    "command": "python3 - <<'PY'\nimport hashlib, json\nfrom pathlib import Path\nmanifest = json.loads(Path(\"src/demos/vijay-ghume-mini-dragon-character/dragon-demo-manifest.json\").read_text())\nroot = Path(\".\")\nfor bucket in (\"provenanceJson\", \"runtimeAssets\"):\n    for entry in manifest[\"integrity\"][\"sha256\"][bucket]:\n        path = root / entry[\"path\"]\n        digest = hashlib.sha256(path.read_bytes()).hexdigest()\n        assert digest == entry[\"sha256\"], f\"{entry['path']}: {digest} != {entry['sha256']}\"\nprint(\"integrity-ok\")\nPY"
+  }
+}

@@ -281,7 +281,8 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   if (capture) {
     // Flat white bg + hide the UI overlay + freeze per-frame animation so the evaluation
     // frame is deterministic and shows only the object (matches the reference plate).
-    viewer.scene.background = new THREE.Color(0xffffff);
+    const captureBackground = new URLSearchParams(window.location.search).get('captureBg');
+    viewer.scene.background = new THREE.Color(captureBackground === 'dark' ? 0x182331 : 0xffffff);
     viewer.scene.traverse((o) => {
       if ((o.userData as { tick?: unknown }).tick) delete (o.userData as { tick?: unknown }).tick;
     });

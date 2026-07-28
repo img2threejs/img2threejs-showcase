@@ -1,0 +1,69 @@
+{
+  "targetName": "Vijay Ghume Mini Dragon Character",
+  "pipelineRouting": {
+    "version": 1,
+    "track": "character-v1.5",
+    "source": "explicit",
+    "status": "resolved",
+    "classification": {
+      "kind": "character",
+      "confidence": 0.98,
+      "evidenceRefs": [
+        "front-primary",
+        "front-three-quarter",
+        "rear-three-quarter",
+        "side",
+        "rear"
+      ],
+      "provider": "user-specified-multi-view-classification",
+      "version": "1.0"
+    },
+    "conflicts": []
+  },
+  "selectedTrack": "character-v1.5",
+  "decision": "resolved",
+  "evidence": {
+    "views": {
+      "front-three-quarter": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-1.jpg",
+      "front-primary": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-2.jpg",
+      "rear-three-quarter": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-3.jpg",
+      "side": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-4.jpg",
+      "rear": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-5.jpg",
+      "mood-only": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-ref.jpg"
+    },
+    "classification": "User-specified 0.98 multi-view character record",
+    "materialCrops": {
+      "dragon-skin": "/private/tmp/dragon-skin-crop.png",
+      "horn-black": "/private/tmp/dragon-horn-crop.png",
+      "loincloth-purple": "/private/tmp/dragon-cloth-crop.png",
+      "gold-ornament": "/private/tmp/dragon-gold-crop.png",
+      "wing-membrane-pink": "/private/tmp/dragon-wing-membrane-crop.png",
+      "fang-ivory": "/private/tmp/dragon-fang-crop.png",
+      "eye-amber": "/private/tmp/dragon-eye-crop.png",
+      "mask-purple": "/private/tmp/dragon-eye-crop.png"
+    },
+    "alphaMaskedMaterialCrops": {
+      "dragon-tail-skin": "/private/tmp/dragon-pbr/masked-crops/dragon-skin-alpha-v2.png",
+      "dragon-body-skin": "/private/tmp/dragon-pbr/body-skin/dragon-body-skin-alpha.png",
+      "horn-black": "/private/tmp/dragon-pbr/masked-crops/horn-black-alpha.png",
+      "loincloth-purple": "/private/tmp/dragon-pbr/masked-crops/loincloth-purple-alpha.png",
+      "gold-ornament": "/private/tmp/dragon-pbr/masked-crops/gold-ornament-alpha.png",
+      "wing-membrane-pink": "/private/tmp/dragon-pbr/masked-crops/wing-membrane-pink-alpha.png"
+    }
+  },
+  "uncertainties": [
+    "Reference camera is intentionally unsolved.",
+    "Mood reference is excluded from measured geometry.",
+    "Rear membrane tear edges and tail-tip thickness remain unreviewed.",
+    "Core material PBR evidence is alpha-masked and semantically localized, but remains single-image estimate evidence rather than inverse rendering.",
+    "Fang, eye, and mask retain independent procedural fallbacks pending larger isolated source views.",
+    "Body skin uses localized admitted front-primary arm/hand evidence; tail skin uses separate rear-three-quarter tail evidence scoped to tail and tail-tip."
+  ],
+  "conflicts": [],
+  "prohibitedRoutes": [
+    "weapon-v1.4",
+    "CS2",
+    "cs2Intake"
+  ],
+  "reviewState": "No render screenshots, comparison sheets, scores, or completed passes are claimed."
+}

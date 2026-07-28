@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "admittedViews": [
+    {
+      "id": "front-three-quarter",
+      "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-1.jpg",
+      "originalSourceSha256": "2e9cc8ac2ccccf385702cfa15ecf2228ee0e8c013f8a3b15428d958fcc3b3cd3",
+      "admittedCropPath": "/private/tmp/dragon-reference-admission/front-three-quarter-admitted.png",
+      "previewPath": "/private/tmp/dragon-reference-admission/front-three-quarter-preview.png",
+      "reportPath": "/private/tmp/dragon-reference-admission/reports/front-three-quarter.json",
+      "report": {
+        "admitted": true,
+        "reasons": [],
+        "provenance": {
+          "viewpoint": "front-three-quarter",
+          "sourcePath": "/private/tmp/dragon-reference-admission/front-three-quarter-admitted.png",
+          "width": 1920,
+          "height": 1920,
+          "foregroundCoverage": 0.2715,
+          "largestComponentFraction": 1.0,
+          "pHash": "10863642626748217404",
+          "duplicateOfHash": null
+        }
+      }
+    },
+    {
+      "id": "front-primary",
+      "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-2.jpg",
+      "originalSourceSha256": "7b7bf3db3a8420f1d6a9f9770b647c5f27da18802208cbd5d63da550ede44d92",
+      "admittedCropPath": "/private/tmp/dragon-reference-admission/front-primary-admitted.png",
+      "previewPath": "/private/tmp/dragon-reference-admission/front-primary-preview.png",
+      "reportPath": "/private/tmp/dragon-reference-admission/reports/front-primary.json",
+      "report": {
+        "admitted": true,
+        "reasons": [],
+        "provenance": {
+          "viewpoint": "front-primary",
+          "sourcePath": "/private/tmp/dragon-reference-admission/front-primary-admitted.png",
+          "width": 1920,
+          "height": 1920,
+          "foregroundCoverage": 0.3075,
+          "largestComponentFraction": 1.0,
+          "pHash": "10867817472369380246",
+          "duplicateOfHash": null
+        }
+      }
+    },
+    {
+      "id": "rear-three-quarter",
+      "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-3.jpg",
+      "originalSourceSha256": "29f48d55d6fe9ee47dd3485ffa9c40a02970c414fe3c6ee8437e2eb5ef9de2a1",
+      "admittedCropPath": "/private/tmp/dragon-reference-admission/rear-three-quarter-admitted.png",
+      "previewPath": "/private/tmp/dragon-reference-admission/rear-three-quarter-preview.png",
+      "reportPath": "/private/tmp/dragon-reference-admission/reports/rear-three-quarter.json",
+      "report": {
+        "admitted": true,
+        "reasons": [],
+        "provenance": {
+          "viewpoint": "rear-three-quarter",
+          "sourcePath": "/private/tmp/dragon-reference-admission/rear-three-quarter-admitted.png",
+          "width": 1920,
+          "height": 1920,
+          "foregroundCoverage": 0.2415,
+          "largestComponentFraction": 1.0,
+          "pHash": "14385689599639697089",
+          "duplicateOfHash": null
+        }
+      }
+    },
+    {
+      "id": "side",
+      "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-4.jpg",
+      "originalSourceSha256": "a92666a18b666a3f7967c52cdcd8116755e8590e30991bea980d1bfef5d4706f",
+      "admittedCropPath": "/private/tmp/dragon-reference-admission/side-admitted.png",
+      "previewPath": "/private/tmp/dragon-reference-admission/side-preview.png",
+      "reportPath": "/private/tmp/dragon-reference-admission/reports/side.json",
+      "report": {
+        "admitted": true,
+        "reasons": [],
+        "provenance": {
+          "viewpoint": "side",
+          "sourcePath": "/private/tmp/dragon-reference-admission/side-admitted.png",
+          "width": 1920,
+          "height": 1920,
+          "foregroundCoverage": 0.1628,
+          "largestComponentFraction": 1.0,
+          "pHash": "14886141939514434450",
+          "duplicateOfHash": null
+        }
+      }
+    },
+    {
+      "id": "rear",
+      "originalSourcePath": "/Users/nhonh/Desktop/dragon/vijay-ghume-mini-dragon-5.jpg",
+      "originalSourceSha256": "f6a3084b59cd11b325e66f0c73808c303f1c4500ed17eaf186205c58079d4425",
+      "admittedCropPath": "/private/tmp/dragon-reference-admission/rear-admitted.png",
+      "previewPath": "/private/tmp/dragon-reference-admission/rear-preview.png",
+      "reportPath": "/private/tmp/dragon-reference-admission/reports/rear.json",
+      "report": {
+        "admitted": true,
+        "reasons": [],
+        "provenance": {
+          "viewpoint": "rear",
+          "sourcePath": "/private/tmp/dragon-reference-admission/rear-admitted.png",
+          "width": 1920,
+          "height": 1920,
+          "foregroundCoverage": 0.2841,
+          "largestComponentFraction": 1.0,
+          "pHash": "10575979397893528721",
+          "duplicateOfHash": null
+        }
+      }
+    }
+  ]
+}

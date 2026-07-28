@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "new-demo": "node scripts/new-showcase.mjs"
+    "new-demo": "node scripts/new-showcase.mjs",
+    "test:mini-dragon": "node scripts/test-demo-registration.mjs",
+    "test:dragon-rig": "node scripts/verify-dragon-rig.mjs"
   },
   "dependencies": {
     "three": "^0.169.0"

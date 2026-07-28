@@ -1,0 +1,86 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "status": "authoritative",
+  "confidence": 0.861,
+  "estimatedFidelity": 0.861,
+  "targetThreshold": 0.7,
+  "materialId": "wing-membrane-pink",
+  "sourceImage": "/private/tmp/dragon-pbr/masked-crops/wing-membrane-pink-alpha.png",
+  "outDir": "/private/tmp/dragon-pbr/masked-v3/wing",
+  "palette": [
+    "#C01D4D",
+    "#D12559",
+    "#AD133E",
+    "#D23366",
+    "#74112C"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/wing/wing-membrane-pink_albedo.png",
+      "url": "wing-membrane-pink_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/wing/wing-membrane-pink_roughness.png",
+      "url": "wing-membrane-pink_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/wing/wing-membrane-pink_height.png",
+      "url": "wing-membrane-pink_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/wing/wing-membrane-pink_normal.png",
+      "url": "wing-membrane-pink_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "/private/tmp/dragon-pbr/masked-v3/wing/wing-membrane-pink_ao.png",
+      "url": "wing-membrane-pink_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 730,
+    "sourceHeight": 576,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 0,
+      "y": 37,
+      "width": 571,
+      "height": 402
+    },
+    "mask": {
+      "backgroundColor": "#FFFFFF",
+      "backgroundNoise": 0.0,
+      "transparentPixelFraction": 0.795,
+      "foregroundCoverage": 0.205
+    },
+    "mapStats": {
+      "valueRange": 0.1512,
+      "heightP90Gradient": 0.02455,
+      "roughnessBase": 0.683,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.185,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#C01D4D",
+      "#D12559",
+      "#AD133E",
+      "#D23366",
+      "#74112C"
+    ]
+  },
+  "warnings": [
+    "low value range weakens height/roughness inference"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

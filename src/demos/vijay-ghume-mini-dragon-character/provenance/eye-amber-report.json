@@ -1,0 +1,89 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "status": "current",
+  "evidenceRole": "procedural-fallback",
+  "confidence": 0.794,
+  "estimatedFidelity": 0.794,
+  "targetThreshold": 0.7,
+  "materialId": "eye-amber",
+  "sourceImage": "/private/tmp/dragon-eye-crop.png",
+  "outDir": "/private/tmp/dragon-pbr/eye-amber",
+  "palette": [
+    "#B82731",
+    "#D95656",
+    "#E9938B",
+    "#3F3848",
+    "#270E14"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "/private/tmp/dragon-pbr/eye-amber/eye-amber_albedo.png",
+      "url": "eye-amber_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "/private/tmp/dragon-pbr/eye-amber/eye-amber_roughness.png",
+      "url": "eye-amber_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "/private/tmp/dragon-pbr/eye-amber/eye-amber_height.png",
+      "url": "eye-amber_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "/private/tmp/dragon-pbr/eye-amber/eye-amber_normal.png",
+      "url": "eye-amber_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "/private/tmp/dragon-pbr/eye-amber/eye-amber_ao.png",
+      "url": "eye-amber_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 620,
+    "sourceHeight": 360,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 0,
+      "y": 0,
+      "width": 620,
+      "height": 360
+    },
+    "mask": {
+      "backgroundColor": "#E76185",
+      "backgroundNoise": 61.262,
+      "transparentPixelFraction": 0.0,
+      "foregroundCoverage": 0.9738
+    },
+    "mapStats": {
+      "valueRange": 0.6201,
+      "heightP90Gradient": 0.04932,
+      "roughnessBase": 0.701,
+      "roughnessVariation": 0.091,
+      "normalStrength": 0.214,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#B82731",
+      "#D95656",
+      "#E9938B",
+      "#3F3848",
+      "#270E14"
+    ]
+  },
+  "warnings": [
+    "source image was converted to PNG with macOS sips before pixel extraction",
+    "image is not clearly isolated from background; using most pixels as material evidence",
+    "object/background separation is weak"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

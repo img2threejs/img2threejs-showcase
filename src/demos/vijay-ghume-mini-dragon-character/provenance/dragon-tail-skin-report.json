@@ -1,0 +1,88 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "status": "current",
+  "evidenceRole": "admitted-alpha-masked-evidence",
+  "confidence": 0.75,
+  "estimatedFidelity": 0.75,
+  "targetThreshold": 0.7,
+  "materialId": "dragon-skin",
+  "sourceImage": "/private/tmp/dragon-pbr/masked-crops/dragon-skin-alpha-v2.png",
+  "outDir": "/private/tmp/dragon-pbr/masked-v4/skin",
+  "palette": [
+    "#B31641",
+    "#A61037",
+    "#C12855",
+    "#8E0826",
+    "#CD547C"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "/private/tmp/dragon-pbr/masked-v4/skin/dragon-skin_albedo.png",
+      "url": "dragon-skin_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "/private/tmp/dragon-pbr/masked-v4/skin/dragon-skin_roughness.png",
+      "url": "dragon-skin_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "/private/tmp/dragon-pbr/masked-v4/skin/dragon-skin_height.png",
+      "url": "dragon-skin_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "/private/tmp/dragon-pbr/masked-v4/skin/dragon-skin_normal.png",
+      "url": "dragon-skin_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "/private/tmp/dragon-pbr/masked-v4/skin/dragon-skin_ao.png",
+      "url": "dragon-skin_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 240,
+    "sourceHeight": 365,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 98,
+      "y": 5,
+      "width": 135,
+      "height": 319
+    },
+    "mask": {
+      "backgroundColor": "#FFFFFF",
+      "backgroundNoise": 0.0,
+      "transparentPixelFraction": 0.7561,
+      "foregroundCoverage": 0.2439
+    },
+    "mapStats": {
+      "valueRange": 0.1868,
+      "heightP90Gradient": 0.00899,
+      "roughnessBase": 0.684,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.167,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#B31641",
+      "#A61037",
+      "#C12855",
+      "#8E0826",
+      "#CD547C"
+    ]
+  },
+  "warnings": [
+    "low value range weakens height/roughness inference",
+    "low high-frequency detail weakens normal/roughness inference"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}
