@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "state": "fallback",
+  "itemFamily": "glove",
+  "subtype": "sport-gloves",
+  "componentAdapter": "cs2-glove-v1",
+  "route": "procedural-finish",
+  "exactnessTier": "image-only",
+  "primaryImage": {
+    "role": "primary",
+    "path": "public/references/sport-gloves-hedge-maze-field-tested.png",
+    "contentHash": "user-supplied-composite-reference"
+  },
+  "sourceImage": "public/references/sport-gloves-hedge-maze-field-tested.png",
+  "resolvedIdentity": {
+    "itemName": "★ Sport Gloves | Hedge Maze (Field-Tested)",
+    "itemFamily": "glove",
+    "subtype": "sport-gloves",
+    "source": "user-provided-item-name"
+  },
+  "classification": {
+    "provider": "user-metadata",
+    "confidence": 1.0,
+    "evidenceRefs": ["user-provided-item-name", "dorsal-and-palmar-reference-images"]
+  },
+  "confidence": {
+    "visible-dorsal": 0.96,
+    "visible-palmar": 0.96,
+    "hidden-thickness": 0.35,
+    "hidden-lining": 0.3
+  },
+  "warnings": [
+    "Only one left-hand dorsal/palmar pair was supplied; right-hand pairing and hidden shell thickness are inferred.",
+    "Procedural finish route is used because independent texture maps were not supplied."
+  ],
+  "assumptions": [
+    "Canonical object-space is left glove, dorsal +Z, palm -Z, thumb +X.",
+    "The supplied composite reference is the visual source for colour and detail placement."
+  ]
+}

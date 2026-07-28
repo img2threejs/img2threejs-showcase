@@ -43,6 +43,7 @@ import {
   createGlockGhostProtocolLookDevLights,
   makeGhostProtocolBackground,
 } from './glock-ghost-protocol/createGlockGhostProtocolModel';
+import { createGloveModel } from '../createGloveModel';
 
 export interface DemoEntry {
   /** route id, e.g. 'crown-chest' */
@@ -519,6 +520,36 @@ export const demos: DemoEntry[] = [
       const group = createCrownChestModel();
       scene.add(group);
       return group;
+    },
+  },
+  {
+    id: 'sport-gloves-hedge-maze',
+    title: 'Sport Gloves | Hedge Maze (Field-Tested)',
+    subjectClass: 'object',
+    blurb: 'A procedural left sport glove rebuilt as an organic curved shell with rounded finger stalls, a shaped palm and thumb gusset, reference-projected PBR albedo/normal/roughness, dedicated fourchette UV material, and no floating surface geometry.',
+    referenceImage: `${BASE}references/sport-gloves-hedge-maze-field-tested.png`,
+    sourcePath: 'src/createGloveModel.ts',
+    sourceUrl: `${REPO}/src/createGloveModel.ts`,
+    generatedWith: 'img2threejs v1.4.1',
+    author: 'img2threejs',
+    authorUrl: 'https://github.com/img2threejs',
+    status: 'final',
+    cameraPosition: [0, 0.08, 6.25],
+    cameraTarget: [0, 0.10, 0],
+    cameraFov: 37,
+    accent: '#52B82A',
+    backgroundGradient: { inner: '#122116', outer: '#030404' },
+    exposure: 0.96,
+    environmentIntensity: 0.78,
+    toneMapping: 'neutral',
+    build: (scene) => {
+      scene.background = new THREE.Color(0x08120b);
+      const model = createGloveModel({ shadows: true });
+      if (import.meta.env.DEV) {
+        (window as unknown as { __IMG2THREEJS_DEBUG_MODEL__?: THREE.Group }).__IMG2THREEJS_DEBUG_MODEL__ = model;
+      }
+      scene.add(model);
+      return model;
     },
   },
 ];
