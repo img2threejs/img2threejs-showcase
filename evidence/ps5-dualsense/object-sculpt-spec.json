@@ -1,0 +1,463 @@
+{
+  "targetName": "PS5 DualSense Wireless Controller",
+  "targetId": "ps5-dualsense",
+  "schemaVersion": "2.1",
+  "terminologyProfile": {
+    "domain": "real-time procedural Three.js asset",
+    "geometryTerms": [
+      "silhouette",
+      "topology",
+      "primitive",
+      "bevel",
+      "chamfer",
+      "taper",
+      "bend",
+      "boolean cut",
+      "edge loop",
+      "surface normal",
+      "displacement"
+    ],
+    "materialTerms": [
+      "albedo",
+      "baseColor",
+      "roughness",
+      "metalness",
+      "normal map",
+      "bump map",
+      "ambient occlusion",
+      "cavity dirt",
+      "edge wear",
+      "clearcoat"
+    ],
+    "lightingTerms": [
+      "key light",
+      "fill light",
+      "rim light",
+      "HDRI/environment reflection",
+      "contact shadow"
+    ],
+    "descriptionRule": "Use measurable 3D graphics terms. Avoid vague words unless they are paired with concrete geometry/material/shader parameters."
+  },
+  "sourceImage": "/Users/tamlh/workspaces/self/AI/img2threejs-showcase/references/ps5-dualsense-front.png",
+  "referenceCamera": {
+    "type": "perspective",
+    "provenance": "observed",
+    "fixedReviewView": "perspective from [0, 1.2, 2.8] looking at [0, 0, 0], FOV 35"
+  },
+  "suitability": "proceed",
+  "scores": {
+    "object_isolation": 0.9,
+    "silhouette_readability": 0.85,
+    "depth_inference": 0.8,
+    "primitive_decomposition": 0.7,
+    "material_procedurality": 0.8,
+    "occlusion_risk": 0.6,
+    "interaction_fit": 0.7
+  },
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryType": "game-controller",
+      "primaryDomain": "object",
+      "formLanguage": [
+        "hard-surface",
+        "ergonomic",
+        "organic-handles"
+      ],
+      "structureKind": [
+        "sandwich-assembly",
+        "shell",
+        "buttons",
+        "thumbsticks"
+      ],
+      "motionPotential": [
+        "static",
+        "inspect-orbit"
+      ],
+      "materialFamilies": [
+        "plastic",
+        "rubber",
+        "translucent-polymer"
+      ],
+      "cs2": false,
+      "notes": "PS5 DualSense controller with butterfly silhouette, white outer shells over black inner chassis, asymmetric handle curvature, touchpad as separate plate"
+    },
+    "complexity": {
+      "tier": "complex",
+      "scores": {
+        "silhouetteComplexity": 3,
+        "componentCount": 4,
+        "hierarchyDepth": 3,
+        "repetitionDensity": 2,
+        "materialLayerCount": 3,
+        "localDetailDensity": 2,
+        "occlusionRisk": 2,
+        "actionReadinessNeed": 1
+      },
+      "estimatedCounts": {
+        "macroComponents": 5,
+        "mesoComponents": 12,
+        "microFeatureGroups": 6,
+        "materialLayers": 5,
+        "repetitionSystems": 2
+      },
+      "reasoning": "Controller has complex organic handle curvature, multiple button/thumbstick components, sandwich assembly topology, and detailed surface features"
+    }
+  },
+  "componentTree": {
+    "root": {
+      "id": "chassis",
+      "name": "BlackInnerChassis",
+      "topologyClass": "hard-surface",
+      "topologyRationale": "Central structural frame, slightly rounded rectangular form",
+      "primitive": "RoundedBoxGeometry",
+      "dimensions": {"width": 1.4, "height": 0.3, "depth": 0.48},
+      "material": "blackInner",
+      "children": [
+        {
+          "id": "whiteTopShell",
+          "name": "WhiteTopShell",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "Thin curved plate following controller contour",
+          "primitive": "ExtrudeGeometry",
+          "dimensions": {"width": 1.5, "height": 0.06, "depth": 0.56},
+          "material": "whiteShell",
+          "position": {"y": 0.16}
+        },
+        {
+          "id": "whiteBottomShell",
+          "name": "WhiteBottomShell",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "Thin curved plate following controller contour",
+          "primitive": "ExtrudeGeometry",
+          "dimensions": {"width": 1.5, "height": 0.06, "depth": 0.56},
+          "material": "whiteShell",
+          "position": {"y": -0.16}
+        },
+        {
+          "id": "touchpadAssembly",
+          "name": "TouchpadAssembly",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "Separate rectangular plate with clearance gap",
+          "primitive": "RoundedBoxGeometry",
+          "dimensions": {"width": 0.55, "height": 0.02, "depth": 0.35},
+          "material": "blackInner",
+          "position": {"y": 0.22, "z": -0.05}
+        },
+        {
+          "id": "handleLeft",
+          "name": "HandleLeft",
+          "topologyClass": "organic",
+          "topologyRationale": "Asymmetric elliptical cross-section, tapering to point",
+          "primitive": "ExtrudeGeometry",
+          "dimensions": {"length": 0.7},
+          "material": "whiteShell",
+          "position": {"x": -0.55, "y": -0.15}
+        },
+        {
+          "id": "handleRight",
+          "name": "HandleRight",
+          "topologyClass": "organic",
+          "topologyRationale": "Asymmetric elliptical cross-section, tapering to point",
+          "primitive": "ExtrudeGeometry",
+          "dimensions": {"length": 0.7},
+          "material": "whiteShell",
+          "position": {"x": 0.55, "y": -0.15}
+        },
+        {
+          "id": "thumbstickLeft",
+          "name": "ThumbstickLeft",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "Cylindrical stalk with cup and blue ring",
+          "primitive": "CylinderGeometry",
+          "dimensions": {"radius": 0.09, "height": 0.12},
+          "material": "thumbstickRubber",
+          "position": {"x": -0.25, "y": 0.25, "z": -0.05}
+        },
+        {
+          "id": "thumbstickRight",
+          "name": "ThumbstickRight",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "Cylindrical stalk with cup and blue ring",
+          "primitive": "CylinderGeometry",
+          "dimensions": {"radius": 0.09, "height": 0.12},
+          "material": "thumbstickRubber",
+          "position": {"x": 0.25, "y": 0.25, "z": -0.05}
+        },
+        {
+          "id": "dpad",
+          "name": "DPad",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "Cross-shaped button cluster",
+          "primitive": "CylinderGeometry",
+          "dimensions": {"radius": 0.12, "height": 0.03},
+          "material": "buttons",
+          "position": {"x": -0.45, "y": 0.22, "z": -0.05}
+        },
+        {
+          "id": "faceButtons",
+          "name": "FaceButtons",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "Four circular buttons in diamond pattern",
+          "primitive": "CylinderGeometry",
+          "dimensions": {"radius": 0.03, "height": 0.02},
+          "material": "buttons",
+          "position": {"x": 0.45, "y": 0.22, "z": -0.05}
+        },
+        {
+          "id": "psButton",
+          "name": "PSButton",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "Small circular button with PS logo",
+          "primitive": "CylinderGeometry",
+          "dimensions": {"radius": 0.04, "height": 0.02},
+          "material": "buttons",
+          "position": {"y": 0.18, "z": 0.1}
+        },
+        {
+          "id": "l1Bumper",
+          "name": "L1Bumper",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "Shoulder bumper button",
+          "primitive": "BoxGeometry",
+          "dimensions": {"width": 0.25, "height": 0.04, "depth": 0.08},
+          "material": "blackInner",
+          "position": {"x": -0.55, "y": 0.2, "z": 0.2}
+        },
+        {
+          "id": "r1Bumper",
+          "name": "R1Bumper",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "Shoulder bumper button",
+          "primitive": "BoxGeometry",
+          "dimensions": {"width": 0.25, "height": 0.04, "depth": 0.08},
+          "material": "blackInner",
+          "position": {"x": 0.55, "y": 0.2, "z": 0.2}
+        },
+        {
+          "id": "l2Trigger",
+          "name": "L2Trigger",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "Deep-travel trigger with pivot",
+          "primitive": "BoxGeometry",
+          "dimensions": {"width": 0.2, "height": 0.06, "depth": 0.12},
+          "material": "blackInner",
+          "position": {"x": -0.55, "y": 0.15, "z": 0.25}
+        },
+        {
+          "id": "r2Trigger",
+          "name": "R2Trigger",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "Deep-travel trigger with pivot",
+          "primitive": "BoxGeometry",
+          "dimensions": {"width": 0.2, "height": 0.06, "depth": 0.12},
+          "material": "blackInner",
+          "position": {"x": 0.55, "y": 0.15, "z": 0.25}
+        },
+        {
+          "id": "speakerGrille",
+          "name": "SpeakerGrille",
+          "topologyClass": "surface-detail",
+          "topologyRationale": "5x2 perforation array",
+          "primitive": "CylinderGeometry",
+          "dimensions": {"radius": 0.005, "height": 0.01},
+          "material": "blackInner",
+          "position": {"y": 0.15, "z": 0.15},
+          "count": 10
+        },
+        {
+          "id": "usbPort",
+          "name": "USBPort",
+          "topologyClass": "hard-surface",
+          "topologyRationale": "USB-C port opening",
+          "primitive": "BoxGeometry",
+          "dimensions": {"width": 0.09, "height": 0.03, "depth": 0.04},
+          "material": "blackInner",
+          "position": {"y": 0.15, "z": 0.25}
+        },
+        {
+          "id": "chargingContacts",
+          "name": "ChargingContacts",
+          "topologyClass": "surface-detail",
+          "topologyRationale": "4 copper contact points on rear",
+          "primitive": "CylinderGeometry",
+          "dimensions": {"radius": 0.01, "height": 0.005},
+          "material": "chargingContacts",
+          "position": {"y": -0.2, "z": 0.2},
+          "count": 4
+        }
+      ]
+    }
+  },
+  "materials": {
+    "whiteShell": {
+      "type": "rigid polymer",
+      "finish": "matte",
+      "roughness": 0.85,
+      "metalness": 0.0,
+      "color": "#e8e4e0"
+    },
+    "blackInner": {
+      "type": "rigid polymer",
+      "finish": "matte",
+      "roughness": 0.7,
+      "metalness": 0.0,
+      "color": "#1a1a1a"
+    },
+    "thumbstickRubber": {
+      "type": "textured rubber",
+      "finish": "soft-touch",
+      "roughness": 0.9,
+      "metalness": 0.0,
+      "color": "#111111"
+    },
+    "buttons": {
+      "type": "translucent polymer",
+      "finish": "clear",
+      "transmission": 0.6,
+      "ior": 1.5,
+      "color": "#cccccc"
+    },
+    "chargingContacts": {
+      "type": "copper metal",
+      "finish": "brushed",
+      "roughness": 0.3,
+      "metalness": 0.8,
+      "color": "#cc2200"
+    }
+  },
+  "qualityContract": {
+    "criticalFeatures": [
+      "Butterfly/wing silhouette from front view",
+      "Two-tone white/black material separation",
+      "Touchpad as separate mechanical plate",
+      "Ergonomic handle curvature",
+      "Thumbstick with blue accent ring"
+    ],
+    "importantFeatures": [
+      "Translucent D-pad and face buttons",
+      "L1/R1 bumpers and L2/R2 triggers",
+      "Speaker grille perforations",
+      "USB-C port",
+      "Charging contacts"
+    ],
+    "tolerances": {
+      "silhouette": "±5% of reference proportions",
+      "materialBoundary": "±2mm of observed seam lines"
+    }
+  },
+  "featureReviewTargets": {
+    "critical": [
+      {
+        "id": "silhouette",
+        "name": "Butterfly silhouette",
+        "description": "Wing-like profile with handles flaring outward at 15-20 degrees"
+      },
+      {
+        "id": "shellThickness",
+        "name": "White shell thickness",
+        "description": "Thin plates (3-4mm) wrapping around black chassis"
+      },
+      {
+        "id": "handleCurvature",
+        "name": "Handle curvature",
+        "description": "Asymmetric elliptical cross-section tapering to points"
+      },
+      {
+        "id": "touchpadIntegration",
+        "name": "Touchpad integration",
+        "description": "Flush rectangular plate centered between handle horns"
+      },
+      {
+        "id": "thumbstickPlacement",
+        "name": "Thumbstick placement",
+        "description": "Seated in circular cutouts with blue LED rings"
+      }
+    ],
+    "important": [
+      {
+        "id": "buttonClarity",
+        "name": "Button clarity",
+        "description": "D-pad and face buttons visible and properly sized"
+      },
+      {
+        "id": "trigger造型",
+        "name": "Trigger shape",
+        "description": "L2/R2 triggers with proper pivot and travel depth"
+      }
+    ]
+  },
+  "buildPasses": [
+    {
+      "id": "structure",
+      "name": "Structure",
+      "description": "Primary silhouette, proportions, major component placement",
+      "status": "in-progress"
+    },
+    {
+      "id": "form",
+      "name": "Form",
+      "description": "Handle curvature, shell contour, component integration",
+      "status": "pending"
+    },
+    {
+      "id": "material",
+      "name": "Material",
+      "description": "PBR properties, color accuracy, surface finish",
+      "status": "pending"
+    },
+    {
+      "id": "detail",
+      "name": "Detail",
+      "description": "Buttons, speakers, USB port, charging contacts",
+      "status": "pending"
+    }
+  ],
+  "reviewHistory": [
+    {
+      "passId": "structure",
+      "timestamp": "2026-07-29T03:05:00Z",
+      "fidelity": 0.4422,
+      "action": "refine-code",
+      "summary": "Both hard gates fail: silhouette IoU 0.355 (needs ≥0.85), scale delta 0.850 (needs ≤0.08). Model is too small and silhouette doesn't match butterfly profile.",
+      "renderScreenshot": "evidence/ps5-dualsense/v8-render.png",
+      "comparisonImage": "evidence/ps5-dualsense/comparison-structure.png",
+      "divineEyeResults": {
+        "fidelity": 0.4422,
+        "hardGates": {
+          "silhouetteIoU": {"value": 0.355, "threshold": 0.85, "pass": false},
+          "scaleDelta": {"value": 0.850, "threshold": 0.08, "pass": false}
+        }
+      }
+    },
+    {
+      "passId": "structure",
+      "timestamp": "2026-07-29T03:30:00Z",
+      "fidelity": 0.3544,
+      "action": "refine-code",
+      "summary": "Silhouette IoU improved to 0.497, scale delta to 0.460 with lighter background. Still failing hard gates. White shells still too thick.",
+      "renderScreenshot": "evidence/ps5-dualsense/v17-render.png",
+      "divineEyeResults": {
+        "fidelity": 0.3544,
+        "hardGates": {
+          "silhouetteIoU": {"value": 0.497, "threshold": 0.85, "pass": false},
+          "scaleDelta": {"value": 0.460, "threshold": 0.08, "pass": false}
+        }
+      }
+    },
+    {
+      "passId": "structure",
+      "timestamp": "2026-07-29T03:45:00Z",
+      "fidelity": 0.3369,
+      "action": "refine-code",
+      "summary": "White shells now thin plates, handles flaring outward. Silhouette IoU 0.383, scale delta 0.355. Still failing hard gates. Need to match reference aspect ratio.",
+      "renderScreenshot": "evidence/ps5-dualsense/v19-render.png",
+      "divineEyeResults": {
+        "fidelity": 0.3369,
+        "hardGates": {
+          "silhouetteIoU": {"value": 0.383, "threshold": 0.85, "pass": false},
+          "scaleDelta": {"value": 0.355, "threshold": 0.08, "pass": false}
+        }
+      }
+    }
+  ]
+}

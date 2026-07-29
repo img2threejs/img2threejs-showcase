@@ -1,0 +1,178 @@
+{
+  "itemName": "PS5 DualSense Wireless Controller",
+  "modelNumber": "CFI-ZCT1W",
+  "intakeDate": "2026-07-29",
+  "notebookId": "02c0c827-2044-419e-bdca-39f97af3c97f",
+  "verdict": "proceed",
+  "currentVersion": "v7",
+  "versionHistory": [
+    {"version": "v1", "status": "failed", "issues": ["model too small", "blank viewport"]},
+    {"version": "v2", "status": "failed", "issues": ["white shells too thick", "black chassis too large"]},
+    {"version": "v3", "status": "failed", "issues": ["camera angle wrong", "handles too thick"]},
+    {"version": "v4", "status": "improving", "issues": ["handles taper better", "shells still thick"]},
+    {"version": "v5", "status": "improving", "issues": ["handles now taper to points", "camera still low angle"]},
+    {"version": "v6", "status": "improving", "issues": ["camera angle better", "white shells still thick"]},
+    {"version": "v7", "status": "good", "achievements": ["thin white shells", "black body visible", "components visible"], "remaining": ["handle cross-section", "mechanical gaps", "material fidelity"]}
+  ],
+  
+  "references": {
+    "front": {"path": "references/ps5-dualsense-front.png", "role": "primary", "resolution": "high", "view": "front"},
+    "back": {"path": "references/ps5-dualsense-back.png", "role": "secondary", "resolution": "high", "view": "back"},
+    "top": {"path": "references/ps5-dualsense-top.png", "role": "critical", "resolution": "high", "view": "top"},
+    "bottom": {"path": "references/ps5-dualsense-bottom.png", "role": "secondary", "resolution": "high", "view": "bottom"},
+    "left": {"path": "references/ps5-dualsense-left.png", "role": "profile", "resolution": "high", "view": "left"},
+    "right": {"path": "references/ps5-dualsense-right.png", "role": "profile", "resolution": "high", "view": "right"}
+  },
+
+  "technicalSpecs": {
+    "dimensions": {"width": 160, "height": 66, "depth": 106, "unit": "mm"},
+    "weight": {"value": 280, "unit": "g"},
+    "touchpadWidth": {"value": 55, "unit": "mm", "confidence": "inferred"},
+    "thumbstickDiameter": {"value": 18, "unit": "mm", "confidence": "inferred"}
+  },
+
+  "materials": {
+    "whiteShell": {
+      "type": "rigid polymer",
+      "finish": "matte",
+      "roughness": 0.85,
+      "metalness": 0.0,
+      "color": "#e8e4e0"
+    },
+    "blackInner": {
+      "type": "rigid polymer",
+      "finish": "matte",
+      "roughness": 0.7,
+      "metalness": 0.0,
+      "color": "#1a1a1a"
+    },
+    "thumbstickRubber": {
+      "type": "textured rubber",
+      "finish": "soft-touch",
+      "roughness": 0.9,
+      "metalness": 0.0,
+      "color": "#111111"
+    },
+    "buttons": {
+      "type": "translucent polymer",
+      "finish": "clear",
+      "transmission": 0.6,
+      "ior": 1.5,
+      "color": "#cccccc"
+    },
+    "chargingContacts": {
+      "type": "copper metal",
+      "finish": "brushed",
+      "roughness": 0.3,
+      "metalness": 0.8,
+      "color": "#cc2200"
+    }
+  },
+
+  "topology": {
+    "assemblyType": "sandwich",
+    "description": "Central black chassis nested between two white outer plates",
+    "partingLine": "Longitudinal seam along handle center where front/rear shells meet",
+    "touchpadMount": "Separate mechanical plate with clearance gap for click travel"
+  },
+
+  "componentHierarchy": {
+    "root": "BlackInnerBody (chassis)",
+    "children": [
+      "WhiteTopShell",
+      "WhiteBottomShell",
+      "TouchpadAssembly",
+      "ThumbstickModuleL",
+      "ThumbstickModuleR",
+      "DPadCluster",
+      "FaceButtonCluster",
+      "PSButton",
+      "CreateButton",
+      "OptionsButton",
+      "SpeakerGrille",
+      "USBPort",
+      "L1Bumper",
+      "R1Bumper",
+      "L2Trigger",
+      "R2Trigger",
+      "ChargingContacts"
+    ]
+  },
+
+  "silhouetteDefiningFeatures": [
+    "Ergonomic handle sweep (asymmetrical elliptical cross-section)",
+    "Thumbstick protrusion height",
+    "Trigger pivot and travel depth",
+    "Touchpad raised plate"
+  ],
+
+  "surfaceOnlyDetails": [
+    "Speaker grille (5x2 perforation array)",
+    "SONY branding and regulatory text",
+    "Microtexture (40,000 tiny PlayStation symbols)",
+    "Blue LED rings around thumbsticks"
+  ],
+
+  "notebooklmResearch": {
+    "query1": {
+      "topic": "Three.js procedural geometry techniques",
+      "keyFindings": [
+        "RoundedBoxGeometry for central body and touchpad",
+        "TubeGeometry + CatmullRomCurve3 for ergonomic handles",
+        "CylinderGeometry for thumbstick stalks",
+        "TorusGeometry for blue accent rings",
+        "MeshPhysicalMaterial with transmission for translucent buttons"
+      ]
+    },
+    "query2": {
+      "topic": "PS5 DualSense technical specifications",
+      "keyFindings": [
+        "160mm x 66mm x 106mm dimensions",
+        "280g weight",
+        "13 digital buttons + 2 analog sticks",
+        "White matte plastic + black inner body",
+        "Monochrome action buttons (not color-coded)",
+        "Adaptive triggers with DC rotary motors"
+      ]
+    },
+    "query3": {
+      "topic": "3D topology vocabulary and controller anatomy",
+      "keyFindings": [
+        "Sandwich assembly: black chassis between white plates",
+        "Longitudinal parting line on handles",
+        "Touchpad as separate mechanical plate with clearance gap",
+        "Silhouette-defining: handles, thumbsticks, triggers",
+        "Surface-only: speaker grille, logos, microtexture"
+      ]
+    }
+  },
+
+  "implementationRoute": {
+    "geometry": "procedural",
+    "topologyClass": "hard-surface with organic handles",
+    "primitiveStrategy": "RoundedBoxGeometry for body, TubeGeometry for handles, CylinderGeometry for buttons",
+    "materialStrategy": "MeshPhysicalMaterial with per-component properties",
+    "scaleReference": "160mm width = 1.6 units in world space"
+  },
+
+  "qualityContract": {
+    "criticalFeatures": [
+      "Butterfly/wing silhouette from front view",
+      "Two-tone white/black material separation",
+      "Touchpad as separate mechanical plate",
+      "Ergonomic handle curvature",
+      "Thumbstick with blue accent ring"
+    ],
+    "importantFeatures": [
+      "Translucent D-pad and face buttons",
+      "L1/R1 bumpers and L2/R2 triggers",
+      "Speaker grille perforations",
+      "USB-C port",
+      "Charging contacts"
+    ],
+    "tolerances": {
+      "silhouette": "±5% of reference proportions",
+      "materialBoundary": "±2mm of observed seam lines"
+    }
+  }
+}

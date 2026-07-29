@@ -1,0 +1,238 @@
+{
+  "targetName": "PS5 DualSense Controller",
+  "sourceImage": "/Users/tamlh/Desktop/tmp/demo/front.png",
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryType": "electronic-device",
+      "primaryDomain": "object",
+      "formLanguage": ["ergonomic", "organic-curves", "two-tone-shell", "bilateral-symmetry"],
+      "structureKind": ["hard-surface-shell", "embedded-components", "snap-fit-assembly"],
+      "motionPotential": ["thumbstick-rotation", "trigger-pivot", "button-press"],
+      "materialFamilies": ["matte-plastic", "glossy-transparent-plastic", "textured-rubber", "brushed-metal-accent"],
+      "notes": "PS5 DualSense wireless controller. Two-tone white outer shell over black inner body. Ergonomic butterfly silhouette with curved handles. Complex multi-component hard-surface object with organic shell curvature."
+    },
+    "complexity": {
+      "tier": "complex",
+      "scores": {
+        "silhouetteComplexity": 8,
+        "componentCount": 9,
+        "hierarchyDepth": 4,
+        "repetitionDensity": 6,
+        "materialLayerCount": 5,
+        "localDetailDensity": 7,
+        "occlusionRisk": 6,
+        "actionReadinessNeed": 7
+      },
+      "estimatedCounts": {
+        "macroComponents": 4,
+        "mesoComponents": 12,
+        "microFeatureGroups": 8,
+        "materialLayers": 5,
+        "repetitionSystems": 3
+      },
+      "reasoning": [
+        "Ergonomic butterfly/batwing silhouette with asymmetric handle curvature — not a simple primitive.",
+        "Two-tone (white/black) shell with visible seam line separating outer and inner bodies.",
+        "12+ distinct component groups: shell, touchpad, 2 thumbsticks, D-pad, 4 face buttons, 2 shoulder buttons, 2 triggers, PS button, Create/Options buttons, speaker grille, mic button, USB-C port.",
+        "Transparent/clear plastic buttons with glossy finish — distinct material from matte shell.",
+        "Textured rubber thumbstick tops with dimple pattern — micro detail.",
+        "Blue accent rings at thumbstick bases — micro detail.",
+        "4 red charging contacts on back — micro detail.",
+        "Regulatory text and SONY branding on back — decal/albedo detail.",
+        "Organic curved handles require non-primitive topology for correct silhouette."
+      ]
+    },
+    "specDepthDecision": {
+      "requiredDepth": "complex",
+      "minimumComponentLevels": [
+        "macro",
+        "meso",
+        "micro"
+      ],
+      "needsRepetitionSystems": true,
+      "needsMaterialLocalOverrides": true,
+      "needsMultipleReviewViews": true,
+      "needsActionReadyHierarchy": true,
+      "rationale": "Choose simple/moderate/complex/ultra-complex from observed structure, not from a hardcoded domain."
+    },
+    "unknownsToResolveBeforeImplementation": [],
+    "detailInventory": {
+      "scanMethod": "manual-6view",
+      "targetMinDetails": 16,
+      "note": "Filled from 6-view analysis. Each detail maps to a component or material entry.",
+      "details": [
+        {"id": "thumbstick-texture", "kind": "micro-texture", "description": "Dimpled rubber pattern on thumbstick tops — concentric circles of small raised dots", "scale": "micro", "affects": "roughness/normal", "mapsTo": {"type": "component", "ref": "thumbstick"}, "confidence": 0.95},
+        {"id": "thumbstick-blue-ring", "kind": "accent", "description": "Blue LED accent ring at base of each thumbstick", "scale": "micro", "affects": "albedo/emissive", "mapsTo": {"type": "material", "ref": "thumbstick-ring"}, "confidence": 0.95},
+        {"id": "dpad-transparent", "kind": "material", "description": "Transparent/clear glossy plastic D-pad cross shape", "scale": "meso", "affects": "albedo/roughness/transmission", "mapsTo": {"type": "material", "ref": "button-transparent"}, "confidence": 0.95},
+        {"id": "face-buttons-transparent", "kind": "material", "description": "Transparent/clear glossy plastic face buttons with etched symbols", "scale": "meso", "affects": "albedo/roughness/transmission", "mapsTo": {"type": "material", "ref": "button-transparent"}, "confidence": 0.95},
+        {"id": "touchpad-seam", "kind": "seam", "description": "Thin gap around touchpad perimeter separating it from shell", "scale": "meso", "affects": "geometry/occlusion", "mapsTo": {"type": "component", "ref": "touchpad"}, "confidence": 0.95},
+        {"id": "shell-seam-line", "kind": "seam", "description": "Continuous seam where white outer shell meets black inner body", "scale": "meso", "affects": "geometry/albedo", "mapsTo": {"type": "component", "ref": "main-shell"}, "confidence": 0.95},
+        {"id": "speaker-grille", "kind": "micro-detail", "description": "Array of small circular holes below touchpad center", "scale": "micro", "affects": "geometry/normal", "mapsTo": {"type": "component", "ref": "speaker-grille"}, "confidence": 0.95},
+        {"id": "usb-c-port", "kind": "recess", "description": "Recessed USB-C port centered on top edge", "scale": "micro", "affects": "geometry", "mapsTo": {"type": "component", "ref": "usb-port"}, "confidence": 0.95},
+        {"id": "charging-pins", "kind": "micro-detail", "description": "4 red oval charging contacts on back face center", "scale": "micro", "affects": "albedo", "mapsTo": {"type": "component", "ref": "charging-pins"}, "confidence": 0.95},
+        {"id": "regulatory-text", "kind": "decal", "description": "Regulatory markings, SONY branding, model info on back face", "scale": "micro", "affects": "albedo", "mapsTo": {"type": "material", "ref": "back-decal"}, "confidence": 0.9},
+        {"id": "ps-button-symbol", "kind": "decal", "description": "PlayStation logo button below thumbsticks", "scale": "micro", "affects": "albedo", "mapsTo": {"type": "component", "ref": "ps-button"}, "confidence": 0.95},
+        {"id": "create-options-icons", "kind": "decal", "description": "Small icons on Create (left) and Options (right) buttons", "scale": "micro", "affects": "albedo", "mapsTo": {"type": "component", "ref": "create-button"}, "confidence": 0.9},
+        {"id": "shoulder-l1r1-text", "kind": "decal", "description": "L1/R1 text markings on shoulder buttons", "scale": "micro", "affects": "albedo", "mapsTo": {"type": "component", "ref": "shoulder-buttons"}, "confidence": 0.9},
+        {"id": "trigger-texture", "kind": "micro-texture", "description": "Slight texture/grip on L2/R2 trigger surfaces", "scale": "micro", "affects": "roughness", "mapsTo": {"type": "material", "ref": "trigger-surface"}, "confidence": 0.85},
+        {"id": "mic-button-icon", "kind": "decal", "description": "Microphone icon on mic mute button", "scale": "micro", "affects": "albedo", "mapsTo": {"type": "component", "ref": "mic-button"}, "confidence": 0.85},
+        {"id": "handle-grip-texture", "kind": "micro-texture", "description": "Subtle texture on handle grip underside for tactile feedback", "scale": "micro", "affects": "roughness/normal", "mapsTo": {"type": "material", "ref": "handle-grip"}, "confidence": 0.8}
+      ]
+    },
+    "anatomy": {
+      "applies": false,
+      "styleHeads": 0.0,
+      "proportions": {
+        "headUnit": 0.0,
+        "torso": 0.0,
+        "legs": 0.0,
+        "shoulderWidth": 0.0,
+        "hipWidth": 0.0
+      },
+      "pose": {
+        "type": "unassessed",
+        "jointAngles": {}
+      },
+      "faceLandmarks": {
+        "eyeLine": 0.0,
+        "eyeSpacing": 0.0,
+        "noseBase": 0.0,
+        "mouthLine": 0.0,
+        "hairline": 0.0
+      },
+      "features": [],
+      "confidence": 0.0,
+      "note": "Only meaningful when objectClass.primaryDomain is character or hybrid. Set applies=true and fill from forge/stage1_intake/extract_landmarks.py. See grimoire/character/reconstruction.md and grimoire/character/likeness_maximization.md."
+    },
+    "sourceImage": "/Users/tamlh/Desktop/tmp/demo/front.png"
+  },
+  "qualityContract": {
+    "qualityBar": "complex",
+    "definitionOfDone": [
+      "The rendered model matches the reference silhouette, primary proportions, visible component hierarchy, material response, and most recognizable local features for the selected fidelity tier."
+    ],
+    "minimumSpecDepth": {
+      "macroComponents": 3,
+      "mesoComponents": 8,
+      "microFeatureGroups": 5,
+      "materialLayers": 3,
+      "repetitionSystems": 1,
+      "reviewViewpoints": 4
+    },
+    "featureGroups": [
+      {
+        "id": "overall-silhouette",
+        "name": "Overall silhouette and proportions",
+        "required": true,
+        "qualityCriteria": [
+          "Bounding shape, dominant curves, negative spaces, and scale relationships are explicitly described."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "model reads as a generic placeholder instead of the reference object",
+          "major proportions are guessed without evidence"
+        ]
+      },
+      {
+        "id": "primary-structure",
+        "name": "Primary structure and hierarchy",
+        "required": true,
+        "qualityCriteria": [
+          "Major parts, joints, seams, contact points, and parent-child relationships are named before code generation."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "large visible parts are merged into one mesh",
+          "component hierarchy is too shallow for the observed complexity"
+        ]
+      },
+      {
+        "id": "attachment-joint-correctness",
+        "name": "Attachment and joint correctness",
+        "required": true,
+        "qualityCriteria": [
+          "Every visible child appendage, branch, limb, handle, connector, tube, cable, horn, wing, leg, or hinged part has an attachment contract with parent socket, localStart/localEnd, contact type, embed/overlap, and gap tolerance."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "child part root floats away from the parent",
+          "branch/limb/tube is centered in space instead of pivoting from its root",
+          "parent-child transform mixes world and local coordinates"
+        ]
+      },
+      {
+        "id": "surface-material-response",
+        "name": "Surface material response",
+        "required": true,
+        "qualityCriteria": [
+          "Albedo zones, roughness, normal/bump/displacement intent, cavity dirt, edge wear, and local overrides are specified where visible.",
+          "Important materials define independent albedo, roughness, height/normal, and AO responses instead of reusing one texture for unrelated PBR channels.",
+          "Surface response is decomposed into macro, meso, and micro frequency bands with scale and amplitude tied to object scale."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "surface looks like flat plastic",
+          "local material variation is missing or not tied to image evidence"
+        ]
+      },
+      {
+        "id": "reference-lookdev",
+        "name": "Reference color, material, and lighting response",
+        "required": true,
+        "qualityCriteria": [
+          "Material-pass names the reference-derived albedo palette, roughness variation, tactile normal/bump/displacement response, and local masks.",
+          "When a source image is available, run reference PBR extraction and require confidence >= 0.7 before treating maps as implementation-ready.",
+          "Lighting-pass names key/fill/rim or environment light, exposure, tone mapping, background, and contact shadow behavior.",
+          "Neutral, grazing-angle, and reference-matched renders prove that surface relief survives relighting and is not painted into albedo."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "model has acceptable shape but reads as flat shaded or plastic",
+          "colors are a generic average instead of reference-observed local color zones",
+          "lighting is evenly ambient and cannot reproduce the source value range"
+        ]
+      }
+    ],
+    "visualDeltaChecks": [
+      "silhouette and negative-space delta",
+      "component hierarchy depth delta",
+      "repetition density and distribution delta",
+      "material albedo/roughness/normal response delta",
+      "local feature placement and scale delta"
+    ],
+    "antiShallowSpecRules": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate or complex object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials, or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components/materials/evidenceRefs.",
+      "Do not proceed past structural-pass if attached child parts lack attachment.parentSocket, localStart, localEnd, embedDepth/overlap, and gapTolerance.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal, or AO.",
+      "Do not pass material look-dev without macro, meso, and micro surface frequency bands for close-up materials.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not patch a spec with extracted PBR maps when extraction confidence is below the target threshold unless the user explicitly accepts lower fidelity.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief, fasteners, or grip structure with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ]
+  },
+  "authoringInstruction": "Fill observed object class, complexity reasoning, featureGroups, visualDeltaChecks, and unknowns before generating or implementing ObjectSculptSpec.",
+  "localSpecSearch": {
+    "collection": "core_3d",
+    "query": "PS5 DualSense Controller",
+    "index": {
+      "status": "hit",
+      "reason": "current",
+      "fingerprint": "6857e5ab528b42ac12f4f411f862610a0bffce8e47aee3610a7603c318072fe8"
+    },
+    "matches": []
+  }
+}

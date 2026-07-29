@@ -43,6 +43,11 @@ import {
   createGlockGhostProtocolLookDevLights,
   makeGhostProtocolBackground,
 } from './glock-ghost-protocol/createGlockGhostProtocolModel';
+import {
+  createPs5DualSenseModel,
+  createPs5DualSenseLookDevLights,
+  makePs5Background,
+} from './ps5-dualsense/createPs5DualSenseModel';
 
 export interface DemoEntry {
   /** route id, e.g. 'crown-chest' */
@@ -518,6 +523,56 @@ export const demos: DemoEntry[] = [
     build: (scene) => {
       const group = createCrownChestModel();
       scene.add(group);
+      return group;
+    },
+  },
+  {
+    id: 'ps5-dualsense',
+    title: 'PS5 DualSense Wireless Controller',
+    subjectClass: 'object',
+    blurb:
+      'A PS5 DualSense wireless controller rebuilt in code from a 6-view reference set: two-tone ' +
+      'white outer shell over black inner body with recessed lap-joint seams, ergonomic butterfly ' +
+      'silhouette with curved handles tapering to rounded points, a central touchpad with ' +
+      'clearance gap, translucent D-pad and face buttons, concave rubber thumbsticks with blue ' +
+      'LED accent rings, a 5x2 speaker grille, USB-C port, 4 red charging contacts on the rear, ' +
+      'L1/R1 shoulder bumpers and L2/R2 deep-travel triggers. Live: slow studio rock.',
+    referenceImage: `${BASE}references/ps5-dualsense-front.png`,
+    sourcePath: 'src/demos/ps5-dualsense/createPs5DualSenseModel.ts',
+    sourceUrl: `${REPO}/src/demos/ps5-dualsense/createPs5DualSenseModel.ts`,
+    generatedWith: 'img2threejs v1.4',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'final',
+    cameraPosition: [0, 0, 2.5], // Closer to fill viewport
+    cameraTarget: [0, 0, 0],
+    cameraFov: 30,
+    accent: '#1a5ccc',
+    backgroundGradient: { inner: '#0f1015', outer: '#050508' },
+    toneMapping: 'aces',
+    exposure: 1.0,
+    environmentIntensity: 0.6,
+    installLights: (scene) => {
+      scene.add(createPs5DualSenseLookDevLights());
+    },
+    build: (scene) => {
+      scene.background = makePs5Background();
+      const group = createPs5DualSenseModel({ shadows: true });
+      // Scale to match reference foreground ~35.65% with official mask
+      group.scale.setScalar(0.85);
+      // Rotate to show front face (touchpad, buttons) toward camera
+      // Reference shows controller face-on with touchpad centered
+      group.rotation.x = 0;
+      group.rotation.y = 0;
+      group.rotation.z = 0;
+      scene.add(group);
+
+      let t = 0;
+      group.userData.tick = (dt: number) => {
+        t += dt;
+        group.rotation.y = Math.sin(t * 0.3) * 0.15;
+        group.rotation.x = -0.3 + Math.sin(t * 0.2) * 0.04;
+      };
       return group;
     },
   },
