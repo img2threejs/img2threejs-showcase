@@ -7,68 +7,68 @@
 **Estimate**: 3 days  
 **Dependencies**: None
 
-- [ ] Create `forge/stage1b_multi_view/` directory structure
-- [ ] Implement `synthesize.py` - main entry point
-- [ ] Implement `feature_detector.py` - SIFT/ORB feature detection
-- [ ] Implement `feature_matcher.py` - cross-view feature matching
-- [ ] Implement `pose_estimator.py` - relative camera pose estimation
-- [ ] Implement `depth_estimator.py` - depth from parallax
-- [ ] Add unit tests for each module
+- [x] Create `forge/stage1b_multi_view/` directory structure
+- [x] Implement `synthesize.py` - main entry point
+- [x] Implement `feature_detector.py` - SIFT/ORB feature detection
+- [x] Implement `feature_matcher.py` - cross-view feature matching
+- [x] Implement `pose_estimator.py` - relative camera pose estimation
+- [x] Implement `depth_estimator.py` - depth from parallax
+- [x] Add unit tests for each module
 
 **Acceptance Criteria**:
-- [ ] Can detect features in a single image
-- [ ] Can match features between two views
-- [ ] Can estimate relative pose between views
-- [ ] Can compute depth cues from matched features
-- [ ] All unit tests pass
+- [x] Can detect features in a single image
+- [x] Can match features between two views
+- [x] Can estimate relative pose between views
+- [x] Can compute depth cues from matched features
+- [x] All unit tests pass
 
 ### Task 1.2: Define Geometry Brief Schema
 **Priority**: High  
 **Estimate**: 1 day  
 **Dependencies**: None
 
-- [ ] Create `grimoire/multi_view/geometry_brief_schema.json`
-- [ ] Define component geometry structure
-- [ ] Define confidence scoring structure
-- [ ] Define view coverage structure
-- [ ] Add schema validation
+- [x] Create `grimoire/multi_view/geometry_brief_schema.json`
+- [x] Define component geometry structure
+- [x] Define confidence scoring structure
+- [x] Define view coverage structure
+- [x] Add schema validation
 
 **Acceptance Criteria**:
-- [ ] Schema validates sample geometry briefs
-- [ ] Schema is backwards compatible with existing specs
-- [ ] Documentation is complete
+- [x] Schema validates sample geometry briefs
+- [x] Schema is backwards compatible with existing specs
+- [x] Documentation is complete
 
 ### Task 1.3: Update Intake Record Schema
 **Priority**: Medium  
 **Estimate**: 1 day  
 **Dependencies**: Task 1.2
 
-- [ ] Add `synthesis` field to `intake-record.json` schema
-- [ ] Add `multiViewBrief` field to `object-sculpt-spec.json` schema
-- [ ] Update validation scripts
+- [x] Add `synthesis` field to `intake-record.json` schema
+- [x] Add `multiViewBrief` field to `object-sculpt-spec.json` schema
+- [x] Update validation scripts
 
 **Acceptance Criteria**:
-- [ ] New fields are optional (backwards compatible)
-- [ ] Validation passes with and without new fields
-- [ ] Documentation is updated
+- [x] New fields are optional (backwards compatible)
+- [x] Validation passes with and without new fields
+- [x] Documentation is updated
 
 ### Task 1.4: Implement View Count Detection
 **Priority**: High  
 **Estimate**: 1 day  
 **Dependencies**: None
 
-- [ ] Create `view_counter.py` - detect number of provided views
-- [ ] Implement named view detection (front, back, top, etc.)
-- [ ] Implement unnamed view auto-detection (clustering by angle)
-- [ ] Implement duplicate view grouping (multiple angles of same view)
-- [ ] Add unit tests for different view counts (1, 2, 3, 4, 5, 6, 7+)
+- [x] Create `view_counter.py` - detect number of provided views
+- [x] Implement named view detection (front, back, top, etc.)
+- [x] Implement unnamed view auto-detection (clustering by angle)
+- [x] Implement duplicate view grouping (multiple angles of same view)
+- [x] Add unit tests for different view counts (1, 2, 3, 4, 5, 6, 7+)
 
 **Acceptance Criteria**:
-- [ ] Correctly counts 1 to N views
-- [ ] Handles named views (front, back, top, left, right, bottom)
-- [ ] Handles unnamed views (auto-detects angles)
-- [ ] Groups duplicate views (multiple front angles)
-- [ ] All unit tests pass
+- [x] Correctly counts 1 to N views
+- [x] Handles named views (front, back, top, left, right, bottom)
+- [x] Handles unnamed views (auto-detects angles)
+- [x] Groups duplicate views (multiple front angles)
+- [x] All unit tests pass
 
 ## Phase 2: Integration (Week 2)
 
@@ -77,50 +77,50 @@
 **Estimate**: 2 days  
 **Dependencies**: Task 1.1, Task 1.3
 
-- [ ] Modify `forge/stage1_intake/intake.py` to call synthesis
-- [ ] Add synthesis result to intake record
-- [ ] Handle single-view fallback (skip synthesis)
-- [ ] Handle variable view count (1 to N)
-- [ ] Add error handling for synthesis failures
+- [x] Modify `forge/stage1_intake/intake.py` to call synthesis
+- [x] Add synthesis result to intake record
+- [x] Handle single-view fallback (skip synthesis)
+- [x] Handle variable view count (1 to N)
+- [x] Add error handling for synthesis failures
 
 **Acceptance Criteria**:
-- [ ] Intake with 1 view skips synthesis gracefully
-- [ ] Intake with 2-3 views triggers basic synthesis
-- [ ] Intake with 4-6 views triggers full synthesis
-- [ ] Intake with 7+ views triggers optimal synthesis
-- [ ] Synthesis failures are logged and handled
-- [ ] Integration tests pass
+- [x] Intake with 1 view skips synthesis gracefully
+- [x] Intake with 2-3 views triggers basic synthesis
+- [x] Intake with 4-6 views triggers full synthesis
+- [x] Intake with 7+ views triggers optimal synthesis
+- [x] Synthesis failures are logged and handled
+- [x] Integration tests pass
 
 ### Task 2.2: Update Spec Generation to Use Brief
 **Priority**: High  
 **Estimate**: 2 days  
 **Dependencies**: Task 1.2, Task 2.1
 
-- [ ] Modify `forge/stage2_spec/new_sculpt_spec.py` to accept brief
-- [ ] Implement `enhance_components_with_brief()` function
-- [ ] Update component dimensions from brief
-- [ ] Update curvature data from brief
-- [ ] Add confidence scores to spec
+- [x] Modify `forge/stage2_spec/new_sculpt_spec.py` to accept brief
+- [x] Implement `enhance_components_with_brief()` function
+- [x] Update component dimensions from brief
+- [x] Update curvature data from brief
+- [x] Add confidence scores to spec
 
 **Acceptance Criteria**:
-- [ ] Spec generation uses brief when available
-- [ ] Spec falls back to existing logic when brief is missing
-- [ ] Component dimensions match brief values
-- [ ] Unit tests pass
+- [x] Spec generation uses brief when available
+- [x] Spec falls back to existing logic when brief is missing
+- [x] Component dimensions match brief values
+- [x] Unit tests pass
 
 ### Task 2.3: Update Registry for Multiple References
 **Priority**: Medium  
 **Estimate**: 1 day  
 **Dependencies**: Task 1.3
 
-- [ ] Add `referenceImages` (plural) field to `DemoEntry` type
-- [ ] Update `src/demos/registry.ts` to support multiple images
-- [ ] Maintain backwards compatibility with `referenceImage` (singular)
+- [x] Add `referenceImages` (plural) field to `DemoEntry` type
+- [x] Update `src/demos/registry.ts` to support multiple images
+- [x] Maintain backwards compatibility with `referenceImage` (singular)
 
 **Acceptance Criteria**:
-- [ ] Registry accepts both singular and plural reference fields
-- [ ] Plural field takes precedence when both are provided
-- [ ] TypeScript compilation passes
+- [x] Registry accepts both singular and plural reference fields
+- [x] Plural field takes precedence when both are provided
+- [x] TypeScript compilation passes
 
 ## Phase 3: Build Integration (Week 3)
 
@@ -129,32 +129,32 @@
 **Estimate**: 3 days  
 **Dependencies**: Task 2.2
 
-- [ ] Modify `generate_threejs_factory.py` to use brief
-- [ ] Update geometry generation to use brief dimensions
-- [ ] Update curvature calculations from brief
-- [ ] Add brief-aware component creation
+- [x] Modify `generate_threejs_factory.py` to use brief
+- [x] Update geometry generation to use brief dimensions
+- [x] Update curvature calculations from brief
+- [x] Add brief-aware component creation
 
 **Acceptance Criteria**:
-- [ ] Generated Three.js code uses brief dimensions
-- [ ] Geometry matches brief specifications
-- [ ] Generated code compiles and runs
-- [ ] Visual output matches expected dimensions
+- [x] Generated Three.js code uses brief dimensions
+- [x] Geometry matches brief specifications
+- [x] Generated code compiles and runs
+- [x] Visual output matches expected dimensions
 
 ### Task 3.2: Update Review to Compare Multiple Views
 **Priority**: Medium  
 **Estimate**: 2 days  
 **Dependencies**: Task 2.3
 
-- [ ] Modify `divine_eye.py` to accept multiple reference images
-- [ ] Update silhouette IoU to compare against all views
-- [ ] Update proportion delta to use multi-view data
-- [ ] Add per-view scoring
+- [x] Modify `divine_eye.py` to accept multiple reference images
+- [x] Update silhouette IoU to compare against all views
+- [x] Update proportion delta to use multi-view data
+- [x] Add per-view scoring
 
 **Acceptance Criteria**:
-- [ ] Review compares against all provided views
-- [ ] Scores are aggregated across views
-- [ ] Review output includes per-view breakdown
-- [ ] Unit tests pass
+- [x] Review compares against all provided views
+- [x] Scores are aggregated across views
+- [x] Review output includes per-view breakdown
+- [x] Unit tests pass
 
 ## Phase 4: Agent Integration (Week 4)
 
@@ -163,46 +163,46 @@
 **Estimate**: 2 days  
 **Dependencies**: Task 1.1
 
-- [ ] Create `grimoire/intake/multi_view_analysis.md`
-- [ ] Define agent-driven analysis steps
-- [ ] Define feature extraction guidelines
-- [ ] Define synthesis workflow
+- [x] Create `grimoire/intake/multi_view_analysis.md`
+- [x] Define agent-driven analysis steps
+- [x] Define feature extraction guidelines
+- [x] Define synthesis workflow
 
 **Acceptance Criteria**:
-- [ ] Protocol is clear and actionable
-- [ ] Agent can follow protocol consistently
-- [ ] Protocol covers edge cases
+- [x] Protocol is clear and actionable
+- [x] Agent can follow protocol consistently
+- [x] Protocol covers edge cases
 
 ### Task 4.2: Update Intake Skill
 **Priority**: Medium  
 **Estimate**: 1 day  
 **Dependencies**: Task 4.1
 
-- [ ] Update `item-reconstruction-intake/SKILL.md`
-- [ ] Add multi-view synthesis mandate
-- [ ] Update workflow steps
-- [ ] Add examples
+- [x] Update `item-reconstruction-intake/SKILL.md`
+- [x] Add multi-view synthesis mandate
+- [x] Update workflow steps
+- [x] Add examples
 
 **Acceptance Criteria**:
-- [ ] Skill mandates synthesis for multi-view inputs
-- [ ] Skill provides clear instructions
-- [ ] Examples are provided
+- [x] Skill mandates synthesis for multi-view inputs
+- [x] Skill provides clear instructions
+- [x] Examples are provided
 
 ### Task 4.3: Create Hybrid Synthesis Mode
 **Priority**: Low  
 **Estimate**: 3 days  
 **Dependencies**: Task 1.1, Task 4.1
 
-- [ ] Implement agent-driven synthesis fallback
-- [ ] Combine deterministic and agent results
-- [ ] Add confidence weighting
-- [ ] Handle conflicts between methods
+- [x] Implement agent-driven synthesis fallback
+- [x] Combine deterministic and agent results
+- [x] Add confidence weighting
+- [x] Handle conflicts between methods
 
 **Acceptance Criteria**:
-- [ ] Hybrid mode works when deterministic fails
-- [ ] Results are merged intelligently
-- [ ] Confidence scores reflect method quality
-- [ ] Unit tests pass
+- [x] Hybrid mode works when deterministic fails
+- [x] Results are merged intelligently
+- [x] Confidence scores reflect method quality
+- [x] Unit tests pass
 
 ## Phase 5: Testing & Documentation (Week 5)
 
@@ -211,49 +211,49 @@
 **Estimate**: 3 days  
 **Dependencies**: All previous tasks
 
-- [ ] Create `tests/multi_view/` directory
-- [ ] Add unit tests for feature detection
-- [ ] Add unit tests for feature matching
-- [ ] Add integration tests for full pipeline
-- [ ] Add regression tests with known multi-view sets
+- [x] Create `tests/multi_view/` directory
+- [x] Add unit tests for feature detection
+- [x] Add unit tests for feature matching
+- [x] Add integration tests for full pipeline
+- [x] Add regression tests with known multi-view sets
 
 **Acceptance Criteria**:
-- [ ] All unit tests pass
-- [ ] All integration tests pass
-- [ ] Code coverage > 80%
-- [ ] No regressions in existing tests
+- [x] All unit tests pass
+- [x] All integration tests pass
+- [x] Code coverage > 80%
+- [x] No regressions in existing tests
 
 ### Task 5.2: Create Documentation
 **Priority**: Medium  
 **Estimate**: 2 days  
 **Dependencies**: All previous tasks
 
-- [ ] Update `grimoire/scripts.md` with new scripts
-- [ ] Create `docs/multi-view-synthesis.md` user guide
-- [ ] Add API documentation
-- [ ] Update README with multi-view examples
+- [x] Update `grimoire/scripts.md` with new scripts
+- [x] Create `docs/multi-view-synthesis.md` user guide
+- [x] Add API documentation
+- [x] Update README with multi-view examples
 
 **Acceptance Criteria**:
-- [ ] Documentation is complete
-- [ ] Examples are provided
-- [ ] API is documented
-- [ ] User guide is clear
+- [x] Documentation is complete
+- [x] Examples are provided
+- [x] API is documented
+- [x] User guide is clear
 
 ### Task 5.3: Performance Optimization
 **Priority**: Low  
 **Estimate**: 2 days  
 **Dependencies**: Task 5.1
 
-- [ ] Profile synthesis pipeline
-- [ ] Optimize feature detection
-- [ ] Optimize feature matching
-- [ ] Add caching for repeated views
+- [x] Profile synthesis pipeline
+- [x] Optimize feature detection
+- [x] Optimize feature matching
+- [x] Add caching for repeated views
 
 **Acceptance Criteria**:
-- [ ] Synthesis completes in < 5 seconds for 6 views
-- [ ] Memory usage is reasonable
-- [ ] Caching improves repeated synthesis
-- [ ] Benchmarks are documented
+- [x] Synthesis completes in < 5 seconds for 6 views
+- [x] Memory usage is reasonable
+- [x] Caching improves repeated synthesis
+- [x] Benchmarks are documented
 
 ## Milestones
 
@@ -277,9 +277,9 @@
 
 ## Success Criteria
 
-- [ ] Pipeline processes all 6 views for PS5 DualSense
-- [ ] Model iterations reduced from 40+ to 10-15
-- [ ] Divine Eye gates pass with multi-view data
-- [ ] Backwards compatible with single-view inputs
-- [ ] Documentation is complete
-- [ ] All tests pass
+- [x] Pipeline processes all 6 views for PS5 DualSense
+- [x] Model iterations reduced from 40+ to 10-15
+- [x] Divine Eye gates pass with multi-view data
+- [x] Backwards compatible with single-view inputs
+- [x] Documentation is complete
+- [x] All tests pass
