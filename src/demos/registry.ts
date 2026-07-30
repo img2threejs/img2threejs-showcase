@@ -1,5 +1,13 @@
 import * as THREE from 'three';
 import {
+  createVijayGhumeMiniDragonCharacterModel,
+  createVijayGhumeMiniDragonCharacterLookDevLights,
+} from './vijay-ghume-mini-dragon-character/createVijayGhumeMiniDragonCharacterModel';
+import {
+  REVIEW_VIEW_IDS,
+  reviewViewModelRotationY,
+} from './vijay-ghume-mini-dragon-character/reviewViewRotations';
+import {
   createM9DopplerModel,
   createM9DopplerLookDevLights,
   makeM9DopplerBackground,
@@ -43,6 +51,10 @@ import {
   createGlockGhostProtocolLookDevLights,
   makeGhostProtocolBackground,
 } from './glock-ghost-protocol/createGlockGhostProtocolModel';
+import {
+  createRegretKnightModel,
+  createRegretKnightLookDevLights,
+} from './regret-knight/createRegretKnightModel';
 
 export interface DemoEntry {
   /** route id, e.g. 'crown-chest' */
@@ -90,6 +102,97 @@ const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/hoainho/img2threejs-showcase/blob/main';
 
 export const demos: DemoEntry[] = [
+  {
+    id: 'regret-knight',
+    title: 'Regret — Chronobreak Knight (blockout)',
+    subjectClass: 'character',
+    blurb:
+      'A stylised anime knight rebuilt in code from Nguyễn Khoa’s ZENONIA: Chronobreak sculpt. ' +
+      'Proportions are measured from the grey-sculpt silhouette (6.78 head-units, short torso, ' +
+      'narrow shoulders, wide hips) and the contrapposto pose is driven by ten authored joint ' +
+      'angles through a real parent chain — not a flat part list. Blockout stage: 26 body ' +
+      'segments, no armour plating, hair or sword yet.',
+    referenceImage: `${BASE}references/regret-knight.jpg`,
+    sourcePath: 'src/demos/regret-knight/createRegretKnightModel.ts',
+    sourceUrl: `${REPO}/src/demos/regret-knight/createRegretKnightModel.ts`,
+    generatedWith: 'img2threejs v1.5 (character track, posed pivot hierarchy)',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'placeholder',
+    cameraPosition: [0.35, 1.15, 3.4],
+    cameraTarget: [0, 0.72, 0],
+    cameraFov: 34,
+    build: (scene) => {
+      const group = createRegretKnightModel();
+      scene.add(group);
+      scene.add(createRegretKnightLookDevLights('reference'));
+      return group;
+    },
+  },
+  {
+    id: 'vijay-ghume-mini-dragon-character',
+    title: 'Vijay Ghume Mini Dragon',
+    subjectClass: 'character',
+    blurb:
+      'A hovering mini dragon rebuilt in code from five admitted views — front, ' +
+      'front and rear three-quarter, side and rear. Organic anatomy is now authored as closed, ' +
+      'indexed semantic lofts with direct cross-section control instead of visible primitive scaffolds, driven by a real ' +
+      '42-bone THREE.SkinnedMesh rig with four normalized influences per body vertex. ' +
+      'The wings are subdivided skinned membranes; jaw, spars, cuffs, hooves, jewelry and ' +
+      'tail hardware are bone-owned attachments. The complete 30-map extraction bundle ' +
+      'remains attached as provenance evidence, while fitted procedural physical materials ' +
+      'avoid painting unrelated anatomy with crop seams. Hidden cross-sections remain inferred.',
+    referenceImage: `${BASE}references/vijay-ghume-mini-dragon-character.jpg`,
+    sourcePath: 'src/demos/vijay-ghume-mini-dragon-character/createVijayGhumeMiniDragonCharacterModel.ts',
+    sourceUrl: `${REPO}/src/demos/vijay-ghume-mini-dragon-character/createVijayGhumeMiniDragonCharacterModel.ts`,
+    generatedWith: 'v1.5 gates + semantic skinned Three.js rebuild',
+    author: 'hoainho',
+    authorUrl: 'https://github.com/hoainho',
+    // Keep placeholder until a human accepts the new multi-view visual match. Build,
+    // topology and rig gates passing are necessary but do not substitute for likeness.
+    status: 'placeholder',
+    // Capture mode derives framing from current geometry bounds; this camera is the
+    // regular interactive showcase view.
+    cameraPosition: [5.6, 1.8, 26.1],
+    cameraTarget: [0, -0.5, 0],
+    cameraFov: 35,
+    accent: '#c65c43',
+    backgroundGradient: { inner: '#2b1b2e', outer: '#0a0709' },
+    installLights: (scene) => {
+      scene.add(createVijayGhumeMiniDragonCharacterLookDevLights('reference'));
+    },
+    build: (scene) => {
+      const group = createVijayGhumeMiniDragonCharacterModel();
+      // `?view=` review angles are DERIVED from provenance/review-plan.json, never typed here.
+      // They used to be four hand-written literals (-PI/6, PI*0.72, -PI/2, PI) and they were wrong
+      // in both magnitude and sign: -30 against the plan's -35, 129.6 against 130, and rotating the
+      // MODEL by -theta presents the same face as moving the CAMERA to +theta, so the two
+      // three-quarter views were rendering the mirror of the reference they were named after. See
+      // reviewViewRotations.ts for the renders that settled the sign.
+      const reviewView = new URLSearchParams(window.location.search).get('view');
+      if (reviewView !== null) {
+        const rotationY = reviewViewModelRotationY(reviewView);
+        // A typo in ?view= used to silently show the default camera, which is the same failure this
+        // whole reconciliation is about: a frame you cannot name. Say so instead.
+        if (rotationY === null) {
+          const failure = {
+            code: 'INVALID_CAPTURE_VIEW',
+            view: reviewView,
+            expected: [...REVIEW_VIEW_IDS],
+          };
+          (window as unknown as Record<string, unknown>).__IMG2THREEJS_CAPTURE_FAILURE__ = failure;
+          throw new Error(
+            `[capture-failure:${failure.code}] unknown ?view=${reviewView}; `
+              + `expected one of ${REVIEW_VIEW_IDS.join(', ')}`,
+          );
+        } else {
+          group.rotation.y = rotationY;
+        }
+      }
+      scene.add(group);
+      return group;
+    },
+  },
   {
     id: 'glock-ghost-protocol',
     title: 'Glock-18 | Ghost Protocol (Well-Worn)',
