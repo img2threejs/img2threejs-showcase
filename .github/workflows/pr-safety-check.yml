@@ -7,25 +7,11 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: pr-safety-check-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
-
 jobs:
   check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - run: npm ci
-
-      - run: npm run build
-
-      - run: node scripts/check-showcase-safety.mjs --base "${{ github.base_ref }}"
+    # ci-workflows v1.0.0-initial
+    uses: img2threejs/ci-workflows/.github/workflows/node-quality.yml@66e4071913652d7ce9e0ad66709a5e4e66497e0d
+    with:
+      node-version: "20"
+      checkout-fetch-depth: "0"
+      post-build-check: showcase-safety

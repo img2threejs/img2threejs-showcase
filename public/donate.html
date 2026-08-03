@@ -162,15 +162,27 @@
       }
       .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
+      .support-row { display: flex; gap: .6rem; margin-top: 1.4rem; }
+      @media (max-width: 360px) { .support-row { flex-direction: column; } }
+
       .paypal {
         display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-        width: 100%; padding: .75rem 1.25rem; border-radius: 12px;
+        flex: 1 1 0; padding: .75rem 1rem; border-radius: 12px;
         font-weight: 700; font-size: .95rem; text-decoration: none;
         color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2));
         box-shadow: 0 10px 26px -10px var(--qr-shadow);
         transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease;
       }
       .paypal:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -10px var(--qr-shadow); }
+
+      .bmc {
+        flex: 1 1 0; display: flex; align-items: center; justify-content: center;
+        border-radius: 12px; background: #fff; padding: .35rem;
+        box-shadow: 0 10px 26px -10px var(--qr-shadow);
+        transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease;
+      }
+      .bmc:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -10px var(--qr-shadow); }
+      .bmc img { height: 44px; width: auto; max-width: 100%; display: block; }
 
       footer { margin-top: 2rem; font-family: var(--mono); font-size: .85rem; color: var(--muted); }
       footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
@@ -214,9 +226,14 @@
 
         <div class="divider"><span>or</span></div>
 
-        <a class="paypal" href="https://www.paypal.com/paypalme/NguyenHoai545" target="_blank" rel="noopener noreferrer">
-          Donate via PayPal
-        </a>
+        <div class="support-row">
+          <a class="paypal" href="https://www.paypal.com/paypalme/NguyenHoai545" target="_blank" rel="noopener noreferrer">
+            Donate via PayPal
+          </a>
+          <a class="bmc" href="https://www.buymeacoffee.com/hoainhowors" target="_blank" rel="noopener noreferrer">
+            <img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" alt="Buy Me a Coffee" />
+          </a>
+        </div>
       </section>
 
       <footer class="reveal d4">

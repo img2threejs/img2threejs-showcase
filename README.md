@@ -185,6 +185,15 @@ you rebuilt this weekend?
 - **`#wishlist`** — what categories people actually want next, beyond the current 14 exhibits
 - **`#i-made-a-thing`** — share models built with the skill, whether or not they ship to the gallery
 
+## Support the project
+
+img2threejs is free and open source. If the gallery or the underlying skill saved you time, consider
+supporting continued development:
+
+<a href="https://www.buymeacoffee.com/hoainhowors" target="_blank" rel="noopener noreferrer"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" alt="Buy Me a Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+VietQR / MoMo / PayPal also work — see the [donate page](https://hoainho.github.io/img2threejs-showcase/donate.html).
+
 ## Star History
 
 <a href="https://www.star-history.com/#hoainho/img2threejs-showcase&Timeline">
