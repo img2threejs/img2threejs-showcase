@@ -1,12 +1,16 @@
 import * as THREE from 'three';
 import {
-  createVijayGhumeMiniDragonCharacterModel,
-  createVijayGhumeMiniDragonCharacterLookDevLights,
-} from './vijay-ghume-mini-dragon-character/createVijayGhumeMiniDragonCharacterModel';
+  createLowPolyHumanoidLookDevLights,
+  createLowPolyHumanoidModel,
+} from './low-poly-humanoid/createLowPolyHumanoidModel';
 import {
-  REVIEW_VIEW_IDS,
-  reviewViewModelRotationY,
-} from './vijay-ghume-mini-dragon-character/reviewViewRotations';
+  createFacetRunnerLookDevLights,
+  createFacetRunnerModel,
+} from './facet-runner/createFacetRunnerModel';
+import {
+  createLowPolyHumanoidGlbReferenceModel,
+  LOW_POLY_HUMANOID_GLB_BOUNDS,
+} from './low-poly-humanoid/lowPolyHumanoidGlbReference';
 import {
   createM9DopplerModel,
   createM9DopplerLookDevLights,
@@ -52,9 +56,9 @@ import {
   makeGhostProtocolBackground,
 } from './glock-ghost-protocol/createGlockGhostProtocolModel';
 import {
-  createRegretKnightModel,
-  createRegretKnightLookDevLights,
-} from './regret-knight/createRegretKnightModel';
+  createElectricMouseMascotLookDevLights,
+  createElectricMouseMascotModel,
+} from './electric-mouse-mascot/createElectricMouseMascotModel';
 
 export interface DemoEntry {
   /** route id, e.g. 'crown-chest' */
@@ -68,6 +72,11 @@ export interface DemoEntry {
   sourcePath: string;
   sourceUrl: string;
   generatedWith: string;
+  /**
+   * The reconstruction prompt this demo was built from — the subject description handed to
+   * img2threejs, kept next to the result so the two can be read against each other.
+   */
+  prompt?: string;
   /** display name of whoever contributed this demo */
   author: string;
   /** link to the author's profile (GitHub, etc.) */
@@ -76,10 +85,25 @@ export interface DemoEntry {
   cameraPosition: [number, number, number];
   cameraTarget: [number, number, number];
   cameraFov: number;
+  /** Optional capture pose for references photographed away from the default side-on +Z view. */
+  captureCamera?: {
+    position: [number, number, number];
+    target: [number, number, number];
+    fov?: number;
+  };
+  /** Capture framing margin; stylized key art may intentionally crop a shoe tip. */
+  captureMargin?: number;
+  /** Fixed review bounds used when GLB and procedural routes must share one camera exactly. */
+  captureBounds?: {
+    size: [number, number, number];
+    center: [number, number, number];
+  };
   /** Optional per-demo accent (hex) — themes the panel to the object's signature colour. */
   accent?: string;
   /** Optional radial-gradient backdrop (inner→outer hex) for a themed hero stage. */
   backgroundGradient?: { inner: string; outer: string };
+  /** Optional capture-only backdrop when the supplied reference uses a studio plate. */
+  captureBackgroundGradient?: { inner: string; outer: string };
   /** ACES exposure (default 1.0); <1 = darker/moodier to match a low-key reference. */
   exposure?: number;
   /** Scene IBL intensity (default 1.0); <1 = less ambient fill. */
@@ -87,6 +111,10 @@ export interface DemoEntry {
   /** Tone-mapping operator (default 'aces'); 'agx' preserves saturated crimson/red a Ruby-Doppler
    * blade needs (ACES desaturates pure red toward pink/brown). */
   toneMapping?: 'aces' | 'agx' | 'neutral';
+  /** Optional bloom tuned for a demo's emissive identity feature. */
+  bloom?: { threshold?: number; strength?: number; radius?: number };
+  /** Frozen img2threejs render-profile.v2 artifact used by the review route. */
+  renderProfile?: string;
   /**
    * Installs this demo's own light rig. When provided, the Viewer SKIPS its
    * default studio rig — preventing the double-lighting (own rig + default rig)
@@ -103,92 +131,255 @@ const REPO = 'https://github.com/hoainho/img2threejs-showcase/blob/main';
 
 export const demos: DemoEntry[] = [
   {
-    id: 'regret-knight',
-    title: 'Regret — Chronobreak Knight (blockout)',
+    id: 'facet-runner',
+    title: 'Facet Runner — Low-Poly Android',
     subjectClass: 'character',
     blurb:
-      'A stylised anime knight rebuilt in code from Nguyễn Khoa’s ZENONIA: Chronobreak sculpt. ' +
-      'Proportions are measured from the grey-sculpt silhouette (6.78 head-units, short torso, ' +
-      'narrow shoulders, wide hips) and the contrapposto pose is driven by ten authored joint ' +
-      'angles through a real parent chain — not a flat part list. Blockout stage: 26 body ' +
-      'segments, no armour plating, hair or sword yet.',
-    referenceImage: `${BASE}references/regret-knight.jpg`,
-    sourcePath: 'src/demos/regret-knight/createRegretKnightModel.ts',
-    sourceUrl: `${REPO}/src/demos/regret-knight/createRegretKnightModel.ts`,
-    generatedWith: 'img2threejs v1.5 (character track, posed pivot hierarchy)',
-    author: 'Hoài Nhớ',
+      'A code-only procedural reconstruction of a young adult female humanoid android explorer: '
+      + 'faceted orange helmet and armor, smoked-cyan visor, graphite-navy composite body, '
+      + 'semantic joints, readable gloves and boots, and an action-ready humanoid rig.',
+    referenceImage: `${BASE}references/facet-runner-primary.png`,
+    sourcePath: 'src/demos/facet-runner/createFacetRunnerModel.ts',
+    sourceUrl: `${REPO}/src/demos/facet-runner/createFacetRunnerModel.ts`,
+    generatedWith: 'ImageGen + img2threejs v1.5 · code-only procedural refinement',
+    author: 'Codex local showcase',
     authorUrl: 'https://github.com/hoainho',
     status: 'placeholder',
-    cameraPosition: [0.35, 1.15, 3.4],
-    cameraTarget: [0, 0.72, 0],
-    cameraFov: 34,
+    cameraPosition: [6.8, 5.05, 14.95],
+    cameraTarget: [0, 3.65, 0],
+    cameraFov: 28,
+    captureCamera: {
+      position: [5.6, 3.75, 8.6],
+      target: [0, 3.65, 0],
+      fov: 24,
+    },
+    captureMargin: 1.08,
+    accent: '#55c7c1',
+    backgroundGradient: { inner: '#e7ebed', outer: '#9da7ad' },
+    captureBackgroundGradient: { inner: '#f2f3f3', outer: '#d7dadd' },
+    exposure: 0.86,
+    environmentIntensity: 0.42,
+    toneMapping: 'agx',
+    installLights: (scene) => {
+      scene.add(createFacetRunnerLookDevLights());
+    },
     build: (scene) => {
-      const group = createRegretKnightModel();
+      const group = createFacetRunnerModel({ castShadow: true, receiveShadow: true });
       scene.add(group);
-      scene.add(createRegretKnightLookDevLights('reference'));
       return group;
     },
   },
   {
-    id: 'vijay-ghume-mini-dragon-character',
-    title: 'Vijay Ghume Mini Dragon',
+    id: 'low-poly-humanoid-glb-baseline',
+    title: 'Low-Poly Humanoid — GLB Baseline',
     subjectClass: 'character',
     blurb:
-      'A hovering mini dragon rebuilt in code from five admitted views — front, ' +
-      'front and rear three-quarter, side and rear. Organic anatomy is now authored as closed, ' +
-      'indexed semantic lofts with direct cross-section control instead of visible primitive scaffolds, driven by a real ' +
-      '42-bone THREE.SkinnedMesh rig with four normalized influences per body vertex. ' +
-      'The wings are subdivided skinned membranes; jaw, spars, cuffs, hooves, jewelry and ' +
-      'tail hardware are bone-owned attachments. The complete 30-map extraction bundle ' +
-      'remains attached as provenance evidence, while fitted procedural physical materials ' +
-      'avoid painting unrelated anatomy with crop seams. Hidden cross-sections remain inferred.',
-    referenceImage: `${BASE}references/vijay-ghume-mini-dragon-character.jpg`,
-    sourcePath: 'src/demos/vijay-ghume-mini-dragon-character/createVijayGhumeMiniDragonCharacterModel.ts',
-    sourceUrl: `${REPO}/src/demos/vijay-ghume-mini-dragon-character/createVijayGhumeMiniDragonCharacterModel.ts`,
-    generatedWith: 'v1.5 gates + semantic skinned Three.js rebuild',
-    author: 'hoainho',
+      'A browser-rendered baseline for the supplied human_pbr.glb. The source asset is kept intact '
+      + 'for visual and multi-angle evidence; semantic part claims remain blocked because the GLB is one merged drawable.',
+    referenceImage: `${BASE}references/low-poly-humanoid-glb/humanoid.jpeg`,
+    sourcePath: 'src/demos/low-poly-humanoid/lowPolyHumanoidGlbReference.ts',
+    sourceUrl: `${REPO}/src/demos/low-poly-humanoid/lowPolyHumanoidGlbReference.ts`,
+    generatedWith: 'img2threejs v1.5 · GLB-mediated v2 browser baseline',
+    author: 'Codex local showcase',
     authorUrl: 'https://github.com/hoainho',
-    // Keep placeholder until a human accepts the new multi-view visual match. Build,
-    // topology and rig gates passing are necessary but do not substitute for likeness.
     status: 'placeholder',
-    // Capture mode derives framing from current geometry bounds; this camera is the
-    // regular interactive showcase view.
-    cameraPosition: [5.6, 1.8, 26.1],
-    cameraTarget: [0, -0.5, 0],
-    cameraFov: 35,
-    accent: '#c65c43',
-    backgroundGradient: { inner: '#2b1b2e', outer: '#0a0709' },
+    cameraPosition: [0, 3.25, 9.4],
+    cameraTarget: [0, 3.25, 0],
+    cameraFov: 31,
+    captureCamera: {
+      position: [0, 3.25, 9.4],
+      target: [0, 3.25, 0],
+      fov: 31,
+    },
+    captureMargin: 1.0,
+    captureBounds: {
+      size: [
+        LOW_POLY_HUMANOID_GLB_BOUNDS.size[0] * 3.8,
+        LOW_POLY_HUMANOID_GLB_BOUNDS.size[1] * 3.8,
+        LOW_POLY_HUMANOID_GLB_BOUNDS.size[2] * 3.8,
+      ],
+      center: [
+        LOW_POLY_HUMANOID_GLB_BOUNDS.center[0] * 3.8,
+        LOW_POLY_HUMANOID_GLB_BOUNDS.center[1] * 3.8,
+        LOW_POLY_HUMANOID_GLB_BOUNDS.center[2] * 3.8,
+      ],
+    },
+    accent: '#f2690c',
+    backgroundGradient: { inner: '#303030', outer: '#1d1d1d' },
+    captureBackgroundGradient: { inner: '#2b2b2b', outer: '#202020' },
+    exposure: 0.95,
+    environmentIntensity: 0.7,
+    toneMapping: 'aces',
+    renderProfile: 'artifacts/low-poly-humanoid-glb/render-profile.v2.json',
     installLights: (scene) => {
-      scene.add(createVijayGhumeMiniDragonCharacterLookDevLights('reference'));
+      scene.add(createLowPolyHumanoidLookDevLights('reference'));
     },
     build: (scene) => {
-      const group = createVijayGhumeMiniDragonCharacterModel();
-      // `?view=` review angles are DERIVED from provenance/review-plan.json, never typed here.
-      // They used to be four hand-written literals (-PI/6, PI*0.72, -PI/2, PI) and they were wrong
-      // in both magnitude and sign: -30 against the plan's -35, 129.6 against 130, and rotating the
-      // MODEL by -theta presents the same face as moving the CAMERA to +theta, so the two
-      // three-quarter views were rendering the mirror of the reference they were named after. See
-      // reviewViewRotations.ts for the renders that settled the sign.
-      const reviewView = new URLSearchParams(window.location.search).get('view');
-      if (reviewView !== null) {
-        const rotationY = reviewViewModelRotationY(reviewView);
-        // A typo in ?view= used to silently show the default camera, which is the same failure this
-        // whole reconciliation is about: a frame you cannot name. Say so instead.
-        if (rotationY === null) {
-          const failure = {
-            code: 'INVALID_CAPTURE_VIEW',
-            view: reviewView,
-            expected: [...REVIEW_VIEW_IDS],
-          };
-          (window as unknown as Record<string, unknown>).__IMG2THREEJS_CAPTURE_FAILURE__ = failure;
-          throw new Error(
-            `[capture-failure:${failure.code}] unknown ?view=${reviewView}; `
-              + `expected one of ${REVIEW_VIEW_IDS.join(', ')}`,
-          );
-        } else {
-          group.rotation.y = rotationY;
-        }
-      }
+      const group = createLowPolyHumanoidGlbReferenceModel();
+      scene.add(group);
+      return group;
+    },
+  },
+  {
+    id: 'low-poly-humanoid-glb-reference',
+    title: 'Low-Poly Humanoid — GLB-Fitted Procedural',
+    subjectClass: 'character',
+    blurb:
+      'An independent code-only procedural reconstruction reviewed against the separately rendered '
+      + 'human_pbr.glb baseline with the same camera, renderer, lights and multi-angle capture contract.',
+    referenceImage: `${BASE}references/low-poly-humanoid-glb/humanoid.jpeg`,
+    sourcePath: 'src/demos/low-poly-humanoid/createLowPolyHumanoidModel.ts',
+    sourceUrl: `${REPO}/src/demos/low-poly-humanoid/createLowPolyHumanoidModel.ts`,
+    generatedWith: 'img2threejs v1.5 · GLB-mediated v2 independent procedural factory',
+    author: 'Codex local showcase',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'placeholder',
+    cameraPosition: [0, 3.25, 9.4],
+    cameraTarget: [0, 3.25, 0],
+    cameraFov: 31,
+    captureCamera: {
+      position: [0, 3.25, 9.4],
+      target: [0, 3.25, 0],
+      fov: 31,
+    },
+    captureMargin: 1.0,
+    captureBounds: {
+      size: [
+        LOW_POLY_HUMANOID_GLB_BOUNDS.size[0] * 3.8,
+        LOW_POLY_HUMANOID_GLB_BOUNDS.size[1] * 3.8,
+        LOW_POLY_HUMANOID_GLB_BOUNDS.size[2] * 3.8,
+      ],
+      center: [
+        LOW_POLY_HUMANOID_GLB_BOUNDS.center[0] * 3.8,
+        LOW_POLY_HUMANOID_GLB_BOUNDS.center[1] * 3.8,
+        LOW_POLY_HUMANOID_GLB_BOUNDS.center[2] * 3.8,
+      ],
+    },
+    accent: '#f2690c',
+    backgroundGradient: { inner: '#303030', outer: '#1d1d1d' },
+    captureBackgroundGradient: { inner: '#2b2b2b', outer: '#202020' },
+    exposure: 0.95,
+    environmentIntensity: 0.7,
+    toneMapping: 'aces',
+    renderProfile: 'artifacts/low-poly-humanoid-glb/render-profile.v2.json',
+    installLights: (scene) => {
+      scene.add(createLowPolyHumanoidLookDevLights('reference'));
+    },
+    build: (scene) => {
+      const group = createLowPolyHumanoidModel({
+        castShadow: true,
+        receiveShadow: true,
+      });
+      group.userData.referenceWorkflow = {
+        route: 'procedural-factory',
+        referenceAsset: `${BASE}references/low-poly-humanoid-glb/human_pbr.glb`,
+        topologyCopiedIntoFactory: false,
+        importedMaterialsIntoFactory: false,
+        baselineRoute: 'low-poly-humanoid-glb-baseline',
+        admittedBounds: LOW_POLY_HUMANOID_GLB_BOUNDS,
+      };
+      scene.add(group);
+      return group;
+    },
+  },
+  {
+    id: 'low-poly-humanoid',
+    title: 'Low-Poly Humanoid',
+    subjectClass: 'character',
+    blurb:
+      'A code-only procedural reconstruction of the supplied frontal low-poly humanoid: a six-head-unit body, symmetric T-pose, angular swept hair, faceted face and torso, orange shorts, semantic joints, and an explodable clickable part hierarchy.',
+    referenceImage: `${BASE}references/low-poly-humanoid/reference.png`,
+    sourcePath: 'src/demos/low-poly-humanoid/createLowPolyHumanoidModel.ts',
+    sourceUrl: `${REPO}/src/demos/low-poly-humanoid/createLowPolyHumanoidModel.ts`,
+    generatedWith: 'img2threejs v1.4.4-beta.3 · character profile · code-only procedural low-poly track',
+    author: 'Codex local showcase',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'placeholder',
+    cameraPosition: [0, 3.25, 9.4],
+    cameraTarget: [0, 3.25, 0],
+    cameraFov: 31,
+    captureCamera: {
+      position: [0, 3.25, 9.4],
+      target: [0, 3.25, 0],
+      fov: 31,
+    },
+    captureMargin: 1.0,
+    accent: '#f2690c',
+    backgroundGradient: { inner: '#303030', outer: '#1d1d1d' },
+    captureBackgroundGradient: { inner: '#2b2b2b', outer: '#202020' },
+    exposure: 0.95,
+    environmentIntensity: 0.7,
+    toneMapping: 'aces',
+    installLights: (scene) => {
+      scene.add(createLowPolyHumanoidLookDevLights('reference'));
+    },
+    build: (scene) => {
+      const group = createLowPolyHumanoidModel({
+        castShadow: true,
+        receiveShadow: true,
+      });
+      scene.add(group);
+      return group;
+    },
+  },
+  {
+    id: 'electric-mouse-mascot',
+    title: 'Ăn mừng 10k star pikachu',
+    subjectClass: 'character',
+    blurb:
+      'A code-only procedural reconstruction of the supplied stylized yellow mascot reference, ' +
+      'staged as a 10k-star celebration: rounded capsule body, dark-tipped ears, open smiling ' +
+      'mouth, red cheeks, angular tail, and a speech bubble whose counter rolls up to 10K under ' +
+      'a lightning burst. Named semantic parts and lightweight animation controls throughout.',
+    referenceImage: `${BASE}references/electric-mouse-mascot/reference.png`,
+    sourcePath: 'src/demos/electric-mouse-mascot/createElectricMouseMascotModel.ts',
+    sourceUrl: `${REPO}/src/demos/electric-mouse-mascot/createElectricMouseMascotModel.ts`,
+    generatedWith: 'img2threejs v1.5-beta · procedural character track',
+    prompt:
+      'Rebuild the stylized yellow electric-mouse mascot in the reference image as a code-only '
+      + 'procedural Three.js character, then stage it celebrating 10,000 GitHub stars.\n\n'
+      + 'SUBJECT. One rounded capsule that reads as body and head at once (Body_Head_Main), with a '
+      + 'single soft belly crease rather than a waist seam. Two tall tapered ears with dark tips '
+      + '(Ear_L/Ear_R). Two round eyes with offset specular highlights (Eye_L/Eye_R, '
+      + 'EyeHighlight_L/EyeHighlight_R), a small dark nose, and an open smiling mouth built as an '
+      + 'outer lip, a dark inner cavity and a tongue (Mouth_Outer, Mouth_Inner, Tongue). Two red '
+      + 'circular cheek patches (Cheek_L/Cheek_R) sitting flush on the body curvature, not floating '
+      + 'above it. Short teardrop arms and feet (Arm_L/Arm_R, Foot_L/Foot_R). An angular '
+      + 'lightning-bolt tail with brown flank accents at its base, hung off its own pivot so it can '
+      + 'be animated independently (Tail_Pivot, Tail_Main, Tail_Accent, Tail_Accent_Flank_Upper/Lower).\n\n'
+      + 'CELEBRATION STAGING. A speech bubble beside the head (SpeechBubble_Optional, '
+      + 'SpeechBubble_Disc, SpeechBubble_Pointer) carrying a celebration star and a star-count label '
+      + 'that rolls 9.80K → 9.86K → 9.91K → 9.95K → 9.98K → 9.99K → 9,999 → 10K and then holds on '
+      + '10K (Star_10K_Label). On the hold, fire a lightning burst of bolts with an additive glow '
+      + 'around the star (Star_Lightning_Burst) plus a lightning aura on the character '
+      + '(Celebration_Lightning_Aura), keeping the silhouette readable — the burst must not wash the '
+      + 'mascot out.\n\n'
+      + 'CONSTRAINTS. No imported meshes: every surface is generated in TypeScript. Every part is '
+      + 'named and semantically addressable so the runtime can drive it. Materials are physical, lit '
+      + 'by one bespoke look-dev rig (createElectricMouseMascotLookDevLights) rather than a generic '
+      + 'studio rig. The belly crease and its contact shadow stay parametric — the values ship as '
+      + 'DEFAULT_ELECTRIC_MOUSE_BELLY_TUNE and are editable live through the shared tune panel.',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'placeholder',
+    cameraPosition: [2.60, 2.15, 9.20],
+    cameraTarget: [0, 1.35, 0],
+    cameraFov: 30,
+    accent: '#ffd51a',
+    backgroundGradient: { inner: '#ff8499', outer: '#ee5c7b' },
+    exposure: 0.95,
+    environmentIntensity: 0.48,
+    toneMapping: 'aces',
+    installLights: (scene) => {
+      scene.add(createElectricMouseMascotLookDevLights());
+    },
+    build: (scene) => {
+      const group = createElectricMouseMascotModel({ includeSpeechBubble: true });
+      const runtime = group.userData.electricMouseMascotRuntime as ReturnType<typeof createElectricMouseMascotModel>['userData']['electricMouseMascotRuntime'];
+      // The Belly Tune panel is not mounted yet — it ships in v1.5. The runtime still exposes
+      // getBellyTune/setBellyTune, so re-wiring it is a one-line change in
+      // ./electric-mouse-mascot/electricMouseBellyTunePanel.
+      group.userData.tick = (_dt: number, elapsed: number) => runtime.update(elapsed);
       scene.add(group);
       return group;
     },
