@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import type { PinnedCaptureCamera } from '../scene';
 import {
+  createStarshipSuperHeavyLookDevLights,
+  createStarshipSuperHeavyModel,
+} from './starship-super-heavy/createStarshipSuperHeavyModel';
+import {
   createM9DopplerModel,
   createM9DopplerLookDevLights,
   makeM9DopplerBackground,
@@ -144,6 +148,39 @@ const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
 export const demos: DemoEntry[] = [
+  {
+    id: 'starship-super-heavy',
+    title: 'Starship + Super Heavy',
+    subjectClass: 'object',
+    blurb:
+      'The complete Starship and Super Heavy stack rebuilt entirely from procedural geometry: ' +
+      'brushed stainless shells, a windward field of individually conformed hexagonal heat-shield ' +
+      'tiles, hinged flaps, lattice grid fins, tank-dome structure, and explicit seven- and ' +
+      'thirty-three-engine arrays. Live animation follows a safe three-stage separation route, ' +
+      'presents both vehicles side by side, then returns the upper stage to the stack.',
+    referenceImage: `${BASE}references/starship-super-heavy.webp`,
+    sourcePath: 'src/demos/starship-super-heavy/createStarshipSuperHeavyModel.ts',
+    sourceUrl: `${REPO}/src/demos/starship-super-heavy/createStarshipSuperHeavyModel.ts`,
+    generatedWith: 'img2threejs v1.2.0',
+    author: 'Jinliang Guo',
+    authorUrl: 'https://github.com/too-young-too-naive',
+    status: 'final',
+    cameraPosition: [5.6, 4.2, 14.8],
+    cameraTarget: [0.5, 3.8, 0],
+    cameraFov: 34,
+    accent: '#8da7c7',
+    backgroundGradient: { inner: '#10203a', outer: '#050a13' },
+    exposure: 1.15,
+    environmentIntensity: 0.55,
+    installLights: (scene) => {
+      scene.add(createStarshipSuperHeavyLookDevLights());
+    },
+    build: (scene) => {
+      const group = createStarshipSuperHeavyModel();
+      scene.add(group);
+      return group;
+    },
+  },
   {
     id: 'girl-character',
     title: 'Dual-Sword Warrior — TypeScript procedural surfaces',
