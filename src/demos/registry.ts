@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createLuxoraHotelModel } from './luxora-hotel/createLuxoraHotelModel';
 import type { PinnedCaptureCamera } from '../scene';
 import {
   createM9DopplerModel,
@@ -129,6 +130,33 @@ const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/hoainho/img2threejs-showcase/blob/main';
 
 export const demos: DemoEntry[] = [
+  {
+    id: 'luxora-hotel',
+    title: 'Luxora Low-Poly Hotel',
+    subjectClass: 'object',
+    blurb:
+      'A code-only low-poly hotel diorama with a central tower, layered façades, pool deck, cars, landscaping, and warm room lights. Every visible surface and prop is generated from Three.js primitives and procedural materials.',
+    referenceImage: `${BASE}references/luxora-hotel.jpg`,
+    sourcePath: 'src/demos/luxora-hotel/createLuxoraHotelModel.ts',
+    sourceUrl: `${REPO}/src/demos/luxora-hotel/createLuxoraHotelModel.ts`,
+    generatedWith: 'img2threejs v1.5.0 · procedural hotel diorama',
+    author: 'Faruq So',
+    authorUrl: 'https://github.com/faruqso',
+    status: 'final',
+    cameraPosition: [32, 26, 35],
+    cameraTarget: [0, 5.8, 0],
+    cameraFov: 34,
+    accent: '#b7d95a',
+    backgroundGradient: { inner: '#e9efe1', outer: '#b5c48b' },
+    exposure: 1,
+    environmentIntensity: 0.85,
+    toneMapping: 'aces',
+    build: (scene) => {
+      const group = createLuxoraHotelModel();
+      scene.add(group);
+      return group;
+    },
+  },
   {
     id: 'low-poly-humanoid',
     title: 'Low-Poly Humanoid — Rigged Character',
