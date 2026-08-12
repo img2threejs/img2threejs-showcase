@@ -136,9 +136,10 @@ export const demos: DemoEntry[] = [
     blurb:
       'A code-only procedural humanoid sculpted with broad low-poly cuts across the chest, back, '
       + 'abdomen, arms, hands, legs, feet, fingers and toes. Its articulated runtime includes '
-      + 'shoulder, elbow, wrist, finger, hip, knee, ankle, toe, eye and hair motion, deformable '
-      + 'shorts, continuous torso-to-shoulder joins, and nine panel-controlled actions: Run, Jump, '
-      + 'Kick, T-Pose Breathing, Fan Salute, Wave Left, Wave Right, Roundhouse and Dodge.',
+      + 'shoulder, elbow, wrist, per-phalanx finger, hip, knee, ankle, toe, eye and hair motion, '
+      + 'deformable shorts, continuous torso-to-shoulder joins, and ten panel-controlled actions: '
+      + 'Run, Jump, Kick, T-Pose Breathing, Fan Salute, Wave Left, Wave Right, Finger Articulation, '
+      + 'Roundhouse and Dodge.',
     referenceImage: `${BASE}references/low-poly-humanoid-glb/humanoid.jpeg`,
     sourcePath: 'src/demos/low-poly-humanoid/createLowPolyHumanoidModel.ts',
     sourceUrl: `${REPO}/src/demos/low-poly-humanoid/createLowPolyHumanoidModel.ts`,

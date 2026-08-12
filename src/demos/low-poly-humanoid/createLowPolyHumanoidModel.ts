@@ -14,8 +14,29 @@ export type LowPolyHumanoidAnimationName =
   | 'fan-salute'
   | 'wave-left'
   | 'wave-right'
+  | 'finger-articulation'
   | 'roundhouse'
   | 'dodge';
+
+export type LowPolyHumanoidSide = 'left' | 'right';
+export type LowPolyHumanoidFinger = 'index' | 'middle' | 'ring' | 'pinky';
+
+/** Anatomical finger angles in radians. Positive flexion closes the hand. */
+export type LowPolyFingerPose = {
+  metacarpalFlexion?: number;
+  mcpFlexion?: number;
+  pipFlexion?: number;
+  dipFlexion?: number;
+  abduction?: number;
+};
+
+/** Anatomical thumb angles in radians. Positive flexion closes across the palm. */
+export type LowPolyThumbPose = {
+  cmcFlexion?: number;
+  cmcAbduction?: number;
+  mcpFlexion?: number;
+  ipFlexion?: number;
+};
 
 export type LowPolyHumanoidAnimationController = {
   actions: ReadonlyArray<{
@@ -26,6 +47,13 @@ export type LowPolyHumanoidAnimationController = {
   readonly active: 'idle' | LowPolyHumanoidAnimationName;
   play: (name: LowPolyHumanoidAnimationName) => void;
   stop: () => void;
+  setFingerPose: (
+    side: LowPolyHumanoidSide,
+    finger: LowPolyHumanoidFinger,
+    pose: LowPolyFingerPose,
+  ) => void;
+  setThumbPose: (side: LowPolyHumanoidSide, pose: LowPolyThumbPose) => void;
+  clearHandPose: (side?: LowPolyHumanoidSide) => void;
   update: (dt: number) => void;
   subscribe: (listener: (active: 'idle' | LowPolyHumanoidAnimationName) => void) => () => void;
 };
@@ -3590,11 +3618,16 @@ function installLowPolyHumanoidAnimations(
     middle: THREE.Bone;
     distal: THREE.Bone;
   };
+  type ThumbRig = {
+    cmc: THREE.Bone;
+    mcp: THREE.Bone;
+    ip: THREE.Bone;
+  };
   type HandRig = {
     side: number;
     palm: THREE.Bone;
     fingers: FingerRig[];
-    thumb: [THREE.Bone, THREE.Bone, THREE.Bone];
+    thumb: ThumbRig;
   };
   const makeHandRig = (side: number, label: 'l' | 'r', wrist: THREE.Bone): HandRig => {
     const wristWorld: [number, number, number] = [side * 2.744, 4.786, -0.052];
@@ -3617,11 +3650,14 @@ function installLowPolyHumanoidAnimations(
         side * metacarpalAlong, distalStation.yCentre, centre,
       ];
       const rootWorld: [number, number, number] = [side * rootAlong, distalStation.yCentre, centre];
-      const midWorld: [number, number, number] = [
-        side * (rootAlong + finger.length * 0.38), distalStation.yCentre, centre,
+      // The procedural finger surface is authored with its PIP and DIP creases at 45.5% and
+      // 75.8% of digit length. Bone pivots must land on those same rings; the previous 38%/72%
+      // approximation bent through the middle of the proximal phalanx and missed the visible DIP.
+      const pipWorld: [number, number, number] = [
+        side * (rootAlong + finger.length * 0.455), distalStation.yCentre, centre,
       ];
-      const distalWorld: [number, number, number] = [
-        side * (rootAlong + finger.length * 0.72), distalStation.yCentre, centre,
+      const dipWorld: [number, number, number] = [
+        side * (rootAlong + finger.length * 0.758), distalStation.yCentre, centre,
       ];
       const metacarpal = makeBone(palm, `motion_${finger.id}_metacarpal_${label}`, [
         metacarpalWorld[0] - palmWorld[0], metacarpalWorld[1] - palmWorld[1],
@@ -3632,29 +3668,43 @@ function installLowPolyHumanoidAnimations(
         rootWorld[2] - metacarpalWorld[2],
       ], `${label}-${finger.id}-proximal`);
       const middle = makeBone(proximal, `motion_${finger.id}_middle_${label}`, [
-        midWorld[0] - rootWorld[0], midWorld[1] - rootWorld[1], midWorld[2] - rootWorld[2],
+        pipWorld[0] - rootWorld[0], pipWorld[1] - rootWorld[1], pipWorld[2] - rootWorld[2],
       ], `${label}-${finger.id}-middle`);
       const distal = makeBone(middle, `motion_${finger.id}_distal_${label}`, [
-        distalWorld[0] - midWorld[0], distalWorld[1] - midWorld[1], distalWorld[2] - midWorld[2],
+        dipWorld[0] - pipWorld[0], dipWorld[1] - pipWorld[1], dipWorld[2] - pipWorld[2],
       ], `${label}-${finger.id}-distal`);
+      metacarpal.userData.anatomicalJoint = 'carpometacarpal';
+      proximal.userData.anatomicalJoint = 'metacarpophalangeal';
+      middle.userData.anatomicalJoint = 'proximal-interphalangeal';
+      distal.userData.anatomicalJoint = 'distal-interphalangeal';
       return { id: finger.id, centre, rootAlong, length: finger.length,
         metacarpal, proximal, middle, distal };
     });
     const thumbRootWorld: [number, number, number] = [side * handThumb.rootX, handThumb.rootY, handThumb.rootZ];
     const thumbMidWorld: [number, number, number] = [side * handThumb.midX, handThumb.midY, handThumb.midZ];
     const thumbTipWorld: [number, number, number] = [side * handThumb.tipX, handThumb.tipY, handThumb.tipZ];
-    const thumbRoot = makeBone(palm, `motion_thumb_proximal_${label}`, [
+    // Human thumbs have CMC, MCP and IP pivots. The final pivot must sit before the fingertip so
+    // there is a distal phalanx for it to deform; placing a bone at the tip produced no visible IP bend.
+    const thumbIpWorld: [number, number, number] = [
+      thumbMidWorld[0] + (thumbTipWorld[0] - thumbMidWorld[0]) * 0.58,
+      thumbMidWorld[1] + (thumbTipWorld[1] - thumbMidWorld[1]) * 0.58,
+      thumbMidWorld[2] + (thumbTipWorld[2] - thumbMidWorld[2]) * 0.58,
+    ];
+    const thumbCmc = makeBone(palm, `motion_thumb_cmc_${label}`, [
       thumbRootWorld[0] - palmWorld[0], thumbRootWorld[1] - palmWorld[1], thumbRootWorld[2] - palmWorld[2],
-    ], `${label}-thumb-proximal`);
-    const thumbMid = makeBone(thumbRoot, `motion_thumb_middle_${label}`, [
+    ], `${label}-thumb-cmc`);
+    const thumbMcp = makeBone(thumbCmc, `motion_thumb_mcp_${label}`, [
       thumbMidWorld[0] - thumbRootWorld[0], thumbMidWorld[1] - thumbRootWorld[1],
       thumbMidWorld[2] - thumbRootWorld[2],
-    ], `${label}-thumb-middle`);
-    const thumbTip = makeBone(thumbMid, `motion_thumb_distal_${label}`, [
-      thumbTipWorld[0] - thumbMidWorld[0], thumbTipWorld[1] - thumbMidWorld[1],
-      thumbTipWorld[2] - thumbMidWorld[2],
-    ], `${label}-thumb-distal`);
-    return { side, palm, fingers, thumb: [thumbRoot, thumbMid, thumbTip] };
+    ], `${label}-thumb-mcp`);
+    const thumbIp = makeBone(thumbMcp, `motion_thumb_ip_${label}`, [
+      thumbIpWorld[0] - thumbMidWorld[0], thumbIpWorld[1] - thumbMidWorld[1],
+      thumbIpWorld[2] - thumbMidWorld[2],
+    ], `${label}-thumb-ip`);
+    thumbCmc.userData.anatomicalJoint = 'thumb-carpometacarpal';
+    thumbMcp.userData.anatomicalJoint = 'thumb-metacarpophalangeal';
+    thumbIp.userData.anatomicalJoint = 'thumb-interphalangeal';
+    return { side, palm, fingers, thumb: { cmc: thumbCmc, mcp: thumbMcp, ip: thumbIp } };
   };
   const handRigL = makeHandRig(-1, 'l', wristL);
   const handRigR = makeHandRig(1, 'r', wristR);
@@ -3718,11 +3768,11 @@ function installLowPolyHumanoidAnimations(
     handRigL.palm, ...handRigL.fingers.flatMap((finger) => [
       finger.metacarpal, finger.proximal, finger.middle, finger.distal,
     ]),
-    ...handRigL.thumb,
+    handRigL.thumb.cmc, handRigL.thumb.mcp, handRigL.thumb.ip,
     handRigR.palm, ...handRigR.fingers.flatMap((finger) => [
       finger.metacarpal, finger.proximal, finger.middle, finger.distal,
     ]),
-    ...handRigR.thumb,
+    handRigR.thumb.cmc, handRigR.thumb.mcp, handRigR.thumb.ip,
     footRigL.foot, ...footRigL.toes.flatMap((toe) => [toe.proximal, toe.distal]),
     footRigR.foot, ...footRigR.toes.flatMap((toe) => [toe.proximal, toe.distal]),
   ];
@@ -3853,11 +3903,15 @@ function installLowPolyHumanoidAnimations(
     const thumbRoot = handThumb.rootX;
     const thumbMid = handThumb.midX;
     const thumbTip = handThumb.tipX;
+    const thumbIp = thumbMid + (thumbTip - thumbMid) * 0.58;
     const isThumb = z > 0.025 && y < 4.75 && along > Math.min(2.70, thumbRoot);
     if (isThumb) {
-      if (along < thumbRoot) return blend(rig.palm, rig.thumb[0], (along - 2.70) / (thumbRoot - 2.70));
-      if (along < thumbMid) return blend(rig.thumb[0], rig.thumb[1], (along - thumbRoot) / (thumbMid - thumbRoot));
-      return blend(rig.thumb[1], rig.thumb[2], (along - thumbMid) / Math.max(0.001, thumbTip - thumbMid));
+      if (along < thumbRoot) return blend(rig.palm, rig.thumb.cmc, (along - 2.70) / (thumbRoot - 2.70));
+      if (along < thumbMid) return blend(rig.thumb.cmc, rig.thumb.mcp,
+        (along - thumbRoot) / (thumbMid - thumbRoot));
+      if (along < thumbIp) return blend(rig.thumb.mcp, rig.thumb.ip,
+        (along - thumbMid) / Math.max(0.001, thumbIp - thumbMid));
+      return [[rig.thumb.ip, 1]];
     }
     const palmStart = handStations[0].x;
     const fingerRoot = handStations[handStations.length - 1].x;
@@ -3875,9 +3929,14 @@ function installLowPolyHumanoidAnimations(
         (along - metacarpalStart) / Math.max(0.001, fingerRoot - 0.025 - metacarpalStart));
     }
     const t = clamp01((along - finger.rootAlong) / Math.max(0.001, finger.length));
-    if (t < 0.16) return blend(finger.metacarpal, finger.proximal, t / 0.16);
-    if (t < 0.54) return blend(finger.proximal, finger.middle, (t - 0.16) / 0.38);
-    return blend(finger.middle, finger.distal, (t - 0.54) / 0.46);
+    // Centre each transition over its anatomical crease instead of assigning a long region to the
+    // next bone. This leaves broad rigid phalanges and short, soft joint bands.
+    if (t < 0.10) return blend(finger.metacarpal, finger.proximal, t / 0.10);
+    if (t < 0.405) return [[finger.proximal, 1]];
+    if (t < 0.505) return blend(finger.proximal, finger.middle, (t - 0.405) / 0.10);
+    if (t < 0.708) return [[finger.middle, 1]];
+    if (t < 0.808) return blend(finger.middle, finger.distal, (t - 0.708) / 0.10);
+    return [[finger.distal, 1]];
   };
   convertToSkinned('hand-l', handWeights(handRigL));
   convertToSkinned('hand-r', handWeights(handRigR));
@@ -3956,6 +4015,39 @@ function installLowPolyHumanoidAnimations(
   const eyeR = runtime.nodes['eye-r'];
   if (!eyeL || !eyeR) throw new Error('Eye pivots must exist before installing the animation rig');
 
+  const fingerLimits = {
+    metacarpalFlexion: [-0.18, 0.30],
+    mcpFlexion: [-0.28, 1.57],
+    pipFlexion: [0, 1.92],
+    dipFlexion: [0, 1.40],
+    abduction: [-0.32, 0.32],
+  } as const;
+  const thumbLimits = {
+    cmcFlexion: [-0.35, 0.95],
+    cmcAbduction: [-0.55, 0.75],
+    mcpFlexion: [-0.15, 1.18],
+    ipFlexion: [-0.15, 1.40],
+  } as const;
+  const clampJoint = (value: number | undefined, range: readonly [number, number]): number =>
+    Math.max(range[0], Math.min(range[1], value ?? 0));
+  const handRigFor = (side: LowPolyHumanoidSide): HandRig =>
+    side === 'left' ? handRigL : handRigR;
+  const fingerRigFor = (side: LowPolyHumanoidSide, finger: LowPolyHumanoidFinger): FingerRig => {
+    const rig = handRigFor(side).fingers.find((candidate) => candidate.id === finger);
+    if (!rig) throw new Error(`Missing ${side} ${finger} finger rig`);
+    return rig;
+  };
+
+  // Anatomical metadata is public so exporters and future animation tools can discover the chains
+  // without depending on implementation-only variable names.
+  root.userData.handRig = {
+    convention: '+Y up, +Z front, character-left +X',
+    fingers: ['index', 'middle', 'ring', 'pinky'],
+    fingerChain: ['metacarpal', 'mcp', 'pip', 'dip'],
+    thumbChain: ['cmc', 'mcp', 'ip'],
+    limitsRadians: { fingers: fingerLimits, thumb: thumbLimits },
+  };
+
   const appendFingerCurl = (
     tracks: THREE.KeyframeTrack[],
     rig: HandRig,
@@ -3978,10 +4070,10 @@ function installLowPolyHumanoidAnimations(
       tracks.push(track(finger.middle, 'rotation[z]', times, values.map((v) => v * direction * 1.08)));
       tracks.push(track(finger.distal, 'rotation[z]', times, values.map((v) => v * direction * 0.92)));
     }
-    tracks.push(track(rig.thumb[0], 'rotation[z]', times, values.map((v) => v * direction * 0.42)));
-    tracks.push(track(rig.thumb[1], 'rotation[z]', times, values.map((v) => v * direction * 0.68)));
-    tracks.push(track(rig.thumb[2], 'rotation[z]', times, values.map((v) => v * direction * 0.54)));
-    for (const thumbBone of rig.thumb) {
+    tracks.push(track(rig.thumb.cmc, 'rotation[z]', times, values.map((v) => v * direction * 0.42)));
+    tracks.push(track(rig.thumb.mcp, 'rotation[z]', times, values.map((v) => v * direction * 0.68)));
+    tracks.push(track(rig.thumb.ip, 'rotation[z]', times, values.map((v) => v * direction * 0.54)));
+    for (const thumbBone of [rig.thumb.cmc, rig.thumb.mcp, rig.thumb.ip]) {
       tracks.push(track(thumbBone, 'scale[x]', times, ones));
       tracks.push(track(thumbBone, 'scale[y]', times, ones));
       tracks.push(track(thumbBone, 'scale[z]', times, ones));
@@ -3999,7 +4091,7 @@ function installLowPolyHumanoidAnimations(
       ...rig.fingers.flatMap((finger) => [
         finger.metacarpal, finger.proximal, finger.middle, finger.distal,
       ]),
-      ...rig.thumb,
+      rig.thumb.cmc, rig.thumb.mcp, rig.thumb.ip,
     ];
     for (const joint of handChain) {
       tracks.push(track(joint, 'rotation[x]', times, zeros));
@@ -4020,12 +4112,12 @@ function installLowPolyHumanoidAnimations(
       ...handRigL.fingers.flatMap((finger) => [
         finger.metacarpal, finger.proximal, finger.middle, finger.distal,
       ]),
-      ...handRigL.thumb,
+      handRigL.thumb.cmc, handRigL.thumb.mcp, handRigL.thumb.ip,
       armAnchorR, armR, armTwistR, elbowR, wristR, handRigR.palm,
       ...handRigR.fingers.flatMap((finger) => [
         finger.metacarpal, finger.proximal, finger.middle, finger.distal,
       ]),
-      ...handRigR.thumb,
+      handRigR.thumb.cmc, handRigR.thumb.mcp, handRigR.thumb.ip,
     ];
     for (const joint of armChain) {
       tracks.push(track(joint, 'rotation[x]', times, zeros));
@@ -4268,6 +4360,58 @@ function installLowPolyHumanoidAnimations(
   appendOpenHand(waveRightTracks, handRigR, waveRightTimes);
   appendEyeLook(waveRightTracks, waveRightTimes, [0, 0.003, 0.005, 0.003, 0.005, 0.003, 0.001, 0], [0, 0.001, 0.002, 0.001, 0.002, 0.001, 0, 0]);
 
+  // Diagnostic-friendly anatomical hand cycle. Each digit closes on a phase offset and each
+  // phalanx has its own curve, making it obvious when an MCP/PIP/DIP pivot or skin band is wrong.
+  const fingerArticulationTimes = [0, 0.32, 0.64, 0.96, 1.28, 1.60, 1.92, 2.24];
+  const fingerArticulationTracks: THREE.KeyframeTrack[] = [];
+  const fingerArticulationZeros = fingerArticulationTimes.map(() => 0);
+  for (const joint of [
+    armAnchorL, armL, armTwistL, elbowL, wristL, handRigL.palm,
+    armAnchorR, armR, armTwistR, elbowR, wristR, handRigR.palm,
+  ]) {
+    fingerArticulationTracks.push(track(joint, 'rotation[x]', fingerArticulationTimes,
+      fingerArticulationZeros));
+    fingerArticulationTracks.push(track(joint, 'rotation[y]', fingerArticulationTimes,
+      fingerArticulationZeros));
+    fingerArticulationTracks.push(track(joint, 'rotation[z]', fingerArticulationTimes,
+      fingerArticulationZeros));
+  }
+  const appendFingerWave = (rig: HandRig): void => {
+    const direction = -rig.side;
+    rig.fingers.forEach((finger, index) => {
+      const phase = index * 0.32;
+      const pulse = fingerArticulationTimes.map((time) => {
+        const local = Math.max(0, Math.min(1, (time - phase) / 0.64));
+        return Math.sin(local * Math.PI);
+      });
+      fingerArticulationTracks.push(track(finger.metacarpal, 'rotation[z]', fingerArticulationTimes,
+        pulse.map((value) => value * direction * 0.12)));
+      fingerArticulationTracks.push(track(finger.proximal, 'rotation[z]', fingerArticulationTimes,
+        pulse.map((value) => value * direction * 0.92)));
+      fingerArticulationTracks.push(track(finger.middle, 'rotation[z]', fingerArticulationTimes,
+        pulse.map((value) => value * direction * 1.18)));
+      fingerArticulationTracks.push(track(finger.distal, 'rotation[z]', fingerArticulationTimes,
+        pulse.map((value) => value * direction * 0.82)));
+    });
+    const thumbPulse = fingerArticulationTimes.map((time) => {
+      const local = Math.max(0, Math.min(1, (time - 1.28) / 0.64));
+      return Math.sin(local * Math.PI);
+    });
+    fingerArticulationTracks.push(track(rig.thumb.cmc, 'rotation[z]', fingerArticulationTimes,
+      thumbPulse.map((value) => value * direction * 0.45)));
+    fingerArticulationTracks.push(track(rig.thumb.cmc, 'rotation[y]', fingerArticulationTimes,
+      thumbPulse.map((value) => value * direction * 0.28)));
+    fingerArticulationTracks.push(track(rig.thumb.mcp, 'rotation[z]', fingerArticulationTimes,
+      thumbPulse.map((value) => value * direction * 0.72)));
+    fingerArticulationTracks.push(track(rig.thumb.ip, 'rotation[z]', fingerArticulationTimes,
+      thumbPulse.map((value) => value * direction * 0.66)));
+  };
+  appendFingerWave(handRigL);
+  appendFingerWave(handRigR);
+  appendEyeLook(fingerArticulationTracks, fingerArticulationTimes,
+    [0, -0.001, -0.002, -0.001, 0.001, 0.002, 0.001, 0],
+    [0, 0.001, 0.002, 0.001, 0, 0.001, 0, 0]);
+
   const roundhouseTimes = [0, 0.16, 0.36, 0.56, 0.82, 1.16];
   const roundhouseTracks: THREE.KeyframeTrack[] = [
     track(motionRoot, 'position[y]', roundhouseTimes, [0, -0.04, 0.08, 0.15, 0.03, 0]),
@@ -4341,6 +4485,9 @@ function installLowPolyHumanoidAnimations(
     'fan-salute': new THREE.AnimationClip('Fan Salute', 1.6, saluteTracks),
     'wave-left': new THREE.AnimationClip('Wave Left', 1.40, waveLeftTracks),
     'wave-right': new THREE.AnimationClip('Wave Right', 1.40, waveRightTracks),
+    'finger-articulation': new THREE.AnimationClip(
+      'Finger Articulation', 2.24, fingerArticulationTracks,
+    ),
     roundhouse: new THREE.AnimationClip('Roundhouse', 1.16, roundhouseTracks),
     dodge: new THREE.AnimationClip('Dodge', 0.78, dodgeTracks),
   };
@@ -4354,6 +4501,7 @@ function installLowPolyHumanoidAnimations(
     'fan-salute': mixer.clipAction(clips['fan-salute']),
     'wave-left': mixer.clipAction(clips['wave-left']),
     'wave-right': mixer.clipAction(clips['wave-right']),
+    'finger-articulation': mixer.clipAction(clips['finger-articulation']),
     roundhouse: mixer.clipAction(clips.roundhouse),
     dodge: mixer.clipAction(clips.dodge),
   };
@@ -4361,6 +4509,7 @@ function installLowPolyHumanoidAnimations(
   actions.run.setLoop(THREE.LoopRepeat, Infinity);
   actions['t-pose-breathing'].setLoop(THREE.LoopRepeat, Infinity);
   actions['fan-salute'].setLoop(THREE.LoopRepeat, Infinity);
+  actions['finger-articulation'].setLoop(THREE.LoopRepeat, Infinity);
   const oneShotNames = ['jump', 'kick', 'wave-left', 'wave-right', 'roundhouse', 'dodge'] as const;
   for (const name of oneShotNames) {
     actions[name].setLoop(THREE.LoopOnce, 1).setEffectiveTimeScale(1);
@@ -4406,12 +4555,48 @@ function installLowPolyHumanoidAnimations(
       { id: 'fan-salute', label: 'Fan Salute', loop: true },
       { id: 'wave-left', label: 'Wave Left', loop: false },
       { id: 'wave-right', label: 'Wave Right', loop: false },
+      { id: 'finger-articulation', label: 'Finger Articulation', loop: true },
       { id: 'roundhouse', label: 'Roundhouse', loop: false },
       { id: 'dodge', label: 'Dodge', loop: false },
     ],
     get active() { return active; },
     play: (name) => transition(name),
     stop: () => transition('idle', 0.12),
+    setFingerPose: (side, finger, pose) => {
+      const hand = handRigFor(side);
+      const joint = fingerRigFor(side, finger);
+      const direction = -hand.side;
+      joint.metacarpal.rotation.z = direction * clampJoint(
+        pose.metacarpalFlexion, fingerLimits.metacarpalFlexion,
+      );
+      joint.proximal.rotation.z = direction * clampJoint(pose.mcpFlexion, fingerLimits.mcpFlexion);
+      joint.proximal.rotation.y = direction * clampJoint(pose.abduction, fingerLimits.abduction);
+      joint.middle.rotation.z = direction * clampJoint(pose.pipFlexion, fingerLimits.pipFlexion);
+      joint.distal.rotation.z = direction * clampJoint(pose.dipFlexion, fingerLimits.dipFlexion);
+    },
+    setThumbPose: (side, pose) => {
+      const hand = handRigFor(side);
+      const direction = -hand.side;
+      hand.thumb.cmc.rotation.z = direction * clampJoint(pose.cmcFlexion, thumbLimits.cmcFlexion);
+      hand.thumb.cmc.rotation.y = direction * clampJoint(pose.cmcAbduction, thumbLimits.cmcAbduction);
+      hand.thumb.mcp.rotation.z = direction * clampJoint(pose.mcpFlexion, thumbLimits.mcpFlexion);
+      hand.thumb.ip.rotation.z = direction * clampJoint(pose.ipFlexion, thumbLimits.ipFlexion);
+    },
+    clearHandPose: (side) => {
+      const hands = side ? [handRigFor(side)] : [handRigL, handRigR];
+      for (const hand of hands) {
+        hand.palm.rotation.set(0, 0, 0);
+        for (const finger of hand.fingers) {
+          finger.metacarpal.rotation.set(0, 0, 0);
+          finger.proximal.rotation.set(0, 0, 0);
+          finger.middle.rotation.set(0, 0, 0);
+          finger.distal.rotation.set(0, 0, 0);
+        }
+        hand.thumb.cmc.rotation.set(0, 0, 0);
+        hand.thumb.mcp.rotation.set(0, 0, 0);
+        hand.thumb.ip.rotation.set(0, 0, 0);
+      }
+    },
     update: (dt) => {
       const safeDt = Math.min(0.05, Math.max(0, dt));
       mixer.update(safeDt);
