@@ -15,6 +15,7 @@ export type LowPolyHumanoidAnimationName =
   | 'wave-left'
   | 'wave-right'
   | 'finger-articulation'
+  | 'closed-fist'
   | 'roundhouse'
   | 'dodge';
 
@@ -28,6 +29,8 @@ export type LowPolyFingerPose = {
   pipFlexion?: number;
   dipFlexion?: number;
   abduction?: number;
+  /** 0..1 compression strength; full compression shortens the curled chain by about 17%. */
+  compression?: number;
 };
 
 /** Anatomical thumb angles in radians. Positive flexion closes across the palm. */
@@ -36,6 +39,8 @@ export type LowPolyThumbPose = {
   cmcAbduction?: number;
   mcpFlexion?: number;
   ipFlexion?: number;
+  /** 0..1 compression strength; full compression shortens the thumb chain by about 14%. */
+  compression?: number;
 };
 
 export type LowPolyHumanoidAnimationController = {
@@ -4021,12 +4026,14 @@ function installLowPolyHumanoidAnimations(
     pipFlexion: [0, 1.92],
     dipFlexion: [0, 1.40],
     abduction: [-0.32, 0.32],
+    compression: [0, 1],
   } as const;
   const thumbLimits = {
     cmcFlexion: [-0.35, 0.95],
     cmcAbduction: [-0.55, 0.75],
     mcpFlexion: [-0.15, 1.18],
     ipFlexion: [-0.15, 1.40],
+    compression: [0, 1],
   } as const;
   const clampJoint = (value: number | undefined, range: readonly [number, number]): number =>
     Math.max(range[0], Math.min(range[1], value ?? 0));
@@ -4036,6 +4043,22 @@ function installLowPolyHumanoidAnimations(
     const rig = handRigFor(side).fingers.find((candidate) => candidate.id === finger);
     if (!rig) throw new Error(`Missing ${side} ${finger} finger rig`);
     return rig;
+  };
+  const applyFingerCompression = (joint: FingerRig, amount: number): void => {
+    const compression = clampJoint(amount, fingerLimits.compression);
+    // Bone X scale shortens every downstream segment in this T-pose hand. The distribution keeps
+    // the knuckle block large and spends most shortening near the fingertip, where palm penetration
+    // occurs. Y/Z expand slightly so compressed skin reads as volume instead of a uniformly tiny digit.
+    joint.metacarpal.scale.set(1 - compression * 0.02, 1 + compression * 0.018, 1 + compression * 0.018);
+    joint.proximal.scale.set(1 - compression * 0.04, 1 + compression * 0.022, 1 + compression * 0.022);
+    joint.middle.scale.set(1 - compression * 0.055, 1 + compression * 0.026, 1 + compression * 0.026);
+    joint.distal.scale.set(1 - compression * 0.065, 1 + compression * 0.030, 1 + compression * 0.030);
+  };
+  const applyThumbCompression = (rig: ThumbRig, amount: number): void => {
+    const compression = clampJoint(amount, thumbLimits.compression);
+    rig.cmc.scale.set(1 - compression * 0.03, 1 + compression * 0.018, 1 + compression * 0.018);
+    rig.mcp.scale.set(1 - compression * 0.05, 1 + compression * 0.022, 1 + compression * 0.022);
+    rig.ip.scale.set(1 - compression * 0.06, 1 + compression * 0.026, 1 + compression * 0.026);
   };
 
   // Anatomical metadata is public so exporters and future animation tools can discover the chains
@@ -4066,9 +4089,9 @@ function installLowPolyHumanoidAnimations(
       tracks.push(track(finger.metacarpal, 'scale[x]', times, ones));
       tracks.push(track(finger.metacarpal, 'scale[y]', times, ones));
       tracks.push(track(finger.metacarpal, 'scale[z]', times, ones));
-      tracks.push(track(finger.proximal, 'rotation[z]', times, values.map((v) => v * direction * 0.82)));
-      tracks.push(track(finger.middle, 'rotation[z]', times, values.map((v) => v * direction * 1.08)));
-      tracks.push(track(finger.distal, 'rotation[z]', times, values.map((v) => v * direction * 0.92)));
+      tracks.push(track(finger.proximal, 'rotation[y]', times, values.map((v) => v * direction * 0.82)));
+      tracks.push(track(finger.middle, 'rotation[y]', times, values.map((v) => v * direction * 1.08)));
+      tracks.push(track(finger.distal, 'rotation[y]', times, values.map((v) => v * direction * 0.92)));
     }
     tracks.push(track(rig.thumb.cmc, 'rotation[z]', times, values.map((v) => v * direction * 0.42)));
     tracks.push(track(rig.thumb.mcp, 'rotation[z]', times, values.map((v) => v * direction * 0.68)));
@@ -4384,13 +4407,13 @@ function installLowPolyHumanoidAnimations(
         const local = Math.max(0, Math.min(1, (time - phase) / 0.64));
         return Math.sin(local * Math.PI);
       });
-      fingerArticulationTracks.push(track(finger.metacarpal, 'rotation[z]', fingerArticulationTimes,
+      fingerArticulationTracks.push(track(finger.metacarpal, 'rotation[y]', fingerArticulationTimes,
         pulse.map((value) => value * direction * 0.12)));
-      fingerArticulationTracks.push(track(finger.proximal, 'rotation[z]', fingerArticulationTimes,
+      fingerArticulationTracks.push(track(finger.proximal, 'rotation[y]', fingerArticulationTimes,
         pulse.map((value) => value * direction * 0.92)));
-      fingerArticulationTracks.push(track(finger.middle, 'rotation[z]', fingerArticulationTimes,
+      fingerArticulationTracks.push(track(finger.middle, 'rotation[y]', fingerArticulationTimes,
         pulse.map((value) => value * direction * 1.18)));
-      fingerArticulationTracks.push(track(finger.distal, 'rotation[z]', fingerArticulationTimes,
+      fingerArticulationTracks.push(track(finger.distal, 'rotation[y]', fingerArticulationTimes,
         pulse.map((value) => value * direction * 0.82)));
     });
     const thumbPulse = fingerArticulationTimes.map((time) => {
@@ -4411,6 +4434,82 @@ function installLowPolyHumanoidAnimations(
   appendEyeLook(fingerArticulationTracks, fingerArticulationTimes,
     [0, -0.001, -0.002, -0.001, 0.001, 0.002, 0.001, 0],
     [0, 0.001, 0.002, 0.001, 0, 0.001, 0, 0]);
+
+  // Reference-style closed fist. Digit-specific flexion forms the knuckle arc; scale[x] shortens
+  // the downstream chain while a small scale[y/z] gain preserves compressed soft-tissue volume.
+  // Pinky/ring compress most because their tips otherwise travel deepest into the palm.
+  const closedFistTimes = [0, 0.28, 0.62, 0.94, 1.24];
+  const closedFistTracks: THREE.KeyframeTrack[] = [];
+  const closedFistZeros = closedFistTimes.map(() => 0);
+  for (const joint of [
+    armAnchorL, armL, armTwistL, elbowL, wristL, handRigL.palm,
+    armAnchorR, armR, armTwistR, elbowR, wristR, handRigR.palm,
+  ]) {
+    closedFistTracks.push(track(joint, 'rotation[x]', closedFistTimes, closedFistZeros));
+    closedFistTracks.push(track(joint, 'rotation[y]', closedFistTimes, closedFistZeros));
+    closedFistTracks.push(track(joint, 'rotation[z]', closedFistTimes, closedFistZeros));
+  }
+  const fistPoseByFinger: Record<string, {
+    metacarpal: number; mcp: number; pip: number; dip: number; compression: number;
+  }> = {
+    index: { metacarpal: 0.05, mcp: 1.26, pip: 1.62, dip: 1.02, compression: 0.72 },
+    middle: { metacarpal: 0.08, mcp: 1.34, pip: 1.72, dip: 1.10, compression: 0.78 },
+    ring: { metacarpal: 0.14, mcp: 1.42, pip: 1.80, dip: 1.18, compression: 0.90 },
+    pinky: { metacarpal: 0.20, mcp: 1.48, pip: 1.86, dip: 1.24, compression: 1.00 },
+  };
+  const fistProgress = [0, 0.36, 0.82, 1, 0];
+  const appendClosedFist = (rig: HandRig): void => {
+    const direction = -rig.side;
+    for (const finger of rig.fingers) {
+      const pose = fistPoseByFinger[finger.id];
+      const values = (amount: number): number[] => fistProgress.map((value) => value * amount);
+      closedFistTracks.push(track(finger.metacarpal, 'rotation[y]', closedFistTimes,
+        values(pose.metacarpal * direction)));
+      closedFistTracks.push(track(finger.proximal, 'rotation[y]', closedFistTimes,
+        values(pose.mcp * direction)));
+      closedFistTracks.push(track(finger.middle, 'rotation[y]', closedFistTimes,
+        values(pose.pip * direction)));
+      closedFistTracks.push(track(finger.distal, 'rotation[y]', closedFistTimes,
+        values(pose.dip * direction)));
+      const addCompressionTrack = (joint: THREE.Bone, axis: 'x' | 'y' | 'z', coefficient: number): void => {
+        closedFistTracks.push(track(joint, `scale[${axis}]`, closedFistTimes,
+          fistProgress.map((value) => axis === 'x'
+            ? 1 - value * pose.compression * coefficient
+            : 1 + value * pose.compression * coefficient)));
+      };
+      for (const [joint, coefficient] of [
+        [finger.metacarpal, 0.02], [finger.proximal, 0.04],
+        [finger.middle, 0.055], [finger.distal, 0.065],
+      ] as const) {
+        addCompressionTrack(joint, 'x', coefficient);
+        addCompressionTrack(joint, 'y', coefficient * 0.46);
+        addCompressionTrack(joint, 'z', coefficient * 0.46);
+      }
+    }
+    const thumbProgress = [0, 0.18, 0.70, 1, 0];
+    closedFistTracks.push(track(rig.thumb.cmc, 'rotation[z]', closedFistTimes,
+      thumbProgress.map((value) => value * direction * 0.68)));
+    closedFistTracks.push(track(rig.thumb.cmc, 'rotation[y]', closedFistTimes,
+      thumbProgress.map((value) => value * direction * 0.58)));
+    closedFistTracks.push(track(rig.thumb.mcp, 'rotation[z]', closedFistTimes,
+      thumbProgress.map((value) => value * direction * 0.84)));
+    closedFistTracks.push(track(rig.thumb.ip, 'rotation[z]', closedFistTimes,
+      thumbProgress.map((value) => value * direction * 0.66)));
+    for (const [joint, coefficient] of [
+      [rig.thumb.cmc, 0.03], [rig.thumb.mcp, 0.05], [rig.thumb.ip, 0.06],
+    ] as const) {
+      closedFistTracks.push(track(joint, 'scale[x]', closedFistTimes,
+        thumbProgress.map((value) => 1 - value * coefficient * 0.86)));
+      closedFistTracks.push(track(joint, 'scale[y]', closedFistTimes,
+        thumbProgress.map((value) => 1 + value * coefficient * 0.38)));
+      closedFistTracks.push(track(joint, 'scale[z]', closedFistTimes,
+        thumbProgress.map((value) => 1 + value * coefficient * 0.38)));
+    }
+  };
+  appendClosedFist(handRigL);
+  appendClosedFist(handRigR);
+  appendEyeLook(closedFistTracks, closedFistTimes,
+    [0, 0.001, 0.002, 0.001, 0], [0, 0, 0.001, 0.001, 0]);
 
   const roundhouseTimes = [0, 0.16, 0.36, 0.56, 0.82, 1.16];
   const roundhouseTracks: THREE.KeyframeTrack[] = [
@@ -4488,6 +4587,7 @@ function installLowPolyHumanoidAnimations(
     'finger-articulation': new THREE.AnimationClip(
       'Finger Articulation', 2.24, fingerArticulationTracks,
     ),
+    'closed-fist': new THREE.AnimationClip('Closed Fist', 1.24, closedFistTracks),
     roundhouse: new THREE.AnimationClip('Roundhouse', 1.16, roundhouseTracks),
     dodge: new THREE.AnimationClip('Dodge', 0.78, dodgeTracks),
   };
@@ -4502,6 +4602,7 @@ function installLowPolyHumanoidAnimations(
     'wave-left': mixer.clipAction(clips['wave-left']),
     'wave-right': mixer.clipAction(clips['wave-right']),
     'finger-articulation': mixer.clipAction(clips['finger-articulation']),
+    'closed-fist': mixer.clipAction(clips['closed-fist']),
     roundhouse: mixer.clipAction(clips.roundhouse),
     dodge: mixer.clipAction(clips.dodge),
   };
@@ -4510,6 +4611,7 @@ function installLowPolyHumanoidAnimations(
   actions['t-pose-breathing'].setLoop(THREE.LoopRepeat, Infinity);
   actions['fan-salute'].setLoop(THREE.LoopRepeat, Infinity);
   actions['finger-articulation'].setLoop(THREE.LoopRepeat, Infinity);
+  actions['closed-fist'].setLoop(THREE.LoopRepeat, Infinity);
   const oneShotNames = ['jump', 'kick', 'wave-left', 'wave-right', 'roundhouse', 'dodge'] as const;
   for (const name of oneShotNames) {
     actions[name].setLoop(THREE.LoopOnce, 1).setEffectiveTimeScale(1);
@@ -4556,6 +4658,7 @@ function installLowPolyHumanoidAnimations(
       { id: 'wave-left', label: 'Wave Left', loop: false },
       { id: 'wave-right', label: 'Wave Right', loop: false },
       { id: 'finger-articulation', label: 'Finger Articulation', loop: true },
+      { id: 'closed-fist', label: 'Closed Fist', loop: true },
       { id: 'roundhouse', label: 'Roundhouse', loop: false },
       { id: 'dodge', label: 'Dodge', loop: false },
     ],
@@ -4566,13 +4669,14 @@ function installLowPolyHumanoidAnimations(
       const hand = handRigFor(side);
       const joint = fingerRigFor(side, finger);
       const direction = -hand.side;
-      joint.metacarpal.rotation.z = direction * clampJoint(
+      joint.metacarpal.rotation.y = direction * clampJoint(
         pose.metacarpalFlexion, fingerLimits.metacarpalFlexion,
       );
-      joint.proximal.rotation.z = direction * clampJoint(pose.mcpFlexion, fingerLimits.mcpFlexion);
-      joint.proximal.rotation.y = direction * clampJoint(pose.abduction, fingerLimits.abduction);
-      joint.middle.rotation.z = direction * clampJoint(pose.pipFlexion, fingerLimits.pipFlexion);
-      joint.distal.rotation.z = direction * clampJoint(pose.dipFlexion, fingerLimits.dipFlexion);
+      joint.proximal.rotation.y = direction * clampJoint(pose.mcpFlexion, fingerLimits.mcpFlexion);
+      joint.proximal.rotation.z = direction * clampJoint(pose.abduction, fingerLimits.abduction);
+      joint.middle.rotation.y = direction * clampJoint(pose.pipFlexion, fingerLimits.pipFlexion);
+      joint.distal.rotation.y = direction * clampJoint(pose.dipFlexion, fingerLimits.dipFlexion);
+      applyFingerCompression(joint, pose.compression ?? 0);
     },
     setThumbPose: (side, pose) => {
       const hand = handRigFor(side);
@@ -4581,6 +4685,7 @@ function installLowPolyHumanoidAnimations(
       hand.thumb.cmc.rotation.y = direction * clampJoint(pose.cmcAbduction, thumbLimits.cmcAbduction);
       hand.thumb.mcp.rotation.z = direction * clampJoint(pose.mcpFlexion, thumbLimits.mcpFlexion);
       hand.thumb.ip.rotation.z = direction * clampJoint(pose.ipFlexion, thumbLimits.ipFlexion);
+      applyThumbCompression(hand.thumb, pose.compression ?? 0);
     },
     clearHandPose: (side) => {
       const hands = side ? [handRigFor(side)] : [handRigL, handRigR];
