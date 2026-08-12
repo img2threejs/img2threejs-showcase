@@ -422,7 +422,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   }
 
   const explodeBtn = mount.querySelector<HTMLButtonElement>('#demo-explode');
-  if (explodeBtn && viewer.canExplode && !capture) {
+  if (explodeBtn && demo.enableExplode !== false && viewer.canExplode && !capture) {
     explodeBtn.hidden = false;
     let exploded = false;
     explodeBtn.addEventListener('click', () => {

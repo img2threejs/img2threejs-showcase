@@ -109,6 +109,8 @@ export interface DemoEntry {
   installLights?: (scene: THREE.Scene) => void;
   /** Adds the model (and any demo-specific lights) to the scene, returns the group. */
   build: (scene: THREE.Scene) => THREE.Group;
+  /** Whether this demo should offer the generic exploded-parts inspection view. */
+  enableExplode?: boolean;
   /** Optional deterministic capture framing margin for source plates with tight bounds. */
   captureMargin?: number;
   /** Optional vertical framing correction as a fraction of the measured subject bbox height. */
@@ -151,6 +153,7 @@ export const demos: DemoEntry[] = [
     exposure: 1,
     environmentIntensity: 0.85,
     toneMapping: 'aces',
+    enableExplode: false,
     build: (scene) => {
       const group = createLuxoraHotelModel();
       scene.add(group);
