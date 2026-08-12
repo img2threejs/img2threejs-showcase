@@ -300,6 +300,13 @@ export class Viewer {
    * keeps the demos with no naming at all still explodable.
    */
   private explodeUnits(): THREE.Object3D[] {
+    // Use the same selectable component tree exposed by the Parts inspector when
+    // one exists. Some procedural models intentionally mark every child mesh as
+    // integral detail (`explodeWithParent`) while the named component groups are
+    // still the correct units to separate.
+    if (!this.partList.length) this.buildPartList();
+    if (this.partList.length) return this.partList.map((part) => part.object);
+
     const units: THREE.Object3D[] = [];
     const seen = new Set<THREE.Object3D>();
     this.explodeRoot!.traverse((o) => {

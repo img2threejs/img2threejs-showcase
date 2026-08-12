@@ -16,6 +16,11 @@
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
+/* Hide capability-gated controls when a model does not publish the matching hook. */
+[hidden] {
+  display: none !important;
+}
+
 * {
   box-sizing: border-box;
 }
