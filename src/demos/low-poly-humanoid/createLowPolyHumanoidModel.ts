@@ -4555,10 +4555,40 @@ export function createLowPolyHumanoidModel(
   // out to their own clearance, so its quads are not planar; under flat shading each quad's two triangles
   // take different normals and the garment reads as diagonal static rather than as fabric. Smooth normals
   // let the FOLDS carry the shape instead of the triangulation.
-  const shorts = new THREE.MeshStandardMaterial({
-    color: clayCapture ? clayColor : palette.shorts,
+  // SHEEN IS THE ONLY WOVEN CUE A CODE-ONLY PIPELINE HAS. `MeshStandardMaterial` has no sheen at all,
+  // so until now the shorts carried no fabric cue whatsoever -- they were a diffuse orange solid whose
+  // only difference from plastic was its roughness. `MeshPhysicalMaterial` adds the Estevez & Kulla
+  // Charlie-distribution sheen lobe (lights_physical_pars_fragment.glsl.js:320,337) which is what puts
+  // a grazing rim on cloth.
+  //
+  // THREE NUMBERS HERE ARE ENGINE FACTS, NOT TASTE. Derivation:
+  // `img2threejs/grimoire/build/threejs_skin_and_cloth_materials.md`.
+  //
+  //   sheenColor is REQUIRED.  three's default is 0x000000 and the sheen term is `sheenColor * (D*V)`
+  //                            -- a multiply by black. `sheen: 0.7` alone contributes exactly zero.
+  //                            The tint is the LIGHT's, not the cloth's, so it is a warm off-white.
+  //
+  //   sheenRoughness 0.85.     Charlie distribution width. High for cotton/canvas: a broad soft rim.
+  //                            Dropping it toward 0.2 gives the satin rim this reference does not have,
+  //                            and on a sparse quad grid a tight rim lands on a few quads and reads as
+  //                            plastic.
+  //
+  //   color is COMPENSATED.    `sheenEnergyComp = 1.0 - 0.157 * max3(sheenColor)`, applied to the
+  //                            diffuse term (meshphysical.glsl.js:205). At sheen 0.70 x max3(#f2ece2)
+  //                            = 0.664 effective, the base is darkened 10.43%. Authoring palette.shorts
+  //                            unchanged would render the garment 10% darker than the reference at every
+  //                            non-grazing angle. 0xd45307 / (1 - 0.1043) = 0xed5d08.
+  //
+  // `side: DoubleSide` stays and is now load-bearing for a second reason: the hem and both leg openings
+  // are open boundaries, and FrontSide would cull their backfaces and render the openings as holes.
+  const shorts = new THREE.MeshPhysicalMaterial({
+    color: clayCapture ? clayColor : 0xed5d08,
     roughness: 0.82,
     metalness: 0,
+    sheen: 0.7,
+    sheenColor: new THREE.Color(0xf2ece2),
+    sheenRoughness: 0.85,
+    ior: 1.5,
     flatShading: false,
     side: THREE.DoubleSide,
   });
@@ -5808,10 +5838,38 @@ export function createLowPolyHumanoidModel(
   // recompute a flat normal per triangle and discards the selective creasing entirely. Smooth shading
   // here does not mean a smooth surface: the normals are authored with hard edges where the anatomy
   // turns, and this is what lets those be the only hard edges.
-  const torsoSkin = new THREE.MeshStandardMaterial({
+  // CLEARCOAT IS SKIN'S CARRIER WHEN THERE ARE NO TEXTURES. `MeshStandardMaterial` has no clearcoat, so
+  // this shell had one specular lobe at roughness 0.92 -- which is matte cloth, not skin. Skin's actual
+  // signature at this fidelity is a BROAD SOFT dielectric highlight sitting over a warm diffuse base,
+  // and that is exactly a low-strength mid-roughness clearcoat. Two numbers, no maps.
+  //
+  //   clearcoatRoughness 0.38.  NOT lower: three clamps with `max(clearcoatRoughness, 0.0525)`
+  //                             (lights_physical_fragment.glsl.js:72), so anything under 0.0525 is a
+  //                             lie, and anything tight enough to read as a hotspot reads as sweat.
+  //
+  //   ior 1.4.                  Skin's measured index. Authored as `ior`, never as `reflectivity` --
+  //                             they are ONE degree of freedom (`reflectivity` is a derived accessor,
+  //                             MeshPhysicalMaterial.js:34-44) and `ior` is the physical one.
+  //
+  //   roughness 0.92 IS UNCHANGED, deliberately. It was tuned against this reference under this
+  //   lighting, and the standing rule is that roughness is never re-gated from a reference whose
+  //   lighting is unknown. Clearcoat ADDS a carrier; it does not license retuning the base.
+  //
+  // NO `transmission`. It is a screen-space refraction (glass) model, not subsurface scattering: on a
+  // closed body mesh it renders a glassy figure and costs an extra render target. Forbidden for the
+  // skin family in the material registry for exactly this reason.
+  //
+  // One coupling worth knowing: `clearcoatRoughness += geometryRoughness`
+  // (lights_physical_fragment.glsl.js:73), and geometryRoughness comes from screen-space normal
+  // derivatives. This shell is smooth-shaded so it stays near 0.38; the FACETED skin material next to it
+  // will read blurrier from the same number. That is the engine, not a mismatch.
+  const torsoSkin = new THREE.MeshPhysicalMaterial({
     color: clayCapture ? clayColor : palette.skin,
     roughness: 0.92,
     metalness: 0,
+    clearcoat: 0.18,
+    clearcoatRoughness: 0.38,
+    ior: 1.4,
     flatShading: false,
     side: THREE.DoubleSide,
   });

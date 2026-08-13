@@ -4,10 +4,6 @@ import {
   createLowPolyHumanoidModel,
 } from './low-poly-humanoid/createLowPolyHumanoidModel';
 import {
-  createFacetRunnerLookDevLights,
-  createFacetRunnerModel,
-} from './facet-runner/createFacetRunnerModel';
-import {
   createLowPolyHumanoidGlbReferenceModel,
   LOW_POLY_HUMANOID_GLB_BOUNDS,
 } from './low-poly-humanoid/lowPolyHumanoidGlbReference';
@@ -59,6 +55,22 @@ import {
   createElectricMouseMascotLookDevLights,
   createElectricMouseMascotModel,
 } from './electric-mouse-mascot/createElectricMouseMascotModel';
+import {
+  createLeeSinLookDevLights,
+  createLeeSinModel,
+} from './lee-sin/createLeeSinModel';
+import {
+  createLeeSinV2CaptureProfiles,
+  createLeeSinV2LookDevLights,
+  createLeeSinV2Model,
+} from './lee-sin-v2/createLeeSinV2Model';
+
+const LEE_SIN_V2_CAPTURE_PROFILES = createLeeSinV2CaptureProfiles();
+
+export interface DemoBuildContext {
+  capture: boolean;
+  captureProfile?: string;
+}
 
 export interface DemoEntry {
   /** route id, e.g. 'crown-chest' */
@@ -90,7 +102,11 @@ export interface DemoEntry {
     position: [number, number, number];
     target: [number, number, number];
     fov?: number;
+    projection?: 'perspective' | 'orthographic';
+    orthographicHalfHeight?: number;
+    poseProfileId?: string;
   };
+  captureProfiles?: Record<string, NonNullable<DemoEntry['captureCamera']>>;
   /** Capture framing margin; stylized key art may intentionally crop a shoe tip. */
   captureMargin?: number;
   /** Fixed review bounds used when GLB and procedural routes must share one camera exactly. */
@@ -123,7 +139,7 @@ export interface DemoEntry {
    */
   installLights?: (scene: THREE.Scene) => void;
   /** Adds the model (and any demo-specific lights) to the scene, returns the group. */
-  build: (scene: THREE.Scene) => THREE.Group;
+  build: (scene: THREE.Scene, context?: DemoBuildContext) => THREE.Group;
 }
 
 const BASE = import.meta.env.BASE_URL;
@@ -131,40 +147,101 @@ const REPO = 'https://github.com/hoainho/img2threejs-showcase/blob/main';
 
 export const demos: DemoEntry[] = [
   {
-    id: 'facet-runner',
-    title: 'Facet Runner — Low-Poly Android',
+    id: 'lee-sin-v2',
+    title: 'Lee Sin v2 — Character Plugin',
     subjectClass: 'character',
     blurb:
-      'A code-only procedural reconstruction of a young adult female humanoid android explorer: '
-      + 'faceted orange helmet and armor, smoked-cyan visor, graphite-navy composite body, '
-      + 'semantic joints, readable gloves and boots, and an action-ready humanoid rig.',
-    referenceImage: `${BASE}references/facet-runner-primary.png`,
-    sourcePath: 'src/demos/facet-runner/createFacetRunnerModel.ts',
-    sourceUrl: `${REPO}/src/demos/facet-runner/createFacetRunnerModel.ts`,
-    generatedWith: 'ImageGen + img2threejs v1.5 · code-only procedural refinement',
+      'Native img2threejs-character CharacterIR compile through CharacterSession: '
+      + '13 deformable body meshes, 27 named bones, 42 semantic accessories, opaque blindfold, '
+      + 'low-poly topknot, cropped trousers, thigh wraps, and three gold hoops. '
+      + 'The route remains a placeholder because its inherited quantitative likeness gate is still blocked.',
+    referenceImage: `${BASE}references/lee-sin-v2/turnaround.png`,
+    sourcePath: 'src/demos/lee-sin-v2/createLeeSinV2Model.ts',
+    sourceUrl: `${REPO}/src/demos/lee-sin-v2/createLeeSinV2Model.ts`,
+    generatedWith: 'img2threejs-character · native CharacterIR compiler/runtime',
+    prompt:
+      'Use the front/side/back turnaround as visible-design authority and the T-pose as bind-pose authority; '
+      + 'preserve the stylized low-poly blind monk silhouette, markings, wraps, hair masses, and three gold hoops.',
     author: 'Codex local showcase',
     authorUrl: 'https://github.com/hoainho',
     status: 'placeholder',
-    cameraPosition: [6.8, 5.05, 14.95],
-    cameraTarget: [0, 3.65, 0],
+    cameraPosition: [0, 3.1, 14],
+    cameraTarget: [0, 3.1, 0],
+    cameraFov: 28,
+    captureCamera: LEE_SIN_V2_CAPTURE_PROFILES['turnaround-front'],
+    captureProfiles: LEE_SIN_V2_CAPTURE_PROFILES,
+    captureMargin: 1.04,
+    captureBounds: {
+      size: [5.7, 6.25, 1.35],
+      center: [0, 3.1, 0.12],
+    },
+    accent: '#b3211c',
+    backgroundGradient: { inner: '#ebe9e4', outer: '#c9c6bf' },
+    captureBackgroundGradient: { inner: '#f6f5f2', outer: '#dedbd5' },
+    exposure: 1,
+    environmentIntensity: 0.55,
+    toneMapping: 'aces',
+    installLights: (scene) => {
+      scene.add(createLeeSinV2LookDevLights());
+    },
+    build: (scene, context) => {
+      const profile = LEE_SIN_V2_CAPTURE_PROFILES[context?.captureProfile ?? 'turnaround-front']
+        ?? LEE_SIN_V2_CAPTURE_PROFILES['turnaround-front'];
+      const group = createLeeSinV2Model({ castShadow: true, receiveShadow: true, animate: true, poseProfile: profile.poseProfileId });
+      scene.add(group);
+      return group;
+    },
+  },
+  {
+    id: 'lee-sin',
+    title: 'Lee Sin — Low-Poly Blind Monk',
+    subjectClass: 'character',
+    blurb:
+      'Procedural low-poly reconstruction of Lee Sin from an approved hero reference: '
+      + 'faceted tan skin, red blindfold and sash, black topknot hair clumps, chest mandala tattoo, '
+      + 'gold sonic-wave rings, action-ready pivots, and an idle combat-monk animation loop.',
+    referenceImage: `${BASE}references/lee-sin.jpg`,
+    sourcePath: 'src/demos/lee-sin/createLeeSinModel.ts',
+    sourceUrl: `${REPO}/src/demos/lee-sin/createLeeSinModel.ts`,
+    generatedWith: 'ImageGen + img2threejs v1.5 · code-only character factory',
+    prompt:
+      'Stylized low-poly Lee Sin full-body hero reference, A-pose, soft studio lighting, '
+      + 'red blindfold, black topknot, gold energy rings, reconstructable for img2threejs.',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'placeholder',
+    cameraPosition: [0, 3.7, 11.5],
+    cameraTarget: [0, 3.5, 0],
     cameraFov: 28,
     captureCamera: {
-      position: [5.6, 3.75, 8.6],
-      target: [0, 3.65, 0],
-      fov: 24,
+      position: [0, 3.55, 10.2],
+      target: [0, 3.5, 0],
+      fov: 26,
     },
-    captureMargin: 1.08,
-    accent: '#55c7c1',
-    backgroundGradient: { inner: '#e7ebed', outer: '#9da7ad' },
-    captureBackgroundGradient: { inner: '#f2f3f3', outer: '#d7dadd' },
-    exposure: 0.86,
-    environmentIntensity: 0.42,
+    // Measured against the admitted 1408x768 plate: the current subject mask
+    // is ~715 px tall while the reference is ~701 px (y=40..740).  This is a
+    // camera-frame correction, not a model scale hack.
+    captureMargin: 1.095,
+    // Pass 1 camera contract: keep the admitted 1408x768 subject scale fixed
+    // while silhouette parameters change.  These are the live pre-pass model
+    // bounds, rounded only to stable review values; rings remain excluded from
+    // the fit by the source factory's explicit capture-boundary flag.
+    captureBounds: {
+      size: [4.16, 7.56, 1.14],
+      center: [0.02, 3.71, 0.07],
+    },
+    accent: '#eab308',
+    backgroundGradient: { inner: '#f0eeea', outer: '#c8c4bc' },
+    captureBackgroundGradient: { inner: '#ffffff', outer: '#d9dbe1' },
+    exposure: 1.30,
+    environmentIntensity: 0.08,
     toneMapping: 'agx',
+    bloom: { threshold: 1.12, strength: 0.26, radius: 0.28 },
     installLights: (scene) => {
-      scene.add(createFacetRunnerLookDevLights());
+      scene.add(createLeeSinLookDevLights());
     },
     build: (scene) => {
-      const group = createFacetRunnerModel({ castShadow: true, receiveShadow: true });
+      const group = createLeeSinModel({ castShadow: true, receiveShadow: true, animate: true });
       scene.add(group);
       return group;
     },
@@ -324,7 +401,7 @@ export const demos: DemoEntry[] = [
   },
   {
     id: 'electric-mouse-mascot',
-    title: 'Ăn mừng 10k star pikachu',
+    title: 'Pikachu 10K Star Celebration',
     subjectClass: 'character',
     blurb:
       'A code-only procedural reconstruction of the supplied stylized yellow mascot reference, ' +

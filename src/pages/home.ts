@@ -51,7 +51,7 @@ export function renderHome(mount: HTMLElement): () => void {
 
       <section class="hero">
         <div class="hero-copy">
-          <span class="hero-eyebrow">live demo gallery &middot; v1.2</span>
+          <span class="hero-eyebrow">live demo gallery &middot; v1.5-beta</span>
           <h1 class="hero-title">
             One photo in.<br />
             A <span class="grad">procedural 3D</span> model out.

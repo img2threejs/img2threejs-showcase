@@ -7,9 +7,17 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "new-demo": "node scripts/new-showcase.mjs"
+    "new-demo": "node scripts/new-showcase.mjs",
+    "test:mini-dragon": "node scripts/test-demo-registration.mjs",
+    "test:dragon-rig": "node scripts/verify-dragon-rig.mjs",
+    "capture:dragon": "node scripts/capture-views.mjs",
+    "review:loop": "node scripts/correction_loop.mjs",
+    "generate:review-views": "node scripts/generate-review-view-rotations.mjs",
+    "verify:view-mechanism": "node scripts/measure-view-mechanism.mjs --verify",
+    "test:review-apparatus": "node --test scripts/test-provenance-capture.mjs scripts/correction-loop-epoch.test.mjs && python3 scripts/test-sweep-manifest-integrity.py && python3 scripts/correction-loop-gate_record_test.py && python3 scripts/test-provenance-reference.py && python3 scripts/test_silhouette_normalization.py && python3 scripts/test_component_microscope.py"
   },
   "dependencies": {
+    "img2threejs-character": "file:../img2threejs-character/character-plugin",
     "three": "^0.169.0"
   },
   "devDependencies": {

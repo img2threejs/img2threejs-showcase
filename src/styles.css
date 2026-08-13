@@ -1047,6 +1047,54 @@ code,
   margin: 0;
 }
 
+.demo-animations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.demo-animations-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.demo-animation-status {
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.demo-animation-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.demo-animation-btn {
+  justify-content: center;
+  min-width: 0;
+  padding: 0.58rem 0.45rem;
+  font-size: 0.78rem;
+}
+
+.demo-animation-btn.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--text);
+}
+
+.demo-animation-stop {
+  grid-column: 1 / -1;
+}
+
 .demo-links {
   display: flex;
   flex-direction: column;
@@ -1085,6 +1133,30 @@ code,
 
 .btn-explode.is-active .explode-glyph {
   transform: rotate(45deg) scale(1.15);
+}
+
+.explode-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.55rem 0.75rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+
+.explode-slider-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.explode-slider input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent-strong);
 }
 
 /* ---- part inspector ---- */

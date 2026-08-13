@@ -67,6 +67,13 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
               </div>
               <p>${demo.blurb}</p>
             </div>
+            <section class="demo-animations" id="demo-animations" hidden aria-labelledby="demo-animations-title">
+              <div class="demo-animations-head">
+                <span class="parts-title" id="demo-animations-title">Animations</span>
+                <output class="demo-animation-status" id="demo-animation-status">Idle</output>
+              </div>
+              <div class="demo-animation-buttons" id="demo-animation-buttons"></div>
+            </section>
             <section class="demo-parts" id="demo-parts" hidden>
               <div class="parts-head">
                 <span class="parts-title">Parts</span>
@@ -80,6 +87,12 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
               <button class="btn btn-explode" id="demo-explode" type="button" aria-pressed="false" hidden>
                 <span class="explode-glyph">&#10021;</span> <span class="explode-label">Explode parts</span>
               </button>
+              <label class="explode-slider" id="demo-explode-slider-wrap" hidden>
+                <span class="explode-slider-label">Explosion <output id="demo-explode-value">0%</output></span>
+                <input id="demo-explode-slider" type="range" min="0" max="1" step="0.01" value="0" aria-label="Explosion amount" />
+              </label>
+              <button class="btn" id="demo-reset-camera" type="button">Reset camera</button>
+              <button class="btn" id="demo-reset-explosion" type="button" hidden>Reset explosion</button>
               <a class="btn" href="${demo.sourceUrl}" target="_blank" rel="noopener noreferrer">
                 &lt;/&gt; View generated source
               </a>
@@ -110,6 +123,9 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   // background with a frozen camera for the Divine Eye reference loop. Default off (normal viewing).
   const capture = /[?&]capture=1\b/.test(window.location.hash) ||
     new URLSearchParams(window.location.search).get('capture') === '1';
+  const requestedCaptureProfile = new URLSearchParams(window.location.search).get('captureProfile') ?? undefined;
+  const activeCaptureCamera = (requestedCaptureProfile ? demo.captureProfiles?.[requestedCaptureProfile] : undefined)
+    ?? demo.captureCamera;
 
   // Per-demo tone-mapping (optional on the entry; read structurally so demo.ts is independent of
   // the DemoEntry field being declared). AgX preserves the Ruby-Doppler crimson that ACES washes.
@@ -121,14 +137,72 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     cameraTarget: demo.cameraTarget,
     cameraFov: demo.cameraFov,
     backgroundGradient: demo.backgroundGradient,
+    captureBackgroundGradient: demo.captureBackgroundGradient,
     exposure: demo.exposure,
     environmentIntensity: demo.environmentIntensity,
+    bloom: demo.bloom,
     installLights: demo.installLights,
     toneMapping,
+    captureCamera: activeCaptureCamera,
     capture,
   });
 
-  const model = demo.build(viewer.scene);
+  const model = demo.build(viewer.scene, { capture, captureProfile: requestedCaptureProfile });
+
+  type AnimationController = {
+    actions: ReadonlyArray<{ id: string; label: string; loop: boolean }>;
+    readonly active: string;
+    play: (name: string) => void;
+    stop: () => void;
+    subscribe: (listener: (active: string) => void) => () => void;
+  };
+  const animationController = (
+    model.userData.sculptRuntime as { animationController?: AnimationController } | undefined
+  )?.animationController;
+  const animationSection = mount.querySelector<HTMLElement>('#demo-animations');
+  const animationButtons = mount.querySelector<HTMLElement>('#demo-animation-buttons');
+  const animationStatus = mount.querySelector<HTMLOutputElement>('#demo-animation-status');
+  const animationButtonCleanups: Array<() => void> = [];
+  let unsubscribeAnimation: (() => void) | undefined;
+  if (animationController && animationSection && animationButtons && !capture) {
+    animationSection.hidden = false;
+    const buttons = new Map<string, HTMLButtonElement>();
+    for (const action of animationController.actions) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn demo-animation-btn';
+      button.dataset.animation = action.id;
+      button.textContent = action.label;
+      button.setAttribute('aria-pressed', 'false');
+      button.title = action.loop ? `${action.label} (loops until stopped)` : `${action.label} (plays once)`;
+      const onClick = (): void => animationController.play(action.id);
+      button.addEventListener('click', onClick);
+      animationButtonCleanups.push(() => button.removeEventListener('click', onClick));
+      animationButtons.appendChild(button);
+      buttons.set(action.id, button);
+    }
+    const stopButton = document.createElement('button');
+    stopButton.type = 'button';
+    stopButton.className = 'btn demo-animation-btn demo-animation-stop';
+    stopButton.dataset.animation = 'stop';
+    stopButton.textContent = 'Stop / Reset';
+    const onStop = (): void => animationController.stop();
+    stopButton.addEventListener('click', onStop);
+    animationButtonCleanups.push(() => stopButton.removeEventListener('click', onStop));
+    animationButtons.appendChild(stopButton);
+
+    unsubscribeAnimation = animationController.subscribe((active) => {
+      if (animationStatus) animationStatus.value = active === 'idle'
+        ? 'Idle'
+        : buttons.get(active)?.textContent ?? active.charAt(0).toUpperCase() + active.slice(1);
+      for (const [id, button] of buttons) {
+        const selected = id === active;
+        button.classList.toggle('is-active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      }
+    });
+  }
+
   viewer.setExplodeRoot(model);
   // Responsive framing: keeps the authored desktop composition, dollies back on narrow/short
   // viewports so the whole subject stays in frame instead of being cropped away.
@@ -138,22 +212,52 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   // Set in capture mode too — that is the headless run the gate reads it from.
   (window as unknown as Record<string, unknown>).__IMG2THREEJS_PARTS__ = {
     model: id,
+    triangles: (model.userData as { triangleCount?: number }).triangleCount ?? null,
     ...viewer.partManifest(),
   };
 
   // Explode control. Hidden for single-mesh demos and in capture mode, where the panel is
   // hidden anyway and the evaluation frame must stay deterministic.
   const explodeBtn = mount.querySelector<HTMLButtonElement>('#demo-explode');
+  const explodeSliderWrap = mount.querySelector<HTMLElement>('#demo-explode-slider-wrap');
+  const explodeSlider = mount.querySelector<HTMLInputElement>('#demo-explode-slider');
+  const explodeValue = mount.querySelector<HTMLOutputElement>('#demo-explode-value');
+  let exploded = false;
+  const applyExplosionUi = (value: number): void => {
+    const clamped = Math.max(0, Math.min(1, value));
+    exploded = clamped > 0.5;
+    viewer.setExplode(clamped);
+    if (explodeSlider) explodeSlider.value = String(clamped);
+    if (explodeValue) explodeValue.value = `${Math.round(clamped * 100)}%`;
+    explodeBtn?.setAttribute('aria-pressed', String(exploded));
+    explodeBtn?.classList.toggle('is-active', exploded);
+    explodeBtn?.querySelector('.explode-label')?.replaceChildren(
+      document.createTextNode(exploded ? 'Assemble' : 'Explode parts'),
+    );
+  };
   if (explodeBtn && viewer.canExplode && !capture) {
     explodeBtn.hidden = false;
-    let exploded = false;
     explodeBtn.addEventListener('click', () => {
-      exploded = !exploded;
-      viewer.setExplode(exploded ? 1 : 0);
-      explodeBtn.setAttribute('aria-pressed', String(exploded));
-      explodeBtn.classList.toggle('is-active', exploded);
-      explodeBtn.querySelector('.explode-label')!.textContent = exploded ? 'Assemble' : 'Explode parts';
+      applyExplosionUi(exploded ? 0 : 1);
     });
+  }
+  const onExplosionInput = (): void => applyExplosionUi(Number(explodeSlider?.value ?? 0));
+  if (explodeSlider && explodeSliderWrap && viewer.canExplode && !capture) {
+    explodeSliderWrap.hidden = false;
+    explodeSlider.addEventListener('input', onExplosionInput);
+  }
+
+  const resetCameraBtn = mount.querySelector<HTMLButtonElement>('#demo-reset-camera');
+  const resetExplosionBtn = mount.querySelector<HTMLButtonElement>('#demo-reset-explosion');
+  const onResetCamera = (): void => viewer.resetCamera();
+  const onResetExplosion = (): void => {
+    viewer.resetExplosion();
+    applyExplosionUi(0);
+  };
+  resetCameraBtn?.addEventListener('click', onResetCamera);
+  if (resetExplosionBtn && viewer.canExplode && !capture) {
+    resetExplosionBtn.hidden = false;
+    resetExplosionBtn.addEventListener('click', onResetExplosion);
   }
 
   // Part inspector: click any component in the viewer (or in the list) to select, name and
@@ -279,9 +383,15 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   }
 
   if (capture) {
-    // Flat white bg + hide the UI overlay + freeze per-frame animation so the evaluation
-    // frame is deterministic and shows only the object (matches the reference plate).
-    viewer.scene.background = new THREE.Color(0xffffff);
+    // Match the admitted Dragon plates' navy studio background when requested by the review plan.
+    // The component-ID pass temporarily switches back to white because its classifier uses the
+    // flat ID/background colour cube; beauty captures must retain the photographic background.
+    const captureBackground = new URLSearchParams(window.location.search).get('captureBg');
+    // Viewer already installed the demo-specific capture plate when one is
+    // declared. Only override it for the legacy explicit dark/white switch.
+    if (captureBackground) {
+      viewer.scene.background = new THREE.Color(captureBackground === 'dark' ? 0x182331 : 0xffffff);
+    }
     viewer.scene.traverse((o) => {
       if ((o.userData as { tick?: unknown }).tick) delete (o.userData as { tick?: unknown }).tick;
     });
@@ -289,7 +399,19 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
       mount.querySelector<HTMLElement>(sel)?.style.setProperty('display', 'none');
     }
     // Side-on auto-framing so the evaluation silhouette matches the side-on reference plate.
-    viewer.frameForCapture();
+    // Reference camera sweep: a slightly wider FOV places the camera nearer at the same
+    // angular framing, matching the photographed foreshortening better than the near-ortho 20°.
+    if (demo.captureBounds) {
+      viewer.frameForFixedCapture(
+        demo.captureBounds.size,
+        demo.captureBounds.center,
+        activeCaptureCamera?.fov ?? 21,
+        demo.captureMargin ?? 1.12,
+        activeCaptureCamera,
+      );
+    } else {
+      viewer.frameForCapture(activeCaptureCamera?.fov ?? 21, demo.captureMargin ?? 1.12, activeCaptureCamera);
+    }
   }
   viewer.start();
 
@@ -328,6 +450,12 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     bar.removeEventListener('click', onBarClick);
     compact.removeEventListener('change', onCompactChange);
     canvasMount.removeEventListener('pointerdown', hideHint);
+    resetCameraBtn?.removeEventListener('click', onResetCamera);
+    resetExplosionBtn?.removeEventListener('click', onResetExplosion);
+    explodeSlider?.removeEventListener('input', onExplosionInput);
+    animationController?.stop();
+    unsubscribeAnimation?.();
+    for (const cleanup of animationButtonCleanups) cleanup();
     viewer.dispose();
   };
 }

@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+
+declare const __IMG2THREEJS_RENDER_EPOCH__: string;
 import { fitScale, subjectExtent, type SubjectExtent } from './framing';
 
 export interface ViewerOptions {
@@ -9,9 +15,17 @@ export interface ViewerOptions {
   cameraPosition?: [number, number, number];
   cameraTarget?: [number, number, number];
   cameraFov?: number;
+  captureCamera?: {
+    position: [number, number, number];
+    target: [number, number, number];
+    projection?: 'perspective' | 'orthographic';
+    orthographicHalfHeight?: number;
+  };
   background?: number;
   /** Radial gradient backdrop (inner→outer hex) — a premium themed stage for hero props. */
   backgroundGradient?: { inner: string; outer: string };
+  /** Optional capture-only backdrop for references whose studio plate is not white. */
+  captureBackgroundGradient?: { inner: string; outer: string };
   /** Tone-mapping operator (default 'aces'). 'agx' preserves saturated reds/crimson that ACES
    * desaturates toward pink/brown (critical for a Ruby-Doppler blade); 'neutral' scales linearly. */
   toneMapping?: 'aces' | 'agx' | 'neutral';
@@ -19,6 +33,8 @@ export interface ViewerOptions {
   exposure?: number;
   /** Scene environment (IBL) intensity (default 1.0). <1 cuts ambient fill. */
   environmentIntensity?: number;
+  /** Optional post-processing bloom; intended for emissive identity features such as cyan eyes. */
+  bloom?: { threshold?: number; strength?: number; radius?: number };
   /**
    * Headless-evaluation capture mode (default false). When true the viewer renders on a flat
    * white studio background (to match reference-photo framing), skips the contact-shadow ground,
@@ -121,13 +137,15 @@ function makeGradientBackground(inner: string, outer: string): THREE.CanvasTextu
 export class Viewer {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene: THREE.Scene;
-  readonly camera: THREE.PerspectiveCamera;
+  readonly camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
   readonly controls: OrbitControls;
+  private readonly composer: EffectComposer | null;
 
   private readonly mount: HTMLElement;
   private rafHandle = 0;
   private readonly onResize: () => void;
   private readonly capture: boolean;
+  private readonly captureCamera?: ViewerOptions['captureCamera'];
 
   private explodeRoot: THREE.Object3D | null = null;
   private explodeParts: Array<{ object: THREE.Object3D; rest: THREE.Vector3; offset: THREE.Vector3 }> | null = null;
@@ -160,6 +178,10 @@ export class Viewer {
   private camRest: { target: THREE.Vector3; dist: number } | null = null;
 
   // ---- responsive framing ----
+  private readonly authoredPosition = new THREE.Vector3();
+  private readonly authoredTarget = new THREE.Vector3();
+  private readonly authoredFov: number;
+  private readonly authoredOrthoHalfHeight: number;
   /** Distance the demo authored (|cameraPosition - cameraTarget|) — the desktop framing. */
   private readonly authoredDistance: number;
   private readonly authoredFar: number;
@@ -172,7 +194,12 @@ export class Viewer {
   constructor(mount: HTMLElement, options: ViewerOptions = {}) {
     this.mount = mount;
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      // Capture mode also exports the WebGL buffer directly for canvas-only evidence.
+      // Keep normal interactive renders on the default fast path.
+      preserveDrawingBuffer: options.capture ?? false,
+    });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = options.toneMapping === 'agx'
       ? THREE.AgXToneMapping
@@ -186,11 +213,19 @@ export class Viewer {
     mount.appendChild(this.renderer.domElement);
 
     this.capture = options.capture ?? false;
+    this.captureCamera = options.captureCamera;
 
     this.scene = new THREE.Scene();
     if (this.capture) {
-      // Flat white studio bg matches the reference photos (white-bg) → fair silhouette IoU.
-      this.scene.background = new THREE.Color(0xffffff);
+      // Most object references use a white plate, but Zenonia is photographed on
+      // a warm brown studio plate. Keep the capture deterministic while allowing
+      // that demo to compare in the same visual conditions as its references.
+      this.scene.background = options.captureBackgroundGradient
+        ? makeGradientBackground(
+          options.captureBackgroundGradient.inner,
+          options.captureBackgroundGradient.outer,
+        )
+        : new THREE.Color(0xffffff);
     } else if (options.backgroundGradient) {
       this.scene.background = makeGradientBackground(
         options.backgroundGradient.inner,
@@ -205,7 +240,11 @@ export class Viewer {
     this.scene.environmentIntensity = options.environmentIntensity ?? 1.0;
     pmrem.dispose();
 
-    this.camera = new THREE.PerspectiveCamera(options.cameraFov ?? 36, 1, 0.1, 100);
+    const useOrthographicCapture = this.capture && options.captureCamera?.projection === 'orthographic';
+    const halfHeight = options.captureCamera?.orthographicHalfHeight ?? 1;
+    this.camera = useOrthographicCapture
+      ? new THREE.OrthographicCamera(-halfHeight, halfHeight, halfHeight, -halfHeight, 0.01, 100)
+      : new THREE.PerspectiveCamera(options.cameraFov ?? 36, 1, 0.1, 100);
     const [px, py, pz] = options.cameraPosition ?? [1.6, 1.1, 2.4];
     this.camera.position.set(px, py, pz);
 
@@ -217,8 +256,34 @@ export class Viewer {
     this.controls.target.set(tx, ty, tz);
     this.controls.update();
 
+    this.authoredPosition.copy(this.camera.position);
+    this.authoredTarget.copy(this.controls.target);
+    this.authoredFov = this.camera instanceof THREE.PerspectiveCamera ? this.camera.fov : options.cameraFov ?? 36;
+    this.authoredOrthoHalfHeight = this.camera instanceof THREE.OrthographicCamera
+      ? (this.camera.top - this.camera.bottom) / 2
+      : halfHeight;
     this.authoredDistance = this.camera.position.distanceTo(this.controls.target);
     this.authoredFar = this.camera.far;
+    // Bound orbit zoom so the subject remains inspectable. Responsive fitting may still pull
+    // farther back on narrow viewports, but interactive zoom cannot pass through or lose it.
+    this.controls.minDistance = Math.max(0.1, this.authoredDistance * 0.45);
+    this.controls.maxDistance = Math.max(this.authoredDistance * 4, this.authoredDistance + 1);
+
+    if (options.bloom) {
+      const composer = new EffectComposer(this.renderer);
+      composer.addPass(new RenderPass(this.scene, this.camera));
+      const bloom = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        options.bloom.strength ?? 0.65,
+        options.bloom.radius ?? 0.42,
+        options.bloom.threshold ?? 0.82,
+      );
+      composer.addPass(bloom);
+      composer.addPass(new OutputPass());
+      this.composer = composer;
+    } else {
+      this.composer = null;
+    }
 
     if (options.installLights) {
       options.installLights(this.scene);
@@ -271,6 +336,26 @@ export class Viewer {
       this.explodeBaseDist = this.camera.position.distanceTo(this.controls.target);
     }
     this.explodeTarget = next;
+  }
+
+  /** Restore the authored orbit pose while preserving responsive fit for the current viewport. */
+  resetCamera(): void {
+    this.camGoal = null;
+    this.camRest = null;
+    this.controls.target.copy(this.authoredTarget);
+    const direction = this.authoredPosition.clone().sub(this.authoredTarget).normalize();
+    this.camera.position.copy(this.authoredTarget).addScaledVector(direction, this.authoredDistance);
+    if (this.camera instanceof THREE.PerspectiveCamera) this.camera.fov = this.authoredFov;
+    this.appliedDistance = 0;
+    this.camera.updateProjectionMatrix();
+    this.applyFit();
+    this.controls.update();
+  }
+
+  /** Return the assembly to its rest pose. */
+  resetExplosion(): void {
+    this.explodeTarget = 0;
+    this.explodeBaseDist = 0;
   }
 
   /**
@@ -708,9 +793,10 @@ export class Viewer {
       };
     }
     const radius = Math.max(box.getBoundingSphere(new THREE.Sphere()).radius, 1e-3);
+    const fov = this.camera instanceof THREE.PerspectiveCamera ? this.camera.fov : 36;
     this.camGoal = {
       target: box.getCenter(new THREE.Vector3()),
-      dist: (radius / Math.tan((this.camera.fov * Math.PI) / 360)) * 2.2,
+      dist: (radius / Math.tan((fov * Math.PI) / 360)) * 2.2,
     };
   }
 
@@ -732,10 +818,25 @@ export class Viewer {
   private handleResize(): void {
     const width = this.mount.clientWidth || window.innerWidth;
     const height = this.mount.clientHeight || window.innerHeight;
-    this.camera.aspect = width / Math.max(1, height);
+    const aspect = width / Math.max(1, height);
+    if (this.camera instanceof THREE.PerspectiveCamera) {
+      this.camera.aspect = aspect;
+    } else {
+      const halfHeight = this.camera.userData.orthographicHalfHeight ?? this.authoredOrthoHalfHeight;
+      this.camera.top = halfHeight;
+      this.camera.bottom = -halfHeight;
+      this.camera.left = -halfHeight * aspect;
+      this.camera.right = halfHeight * aspect;
+    }
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
+    this.composer?.setSize(width, height);
     this.applyFit();
+  }
+
+  private renderFrame(): void {
+    if (this.composer) this.composer.render();
+    else this.renderer.render(this.scene, this.camera);
   }
 
   /**
@@ -757,6 +858,7 @@ export class Viewer {
 
   private applyFit(): void {
     if (!this.fitExtent || this.authoredDistance <= 0) return;
+    if (!(this.camera instanceof THREE.PerspectiveCamera)) return;
 
     const scale = fitScale(
       this.fitExtent,
@@ -835,7 +937,7 @@ export class Viewer {
       if (this.explodeT > 0 || this.explodeApplied) this.applyExplode();
       this.easeCamera(dt);
       this.controls.update();
-      this.renderer.render(this.scene, this.camera);
+      this.renderFrame();
     };
     loop();
 
@@ -843,11 +945,36 @@ export class Viewer {
     // then a few frames so shaders compile + buffers flip, then flag the page as capture-ready.
     // Fixes the load-race that produced false "chrome"/white renders. No-op for normal viewing
     // beyond setting a window flag. See grimoire/feedback/render_capture.md.
+    // Diagnostic browser handle used by the reference loop. It is read-only from the harness
+    // and does not alter the normal UI; exposing it in beauty mode lets the same camera batch
+    // reproduce the screenshot a user sees instead of validating only the frozen clay pass.
+    {
+      (window as unknown as Record<string, unknown>).__IMG2THREEJS_VIEWER__ = this;
+      // The three namespace alongside the viewer, so a diagnostic pass can build its own
+      // materials from the harness. `render-profile.v2.json` requires depth, normal and
+      // semantic-id captures; those swap materials at capture time, after the async GLB branch
+      // has finished loading, and cannot import three into the page context from outside it.
+      (window as unknown as Record<string, unknown>).__IMG2THREEJS_THREE__ = THREE;
+      if (this.capture) {
+      (window as unknown as Record<string, unknown>).__IMG2THREEJS_APP_EPOCH__ = {
+        threeRevision: String(THREE.REVISION),
+        renderHash: __IMG2THREEJS_RENDER_EPOCH__,
+      };
+      }
+    }
+
     const w = window as unknown as { __IMG2THREEJS_READY__?: boolean };
     w.__IMG2THREEJS_READY__ = false;
+    const captureWindow = window as unknown as Record<string, unknown>;
+    const readiness = {
+      pending: 0,
+      failures: [] as string[],
+      assetsSeen: 0,
+    };
+    captureWindow.__IMG2THREEJS_ASSET_STATUS__ = readiness;
     let signalled = false;
     const signalReady = (): void => {
-      if (signalled) return;
+      if (signalled || readiness.failures.length) return;
       signalled = true;
       let framesToWait = 6;
       const pump = (): void => {
@@ -855,13 +982,39 @@ export class Viewer {
           requestAnimationFrame(pump);
           return;
         }
-        w.__IMG2THREEJS_READY__ = true;
+        if (!readiness.failures.length) w.__IMG2THREEJS_READY__ = true;
       };
       pump();
     };
-    THREE.DefaultLoadingManager.onLoad = signalReady;
-    // Fallback: if no async loads are pending, onLoad never fires → kick after a short delay.
-    setTimeout(signalReady, 600);
+    const manager = THREE.DefaultLoadingManager;
+    const priorStart = manager.onStart;
+    const priorLoad = manager.onLoad;
+    const priorError = manager.onError;
+    let sawStart = false;
+    manager.onStart = (url, loaded, total) => {
+      priorStart?.(url, loaded, total);
+      sawStart = true;
+      readiness.assetsSeen = total;
+      readiness.pending = Math.max(0, total - loaded);
+    };
+    manager.onLoad = () => {
+      priorLoad?.();
+      readiness.pending = 0;
+      signalReady();
+    };
+    manager.onError = (url) => {
+      priorError?.(url);
+      readiness.failures.push(`loading manager failed: ${url}`);
+      captureWindow.__IMG2THREEJS_CAPTURE_FAILURE__ = readiness.failures[readiness.failures.length - 1];
+    };
+    // LoadingManager does not call onLoad for a zero-asset scene. Defer the check by one microtask:
+    // demo.build() runs synchronously immediately after this constructor and TextureLoader.load()
+    // calls itemStart synchronously, so a real asset sets sawStart before this callback can signal.
+    // Reading LoadingManager's private counters is not valid -- they are closure state, which made
+    // `undefined === undefined` signal readiness before the model had even been built.
+    queueMicrotask(() => {
+      if (!sawStart) signalReady();
+    });
   }
 
   /**
@@ -869,15 +1022,54 @@ export class Viewer {
    * bounding-box centre) at a distance that fits the object, matching a side-on reference plate.
    * Call AFTER the demo's build() so the model exists. Near-ortho fov reduces perspective skew.
    */
-  frameForCapture(fovDeg = 20, margin = 1.12): void {
+  frameForCapture(
+    fovDeg = 20,
+    margin = 1.12,
+    captureCamera?: ViewerOptions['captureCamera'],
+  ): void {
+    // MEASURE THE MODEL WHERE IT ACTUALLY IS. Without this the capture frame was sized through
+    // STALE ANCESTOR TRANSFORMS, and it cut the horn tips off two of the five review views.
+    //
+    // Box3.expandByObject calls updateWorldMatrix(false, false), which refreshes the object's own
+    // matrixWorld from its parent's but never refreshes the PARENT. This runs before the first
+    // render, so every ancestor matrixWorld was still identity: the box came out measuring the
+    // dragon rig without its own root.scale.y = 1.28, and without the ?view= rotation. The frame was
+    // therefore sized for a model 1.28x shorter than the one it went on to draw. The symptom was
+    // that the capture camera came out IDENTICAL for every view -- distance 35.6843, target
+    // (0, 0.3967, -0.9200) -- which is impossible for a bounding box that is supposed to depend on
+    // the geometry in front of it, and is what gave the bug away.
+    //
+    // Deliberately NOT fixed by padding `margin`: a bigger constant would have re-clipped the next
+    // time anything upstream of a mesh changed scale, and it would have hidden the cause. The
+    // measured cost of getting this wrong was not cosmetic -- `side` had been the worst view at IoU
+    // 0.4838 through roughly fifty correction iterations, and part of that deficit was the model
+    // being cut off rather than the geometry being wrong.
+    this.scene.updateMatrixWorld(true);
     const box = new THREE.Box3();
     this.scene.traverse((o) => {
       const mesh = o as THREE.Mesh;
-      if (mesh.isMesh && mesh.geometry) box.expandByObject(mesh);
+      if (
+        mesh.isMesh
+        && mesh.geometry
+        && mesh.visible
+        && !mesh.userData.excludeFromCaptureBounds
+      ) {
+        // SkinnedMesh owns a posed object-level bounding box. Geometry bounds
+        // describe the bind pose and can clip a deformed wing or limb.
+        if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) {
+          (mesh as THREE.SkinnedMesh).computeBoundingBox();
+        }
+        box.expandByObject(mesh);
+      }
     });
     if (box.isEmpty()) return;
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
+    const pose = captureCamera ?? this.captureCamera;
+    if (this.camera instanceof THREE.OrthographicCamera) {
+      this.frameOrthographicCapture(center, size, margin, pose);
+      return;
+    }
     this.camera.fov = fovDeg;
     const vFov = (fovDeg * Math.PI) / 180;
     const halfH = size.y / 2;
@@ -886,14 +1078,87 @@ export class Viewer {
     const distH = halfH / Math.tan(vFov / 2);
     const distW = halfW / Math.tan(vFov / 2) / aspect;
     const dist = Math.max(distH, distW) * margin + size.z / 2;
-    this.camera.position.set(center.x, center.y, center.z + dist);
+    const direction = pose
+      ? new THREE.Vector3(...pose.position).sub(new THREE.Vector3(...pose.target)).normalize()
+      : new THREE.Vector3(0, 0, 1);
+    this.camera.position.copy(center).addScaledVector(direction, dist);
     this.camera.near = Math.max(0.01, dist - size.z);
     this.camera.far = dist + size.z * 4;
     this.camera.updateProjectionMatrix();
     this.camera.lookAt(center);
     this.controls.target.copy(center);
     this.controls.update();
-    this.renderer.render(this.scene, this.camera);
+    this.renderFrame();
+  }
+
+  /**
+   * Capture framing with an admitted reference box rather than the current route's bounds.
+   * This is required for GLB-vs-procedural comparisons: auto-fitting each model independently
+   * would hide silhouette differences by giving each route a different camera distance.
+   */
+  frameForFixedCapture(
+    sizeTuple: [number, number, number],
+    centerTuple: [number, number, number],
+    fovDeg = 20,
+    margin = 1.12,
+    captureCamera?: ViewerOptions['captureCamera'],
+  ): void {
+    const size = new THREE.Vector3(...sizeTuple);
+    const center = new THREE.Vector3(...centerTuple);
+    if (this.camera instanceof THREE.OrthographicCamera) {
+      this.frameOrthographicCapture(center, size, margin, captureCamera ?? this.captureCamera);
+      return;
+    }
+    this.camera.fov = fovDeg;
+    const vFov = (fovDeg * Math.PI) / 180;
+    const aspect = this.camera.aspect || 1;
+    const distH = (size.y / 2) / Math.tan(vFov / 2);
+    const distW = (size.x / 2) / Math.tan(vFov / 2) / aspect;
+    const dist = Math.max(distH, distW) * margin + size.z / 2;
+    const direction = captureCamera
+      ? new THREE.Vector3(...captureCamera.position).sub(new THREE.Vector3(...captureCamera.target)).normalize()
+      : new THREE.Vector3(0, 0, 1);
+    this.camera.position.copy(center).addScaledVector(direction, dist);
+    this.camera.near = Math.max(0.01, dist - size.z);
+    this.camera.far = dist + size.z * 4;
+    this.camera.updateProjectionMatrix();
+    this.camera.lookAt(center);
+    this.controls.target.copy(center);
+    this.controls.update();
+    this.renderFrame();
+  }
+
+  private frameOrthographicCapture(
+    center: THREE.Vector3,
+    size: THREE.Vector3,
+    margin: number,
+    captureCamera?: ViewerOptions['captureCamera'],
+  ): void {
+    if (!(this.camera instanceof THREE.OrthographicCamera)) return;
+    const width = this.mount.clientWidth || window.innerWidth;
+    const height = this.mount.clientHeight || window.innerHeight;
+    const aspect = width / Math.max(1, height);
+    const admittedHalfHeight = captureCamera?.orthographicHalfHeight;
+    const fittedHalfHeight = Math.max(size.y / 2, size.x / (2 * Math.max(1e-9, aspect))) * margin;
+    const halfHeight = admittedHalfHeight ?? fittedHalfHeight;
+    this.camera.userData.orthographicHalfHeight = halfHeight;
+    this.camera.top = halfHeight;
+    this.camera.bottom = -halfHeight;
+    this.camera.left = -halfHeight * aspect;
+    this.camera.right = halfHeight * aspect;
+    const direction = captureCamera
+      ? new THREE.Vector3(...captureCamera.position).sub(new THREE.Vector3(...captureCamera.target)).normalize()
+      : new THREE.Vector3(0, 0, 1);
+    const target = captureCamera ? new THREE.Vector3(...captureCamera.target) : center;
+    const distance = Math.max(10, size.length() * 2);
+    this.camera.position.copy(target).addScaledVector(direction, distance);
+    this.camera.near = 0.01;
+    this.camera.far = distance + Math.max(10, size.length() * 4);
+    this.camera.updateProjectionMatrix();
+    this.camera.lookAt(target);
+    this.controls.target.copy(target);
+    this.controls.update();
+    this.renderFrame();
   }
 
   /** Frees renderer/GPU resources. Call this before swapping to a new demo. */
@@ -924,6 +1189,7 @@ export class Viewer {
       }
     });
 
+    this.composer?.dispose();
     this.renderer.dispose();
     if (this.renderer.domElement.parentElement === this.mount) {
       this.mount.removeChild(this.renderer.domElement);
