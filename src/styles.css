@@ -1223,12 +1223,13 @@ body.intro-active { overflow: hidden; }
   gap: 0.6rem;
 }
 
+/* The mark stays pinned to the first row rather than spanning the card: once each sponsor carries
+   a blurb, a pairing line and its own CTA, a centred 54px logo drifts to the middle of a tall
+   column and stops reading as that card's header. */
 .sp-logo {
   display: grid;
   grid-template-columns: 54px 1fr;
-  grid-template-rows: auto auto;
-  gap: 0.2rem 0.9rem;
-  align-items: center;
+  gap: 0.45rem 0.9rem;
   padding: 0.9rem;
   border: 1px solid var(--rule);
   transition: border-color var(--fast) var(--ease);
@@ -1239,20 +1240,54 @@ body.intro-active { overflow: hidden; }
 }
 
 .sp-logo img {
-  grid-row: 1 / 3;
+  grid-column: 1;
   width: 54px;
   height: auto;
+  align-self: start;
+}
+
+.sp-logo > :not(img) {
+  grid-column: 2;
+  margin: 0;
 }
 
 .sp-name {
   font-weight: 600;
   font-size: 0.9rem;
+  align-self: center;
 }
 
 .sp-blurb {
   font-size: 0.78rem;
   line-height: 1.6;
   color: var(--paper-dim);
+}
+
+/* Our claim about the pairing, not the sponsor's about themselves — the rule marks the handover. */
+.sp-pair {
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--paper-dim);
+  border-left: 1px solid var(--rule-strong);
+  padding-left: 0.7rem;
+}
+
+.sp-cta {
+  justify-self: start;
+  margin-top: 0.2rem;
+}
+
+/* Under ~560px the 54px logo column squeezes the prose into a ribbon; drop to one column and let
+   the mark sit above its own name. */
+@media (max-width: 560px) {
+  .sp-logo {
+    grid-template-columns: 1fr;
+  }
+
+  .sp-logo img,
+  .sp-logo > :not(img) {
+    grid-column: 1;
+  }
 }
 
 /* ----------------------------------------------------------- command palette */

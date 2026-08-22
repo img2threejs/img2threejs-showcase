@@ -60,12 +60,21 @@ export interface SponsorEntry {
   url: string;
   /** The site renders dark-only (`color-scheme: dark`), so one light-on-dark mark is all it needs. */
   logo: string;
+  /** What the sponsor sells, in their own terms. Sourced from their site, not written to flatter. */
   blurb: string;
+  /**
+   * Why that product and this one belong in the same sentence. Kept separate from `blurb` so the
+   * card can mark it as our claim about the pairing rather than the sponsor's claim about itself.
+   */
+  pairing: string;
+  /** Label for the card's outbound button. Named per sponsor so the CTA says where it actually goes. */
+  cta: string;
 }
 
 /**
- * Logo sponsors, in the order they should render. Kept centered rather than looped while the
- * list is short — a marquee of one logo just reads as a stuck slider.
+ * Logo sponsors, in the order they should render. Stacked as cards rather than looped as a
+ * marquee: at this length a slider just reads as stuck, and each entry carries prose a logo strip
+ * has nowhere to put.
  */
 export const SPONSORS: SponsorEntry[] = [
   {
@@ -75,6 +84,39 @@ export const SPONSORS: SponsorEntry[] = [
     blurb:
       'A full-modal AI inference platform: one API for video generation, image generation and ' +
       'LLM access across 300+ curated models, instead of managing a separate integration per vendor.',
+    pairing:
+      'Reconstruction-by-code is an LLM workload before it is a graphics one — every img2threejs ' +
+      'gate rerun spends tokens. One endpoint across 300+ models is what keeps that loop affordable.',
+    cta: 'Open the coding plan',
+  },
+  {
+    name: 'Tripo',
+    url: 'https://www.tripo3d.ai/',
+    logo: `${BASE}sponsors/tripo-logomark-white.svg`,
+    blurb:
+      'Image- and text-to-3D at production quality: High Detail meshes up to 2M polygons, artist-' +
+      'grade quad Smart Mesh from 500 to 50K, AI auto-rigging, 8K PBR texturing and part-level ' +
+      'segmentation — exported as GLB, FBX, OBJ, USD, STL or 3MF, with plugins for Blender, Unity, ' +
+      'Unreal, Godot, Cocos and ComfyUI.',
+    pairing:
+      'Its quad meshes and auto-rig give an img2threejs rebuild something to be measured against: a ' +
+      'second read on silhouette, proportion and joint placement that one reference photo cannot ' +
+      'settle on its own.',
+    cta: 'Open Tripo Studio',
+  },
+  {
+    name: 'Hyper3D',
+    url: 'https://hyper3d.ai/',
+    logo: `${BASE}sponsors/hyper3d-logomark-white.png`,
+    blurb:
+      'Hyper3D Rodin turns a prompt or a reference image into a 3D asset in seconds, with bounding-' +
+      'box, voxel and point-cloud ControlNet guidance, partial editing for one region at a time, ' +
+      'low-poly optimisation, and ChatAvatar for rigged faces. Exports STL, FBX, OBJ, GLB, glTF and USDZ.',
+    pairing:
+      'Rodin answers the one question a single photograph never can — what the back looks like. ' +
+      'Generate, orbit it, and the hidden sides become references the img2threejs material and ' +
+      'surface gates can actually be run against.',
+    cta: 'Open Hyper3D Rodin',
   },
 ];
 

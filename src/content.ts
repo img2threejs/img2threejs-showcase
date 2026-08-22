@@ -86,11 +86,15 @@ function roadmapDrawer(): string {
 function sponsorDrawer(): string {
   const logos = SPONSORS.map(
     (s) => `
-      <a class="sp-logo" href="${s.url}" target="_blank" rel="noopener noreferrer">
+      <article class="sp-logo">
         <img src="${s.logo}" alt="${escapeAttr(s.name)}" loading="lazy" />
-        <span class="sp-name">${escapeAttr(s.name)}</span>
-        <span class="sp-blurb">${escapeAttr(s.blurb)}</span>
-      </a>`,
+        <h3 class="sp-name">${escapeAttr(s.name)}</h3>
+        <p class="sp-blurb">${escapeAttr(s.blurb)}</p>
+        <p class="sp-pair">${brand(escapeAttr(s.pairing))}</p>
+        <a class="btn sp-cta" href="${s.url}" target="_blank" rel="noopener noreferrer">
+          ${escapeAttr(s.cta)} ${ARROW_OUT}
+        </a>
+      </article>`,
   ).join('');
 
   return `
@@ -106,7 +110,7 @@ function sponsorDrawer(): string {
       <a class="btn" href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer">Join the Discord</a>
     </div>
     <p class="dr-note">
-      Want your logo in this row? Write to
+      Want your logo in this list? Write to
       <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>.
     </p>`;
 }
