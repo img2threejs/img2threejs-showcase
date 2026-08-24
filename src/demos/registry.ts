@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createElectermModel, prewarmElecterm } from './electerm/createElectermModel';
 import type { PinnedCaptureCamera } from '../scene';
 import {
   createM9DopplerModel,
@@ -144,6 +145,33 @@ const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
 export const demos: DemoEntry[] = [
+{
+id: 'electerm',
+title: 'Electerm 3D Logo',
+subjectClass: 'object',
+blurb:
+'The electerm terminal emulator logo as a 3D GLB model, auto-scaled and centered on a dark studio stage with a slow rock so the metallic finish catches travelling highlights. Loaded from a bundled GLB asset — no runtime network calls.',
+referenceImage: `${BASE}references/electerm.png`,
+sourcePath: 'src/demos/electerm/createElectermModel.ts',
+sourceUrl: `${REPO}/src/demos/electerm/createElectermModel.ts`,
+generatedWith: 'GLB asset · Vite static import',
+author: 'ZXD',
+authorUrl: 'https://github.com/zxdong262',
+status: 'final',
+cameraPosition: [0, 0.5, 4.5],
+cameraTarget: [0, 0, 0],
+cameraFov: 30,
+accent: '#00b4d8',
+backgroundGradient: { inner: '#1a2a3a', outer: '#0a0f14' },
+exposure: 0.9,
+environmentIntensity: 0.7,
+prewarm: prewarmElecterm,
+build: (scene) => {
+const group = createElectermModel();
+scene.add(group);
+return group;
+},
+},
   {
     id: 'girl-character',
     title: 'Dual-Sword Warrior — TypeScript procedural surfaces',
