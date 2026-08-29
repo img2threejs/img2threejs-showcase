@@ -201,7 +201,65 @@ export interface DemoEntry {
 const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
+import {
+  createLucTuyetKyModel,
+  createLucTuyetKyLookDevLights,
+  makeLucTuyetKyBackground,
+  prewarmLucTuyetKy,
+} from './luc-tuyet-ky/createLucTuyetKyModel';
+
 const authored: DemoEntry[] = [
+  {
+    id: 'luc-tuyet-ky',
+    updatedAt: '2026-08-29',
+    title: 'Luc Tuyet Ky — Costume Split Off The Body',
+    subjectClass: 'character',
+    blurb:
+      'A code-only measured reconstruction whose costume is no longer part of the body. Tripo returned '
+      + 'this figure as ONE watertight shell — welding coincident vertices collapses all 285 index '
+      + 'islands into a single component — so the auto-rig weighted gown and skin alike, and the '
+      + 'measurement shows what that cost: 40% of vertices dominated by leg twist joints out to a '
+      + 'radius the leg never reaches, and waist-length hair dominated by Spine01 and the clavicles. '
+      + 'A kick lifted the skirt with the knee, a split stance tore the front panel between L_Calf and '
+      + 'R_Calf, and a shoulder roll sheared the hair. Here the shell is cut on the measured bimodal '
+      + 'radial histogram into body, gown and hair, and the two costume meshes are re-weighted onto '
+      + 'joint rings of their own that hang from the pelvis and the head — zero leg influence remains, '
+      + 'so nothing can drag them. They swing instead, as verlet strands with a hard length constraint '
+      + 'and sphere colliders on both thighs and both calves: the legs can push the gown, never pull '
+      + 'it. Six generated frost layers on top, no texture fetched.',
+    referenceImage: `${BASE}references/luc-tuyet-ky.jpg`,
+    sourcePath: 'src/demos/luc-tuyet-ky/createLucTuyetKyModel.ts',
+    sourceUrl: `${REPO}/src/demos/luc-tuyet-ky/createLucTuyetKyModel.ts`,
+    generatedWith: 'img2threejs playground · Tripo v3.1-20260211 measurement · GLB fast lane · measured costume split + verlet cloth rig',
+    prompt:
+      'Rebuild this ice-empress reference from one image, then separate the costume from the body so '
+      + 'the gown and hair stop being dragged by the limbs during animation, and add frost VFX.',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'placeholder',
+    cameraPosition: [1.7695, 1.045, 5.0558],
+    cameraTarget: [0, 0.95, 0],
+    cameraFov: 30,
+    accent: '#8fdcff',
+    backgroundGradient: { inner: '#12283c', outer: '#060a10' },
+    exposure: 1.02,
+    environmentIntensity: 0.95,
+    toneMapping: 'aces',
+    // 4.5 MB of surface plus a 13 MB rig, and the costume cut runs a weld, an adjacency build and two
+    // flood fills over 160k vertices on top. Without a prewarm that whole cost lands on the frame that
+    // is supposed to put the character on screen.
+    prewarm: () => prewarmLucTuyetKy().then(() => undefined),
+    defaultAnimation: 'dance',
+    installLights: (scene) => {
+      scene.background = makeLucTuyetKyBackground();
+      scene.add(createLucTuyetKyLookDevLights());
+    },
+    build: (scene) => {
+      const group = createLucTuyetKyModel({ castShadow: true, receiveShadow: true });
+      scene.add(group);
+      return group;
+    },
+  },
   {
     id: 'leesin',
     title: 'Lee Sin \u2014 Game Character',

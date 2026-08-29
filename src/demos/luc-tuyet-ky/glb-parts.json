@@ -1,0 +1,76 @@
+{
+  "kind": "glb-semantic-map",
+  "status": "hypothesis-requires-render-confirmation",
+  "namesUsedAsEvidence": false,
+  "subjectClass": "character",
+  "subjectClassSource": "user",
+  "figureBounds": {
+    "min": [
+      -0.19527982208339045,
+      0,
+      -0.6732974816281468
+    ],
+    "max": [
+      0.19527982208339045,
+      1.9,
+      0.6732974816281468
+    ],
+    "size": [
+      0.3905596441667809,
+      1.9,
+      1.3465949632562937
+    ]
+  },
+  "nodes": [
+    {
+      "nodeIndex": 0,
+      "nodeName": "tripo_node_9e8b722d-a37c-490e-a2db-d0be214c99e3",
+      "bounds": {
+        "min": [
+          -0.19527982208339045,
+          0,
+          -0.6732974816281468
+        ],
+        "max": [
+          0.19527982208339045,
+          1.9,
+          0.6732974816281468
+        ],
+        "center": [
+          0,
+          0.95,
+          0
+        ],
+        "size": [
+          0.3905596441667809,
+          1.9,
+          1.3465949632562937
+        ]
+      },
+      "triangles": 294378,
+      "id": "body-shell",
+      "label": "body shell",
+      "hypothesis": "body-shell",
+      "confidence": 0.2,
+      "band": "thigh",
+      "side": "midline",
+      "depth": "centre",
+      "sizeClass": "primary",
+      "ambiguity": [
+        "spans footwear / lower-leg / knee / thigh / hip-waist / torso / shoulder-neck / head",
+        "spans most of the figure height (shell or body, not a limb)"
+      ],
+      "evidence": {
+        "method": "measured-world-bounds",
+        "heightFractionRange": [
+          0,
+          1
+        ],
+        "lateralFraction": 0,
+        "depthFraction": 0,
+        "volumeFraction": 1,
+        "reason": "centre at 50% of figure height in band \"thigh\"; lateral 0.00 (midline); depth 0.00 (centre); 100.0% of figure volume"
+      }
+    }
+  ]
+}
