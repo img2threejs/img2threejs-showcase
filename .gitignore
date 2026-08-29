@@ -17,3 +17,6 @@ public/baseline/
 public/mesh/
 .renders/
 .venv/
+
+# Transpiled on the fly by scripts/van-hi/rig-gate.mjs so it can run under plain node.
+scripts/van-hi/.garmentSeparation.mjs

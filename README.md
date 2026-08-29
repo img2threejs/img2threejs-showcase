@@ -28,6 +28,7 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 
 ## Contents
 
+- [Newest exhibit](#newest-exhibit)
 - [Featured exhibits](#featured-exhibits)
 - [All exhibits](#all-exhibits)
 - [What makes these different](#what-makes-these-different)
@@ -39,6 +40,33 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 - [Community](#community)
 - [Support the project](#support-the-project)
 - [Star history](#star-history)
+
+## Newest exhibit
+
+<table>
+<tr>
+<td width="46%" align="center">
+<a href="https://img2threejs.io/#/demo/van-hi"><img src=".github/readme-assets/van-hi.png" width="100%" alt="Van Hi, an immortal in a trailing robe"></a>
+</td>
+<td width="54%">
+
+### [Van Hi — Immortal in a Trailing Robe](https://img2threejs.io/#/demo/van-hi)
+
+Rebuilt from one reference image, and **split in two**: the gown is its own `SkinnedMesh` on the
+shared skeleton, not part of the body shell.
+
+It had to be. The generated source welds the robe to the figure, and its auto-rig hangs **78% of the
+robe's weight off two calves and a foot** — so every clip dragged the dress inside-out by the shins.
+Cutting the gown out and rebinding it to the trunk moves the worst edge stretch across the garment
+from **1,750 mm to 46 mm** and its weight on any leg joint to **zero**, measured over all 22 clips.
+
+The movement rigid binding gives up comes back where it costs nothing: drift, lag and swing applied
+after skinning, which cannot tear a mesh. Nine clips, a rune circle, drifting petals and a ribbon
+off each sleeve.
+
+</td>
+</tr>
+</table>
 
 ## Featured exhibits
 
@@ -86,6 +114,7 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 
 | Exhibit | Kind | Status | Author |
 | --- | :-: | :-: | --- |
+| [Van Hi — Immortal in a Trailing Robe](https://img2threejs.io/#/demo/van-hi)<br><sub>The gown is its own SkinnedMesh: cut off a rig that hung 78% of it on two calves and a foot.</sub> | character | ✅ | [Hoài Nhớ](https://github.com/hoainho) |
 | [Mouse Warrior — Rigged Surface Character](https://img2threejs.io/#/demo/warrior)<br><sub>47 Surface&nbsp;Nets regions bound to a human-structured rig, with a code-native attack clip.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Dual-Sword Warrior — TypeScript procedural surfaces](https://img2threejs.io/#/demo/girl-character)<br><sub>Encoded Surface Nets streamed as high / medium / low quality TypeScript modules.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Low-Poly Humanoid — Rigged Character](https://img2threejs.io/#/demo/low-poly-humanoid)<br><sub>Nine panel-driven actions, from Run and Jump to Roundhouse and Dodge.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |

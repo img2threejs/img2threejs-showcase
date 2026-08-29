@@ -84,6 +84,11 @@ import {
   prewarmGirlCharacter3,
 } from './girl-character-3/createGirlCharacter3Model';
 import {
+  createVanHiModel,
+  createVanHiLookDevLights,
+  prewarmVanHi,
+} from './van-hi/createVanHiModel';
+import {
   createLeesinModel,
   prewarmLeesin,
 } from './leesin/leesinDemo';
@@ -202,6 +207,51 @@ const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
 const authored: DemoEntry[] = [
+  {
+    id: 'van-hi',
+    updatedAt: '2026-08-29',
+    title: 'Van Hi \u2014 Immortal in a Trailing Robe',
+    subjectClass: 'character',
+    blurb:
+      'A xianxia immortal rebuilt from one reference image as pure Three.js, and split in two: the '
+      + 'gown is its OWN SkinnedMesh on the shared skeleton, not part of the body shell. It had to '
+      + 'be. The generated source welds the robe to the figure and its auto-rig hangs 78% of the '
+      + "robe's weight off two calves and a foot, so every clip dragged the dress inside-out by the "
+      + 'shins. Rebinding the garment to the trunk drops its worst edge stretch from 1,750 mm to '
+      + '46 mm and its mean from 2.277 mm to 0.045 mm, and its weight on any leg joint to zero; the '
+      + 'movement rigid binding gives up comes back as post-skinning cloth drift, lag and swing. '
+      + 'Nine clips, a rune circle, drifting petals and a ribbon off each sleeve.',
+    referenceImage: `${BASE}references/van-hi.jpg`,
+    referenceKind: 'image',
+    sourcePath: 'src/demos/van-hi/createVanHiModel.ts',
+    sourceUrl: `${REPO}/src/demos/van-hi/createVanHiModel.ts`,
+    generatedWith: 'img2threejs playground \u00b7 Tripo v3.1-20260211 measurement \u00b7 GLB fast lane \u00b7 garment separation and rebind',
+    prompt:
+      'Rebuild the character from the reference image, then make the costume animate as a garment '
+      + 'rather than as part of the skin: a separate mesh the limbs cannot drag.',
+    author: 'Ho\u00e0i Nh\u1edb',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'final',
+    // The playground frames every figure from +Z, but this rig's A-pose faces +X — the arms spread
+    // along Z, the hands land at z -0.281 and +0.258 — so the default framing showed her in profile.
+    // Same distance and same height, swung round to her front.
+    cameraPosition: [5.3364, 1.045, -0.4669],
+    cameraTarget: [0, 0.95, 0],
+    cameraFov: 30,
+    accent: '#b48ee8',
+    backgroundGradient: { inner: '#2b2440', outer: '#0c0b12' },
+    exposure: 1,
+    environmentIntensity: 0.7,
+    toneMapping: 'aces',
+    installLights: (scene) => scene.add(createVanHiLookDevLights()),
+    // `prewarm` fetches the level of detail \u2014 the registry's own hook for work that must finish
+    // before `build` runs, which the gallery already awaits for its heaviest demos.
+    prewarm: () => prewarmVanHi().then(() => undefined),
+    defaultAnimation: 'idle-turn',
+    // The effects group goes BESIDE the model, so `build` is handed the scene rather than adding to
+    // it itself: the parts inspector walks the returned group and must not find an effect in it.
+    build: (scene) => createVanHiModel(scene, { castShadow: true, receiveShadow: true }),
+  },
   {
     id: 'leesin',
     title: 'Lee Sin \u2014 Game Character',
