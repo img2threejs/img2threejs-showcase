@@ -47,7 +47,7 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 <td width="33%" align="center">
 <a href="https://img2threejs.io/#/demo/chun-li"><img src=".github/readme-assets/chun-li.png" width="100%" alt="Chun-Li — Measured-Impact Ki VFX"></a><br>
 <b><a href="https://img2threejs.io/#/demo/chun-li">Chun-Li</a></b><br>
-<sub>Ki trails, shock rings and a thrown Kikoken, every timing measured off the clips.</sub>
+<sub>Ki trails, shock rings and a Kikoken thrown down the arm, every timing measured off the clips.</sub>
 </td>
 <td width="33%" align="center">
 <a href="https://img2threejs.io/#/demo/sony-wf1000xm3"><img src=".github/readme-assets/sony-wf1000xm3.png" width="100%" alt="Sony WF-1000XM3 Earbuds + Case"></a><br>

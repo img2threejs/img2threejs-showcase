@@ -28,6 +28,8 @@
 export const VFX_JOINTS = {
   handL: 'L_Hand',
   handR: 'R_Hand',
+  forearmL: 'L_Forearm',
+  forearmR: 'R_Forearm',
   toeL: 'L_ToeBase',
   toeR: 'R_ToeBase',
   footL: 'L_Foot',
@@ -98,19 +100,6 @@ export const STRIKE_EVENTS: readonly StrikeEvent[] = [
   { clip: 'preset:biped:flee_01', limb: 'foot', side: 'left', time: 1.652, speed: 5.85 },
   { clip: 'preset:biped:flee_01', limb: 'foot', side: 'right', time: 2.065, speed: 5.36 },
   { clip: 'preset:biped:flee_01', limb: 'foot', side: 'left', time: 2.329, speed: 3.45 },
-  // flee_02
-  { clip: 'preset:biped:flee_02', limb: 'foot', side: 'right', time: 0.630, speed: 3.44 },
-  { clip: 'preset:biped:flee_02', limb: 'foot', side: 'left', time: 0.751, speed: 3.25 },
-  { clip: 'preset:biped:flee_02', limb: 'foot', side: 'right', time: 0.816, speed: 4.74 },
-  { clip: 'preset:biped:flee_02', limb: 'foot', side: 'right', time: 1.168, speed: 3.33 },
-  { clip: 'preset:biped:flee_02', limb: 'foot', side: 'left', time: 1.372, speed: 4.40 },
-  { clip: 'preset:biped:flee_02', limb: 'foot', side: 'left', time: 1.919, speed: 6.49 },
-  { clip: 'preset:biped:flee_02', limb: 'foot', side: 'right', time: 2.179, speed: 6.72 },
-  { clip: 'preset:biped:flee_02', limb: 'foot', side: 'left', time: 2.438, speed: 7.24 },
-  { clip: 'preset:biped:flee_02', limb: 'foot', side: 'right', time: 2.716, speed: 6.72 },
-  { clip: 'preset:biped:flee_02', limb: 'foot', side: 'left', time: 3.004, speed: 6.70 },
-  { clip: 'preset:biped:flee_02', limb: 'foot', side: 'right', time: 3.337, speed: 8.39 },
-  { clip: 'preset:biped:flee_02', limb: 'foot', side: 'left', time: 3.458, speed: 5.97 },
   // front_kick_01
   { clip: 'preset:biped:front_kick_01', limb: 'hand', side: 'right', time: 0.356, speed: 1.70 },
   { clip: 'preset:biped:front_kick_01', limb: 'hand', side: 'right', time: 0.731, speed: 1.57 },
@@ -136,13 +125,6 @@ export const FOOTFALL_EVENTS: readonly FootfallEvent[] = [
   // flee_01
   { clip: 'preset:biped:flee_01', side: 'left', time: 1.009, drop: 0.27 },
   { clip: 'preset:biped:flee_01', side: 'right', time: 1.307, drop: 0.34 },
-  // flee_02
-  { clip: 'preset:biped:flee_02', side: 'left', time: 1.307, drop: 0.89 },
-  { clip: 'preset:biped:flee_02', side: 'left', time: 1.567, drop: 0.20 },
-  { clip: 'preset:biped:flee_02', side: 'left', time: 2.587, drop: 0.19 },
-  { clip: 'preset:biped:flee_02', side: 'right', time: 2.614, drop: 0.40 },
-  { clip: 'preset:biped:flee_02', side: 'left', time: 2.939, drop: 0.21 },
-  { clip: 'preset:biped:flee_02', side: 'left', time: 3.180, drop: 0.22 },
   // front_kick_01
   { clip: 'preset:biped:front_kick_01', side: 'right', time: 0.674, drop: 0.26 },
 ];
@@ -160,7 +142,6 @@ export const TRAIL_REFERENCE: Readonly<Record<string, number>> = {
   'preset:biped:cast_a_spell': 1.03,
   'preset:biped:chop': 0.54,
   'preset:biped:flee_01': 3.88,
-  'preset:biped:flee_02': 6.47,
   'preset:biped:angry_01': 1.63,
 };
 
@@ -174,15 +155,7 @@ export const TRAIL_GATE = 0.34;
  */
 export const ROOT_LOCKED_CLIPS: Readonly<Record<string, number>> = {
   'preset:biped:flee_01': 3.706,
-  'preset:biped:flee_02': 7.612,
 };
-
-/**
- * `flee_02` leaves the ground: the hip rises 0.591 H above its own low and peaks at t=3.458 s.
- * That is the leap the dash ends on, and it is why the landing burst is scheduled off the hip
- * rather than off a toe — at the apex neither toe is anywhere near the floor.
- */
-export const LEAP = { clip: 'preset:biped:flee_02', rise: 0.591, apex: 3.458 } as const;
 
 /**
  * Kikoken, choreographed against the measured hand curves of `cast_a_spell` rather than guessed.
@@ -209,14 +182,15 @@ export const KIKOKEN = {
   /**
    * Seconds of flight before the orb bursts, and how far it gets, in figure heights.
    *
-   * The range is set by the FRAMING, not by taste. She faces +X and the demo camera sits at
-   * x=4.55, so the orb is thrown almost straight down the lens: at 2.6 H it left the frustum
-   * about 0.3 s before it burst, and the burst — the biggest single effect in the demo — happened
-   * off-screen every time. At 0.95 H it bursts around 20 degrees off the camera axis, inside a
-   * 22.6-degree horizontal half-angle, so it is still in shot at the right-hand edge.
+   * The range is set by the FRAMING, not by taste. The throw runs almost straight down the lens —
+   * the demo camera sits at x=4.55 and the arm points at yaw 98 degrees — so at 2.6 H the orb left
+   * the frustum about 0.3 s before it burst, and the burst, the biggest single effect in the demo,
+   * happened off-screen every time. Shorter is also FURTHER from the lens, because the throw runs
+   * toward it: at 0.62 H the burst sits about 17 degrees off the camera axis, inside a 22.6-degree
+   * horizontal half-angle, so the whole shock ring is in shot instead of clipping the right edge.
    */
-  flight: 0.62,
-  range: 0.95,
+  flight: 0.45,
+  range: 0.62,
 } as const;
 
 /**
@@ -249,8 +223,14 @@ export const CHUN_LI_IDLE_ID = 'stance';
 export const CHUN_LI_IDLE_CLIP = 'preset:biped:box_01';
 
 /**
- * Nine of the rig's twenty-seven clips. The other eighteen are either near-static (`fire` peaks at
+ * Eight of the rig's twenty-seven clips. The other eighteen are either near-static (`fire` peaks at
  * 0.11 H/s — it is a held pose), duplicates of one already here, or unreadable at this framing.
+ *
+ * `flee_02` was here and was CUT. It is the only clip whose hip leaves the floor (0.591 H at
+ * t=3.458), and the skirt is not a separate garment: the whole figure is one skinned shell, so
+ * the split panels are skinned to the thighs and ride up with them. There is no cloth to
+ * re-simulate and no separate mesh to weight differently — fixing it would mean re-authoring the
+ * shell — so the clip is gone rather than shown. `flee_01` covers travel and keeps its feet low.
  */
 export const CHUN_LI_ACTIONS: readonly ChunLiAction[] = [
   {
@@ -308,13 +288,6 @@ export const CHUN_LI_ACTIONS: readonly ChunLiAction[] = [
     clip: 'preset:biped:flee_01',
     kind: 'move',
     note: 'Root-locked over 3.71 H of travel. Four stride pushes throw dust; the ribbons run off the ankles.',
-  },
-  {
-    id: 'dash-leap',
-    label: 'Dash & Leap',
-    clip: 'preset:biped:flee_02',
-    kind: 'move',
-    note: 'Root-locked over 7.61 H. Speed lines above 0.45 of the clip reference, and the hip leaves the floor by 0.591 H at t=3.458.',
   },
 ];
 

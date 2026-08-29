@@ -8,16 +8,16 @@ import * as THREE from 'three';
  * where the eye is. Every pool below is a flat typed array with a write cursor; a spawn overwrites
  * the oldest slot and nothing is ever created after construction.
  *
- * FIVE DRAW CALLS DO ALL THE PARTICLES. Sparks and ki motes share one additive `Points`; dust and
- * smoke share one alpha-blended `Points`; speed lines and the orb's wake share one `LineSegments`.
- * The rings and the orb are meshes because they need a real orientation, and there are at most
- * twenty of them.
+ * FIVE DRAW CALLS DO ALL THE PARTICLES. Sparks, ki motes and the orb's wake share one additive
+ * `Points`; dust and smoke share one alpha-blended `Points`; speed lines and impact streaks share
+ * one `LineSegments`. The rings and the orb are meshes because they need a real orientation, and
+ * there are at most twenty of them.
  *
  * COLOUR IS THE CHARACTER'S, NOT A DEFAULT. Chun-Li's ki reads blue-white against her cobalt
  * qipao, so the hot pool interpolates between a near-white core, a cyan mid and a deep blue edge,
  * with the gold of her trim reserved for the frame a strike actually lands. Dust is the neutral
- * warm grey of a floor, deliberately NOT tinted blue: if the dust is blue too, nothing reads as
- * energy any more.
+ * warm grey of ground dust, deliberately NOT tinted blue: if the dust is blue too, nothing reads
+ * as energy any more.
  *
  * ADDITIVE MEANS DEPTH-WRITE OFF, DEPTH-TEST ON. Effects must not erase each other in the depth
  * buffer (two overlapping sparks would punch a hole in one another) but must still be occluded by
@@ -52,9 +52,9 @@ export interface ChunLiVfx {
   charge(at: THREE.Vector3, amount: number, warm?: boolean): void;
   /** A strike arriving. `dir` is the travel direction, normalised. Returns hitstop in seconds. */
   strike(limb: Limb, at: THREE.Vector3, dir: THREE.Vector3, power: number): number;
-  /** A two-handed blow put into the floor: a flat ground ring, dust and a low gold flash. */
+  /** A two-handed blow driven downward: rings down the blow's own axis, dust and a gold flash. */
   slam(at: THREE.Vector3, power: number): void;
-  /** Weight arriving on the floor. `drop` is the measured descent in figure heights per second. */
+  /** Weight arriving on the ground. `drop` is the measured descent in figure heights per second. */
   footfall(at: THREE.Vector3, drop: number): void;
   /** A stride pushing off: dust thrown BACKWARD along `dir`, no flash. */
   stride(at: THREE.Vector3, dir: THREE.Vector3, power: number): void;
@@ -750,13 +750,18 @@ void main() {
       transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
     }),
   );
+  // Thin and tinted, not thick and white. A 1.05-1.32 band in KI_CORE went grey the moment it was
+  // added over a dark background, and seen face-on it turned the orb into a flat target symbol.
   const orbHaloA = new THREE.Mesh(
-    new THREE.RingGeometry(1.05, 1.32, 48, 1),
-    new THREE.MeshBasicMaterial({ color: KI_CORE.clone(), transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }),
+    new THREE.RingGeometry(1.16, 1.28, 64, 1),
+    new THREE.MeshBasicMaterial({ color: KI_MID.clone(), transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }),
   );
   const orbHaloB = orbHaloA.clone();
   orbHaloB.material = (orbHaloA.material as THREE.MeshBasicMaterial).clone();
   orbHaloB.rotation.set(Math.PI / 2, 0, 0);
+  // Tipped off the axis so the two rings CROSS rather than nest, which is what gives the orb a
+  // readable 3D axis instead of a set of concentric circles.
+  orbHaloA.rotation.set(0, 0.5, 0);
   const orbLight = new THREE.PointLight(KI_MID.getHex(), 0, 5.5, 2);
   orbGroup.add(orbCore, orbShell, orbHaloA, orbHaloB, orbLight);
   for (const child of orbGroup.children) child.userData.isHighlight = true;
@@ -775,12 +780,12 @@ void main() {
 
   function orbBurst(): void {
     const at = orbGroup.position;
-    spawnRing(at, orb.direction, orb.radius * 1.2, 1.05, 0.52, KI_MID, 0.95);
-    spawnRing(at, orb.direction, orb.radius * 0.8, 1.55, 0.72, KI_DEEP, 0.6);
-    // A second ring on the floor under the burst, so the shock has somewhere to land.
-    scratchA.set(at.x, 0.012, at.z);
-    spawnRing(scratchA, up, 0.2, 1.1, 0.62, KI_MID, 0.45);
-    spawnFlash(at, 1.05, 0.32, KI_CORE, 1.0);
+    // The orb bursts about 2.3 units from the camera, where the visible frame is only 1.23 units
+    // tall. A ring of radius 1.05 there is nearly twice the frame height — it filled half the shot
+    // and cropped off the edge. These radii put the shock at roughly two-thirds of frame height.
+    spawnRing(at, orb.direction, orb.radius * 1.2, 0.45, 0.52, KI_MID, 0.95);
+    spawnRing(at, orb.direction, orb.radius * 0.8, 0.68, 0.72, KI_DEEP, 0.6);
+    spawnFlash(at, 0.5, 0.32, KI_CORE, 1.0);
     spawnPulse(at, KI_MID, 26, 0.42, 7);
     burst(hot, at, orb.direction, 46, 5.4, 1.0, { size: 0.16, span: 0.62, tint: 0.95, gravity: -1.4, drag: 2.2 });
     burst(hot, at, up, 22, 2.6, 1.0, { size: 0.11, span: 0.9, tint: 0.55, gravity: -0.7, drag: 1.5 });
@@ -894,11 +899,12 @@ void main() {
         scratchB.copy(dir).add(scratchC.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(0.7)).normalize();
         spawnStreak(at, scratchB, 0.28 + p * 0.4, 0.17, 1.05);
       }
-      // A kick close to the floor also kicks the floor.
+      // A kick close to the ground still throws debris up off it. There is no stage geometry in
+      // this demo, so what used to be a flat ring lying at y=0 is gone: with nothing to lie ON it
+      // read as a grey ellipse hanging in the air. Airborne dust needs no surface to be believable.
       if (at.y < 0.55) {
         scratchA.set(at.x, 0.012, at.z);
-        spawnRing(scratchA, up, 0.1, 0.4 + p * 0.34, 0.4, DUST, 0.3);
-        burst(dust, scratchA, up, 9, 0.8 + p * 0.9, 1.0, { size: 0.2, span: 0.85, tint: 0, gravity: -0.5, drag: 2.1, peak: 0.25 });
+        burst(dust, scratchA, up, 11, 0.8 + p * 0.9, 1.0, { size: 0.2, span: 0.85, tint: 0, gravity: -0.5, drag: 2.1, peak: 0.25 });
       }
       // Hitstop, scaled by the measured power: 45 ms for a jab-weight arrival, 105 for a snap kick.
       return (heavy ? 0.055 : 0.04) + p * 0.05;
@@ -907,13 +913,18 @@ void main() {
     slam(at, power) {
       const p = Math.min(1, Math.max(0, power));
       scratchA.set(at.x, 0.014, at.z);
-      // The one effect that is allowed to be big: it is a shock in the FLOOR, and the floor disc it
-      // spreads across is 3.1 units. It still stops well inside the stage ring.
-      spawnRing(scratchA, up, 0.12, 1.15 + p * 0.55, 0.6, KI_MID, 0.85);
-      spawnRing(scratchA, up, 0.08, 0.7 + p * 0.35, 0.4, GOLD, 0.6);
-      spawnRing(at, up, 0.08, 0.42 + p * 0.3, 0.3, KI_CORE, 0.5);
+      // Rings on the DOWNWARD axis rather than lying flat. The blow travels into the ground, and
+      // with no stage geometry to draw a ripple on, a ring expanding down the blow's own axis is
+      // what still reads as force going somewhere.
+      scratchB.set(0, -1, 0);
+      spawnRing(at, scratchB, 0.1, 0.6 + p * 0.3, 0.6, KI_MID, 0.85);
+      spawnRing(at, scratchB, 0.07, 0.36 + p * 0.2, 0.4, GOLD, 0.6);
+      spawnRing(at, scratchB, 0.05, 0.22 + p * 0.15, 0.3, KI_CORE, 0.5);
       spawnFlash(at, 0.7 + p * 0.4, 0.26, GOLD, 1.0);
-      spawnPulse(at, GOLD, 24 + p * 12, 0.3, 6);
+      // Half what it was. At 36 over a 6-unit radius this light sits at chest height right in front
+      // of her and washed the whole figure to white on the contact frame — the flash stopped
+      // reading as an impact and started reading as an exposure error.
+      spawnPulse(at, GOLD, 13 + p * 7, 0.3, 4.5);
       // Everything a slam throws goes UP and outward off the floor, not forward.
       burst(dust, scratchA, up, 34, 2.2 + p * 1.6, 0.95, { size: 0.28, span: 1.25, tint: 0, gravity: -1.1, drag: 1.5, peak: 0.22 });
       burst(hot, scratchA, up, 26, 3.6 + p * 2.4, 0.7, { size: 0.11, span: 0.6, tint: 1.05, gravity: -3.2, drag: 2.2 });
@@ -927,8 +938,7 @@ void main() {
     footfall(at, drop) {
       const p = Math.min(1, drop / 0.9);
       scratchA.set(at.x, 0.012, at.z);
-      spawnRing(scratchA, up, 0.08, 0.3 + p * 0.38, 0.42, DUST, 0.26 + p * 0.2);
-      burst(dust, scratchA, up, 8 + Math.round(p * 12), 0.7 + p * 1.1, 1.0, { size: 0.22, span: 0.95, tint: 0, gravity: -0.8, drag: 1.9, peak: 0.24 });
+      burst(dust, scratchA, up, 10 + Math.round(p * 12), 0.7 + p * 1.1, 1.0, { size: 0.22, span: 0.95, tint: 0, gravity: -0.8, drag: 1.9, peak: 0.24 });
       if (p > 0.5) spawnPulse(scratchA, KI_MID, 5 * p, 0.16, 2.2);
     },
 
@@ -939,8 +949,7 @@ void main() {
       scratchB.copy(dir).multiplyScalar(-1);
       scratchB.y = 0.55;
       scratchB.normalize();
-      burst(dust, scratchA, scratchB, 7 + Math.round(p * 9), 1.1 + p * 1.5, 0.5, { size: 0.2, span: 0.8, tint: 0, gravity: -1.0, drag: 2.0, peak: 0.2 });
-      spawnRing(scratchA, up, 0.06, 0.24 + p * 0.28, 0.3, DUST, 0.22 + p * 0.16);
+      burst(dust, scratchA, scratchB, 9 + Math.round(p * 9), 1.1 + p * 1.5, 0.5, { size: 0.2, span: 0.8, tint: 0, gravity: -1.0, drag: 2.0, peak: 0.2 });
       if (p > 0.6) {
         burst(hot, at, scratchB, 4, 1.6, 0.6, { size: 0.06, span: 0.28, tint: 0.65, gravity: -1.2, drag: 3.0 });
       }
@@ -998,6 +1007,9 @@ void main() {
       orb.span = flightSeconds;
       orb.radius = Math.max(orb.radius, 0.2);
       orb.velocity.copy(orb.direction).multiplyScalar(range / flightSeconds);
+      // Point the orb's own +Z down the throw. Without this the halos keep the world's axes, so
+      // whichever way she threw it they faced the camera and read as flat circles.
+      orbGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), orb.direction);
       orbGroup.visible = true;
       // Muzzle: a ring down the throw axis, a hard flash at the palms and recoil dust at the feet.
       spawnRing(at, orb.direction, 0.1, 0.52, 0.38, KI_MID, 0.85);

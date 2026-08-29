@@ -213,7 +213,7 @@ const authored: DemoEntry[] = [
     blurb:
       'A code-only measured reconstruction (244,468 triangles in one embedded surface stream) on its own '
       + '41-bone rig with twenty-seven embedded clips, wearing an effects layer whose every timing was '
-      + 'measured rather than authored: the nine exposed clips were swept at 400 samples to find where a '
+      + 'measured rather than authored: the eight exposed clips were swept at 400 samples to find where a '
       + 'hand or foot actually ARRIVES rather than where it is fastest, where weight meets the floor, and '
       + 'where the palms close on the ki. A strike carries a windup charge, camera-facing ribbons off the '
       + 'limb, shock rings down the travel axis, a gold contact light and 40-105 ms of hitstop. Kikoken is '
@@ -234,9 +234,9 @@ const authored: DemoEntry[] = [
      * Authored on the side she actually faces, which is not where the playground's own framing put
      * it. Her clavicles span Z \u2014 the T-pose arms measure 1.85 units deep against 0.36 wide \u2014
      * so the facing normal is X, and the download's +Z camera watched every kick from the side.
-     * Sweeping the clavicle line across the nine clips puts the facing at yaw 71-103 degrees, so
-     * this is a three-quarter on +X: the guard reads, the Kikoken travels toward the lens rather
-     * than across it, and the kicking leg does not foreshorten into a point.
+     * Sweeping the clavicle line across the exposed clips puts the resting facing at yaw 71-103
+     * degrees, so this is a three-quarter on +X: the guard reads, the Kikoken travels toward the
+     * lens rather than across it, and the kicking leg does not foreshorten into a point.
      */
     cameraPosition: [4.55, 1.16, 2.35],
     cameraTarget: [0, 0.95, 0],

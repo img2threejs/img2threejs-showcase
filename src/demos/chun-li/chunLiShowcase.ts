@@ -8,7 +8,6 @@ import {
   FIGURE_HEIGHT,
   GROUND_SLAM,
   KIKOKEN,
-  LEAP,
   ROOT_LOCKED_CLIPS,
   STRIKE_EVENTS,
   TRAIL_GATE,
@@ -353,9 +352,21 @@ export function createChunLiShowcase(options: ChunLiOptions = {}): THREE.Group {
       }
       if (crossed(KIKOKEN.flare, clipTime, nextTime)) vfx.flare(palms, 0.6);
       if (crossed(KIKOKEN.fire, clipTime, nextTime)) {
-        // Launched along the measured facing, lifted slightly so it clears the floor ring.
-        scratch.copy(facing);
-        scratch.y = 0.05;
+        /**
+         * Thrown along the ARM, not along the body's facing.
+         *
+         * Facing comes off the clavicle line, and during this clip the torso turns far enough that
+         * the line sweeps from yaw 150 through 178 to -163 across the half second around the
+         * release — at the release frame itself it reads -174 degrees, very nearly BACKWARDS. The
+         * orb left the palms sideways because of it.
+         *
+         * The forearm-to-hand vector has no such problem: measured across the same window it holds
+         * yaw 92-108 with a vertical component under 0.1, which is the arm pointing level and
+         * straight ahead. It is also the more honest answer to "where is she throwing it" — a
+         * thrown projectile follows the arm that threw it, not the shoulders behind it.
+         */
+        scratch.copy(state.joints.handR.world).sub(state.joints.forearmR.world);
+        if (scratch.lengthSq() < 1e-8) scratch.copy(facing);
         vfx.fireOrb(palms, scratch.normalize(), KIKOKEN.flight, KIKOKEN.range * FIGURE_HEIGHT);
         hitstop = Math.max(hitstop, 0.07);
         fired.orbs += 1;
@@ -371,12 +382,6 @@ export function createChunLiShowcase(options: ChunLiOptions = {}): THREE.Group {
       }
       scratch.copy(state.joints.hip.world);
       vfx.aura(scratch, surge);
-    }
-
-    // --- the leap at the end of the dash: a launch ring at the apex, dust when she comes back
-    if (action.clip === LEAP.clip && crossed(LEAP.apex, clipTime, nextTime)) {
-      scratch.copy(state.joints.hip.world);
-      vfx.flare(scratch, 0.85);
     }
 
     // --- an idle guard is never completely still
