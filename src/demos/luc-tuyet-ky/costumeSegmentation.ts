@@ -153,6 +153,15 @@ export interface SegmentationResult {
   seamHop: Uint8Array;
   /** Which costume region each body vertex's nearest seam belongs to; 0 where there is none. */
   seamRegion: Uint8Array;
+  /** Lowest vertex index sharing each vertex's position, so callers can weld without redoing it. */
+  representative: Int32Array;
+  /**
+   * Welded vertex adjacency in CSR form, reused rather than rebuilt.
+   *
+   * Published because weight repairs need it too: the auto-rig's left/right leg boundary can only be
+   * found by asking which vertices have a neighbour belonging to the other leg.
+   */
+  adjacency: { offset: Int32Array; neighbour: Int32Array };
   /** One region id per triangle, decided by majority of its three corners. */
   triangleRegion: Uint8Array;
   counts: Record<Region, { vertices: number; triangles: number }>;
@@ -286,7 +295,7 @@ export function segmentCostume(part: DecodedPart): SegmentationResult {
   for (let i = 0; i < count; i += 1) counts[REGIONS[vertexRegion[i]]].vertices += 1;
   for (let t = 0; t < triangleCount; t += 1) counts[REGIONS[triangleRegion[t]]].triangles += 1;
 
-  return { vertexRegion, seamHop, seamRegion, triangleRegion, counts, straddlingTriangles };
+  return { vertexRegion, seamHop, seamRegion, representative, adjacency: { offset, neighbour }, triangleRegion, counts, straddlingTriangles };
 }
 
 export interface RegionGeometry {
@@ -307,6 +316,107 @@ export interface RegionGeometry {
  * top ring of the gown is deliberately re-weighted back onto the same waist joints the bodice uses,
  * which is what keeps the seam closed once the skeleton moves.
  */
+
+/**
+ * Close a region's open boundaries.
+ *
+ * Cutting the shell leaves every region with holes where its neighbours used to be — measured on
+ * this character, 2,556 open edges on the body alone, in loops of up to 920 vertices where the gown
+ * was lifted off it. An open hole is what a viewer reads as the character going black: nothing is
+ * drawn behind it, so you see the unlit inside of the far side of the model, or the background.
+ *
+ * That hole is the reason the first attempt at this welded the seam by giving both sides of a border
+ * one weight set. It did close the hole, and it cost more than it bought: a vertex on the hem then
+ * carried both a calf joint and a skirt joint, which point in completely different directions the
+ * moment she kicks, and the edges around it stretched by up to 114x into the long slivers this
+ * function exists to make unnecessary. With every region closed on its own, the gown is free to move
+ * however the solver says and nothing shows through when it does.
+ *
+ * The caps reuse the loop's OWN vertices — a fan, no new points. That matters more than the slightly
+ * awkward triangles it produces: a new vertex would need weights of its own, and any weights that
+ * disagreed with the loop's would tear the cap open under exactly the poses it is there to cover.
+ * Sharing them makes the cap deform identically to the rim it closes, by construction.
+ */
+function capBoundaryLoops(
+  indices: number[],
+  sourceVertex: number[],
+  representative: Int32Array,
+): number { 
+  // Directed edge counts over welded positions: an edge the surface only uses once is a boundary.
+  const directed = new Set<string>();
+  const undirected = new Map<string, number>();
+  const localOf = new Map<number, number>();
+  const note = (a: number, b: number): void => {
+    const ra = representative[sourceVertex[a]];
+    const rb = representative[sourceVertex[b]];
+    localOf.set(ra, a);
+    localOf.set(rb, b);
+    if (ra === rb) return;
+    directed.add(`${ra}>${rb}`);
+    const key = ra < rb ? `${ra}_${rb}` : `${rb}_${ra}`;
+    undirected.set(key, (undirected.get(key) ?? 0) + 1);
+  };
+  for (let t = 0; t < indices.length; t += 3) {
+    note(indices[t], indices[t + 1]);
+    note(indices[t + 1], indices[t + 2]);
+    note(indices[t + 2], indices[t]);
+  }
+
+  // Walk each boundary in the direction its own triangle used, so the cap can be wound against it.
+  //
+  // Edges are CONSUMED rather than looked up through a per-vertex successor: a vertex where two
+  // holes meet has two boundary edges leaving it, and a single successor map silently keeps one and
+  // drops the other. That is not hypothetical here — it left 232 of the body's 2,556 open edges
+  // unclosed, which is 232 chances for the interior to show through.
+  const outgoing = new Map<number, number[]>();
+  let pending = 0;
+  for (const [key, count] of undirected) {
+    if (count !== 1) continue;
+    const [x, y] = key.split('_').map(Number);
+    const [from, to] = directed.has(`${x}>${y}`) ? [x, y] : [y, x];
+    const list = outgoing.get(from);
+    if (list) list.push(to);
+    else outgoing.set(from, [to]);
+    pending += 1;
+  }
+
+  let capped = 0;
+  while (pending > 0) {
+    let start = -1;
+    for (const [vertex, list] of outgoing) {
+      if (list.length) { start = vertex; break; }
+      outgoing.delete(vertex);
+    }
+    if (start < 0) break;
+
+    const loop: number[] = [];
+    let at = start;
+    for (;;) {
+      const list = outgoing.get(at);
+      if (!list || !list.length) break;
+      const next = list.pop() as number;
+      pending -= 1;
+      loop.push(at);
+      at = next;
+      if (at === start) break;
+      if (loop.length > 100000) break;
+    }
+    // Fewer than three vertices is not a hole, it is a stray edge the weld left behind.
+    if (loop.length < 3) continue;
+    const hub = localOf.get(loop[0]);
+    if (hub === undefined) continue;
+    for (let i = 1; i + 1 < loop.length; i += 1) {
+      const a = localOf.get(loop[i]);
+      const b = localOf.get(loop[i + 1]);
+      if (a === undefined || b === undefined) continue;
+      // Reversed against the rim's own winding, so the cap faces out of the volume it closes.
+      indices.push(hub, b, a);
+    }
+    capped += 1;
+  }
+  return capped;
+}
+
 export function buildRegionGeometries(part: DecodedPart, segmentation: SegmentationResult): RegionGeometry[] {
   const { position, normal, colour, index } = part;
   const triangleCount = index.length / 3;
@@ -330,6 +440,24 @@ export function buildRegionGeometries(part: DecodedPart, segmentation: Segmentat
       }
     }
     if (!indices.length) continue;
+    // Recorded so measurement can tell the character's own surface from the lids behind it: a cap
+    // triangle spans an opening by design, and counting it as "the mesh stretched" would report an
+    // artefact where there is only a lid doing its job.
+    const visibleIndexCount = indices.length;
+    /*
+     * Only the body is capped, and only the body needs to be.
+     *
+     * A hole matters when there is nothing behind it. Behind the gown and behind the hair there is
+     * the body, which this closes; behind the BODY there is only its own unlit interior, which is
+     * the black the viewer was seeing through her hip.
+     *
+     * Capping all three was tried, and the hair made the case against it: hair is ribbons, not a
+     * volume, and its long open edges ARE the strand silhouettes. Fanning a lid across 23 of those
+     * buried the hair under flat sheets and turned a waist-length black fall into a pale bob.
+     */
+    const cappedLoops = REGIONS[region] === 'body'
+      ? capBoundaryLoops(indices, sourceVertex, segmentation.representative)
+      : 0;
 
     const n = sourceVertex.length;
     const positions = new Float32Array(n * 3);
@@ -349,6 +477,8 @@ export function buildRegionGeometries(part: DecodedPart, segmentation: Segmentat
     geometry.setAttribute('color', new THREE.BufferAttribute(colours, 3));
     geometry.setIndex(new THREE.BufferAttribute(n > 65535 ? new Uint32Array(indices) : new Uint16Array(indices), 1));
     geometry.computeBoundingSphere();
+    geometry.userData.cappedLoops = cappedLoops;
+    geometry.userData.visibleIndexCount = visibleIndexCount;
     out.push({ region: REGIONS[region], geometry, sourceVertex: new Uint32Array(sourceVertex) });
   }
   return out;

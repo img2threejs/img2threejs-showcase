@@ -71,13 +71,39 @@ export interface StrandTuning {
  * envelope closing smoothly as it rises, with no threshold anywhere.
  */
 const SKIRT_TUNING: StrandTuning = { stiffness: 0.003, damping: 0.88, gravity: 28, inertia: 0.5 };
-const HAIR_TUNING: StrandTuning = { stiffness: 0.006, damping: 0.9, gravity: 20, inertia: 0.45 };
+/*
+ * The hair is tuned stiffer and better damped than the gown, and the numbers came from measurement
+ * rather than taste. The eight hair chains are solved independently, so at low stiffness two chains
+ * 45 degrees apart could swing far enough apart to draw the surface between them out to 0.063 of
+ * figure height on the run clip. Holding them nearer their rest pose brings that to 0.025 and costs
+ * the gown nothing, which is the right trade for this character: her hair is a heavy straight fall,
+ * not loose curls, and it should read as weight rather than as float.
+ */
+const HAIR_TUNING: StrandTuning = { stiffness: 0.08, damping: 0.85, gravity: 14, inertia: 0.45 };
 
 /** Ceiling on per-frame particle travel, in world units — a guard against a clip switch teleporting an anchor. */
 const MAX_STEP = 0.25;
 
+/**
+ * Anchor movement in one step that can only be a cut, not a motion.
+ *
+ * A looping clip teleports the skeleton from its last frame back to its first, and the solver cannot
+ * tell that from a movement: it sees the anchor jump and starts swinging after it. Measured on
+ * `flee_02`, whose 3.71 s puts the wrap at frame 222, a hair edge stretched by 0.060 of figure
+ * height at frame 225 while every other edge in that mesh stayed under 0.020 — a whip, once per
+ * loop, forever. Past this distance the strand is re-seeded instead of chased, which is invisible
+ * because the body jumped too: they land together.
+ *
+ * 0.4 world units in one step is roughly a fifth of the figure's height. Nothing these clips do to a
+ * pelvis or a head at 60 fps comes close, so ordinary motion never trips it.
+ */
+const TELEPORT_JUMP = 0.4;
+
 /** Ground plane. The rig normalises the figure feet-at-zero, so this is not a tuned number. */
 const FLOOR_Y = 0;
+
+/** Height over which a region fades from its strand joints onto the body joint it is sewn to. */
+const ATTACH_BAND = 0.05;
 
 interface Strand {
   /** bones[0] is the anchor: it is parented into the body skeleton and never solved. */
@@ -267,6 +293,8 @@ export interface CostumeBinding {
    */
   bones: THREE.Bone[];
   strands: Strand[];
+  /** Strands grouped by the ring they belong to, in sector order, so the solver can couple them. */
+  strandRings: Strand[][];
   /**
    * What a ring would give this source vertex, whatever mesh it ends up in.
    *
@@ -347,6 +375,7 @@ export function planCostumeRig(
 
   const bones = rings.flatMap((r) => r.bones);
   const strands = rings.flatMap((r) => r.strands);
+  const strandRings = rings.map((r) => r.strands);
 
   // Where each ring's joints start once they are appended after the body's.
   const ringBase = new Map<number, number>();
@@ -367,7 +396,7 @@ export function planCostumeRig(
     const y = part.position[source * 3 + 1];
     const z = part.position[source * 3 + 2] - ring.axis.z;
 
-    if (y >= ring.rigidAbove) {
+    if (y >= ring.rigidAbove + ATTACH_BAND) {
       // The bodice seam and the scalp cap ride the body joint outright, which is what keeps the
       // gown's top ring welded to the waist and the hair cap welded to the skull.
       return { index: [ring.anchorBone, 0, 0, 0], weight: [1, 0, 0, 0] };
@@ -402,10 +431,35 @@ export function planCostumeRig(
     const weight: [number, number, number, number] = total > 0
       ? [raw[0] / total, raw[1] / total, raw[2] / total, raw[3] / total]
       : [1, 0, 0, 0];
+
+    /*
+     * Fade into the attachment rather than stepping onto it.
+     *
+     * Above `rigidAbove` a vertex rides the body joint outright; below it, the strand joints. A hard
+     * switch between the two is a step in the deformation exactly where the costume is sewn on, and
+     * on the hair it showed: the run clip stretched an edge there by 0.066 of figure height, where
+     * every other hair edge stayed under 0.003. Fading over a band spreads that step across a
+     * centimetre of surface instead of one ring of vertices.
+     *
+     * The anchor replaces the LIGHTEST strand influence, so the vertex still never exceeds the four
+     * a SkinnedMesh carries.
+     */
+    if (y >= ring.rigidAbove) {
+      const t = (y - ring.rigidAbove) / ATTACH_BAND;
+      let lightest = 0;
+      for (let k = 1; k < 4; k += 1) if (weight[k] < weight[lightest]) lightest = k;
+      for (let k = 0; k < 4; k += 1) weight[k] *= 1 - t;
+      const freed = weight[lightest];
+      weight[lightest] = 0;
+      index[lightest] = ring.anchorBone;
+      weight[lightest] = t + freed;
+      const sum = weight[0] + weight[1] + weight[2] + weight[3];
+      if (sum > 0) for (let k = 0; k < 4; k += 1) weight[k] /= sum;
+    }
     return { index, weight };
   };
 
-  return { bones, strands, ringWeightsAt };
+  return { bones, strands, strandRings, ringWeightsAt };
 }
 
 /**
@@ -415,7 +469,8 @@ export function planCostumeRig(
  * body animation stays exactly what the clip says it is — the cloth moves around the leg, the leg
  * never moves for the cloth.
  */
-export function createClothRig(strands: Strand[], skeletonBones: THREE.Bone[]): ClothRig {
+export function createClothRig(strandRings: Strand[][], skeletonBones: THREE.Bone[]): ClothRig {
+  const strands = strandRings.flat();
   const byName = new Map(skeletonBones.map((b) => [b.name, b] as const));
   const colliders: Collider[] = [];
   // Radii come from the measured inner lobe of the radial histogram (the leg surface sits at
@@ -472,7 +527,7 @@ export function createClothRig(strands: Strand[], skeletonBones: THREE.Bone[]): 
       const parentRotation = new THREE.Quaternion();
 
       for (const strand of strands) {
-        const { bones, particles, previous, lengths, tuning, restOffset, restWorld } = strand;
+        const { bones, particles, previous, lengths, tuning, restWorld } = strand;
 
         /*
          * Put the chain back in its rest pose FIRST, and read the targets from that.
@@ -497,7 +552,16 @@ export function createClothRig(strands: Strand[], skeletonBones: THREE.Bone[]): 
         // every particle is what stops a fast clip from leaving the skirt behind the body entirely:
         // without it the panels only ever catch up through the stiffness term, which reads as the
         // cloth being made of lead. The remainder is the lag that makes it look like cloth at all.
-        if (strand.anchorSeen) carry.subVectors(particles[0], strand.lastAnchor).multiplyScalar(tuning.inertia);
+        const jumped = strand.anchorSeen && particles[0].distanceTo(strand.lastAnchor) > TELEPORT_JUMP;
+        if (jumped) {
+          // A cut, not a movement: land the whole strand on the pose the clip just asked for and
+          // drop the velocity it accumulated chasing the old one.
+          for (let i = 0; i < bones.length; i += 1) {
+            particles[i].copy(restWorld[i]);
+            previous[i].copy(restWorld[i]);
+          }
+        }
+        if (strand.anchorSeen && !jumped) carry.subVectors(particles[0], strand.lastAnchor).multiplyScalar(tuning.inertia);
         else carry.set(0, 0, 0);
         strand.lastAnchor.copy(particles[0]);
         strand.anchorSeen = true;
@@ -552,8 +616,31 @@ export function createClothRig(strands: Strand[], skeletonBones: THREE.Bone[]): 
           if (particles[i].y < FLOOR_Y) particles[i].y = FLOOR_Y;
         }
 
-        // Rotations only once every particle is settled, walking down the chain so each joint reads a
-        // parent whose world matrix is already final for this frame.
+      }
+
+      /*
+       * Neighbouring panels are deliberately NOT coupled to each other.
+       *
+       * A lateral constraint holding adjacent chains at their rest spacing is the textbook way to
+       * make a ring of strands behave as one sheet, and it was tried here across four clips at four
+       * strengths. Every one of them made the result worse, not better: the gown's worst edge went
+       * from 0.009 of figure height to 0.087, and the hair's from 0.063 to 0.077, with no strength
+       * that traded them off. The reason is that this gown is not a closed ring — it has a real slit
+       * up the front — so constraining sectors that the mesh does not actually join pulls the two
+       * sides of the slit around, and the correction then fights the length constraint that runs
+       * after it. The chains are left independent, and the measurements are in the gate.
+       */
+
+      // Turn the joints only once every particle is settled, so each one reads a parent whose world
+      // matrix is already final for this frame.
+      for (const strand of strands) {
+        const { bones, particles, lengths, restOffset } = strand;
+        for (let i = 1; i < bones.length; i += 1) {
+          delta.subVectors(particles[i], particles[i - 1]);
+          const length = delta.length();
+          if (length > 1e-6) particles[i].copy(particles[i - 1]).addScaledVector(delta, lengths[i - 1] / length);
+          if (particles[i].y < FLOOR_Y) particles[i].y = FLOOR_Y;
+        }
         for (let i = 1; i < bones.length; i += 1) {
           const parent = bones[i - 1];
           currentDirection.copy(restOffset[i]).applyMatrix4(parent.matrixWorld).sub(particles[i - 1]);

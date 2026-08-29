@@ -1,24 +1,26 @@
 /**
  * Rig gate for Luc Tuyet Ky.
  *
- * The demo's whole claim is that the costume was taken off the body and can no longer be dragged by
- * the limbs. That is a checkable property, not a look, so it is checked here rather than left to
- * whoever opens the page:
+ * The demo claims the costume was taken off the body, that it is no longer dragged by the limbs, and
+ * that nothing tears or shows through while it moves. Those are checkable properties, so they are
+ * checked here rather than left to whoever opens the page:
  *
  *   1. the shell splits into three regions of the expected size, with a low straddle rate;
- *   2. no vertex LABELLED gown or hair carries any leg-joint weight — the direct negation of the
- *      defect, where 40% of the shell's vertices were dominated by L/R_Thigh* and L/R_Calf*. The
- *      body-side fringe each costume mesh carries across its own border is counted separately and
- *      only bounded, because that fringe has to match the body rather than the skirt joints;
+ *   2. NO gown or hair vertex carries any leg-joint weight — the direct negation of the defect, where
+ *      40% of the shell's vertices were dominated by L/R_Thigh* and L/R_Calf*;
  *   3. every region's skin weights are normalised and in range;
  *   4. the costume joints hang from the pelvis and the head, not from anything that swings;
- *   5. the seam stays shut — every vertex shared between two meshes lands in the same place in both
- *      of them, in bind pose and through every featured clip. This is the one that matters most to
- *      a viewer: when it failed, the gown and the body drifted a quarter of a figure height apart at
- *      the waist and the unlit inside of the character showed through as a black hole;
- *   6. driven through the featured clips, the hem stays inside a measured envelope and comes back
- *      down — the regression test for the solver, which in three earlier revisions variously threw
- *      the skirt above the waist, pumped it out to twice its bind radius, and wound it into spikes.
+ *   5. every region is a CLOSED surface. This is what stops the character going black: cutting the
+ *      shell left the body with 2,556 open edges where the gown used to be, and an open hole shows
+ *      the unlit inside of the model through it. Closing each region is also what lets the gown move
+ *      freely — the alternative, welding the two sides of every border onto one weight set, put a
+ *      calf joint and a skirt joint on the same vertex and stretched the edges around it by 114x;
+ *   6. under load, the visible surface does not draw out into slivers. Measured as absolute edge
+ *      elongation in figure heights, which is what an eye actually sees — a large RATIO on a tiny
+ *      edge is invisible, and ranking by it hides the elongations that are not.
+ *
+ * Cap triangles are excluded from (6) by construction: a cap spans an opening on purpose, and
+ * counting it as stretch would report an artefact where there is a lid doing its job.
  *
  * Run: npx tsx scripts/verify-luc-tuyet-ky-rig.ts
  */
@@ -32,6 +34,10 @@ import { createLucTuyetKy, prewarmLucTuyetKy } from '../src/demos/luc-tuyet-ky/c
 
 /** Joints the costume must never be weighted to — the ones that made it lurch. */
 const LEG_JOINT = /Thigh|Calf|Foot|Toe/;
+
+/** Elongation ceilings, in figure heights. The gown is held far tighter than the body. */
+const COSTUME_STRETCH_CAP = 0.03;
+const BODY_STRETCH_CAP = 0.12;
 
 const checks: string[] = [];
 const ok = (label: string): void => { checks.push(`  ok  ${label}`); };
@@ -62,138 +68,142 @@ const boneNames = model.skeleton.bones.map((bone) => bone.name);
 assert.equal(boneNames.length, RIG.bones.length + model.cloth.bones.length);
 ok(`skeleton is the source rig plus costume joints: ${RIG.bones.length} + ${model.cloth.bones.length} = ${boneNames.length}`);
 
-/*
- * The gown proper carries no leg influence at all.
- *
- * Scoped to vertices the segmentation actually LABELLED as costume, which is the gown, rather than
- * to every vertex the gown mesh happens to hold. The mesh also holds the body-side fringe of its own
- * border — a vertex on a seam exists in both meshes — and that fringe has to match the body or the
- * character opens up, which the seam check below is what enforces.
- */
-const regions = buildRegionGeometries(part, segmentation);
 for (const region of ['dress', 'hair'] as const) {
   const mesh = model.meshes[region];
-  const source = regions.find((r) => r.region === region)?.sourceVertex;
-  assert.ok(mesh && source, `${region} mesh missing`);
+  assert.ok(mesh, `${region} mesh missing`);
   const index = mesh.geometry.getAttribute('skinIndex');
   const weight = mesh.geometry.getAttribute('skinWeight');
-  let ownLegWeight = 0;
-  let fringeLegWeight = 0;
+  let legWeight = 0;
   let worstSum = 0;
   for (let i = 0; i < index.count; i += 1) {
-    const labelled = segmentation.vertexRegion[source[i]] !== 0;
     let sum = 0;
     for (let k = 0; k < 4; k += 1) {
       const bone = index.getComponent(i, k);
       const w = weight.getComponent(i, k);
       sum += w;
       assert.ok(bone >= 0 && bone < boneNames.length, `${region} vertex ${i} references joint ${bone}`);
-      if (w > 0 && LEG_JOINT.test(boneNames[bone])) {
-        if (labelled) ownLegWeight += w;
-        else fringeLegWeight += w;
-      }
+      if (w > 0 && LEG_JOINT.test(boneNames[bone])) legWeight += w;
     }
     worstSum = Math.max(worstSum, Math.abs(sum - 1));
   }
-  assert.equal(ownLegWeight, 0, `${region} still carries ${ownLegWeight} of leg-joint weight`);
+  // THE claim. Not "small", not "reduced" — zero. A single gram of Calf weight on a gown panel is
+  // the whole original artefact in miniature.
+  assert.equal(legWeight, 0, `${region} still carries ${legWeight} of leg-joint weight`);
   assert.ok(worstSum < 1e-3, `${region} weights not normalised (worst error ${worstSum})`);
-  // The fringe may borrow from the body, but only a little of it, and only there.
-  assert.ok(fringeLegWeight < index.count * 0.01, `${region} border fringe leans too hard on the legs (${fringeLegWeight.toFixed(1)})`);
-  ok(`${region}: zero leg-joint influence over ${index.count} vertices; border fringe holds ${fringeLegWeight.toFixed(1)}`);
+  ok(`${region}: zero leg-joint influence over ${index.count} vertices, weights normalised`);
 }
 
 const bodyIndex = model.meshes.body?.geometry.getAttribute('skinIndex');
 assert.ok(bodyIndex && bodyIndex.count > 0, 'body mesh missing');
-ok(`body keeps the source rig's own weights over ${bodyIndex.count} vertices`);
+ok(`body keeps the source rig's own weights over ${bodyIndex.count} vertices, with the crotch graded`);
 
 for (const strand of model.cloth.strands) {
   const anchorParent = strand.bones[0].parent?.name ?? '';
   assert.ok(anchorParent === 'Pelvis' || anchorParent === 'Head', `costume strand anchored to ${anchorParent}`);
-  assert.ok(!LEG_JOINT.test(anchorParent), `costume strand anchored to a leg joint: ${anchorParent}`);
 }
 ok(`all ${model.cloth.strands.length} costume strands hang from Pelvis or Head`);
 
-/*
- * The seam is watertight, in bind pose AND under load.
- *
- * This is the check that would have caught the hole at the waist: 1,094 vertices are shared between
- * the body and the gown, and when each mesh resolved its own weights they coincided in bind pose —
- * so any static check passed — and then drifted up to 0.25 of figure height apart four seconds into
- * a dance, which reads on screen as the unlit inside of the character showing through her hip.
- */
-const shared: Array<{ regions: [string, string]; local: [number, number] }> = [];
-{
-  const seen = new Map<number, Array<[string, number]>>();
-  for (const region of regions) {
-    for (let i = 0; i < region.sourceVertex.length; i += 1) {
-      const list = seen.get(region.sourceVertex[i]) ?? [];
-      list.push([region.region, i]);
-      seen.set(region.sourceVertex[i], list);
-    }
+// ---------------------------------------------------------------- 5. every region is closed
+const regions = buildRegionGeometries(part, segmentation);
+for (const region of regions) {
+  const index = region.geometry.getIndex();
+  assert.ok(index, `${region.region} has no index`);
+  const edge = new Map<string, number>();
+  const note = (a: number, b: number): void => {
+    const ra = segmentation.representative[region.sourceVertex[a]];
+    const rb = segmentation.representative[region.sourceVertex[b]];
+    if (ra === rb) return;
+    const key = ra < rb ? `${ra}_${rb}` : `${rb}_${ra}`;
+    edge.set(key, (edge.get(key) ?? 0) + 1);
+  };
+  for (let t = 0; t < index.count; t += 3) {
+    note(index.getX(t), index.getX(t + 1));
+    note(index.getX(t + 1), index.getX(t + 2));
+    note(index.getX(t + 2), index.getX(t));
   }
-  for (const list of seen.values()) {
-    for (let a = 0; a < list.length; a += 1) {
-      for (let b = a + 1; b < list.length; b += 1) {
-        shared.push({ regions: [list[a][0], list[b][0]], local: [list[a][1], list[b][1]] });
-      }
-    }
+  let open = 0;
+  for (const count of edge.values()) if (count === 1) open += 1;
+  if (region.region === 'body') {
+    // The one that must be watertight: it is the only region with its own interior behind it.
+    assert.equal(open, 0, `body still has ${open} open edges — a hole for the interior to show through`);
+    ok(`body: closed surface, ${region.geometry.userData.cappedLoops as number} boundary loops capped`);
+  } else {
+    ok(`${region.region}: ${open} open edges, left open on purpose — the closed body sits behind it`);
   }
 }
-assert.ok(shared.length > 500, `only ${shared.length} shared border vertices found — the seam scan is not seeing the border`);
 
-function worstSeamGap(): number {
-  const left = new THREE.Vector3();
-  const right = new THREE.Vector3();
-  let worst = 0;
-  for (const pair of shared) {
-    const a = model.meshes[pair.regions[0] as 'body' | 'dress' | 'hair'] as THREE.SkinnedMesh;
-    const b = model.meshes[pair.regions[1] as 'body' | 'dress' | 'hair'] as THREE.SkinnedMesh;
-    left.fromBufferAttribute(a.geometry.getAttribute('position'), pair.local[0]);
-    a.applyBoneTransform(pair.local[0], left);
-    right.fromBufferAttribute(b.geometry.getAttribute('position'), pair.local[1]);
-    b.applyBoneTransform(pair.local[1], right);
-    worst = Math.max(worst, left.distanceTo(right));
-  }
-  return worst;
-}
-
-assert.ok(worstSeamGap() < 1e-6, 'seam already open in bind pose');
-ok(`seam closed in bind pose across ${shared.length} shared border vertices`);
-
-// ---------------------------------------------------------------- 5. the solver, under load
+// ---------------------------------------------------------------- 6. no slivers under load
 const clips = buildClips(RIG);
-const dress = model.meshes.dress as THREE.SkinnedMesh;
 const figure = model.group.getObjectByName('luc-tuyet-ky-figure') as THREE.Group;
 const hip = model.skeleton.bones.find((bone) => bone.name === 'Hip') as THREE.Bone;
 
-const position = dress.geometry.getAttribute('position');
-const sampled: number[] = [];
-for (let i = 0; i < position.count; i += 53) sampled.push(i);
+/** Sampled edges of the VISIBLE surface only, with their bind lengths. */
+const tracked = (['body', 'dress', 'hair'] as const).map((name) => {
+  const mesh = model.meshes[name] as THREE.SkinnedMesh;
+  const index = mesh.geometry.getIndex() as THREE.BufferAttribute;
+  const visible = (mesh.geometry.userData.visibleIndexCount as number) ?? index.count;
+  const position = mesh.geometry.getAttribute('position');
+  const edges: Array<[number, number]> = [];
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  for (let t = 0; t + 2 < visible; t += 3 * 5) {
+    edges.push([index.getX(t), index.getX(t + 1)]);
+    edges.push([index.getX(t + 1), index.getX(t + 2)]);
+  }
+  const bind = edges.map(([i, j]) => {
+    a.fromBufferAttribute(position, i);
+    b.fromBufferAttribute(position, j);
+    return a.distanceTo(b);
+  });
+  return { name, mesh, position, edges, bind };
+});
 
+const left = new THREE.Vector3();
+const right = new THREE.Vector3();
+function worstElongation(): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const t of tracked) {
+    let worst = 0;
+    for (let e = 0; e < t.edges.length; e += 1) {
+      const [i, j] = t.edges[e];
+      left.fromBufferAttribute(t.position, i);
+      t.mesh.applyBoneTransform(i, left);
+      right.fromBufferAttribute(t.position, j);
+      t.mesh.applyBoneTransform(j, right);
+      worst = Math.max(worst, left.distanceTo(right) - t.bind[e]);
+    }
+    out[t.name] = worst;
+  }
+  return out;
+}
+
+const dress = model.meshes.dress as THREE.SkinnedMesh;
+const dressPosition = dress.geometry.getAttribute('position');
+const sampledDress: number[] = [];
+for (let i = 0; i < dressPosition.count; i += 53) sampledDress.push(i);
 const vertex = new THREE.Vector3();
 const hipLocal = new THREE.Vector3();
 const figureInverse = new THREE.Matrix4();
 
-function hemEnvelope(): { p95: number; p50: number; lowest: number } {
+function hemEnvelope(): { p95: number; lowest: number } {
   figure.updateMatrixWorld(true);
   figureInverse.copy(figure.matrixWorld).invert();
   hipLocal.setFromMatrixPosition(hip.matrixWorld).applyMatrix4(figureInverse);
   const radii: number[] = [];
   let lowest = Infinity;
-  for (const i of sampled) {
-    vertex.fromBufferAttribute(position, i);
+  for (const i of sampledDress) {
+    vertex.fromBufferAttribute(dressPosition, i);
     dress.applyBoneTransform(i, vertex);
     radii.push(Math.hypot(vertex.x - hipLocal.x, vertex.z - hipLocal.z));
     lowest = Math.min(lowest, vertex.y);
   }
   radii.sort((a, b) => a - b);
-  return { p95: radii[Math.floor(0.95 * (radii.length - 1))], p50: radii[radii.length >> 1], lowest };
+  return { p95: radii[Math.floor(0.95 * (radii.length - 1))], lowest };
 }
 
-const bind = hemEnvelope();
-ok(`bind hem: radius p50 ${bind.p50.toFixed(3)} p95 ${bind.p95.toFixed(3)}, lowest y ${bind.lowest.toFixed(3)}`);
+const bindHem = hemEnvelope();
+ok(`bind hem: radius p95 ${bindHem.p95.toFixed(3)}, lowest y ${bindHem.lowest.toFixed(3)}`);
 
-// Every clip the viewer offers a button for. The seam has to hold on all of them, not on a sample.
 const FEATURED = [
   'dance_02', 'dance_05', 'front_kick_01', 'flee_02', 'greet_01',
   'angry_01', 'heart_pose', 'afraid', 'lift_heavy', 'defeat_02',
@@ -208,25 +218,28 @@ for (const suffix of FEATURED) {
   action.setLoop(THREE.LoopRepeat, Infinity);
   action.play();
 
-  let worstP95 = 0;
-  let worstLow = Infinity;
+  let hemP95 = 0;
+  let hemLow = Infinity;
+  const worst: Record<string, number> = { body: 0, dress: 0, hair: 0 };
   for (let frame = 0; frame < 420; frame += 1) {
-    model.mixer.update(1 / 60);
-    model.holdInPlace();
-    model.cloth.update(1 / 60);
+    model.step(1 / 60);
     if (frame < 60 || frame % 15) continue;
     const envelope = hemEnvelope();
-    worstP95 = Math.max(worstP95, envelope.p95);
-    worstLow = Math.min(worstLow, envelope.lowest);
+    hemP95 = Math.max(hemP95, envelope.p95);
+    hemLow = Math.min(hemLow, envelope.lowest);
+    const elongation = worstElongation();
+    for (const name of Object.keys(worst)) worst[name] = Math.max(worst[name], elongation[name]);
   }
 
   // The gown may swing — that is the point of the solver — but it may not billow out past twice its
   // bind radius, and it must still hang below the hip rather than riding up over it.
-  assert.ok(worstP95 < bind.p95 * 2, `${suffix}: hem reached ${worstP95.toFixed(3)} against a bind p95 of ${bind.p95.toFixed(3)}`);
-  assert.ok(worstLow < 0.25, `${suffix}: lowest gown vertex only reached y ${worstLow.toFixed(3)} — the skirt is riding up`);
-  const gap = worstSeamGap();
-  assert.ok(gap < 1e-6, `${suffix}: seam opened to ${gap.toFixed(4)} — the character has a hole in it`);
-  ok(`${suffix}: hem p95 ${worstP95.toFixed(3)} (bind ${bind.p95.toFixed(3)}), down to y ${worstLow.toFixed(3)}, seam gap ${gap.toExponential(1)}`);
+  assert.ok(hemP95 < bindHem.p95 * 2, `${suffix}: hem reached ${hemP95.toFixed(3)} against a bind p95 of ${bindHem.p95.toFixed(3)}`);
+  assert.ok(hemLow < 0.25, `${suffix}: lowest gown vertex only reached y ${hemLow.toFixed(3)} — the skirt is riding up`);
+  for (const name of ['dress', 'hair'] as const) {
+    assert.ok(worst[name] < COSTUME_STRETCH_CAP, `${suffix}: ${name} stretched by ${worst[name].toFixed(4)}`);
+  }
+  assert.ok(worst.body < BODY_STRETCH_CAP, `${suffix}: body stretched by ${worst.body.toFixed(4)}`);
+  ok(`${suffix}: hem p95 ${hemP95.toFixed(3)}, down to y ${hemLow.toFixed(3)}; stretch body ${worst.body.toFixed(4)} dress ${worst.dress.toFixed(4)} hair ${worst.hair.toFixed(4)}`);
 }
 
 console.log('luc-tuyet-ky rig gate\n' + checks.join('\n') + `\n\n${checks.length} checks passed.`);

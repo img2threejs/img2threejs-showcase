@@ -12,8 +12,8 @@ import {
   type EncodedRig,
   type Quality,
 } from './meshCodec';
-import { buildRegionGeometries, segmentCostume, SEAM_FALLOFF_HOPS, type Region, type SegmentationResult } from './costumeSegmentation';
-import { createClothRig, planCostumeRig, type ClothRig, type VertexWeights } from './clothRig';
+import { buildRegionGeometries, segmentCostume, type Region, type SegmentationResult } from './costumeSegmentation';
+import { createClothRig, planCostumeRig, type ClothRig } from './clothRig';
 import { createFrostVfx, VFX_LAYERS, type FrostVfx, type VfxLayer } from './frostVfx';
 
 /**
@@ -136,6 +136,16 @@ export interface LucTuyetKyAction {
 
 export interface LucTuyetKyModel {
   group: THREE.Group;
+  /**
+   * Advance one frame: pose the body, pin it in place, then solve the cloth against that pose.
+   *
+   * The order is not incidental and neither is the wrap check inside it, so callers get a single
+   * entry point rather than three they have to sequence correctly themselves.
+   */
+  step(deltaSeconds: number): void;
+  /** Body vertices whose leg weights were graded through the pelvis at the left/right boundary. */
+  crotchVertices: number;
+  crotchRings: number;
   /** Pins the Hip's horizontal travel to its bind value; call after the mixer, before the cloth. */
   holdInPlace(): void;
   meshes: Record<Region, THREE.SkinnedMesh | null>;
@@ -203,60 +213,135 @@ export function createLucTuyetKy(options: LucTuyetKyOptions = {}, host?: THREE.G
   const costume = planCostumeRig(part, regions, bodyBones);
 
   /*
-   * One weight set per SOURCE vertex, applied to every mesh that holds a copy of it.
+   * Each mesh answers for its own vertices. No blending across the border.
    *
-   * This is what keeps the character watertight. Splitting the shell duplicates each border vertex
-   * into two meshes, and the first revision let each copy take its own mesh's rule — the gown copy
-   * onto the skirt joints, the body copy keeping the auto-rig's. They agreed in bind pose and then
-   * came apart the moment anything moved: 1,094 shared vertices between body and gown, measured up
-   * to 0.25 of figure height apart during a dance, which on screen is a hole at the waist with the
-   * unlit inside of the model showing through it. Resolving weights from the source vertex instead
-   * of from the mesh makes both copies identical by construction, so there is no gap to open.
+   * A previous revision resolved every border vertex to ONE weight set shared by both meshes, to
+   * stop the seam opening. It worked, and it bought the hole at the cost of something worse: a
+   * vertex on the hem then held a calf joint AND a skirt joint, and those two point in completely
+   * different directions the moment she kicks. Measured on `front_kick_01`, edges around that band
+   * stretched by up to 114x — the long slivers the gown was being dragged into. Mixing two rigs that
+   * disagree is not a compromise between them, it is a vertex flung to a place neither rig would
+   * ever put it.
    *
-   * Away from the seam the body returns to its own weights over `SEAM_FALLOFF_HOPS` rings rather
-   * than in one step, because a step would simply move the tear inward by one ring.
+   * `buildRegionGeometries` caps every region's open boundaries instead, so each one is a closed
+   * surface in its own right. That removes the reason the blend existed: the gown and the body may
+   * now separate freely at the hem, because there is no longer a hole behind either of them to see
+   * through. The gown keeps a rig with no leg joint anywhere in it, which is the whole point.
+   *
+   * The waist and the scalp stay together without any special handling, because the joints on the
+   * two sides are effectively the same joint there: Hip, Pelvis and Waist all sit at exactly
+   * (0.028, 0.567, -0.008) in this rig, and the skirt ring hangs off the Pelvis.
    */
   const sourceSkinIndex = decodeUint16s(RIG.skinIndex);
   const sourceSkinWeight = decodeFloats(RIG.skinWeight);
 
-  const originalWeights = (source: number): VertexWeights => ({
-    index: [
-      sourceSkinIndex[source * 4], sourceSkinIndex[source * 4 + 1],
-      sourceSkinIndex[source * 4 + 2], sourceSkinIndex[source * 4 + 3],
-    ],
-    weight: [
-      sourceSkinWeight[source * 4], sourceSkinWeight[source * 4 + 1],
-      sourceSkinWeight[source * 4 + 2], sourceSkinWeight[source * 4 + 3],
-    ],
-  });
+  /*
+   * Ease the auto-rig's left/right leg boundary through the joint the two legs share.
+   *
+   * Measured on `front_kick_01`, the single worst edge on the whole character ran between a vertex
+   * at R_ThighTwist01 1.00 and a vertex at L_ThighTwist02 1.00 — the two legs meeting across one
+   * edge, at the crotch line, with no transition whatsoever. Split the stance and that edge has to
+   * span the entire gap between the thighs on its own: 0.138 of figure height, a hand's width of
+   * stretched sliver webbed between her legs, which is what a kick made so obvious.
+   *
+   * Nothing about the costume caused this and no amount of work on the costume could reach it; it is
+   * the source rig, and it was there in the original download.
+   *
+   * The repair grades the crossing over five rings instead of one edge. Vertices ON the boundary
+   * fall back on the pelvis — the joint both legs hang from, and the only one that does not swing
+   * away from either — and the pull decays to nothing five rings out, so the legs themselves keep
+   * exactly the weights they had. Spreading one edge's worth of divergence across five is the whole
+   * mechanism: no single edge is asked to cover the split any more.
+   *
+   * Two simpler versions were measured and rejected. Handing the minority leg's weight to the pelvis
+   * per-vertex made it worse (231x on the ratio metric, against 114x) because it caught mid-thigh
+   * vertices that were only ever going to follow one leg; folding the minority into the dominant leg
+   * was worse still (458x) because it sharpened the very discontinuity that does the damage.
+   */
+  const LEFT_LEG = /^L_(Thigh|Calf)/;
+  const RIGHT_LEG = /^R_(Thigh|Calf)/;
+  const CROTCH_RINGS = 5;
+  const CROTCH_PULL = 0.9;
+  const pelvisIndex = bodyBones.findIndex((bone) => bone.name === 'Pelvis');
 
-  /** Mix two influence sets and keep the four heaviest, renormalised. */
-  const mixWeights = (a: VertexWeights, b: VertexWeights, t: number): VertexWeights => {
-    const pooled = new Map<number, number>();
+  const legSide = new Int8Array(part.meta.vertexCount);
+  for (let v = 0; v < part.meta.vertexCount; v += 1) {
+    let left = 0;
+    let right = 0;
     for (let k = 0; k < 4; k += 1) {
-      if (a.weight[k] > 0) pooled.set(a.index[k], (pooled.get(a.index[k]) ?? 0) + a.weight[k] * (1 - t));
-      if (b.weight[k] > 0) pooled.set(b.index[k], (pooled.get(b.index[k]) ?? 0) + b.weight[k] * t);
+      const name = bodyBones[sourceSkinIndex[v * 4 + k]]?.name ?? '';
+      if (LEFT_LEG.test(name)) left += sourceSkinWeight[v * 4 + k];
+      else if (RIGHT_LEG.test(name)) right += sourceSkinWeight[v * 4 + k];
     }
-    const ranked = [...pooled.entries()].sort((x, y) => y[1] - x[1]).slice(0, 4);
-    const total = ranked.reduce((sum, [, w]) => sum + w, 0) || 1;
-    const index: [number, number, number, number] = [0, 0, 0, 0];
-    const weight: [number, number, number, number] = [0, 0, 0, 0];
-    ranked.forEach(([bone, w], k) => { index[k] = bone; weight[k] = w / total; });
-    if (!ranked.length) weight[0] = 1;
-    return { index, weight };
-  };
+    // Ambiguous, not sided: a vertex holding meaningful weight from BOTH legs is the webbing, and
+    // labelling it by whichever leg happens to hold 0.53 hides exactly the vertices that tear.
+    legSide[v] = Math.min(left, right) > 0.15 ? 2 : left > 0.5 ? -1 : right > 0.5 ? 1 : 0;
+  }
 
-  const weightForSource = (source: number): VertexWeights => {
-    const region = segmentation.vertexRegion[source];
-    if (region !== 0) {
-      // Gown and hair proper: the ring rule alone, so no leg joint reaches them.
-      return costume.ringWeightsAt(source, region as 1 | 2) ?? originalWeights(source);
+  const crotchPull = new Float32Array(part.meta.vertexCount);
+  let crotchVertices = 0;
+  if (pelvisIndex >= 0) {
+    const { offset, neighbour } = segmentation.adjacency;
+    const hop = new Int32Array(part.meta.vertexCount).fill(-1);
+    let frontier: number[] = [];
+    for (let v = 0; v < part.meta.vertexCount; v += 1) {
+      if (legSide[v] === 0) continue;
+      // Seeded either by holding both legs at once, or by touching a vertex that belongs to the
+      // other leg — the two ways the auto-rig's left/right crossing shows up in the weights.
+      let seed = legSide[v] === 2;
+      if (!seed) {
+        for (let k = offset[v]; k < offset[v + 1]; k += 1) {
+          const side = legSide[neighbour[k]];
+          if (side === 2 || (side !== 0 && side === -legSide[v])) { seed = true; break; }
+        }
+      }
+      if (!seed) continue;
+      hop[v] = 0;
+      frontier.push(v);
     }
-    const hop = segmentation.seamHop[source];
-    if (hop === 0 || hop > SEAM_FALLOFF_HOPS) return originalWeights(source);
-    const ring = costume.ringWeightsAt(source, segmentation.seamRegion[source] as 1 | 2);
-    if (!ring) return originalWeights(source);
-    return mixWeights(ring, originalWeights(source), hop / SEAM_FALLOFF_HOPS);
+    for (let ring = 1; ring <= CROTCH_RINGS && frontier.length; ring += 1) {
+      const next: number[] = [];
+      for (const v of frontier) {
+        for (let k = offset[v]; k < offset[v + 1]; k += 1) {
+          const w = neighbour[k];
+          if (hop[w] >= 0 || legSide[w] === 0) continue;
+          hop[w] = ring;
+          next.push(w);
+        }
+      }
+      frontier = next;
+    }
+    for (let v = 0; v < part.meta.vertexCount; v += 1) {
+      const own = hop[v] >= 0 ? hop[v] : hop[segmentation.representative[v]];
+      if (own === undefined || own < 0) continue;
+      crotchPull[v] = CROTCH_PULL * (1 - own / (CROTCH_RINGS + 1));
+      if (crotchPull[v] > 0) crotchVertices += 1;
+    }
+  }
+
+  /** Move `pull` of a vertex's leg influence onto the pelvis, in place. */
+  const easeCrotch = (index: Uint16Array, weight: Float32Array, at: number, pull: number): void => {
+    let moved = 0;
+    for (let k = 0; k < 4; k += 1) {
+      const name = bodyBones[index[at + k]]?.name ?? '';
+      if (!LEFT_LEG.test(name) && !RIGHT_LEG.test(name)) continue;
+      const take = weight[at + k] * pull;
+      weight[at + k] -= take;
+      moved += take;
+    }
+    if (moved <= 0) return;
+    let slot = -1;
+    for (let k = 0; k < 4; k += 1) if (weight[at + k] > 0 && index[at + k] === pelvisIndex) { slot = k; break; }
+    if (slot < 0) for (let k = 0; k < 4; k += 1) if (weight[at + k] <= 1e-6) { slot = k; break; }
+    if (slot < 0) {
+      let lightest = 0;
+      for (let k = 1; k < 4; k += 1) if (weight[at + k] < weight[at + lightest]) lightest = k;
+      slot = lightest;
+      moved += weight[at + slot];
+      weight[at + slot] = 0;
+    }
+    index[at + slot] = pelvisIndex;
+    weight[at + slot] += moved;
   };
 
   for (const region of regions) {
@@ -264,10 +349,21 @@ export function createLucTuyetKy(options: LucTuyetKyOptions = {}, host?: THREE.G
     const skinIndex = new Uint16Array(count * 4);
     const skinWeight = new Float32Array(count * 4);
     for (let i = 0; i < count; i += 1) {
-      const { index, weight } = weightForSource(region.sourceVertex[i]);
-      for (let k = 0; k < 4; k += 1) {
-        skinIndex[i * 4 + k] = index[k];
-        skinWeight[i * 4 + k] = weight[k];
+      const source = region.sourceVertex[i];
+      const ring = region.region === 'body'
+        ? null
+        : costume.ringWeightsAt(source, region.region === 'dress' ? 1 : 2);
+      if (ring) {
+        for (let k = 0; k < 4; k += 1) {
+          skinIndex[i * 4 + k] = ring.index[k];
+          skinWeight[i * 4 + k] = ring.weight[k];
+        }
+      } else {
+        for (let k = 0; k < 4; k += 1) {
+          skinIndex[i * 4 + k] = sourceSkinIndex[source * 4 + k];
+          skinWeight[i * 4 + k] = sourceSkinWeight[source * 4 + k];
+        }
+        if (crotchPull[source] > 0) easeCrotch(skinIndex, skinWeight, i * 4, crotchPull[source]);
       }
     }
     region.geometry.setAttribute('skinIndex', new THREE.BufferAttribute(skinIndex, 4));
@@ -297,7 +393,7 @@ export function createLucTuyetKy(options: LucTuyetKyOptions = {}, host?: THREE.G
     if (mesh) mesh.bind(skeleton, mesh.matrixWorld.clone());
   }
 
-  const cloth = createClothRig(costume.strands, bodyBones);
+  const cloth = createClothRig(costume.strandRings, bodyBones);
   cloth.enabled = options.cloth ?? true;
   cloth.reset();
 
@@ -347,6 +443,14 @@ export function createLucTuyetKy(options: LucTuyetKyOptions = {}, host?: THREE.G
 
   const mixer = new THREE.AnimationMixer(figure);
 
+  const stepClipAndCloth = (deltaSeconds: number): void => {
+    mixer.update(deltaSeconds);
+    holdInPlace();
+    // Strictly after the mixer and the in-place pin: the solver reads the anchor joints the clip has
+    // just posed, and running it first would always leave the cloth one frame behind the body.
+    cloth.update(deltaSeconds);
+  };
+
   const vfx = options.vfx === false
     ? null
     : createFrostVfx({
@@ -366,7 +470,7 @@ export function createLucTuyetKy(options: LucTuyetKyOptions = {}, host?: THREE.G
     });
   if (vfx) group.add(vfx.group);
 
-  return { group, meshes, skeleton, mixer, cloth, vfx, holdInPlace };
+  return { group, meshes, skeleton, mixer, cloth, vfx, holdInPlace, step: stepClipAndCloth, crotchVertices, crotchRings: CROTCH_RINGS };
 }
 
 /**
@@ -436,7 +540,7 @@ function createControllerShell(group: THREE.Group, actions: LucTuyetKyAction[]):
 
 function assembleLucTuyetKy(group: THREE.Group, options: LucTuyetKyOptions, tickHolder: TickHolder, shell: ControllerShell): void {
   const model = createLucTuyetKy(options, group);
-  const { mixer, cloth, vfx, skeleton, holdInPlace } = model;
+  const { mixer, cloth, vfx, skeleton } = model;
   if (!loaded) throw new Error('createLucTuyetKy() cannot have succeeded without a prewarm');
   const clips = buildClips(loaded.rig);
   const byName = new Map(clips.map((clip) => [clip.name, clip] as const));
@@ -469,17 +573,15 @@ function assembleLucTuyetKy(group: THREE.Group, options: LucTuyetKyOptions, tick
     // the panels would keep the swing they had at the moment the clip was cut and settle from a pose
     // the body is no longer in.
     skeleton.pose();
+    model.holdInPlace();
     cloth.reset();
-    holdInPlace();
     setActive('idle');
   };
 
   tickHolder.current = (deltaSeconds: number, elapsedSeconds: number): void => {
-    mixer.update(deltaSeconds);
-    holdInPlace();
-    // Strictly after the mixer and the in-place pin: the solver reads the anchor joints the clip has
-    // just posed, and running it first would always leave the cloth one frame behind the body.
-    cloth.update(deltaSeconds);
+    // Body, then the in-place pin, then the cloth against that finished pose — `step` owns that
+    // order, and the clip-wrap re-seed that has to happen between the last two.
+    model.step(deltaSeconds);
     vfx?.update(deltaSeconds, elapsedSeconds);
   };
   // Exposed for the rig-tuning harness in scripts/, which sweeps the cloth constants against the
@@ -497,7 +599,8 @@ function assembleLucTuyetKy(group: THREE.Group, options: LucTuyetKyOptions, tick
     })),
     cut: 'Seeded on the measured bimodal radial histogram of the shell (gown panels sit outside r=0.085 of figure height where the leg reaches 0.05), grown along mesh edges and stopped at the belt line.',
     straddlingTriangles: decoded?.segmentation.straddlingTriangles ?? 0,
-    seam: `every border vertex resolves its weights from the source vertex, so the ${SEAM_FALLOFF_HOPS}-ring falloff closes the body/costume seam exactly rather than approximately`,
+    crotchRepair: `${model.crotchVertices} body vertices across the auto-rig's left/right leg boundary now grade through the pelvis over ${model.crotchRings} rings, instead of the two legs meeting across a single edge`,
+    seam: 'every region is capped into a closed surface, so the gown may separate from the body without anything showing through — no weights are blended across the border, which is what kept the two rigs from being mixed on one vertex',
     costumeJoints: cloth.bones.length,
     legInfluenceOnCostume: 0,
     solver: 'verlet strands, hard length constraint, sphere colliders on both thighs and both calves',
