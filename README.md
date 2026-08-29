@@ -57,8 +57,10 @@ shared skeleton, not part of the body shell.
 
 It had to be. The generated source welds the robe to the figure, and its auto-rig hangs **78% of the
 robe's weight off two calves and a foot** — so every clip dragged the dress inside-out by the shins.
-Cutting the gown out and rebinding it to the trunk moves the worst edge stretch across the garment
-from **1,750 mm to 46 mm** and its weight on any leg joint to **zero**, measured over all 22 clips.
+Cutting the costume out and rebinding it to the trunk moves the worst edge stretch across the
+garment from **1,750 mm to 110 mm** and its mean from 2.043 mm to **0.058 mm**, measured over all 22
+clips, with its weight on any leg joint down to **zero**. Every one of the 293,940 source triangles
+is still there — nothing is deleted, so nothing can show through.
 
 The movement rigid binding gives up comes back where it costs nothing: drift, lag and swing applied
 after skinning, which cannot tear a mesh. Nine clips, a rune circle, drifting petals and a ribbon
@@ -114,7 +116,7 @@ off each sleeve.
 
 | Exhibit | Kind | Status | Author |
 | --- | :-: | :-: | --- |
-| [Van Hi — Immortal in a Trailing Robe](https://img2threejs.io/#/demo/van-hi)<br><sub>The gown is its own SkinnedMesh: cut off a rig that hung 78% of it on two calves and a foot.</sub> | character | ✅ | [Hoài Nhớ](https://github.com/hoainho) |
+| [Van Hi — Immortal in a Trailing Robe](https://img2threejs.io/#/demo/van-hi)<br><sub>The costume is its own SkinnedMesh: cut off a rig that hung 78% of it on two calves and a foot.</sub> | character | ✅ | [Hoài Nhớ](https://github.com/hoainho) |
 | [Mouse Warrior — Rigged Surface Character](https://img2threejs.io/#/demo/warrior)<br><sub>47 Surface&nbsp;Nets regions bound to a human-structured rig, with a code-native attack clip.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Dual-Sword Warrior — TypeScript procedural surfaces](https://img2threejs.io/#/demo/girl-character)<br><sub>Encoded Surface Nets streamed as high / medium / low quality TypeScript modules.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Low-Poly Humanoid — Rigged Character](https://img2threejs.io/#/demo/low-poly-humanoid)<br><sub>Nine panel-driven actions, from Run and Jump to Roundhouse and Dodge.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |

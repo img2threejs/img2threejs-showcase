@@ -213,14 +213,9 @@ const authored: DemoEntry[] = [
     title: 'Van Hi \u2014 Immortal in a Trailing Robe',
     subjectClass: 'character',
     blurb:
-      'A xianxia immortal rebuilt from one reference image as pure Three.js, and split in two: the '
-      + 'gown is its OWN SkinnedMesh on the shared skeleton, not part of the body shell. It had to '
-      + 'be. The generated source welds the robe to the figure and its auto-rig hangs 78% of the '
-      + "robe's weight off two calves and a foot, so every clip dragged the dress inside-out by the "
-      + 'shins. Rebinding the garment to the trunk drops its worst edge stretch from 1,750 mm to '
-      + '46 mm and its mean from 2.277 mm to 0.045 mm, and its weight on any leg joint to zero; the '
-      + 'movement rigid binding gives up comes back as post-skinning cloth drift, lag and swing. '
-      + 'Nine clips, a rune circle, drifting petals and a ribbon off each sleeve.',
+      'A xianxia immortal rebuilt from one reference image, split in two: the costume is its own '
+      + 'SkinnedMesh on the shared skeleton. The generated rig hung 78% of the robe on two calves '
+      + 'and a foot; rebinding it to the trunk cuts the worst edge stretch from 1,750 mm to 110 mm.',
     referenceImage: `${BASE}references/van-hi.jpg`,
     referenceKind: 'image',
     sourcePath: 'src/demos/van-hi/createVanHiModel.ts',

@@ -13,10 +13,10 @@
  * What it printed when the demo was written:
  *
  *     mesh      edges     worst mm    mean mm   >5mm     >2cm
- *     body source      128013     321.0     0.424    0.88%    0.13%
- *     body shipped     128013     258.2     0.440    1.07%    0.16%
- *     garment source   332532    1750.1     2.277    2.13%    0.79%
- *     garment shipped  332532      45.8     0.045    0.20%    0.00%
+ *     body source       68716     360.1     0.394    0.98%    0.13%
+ *     body shipped      68716      75.8     0.287    0.73%    0.04%
+ *     garment source   391084    1750.1     2.043    1.96%    0.71%
+ *     garment shipped  391084     109.6     0.058    0.32%    0.03%
 
  */
 import { execFileSync } from 'node:child_process';

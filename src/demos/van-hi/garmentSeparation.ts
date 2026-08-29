@@ -20,16 +20,20 @@ import type { EncodedRig } from './meshCodec';
  * `preset:biped:angry_01` alone. On screen that is the dress being dragged inside-out by the shins
  * while spikes shoot off the silhouette.
  *
- * THE REPAIR, IN SIX MEASURED STEPS.
+ * THE REPAIR, IN EIGHT MEASURED STEPS.
  *
- * 1. FIND THE FABRIC, BY HUE AND BY REACH. The robe is the only strongly purple surface on the
- *    figure — its blue channel leads its green by 20-80 in sRGB, while skin sits at 1 and the black
- *    hair at 0 — but hue alone leaves the gown's WHITE panels behind, and the train pooling on the
- *    floor reads rgb(153,149,152). So a surface is also fabric when it is simply out of the body's
- *    reach: further than `FABRIC_REACH` from every bone, which no part of a body is. Coincident
- *    vertices vote as one point, `FABRIC_VOTE_PASSES` of majority vote over the surface close the
- *    pinholes, and non-fabric islands under `ISLAND_ABSORB_VERTICES` — grey braid and metal
- *    fittings sewn into the gown — are absorbed by topology rather than by loosening a threshold.
+ * 1. FIND THE BODY, AND LET THE COSTUME BE WHAT IS LEFT. The costume is not identified by its own
+ *    colour. An earlier version tried that — the gown is strikingly purple — and the gown's WHITE
+ *    front panel, its silver bodice and its grey braid all failed the test and stayed on the body
+ *    carrying the auto-rigger's leg weights. Rendered with the two meshes tinted apart, the "body"
+ *    turned out to hold most of the dress, and every clip pushed it out through the costume.
+ *
+ *    So the test is inverted, because the BODY is the part with a colour of its own. Hair first:
+ *    near-black, and belonging to a dark region that reaches the head, since a shadowed fold on the
+ *    inner thigh is dark too and is not hair. Then skin, which is warm and which nothing else here
+ *    is — red-minus-blue over the non-hair surface is cleanly bimodal, a hump at 4-8 for silk and
+ *    silver, a trough at 22-30, and a second hump at 42-50 across the face, arms and legs.
+ *    Everything that is neither is costume: gown, bodice, braid, crown, shoes.
  *
  * 2. KEEP ONLY WHAT HANGS. Connected components of the fabric set on the surface graph. A component
  *    joins the garment only if it is both large and tall (`MIN_DRAPE_VERTICES`,
@@ -56,17 +60,33 @@ import type { EncodedRig } from './meshCodec';
  *    mean elongation 2.46 mm -> 7.87 mm, because a gradient IS a stretch: spreading the sleeve's
  *    travel over the whole skirt only means every edge pays a little of it.
  *
- * 5. SOFTEN THE BODY'S UNPAINTED JOINT BOUNDARIES. The gown is done; this is the body's own
- *    defect, and it is visible. The rigger painted no falloff — 39.9% of vertices carry ONE
- *    influence at weight 1.0 — so where two such regions meet across a joint the surface has a hard
- *    seam that tears rather than bends, and a lit sliver is thrown out past the silhouette behind
- *    the right knee. Only edges whose two ends disagree by more than `BODY_HARD_EDGE` are touched,
- *    which is near-disjoint and cannot be an intended blend. It runs over the body's own copy of
- *    the weights, so nothing it does can reach the garment.
+ * 5. TAKE THE HAIR OFF THE SHOULDERS. Waist-length hair is the other long hanging surface here and
+ *    the rigger treated it as badly as the gown: `R_Clavicle 37% / L_Clavicle 22% / Head 21% /
+ *    Spine02 5%`, with 7% left over on the THIGHS. Fifty-nine per cent of a head of hair attached
+ *    to the shoulder blades, so raising an arm swung a solid black sheet out through the costume.
+ *    Hair that lies over a shoulder does not turn with that shoulder; it hangs from the head. Each
+ *    of its joints is re-expressed as the nearest joint in `HAIR_CARRIERS`, and the step that
+ *    substitution leaves is diffused away against the hair itself with its roots pinned. It is a
+ *    lift, not a drape: the hair never enters the gown's panel machinery, so it cannot disturb it.
  *
- * 6. CUT THE SHELL IN TWO. Each mesh keeps the vertices its triangles use, duplicated at the rim,
+ * 6. LET THE WELDS BEHAVE LIKE MEMBRANES. The generator fuses surfaces that come close — the inner
+ *    thighs under the skirt, the arms behind the back — so a triangle there has one corner on the
+ *    left calf and the next on the right and is torn apart the moment the legs split. Deleting them
+ *    was tried first and is exactly wrong: a hole in a closed shell shows the unlit inside and the
+ *    black hair through it. Locking them was tried next, per triangle and then per strip, and only
+ *    moved the tear to whatever had been locked. A weld is a membrane, so it is diffused like one,
+ *    with the blend running on into the surface around it. Every triangle the source gave is still
+ *    there.
+ *
+ * 7. SOFTEN THE BODY'S UNPAINTED JOINT BOUNDARIES. 39.9% of this figure's vertices carry a single
+ *    influence at weight 1.0, so where two such regions meet across a joint the surface has a hard
+ *    seam that tears rather than bends. Only edges whose two ends disagree by more than
+ *    `BODY_HARD_EDGE` are touched, which is near-disjoint and cannot be an intended blend.
+ *
+ * 8. CUT THE SHELL IN TWO. Each mesh keeps the vertices its triangles use, duplicated at the rim,
  *    and binds ITS WHOLE LIST ITS OWN WAY — the garment lifted, the body from the source. Triangles
- *    that weld two limbs together are dropped rather than bound, because no binding can deform them.
+ *    Triangles that weld two limbs together are made RIGID rather than deleted: deleting one opens
+ *    a hole, and a hole in a closed shell shows the black hair and the unlit inside through it.
  *    Nothing is sewn back across the cut (`SEAM_BAND` is 0) and that is deliberate: where the gown
  *    is genuinely held, the lift barely changes the binding and the two rims stay together to within
  *    0.9 mm at the collar; where it is a free edge — the thigh slit, the hem on the floor — they
@@ -80,30 +100,25 @@ import type { EncodedRig } from './meshCodec';
  * viewer can see.
  *
  *     mesh              edges     worst mm    mean mm     >5mm     >2cm
- *     body   source    128013      321.0       0.424      0.88%    0.13%
- *     body   shipped   128013      258.2       0.440      1.07%    0.16%
- *     garment source   332532     1750.1       2.277      2.13%    0.79%
- *     garment shipped  332532       45.8       0.045      0.20%    0.00%
+ *     body   source     68716      360.1       0.394      0.98%    0.13%
+ *     body   shipped    68716       75.8       0.287      0.73%    0.04%
+ *     garment source   391084     1750.1       2.043      1.96%    0.71%
+ *     garment shipped  391084      109.6       0.058      0.32%    0.03%
  *
- * The garment's worst tear is 38x smaller, its mean 51x, its share of edges over 2 cm goes to zero,
- * and its weight on any leg joint from 78.8% to none. The body's worst is a fifth smaller for a
- * hundredth of a millimetre on the mean, which is the softening in step 5 paying for itself.
+ * Every column improves on both meshes: the garment's worst tear is 16x smaller and its mean 35x,
+ * the body's worst is 5x smaller, and the share of edges over 2 cm falls to a twentieth on the
+ * garment and a third on the body. The garment's weight on any leg joint goes from 70.1% to none.
  *
- * WHAT IS STILL WRONG. 258 mm, and it is the HAIR. Waist-length hair is the other long hanging
- * surface on this figure and it has the same disease as the gown — the auto-rigger put 36% of it on
- * a collarbone, 22% on the head and 4% on a THIGH — but it is not clothing, so it is not in the
- * costume mesh and it is not rebound. Two strands at the small of the back read `Spine01` and
- * `L_ThighTwist01` and part by 26 cm on `preset:run`.
+ * NOTHING IS DELETED. All 293,940 source triangles are present, split 43,080 to the body and
+ * 250,860 to the costume, and positions, normals, vertex colours and the triangle list are the
+ * decoded source untouched. Only skin weights change. That is a requirement and not a preference:
+ * an earlier version dropped 431 welded triangles, and the holes showed the unlit interior and the
+ * black hair straight through the costume.
  *
- * REBINDING IT WAS TRIED AND COST MORE THAN IT RETURNED. Run through the same drape machinery it
- * improved the body's worst from 321 mm to 301 mm, made the body's mean worse, and cost the garment
- * three and a half times its quality — 45.8 mm worst to 202.1 mm, 0.045 mm mean to 0.157 mm —
- * because waist-length hair LIES AGAINST the gown, so the two share a surface neighbourhood and
- * their panel blends run into each other. Two earlier general repairs failed the same way: a
- * neighbour-majority limb filter reached 6 vertices, and capping the binding disagreement across
- * every edge halved the worst case, 790 -> 365 mm, while driving the body's mean from 0.536 mm to
- * 2.769 mm. All three are the lesson this file is built on: SPREADING a discontinuity is not
- * removing it. Hair wants its own drape and its own carrier, which is a separate piece of work.
+ * WHAT IS STILL WRONG. Nothing collides. The hair hangs from the head and the gown from the trunk,
+ * and neither knows the arms are there, so an arm swung across the body passes through hair that
+ * would in life be pushed aside — it reads as a strand briefly in front of a sleeve rather than
+ * behind one. Fixing that is a collision solver, not a binding.
  *
  * WHAT CHANGES AND WHAT DOES NOT. Skin weights only. Positions, normals, vertex colours and the
  * triangle list are the decoded source, byte for byte. The garment is then issued as its own
@@ -113,21 +128,76 @@ import type { EncodedRig } from './meshCodec';
  * open.
  */
 
-/** sRGB blue-minus-green at which the robe separates from skin, hair and silver. */
-const FABRIC_MARGIN = 18;
+/**
+ * sRGB red-minus-blue at or above which a surface is SKIN.
+ *
+ * The costume is not identified by its own colour; the BODY is, and the costume is what is left.
+ * That inversion is the whole of this constant, and it exists because enumerating fabric hues does
+ * not work on this figure: an earlier version tested for the gown's purple, and the gown's white
+ * front panel, its silver bodice and its grey braid all failed the test and stayed on the body with
+ * the auto-rigger's leg weights. Rendered with the two meshes tinted apart, the "body" turned out
+ * to contain most of the dress, and every clip pushed it out through the costume.
+ *
+ * Skin is warm and nothing else on this figure is. Red-minus-blue over the non-hair surface is
+ * cleanly bimodal — a hump at 4-8 (silk, silver, braid), a trough at 22-30 of 385-442 vertices a
+ * bucket, then a second hump at 42-50 which is 10,400 vertices reading rgb(166,130,124) across the
+ * face, arms and legs. Thirty is the floor of the trough.
+ */
+const SKIN_WARMTH = 30;
 
 /**
- * Distance from the nearest bone at which a surface is drapery whatever its colour.
+ * Max sRGB channel below which a surface is hair rather than skin, silver or silk.
  *
- * The colour test alone leaves the gown's WHITE panels behind — the train pooling on the floor
- * reads rgb(153,149,152), a blue-green margin of 4. Measured by distance band, the non-purple
- * surface that sits further than 0.15 from every bone is 5,376 vertices at an average radius of
- * 0.18-0.29 and a height of 0.00-0.45: the train, and nothing else, because no part of a body is
- * 15% of its own height away from its whole skeleton. The hair, the other long dark surface, comes
- * no further out than 0.15 and hangs at radius 0.09, so it is not caught. Anything this rule does
- * catch that is not drapery — the tiara's spurs — is dropped by the component filter below.
+ * THE HAIR IS THE BLACK THAT GETS THROWN OUT OF THE COSTUME. Waist-length, 13,688 vertices from
+ * y 0.28 to 0.96 at an average radius of 0.065, and the auto-rigger bound it:
+ *
+ *     R_Clavicle 37%   Head 21%   R_ThighTwist01 4%
+ *     L_Clavicle 22%   Spine02 5%  L_ThighTwist01 3%
+ *
+ * Seven per cent of a head of hair is attached to the THIGHS. It is a small share and it is pure
+ * black, so when a leg swings it drags a black sheet out through the gown — a solid wedge across
+ * her side on `greet`, which is the defect this constant exists to remove.
+ *
+ * The threshold comes off the histogram's own gap. Counting non-garment vertices by their brightest
+ * channel: 13,163 sit in 0-15, then the count collapses to 243-374 a bucket until it climbs again
+ * from 96 upward as skin and silver begin. Seventy-two is in the middle of the empty stretch.
  */
-const FABRIC_REACH = 0.15;
+const HAIR_LUMINANCE = 72;
+
+/**
+ * Passes of Laplace over the hair after its leg influence is removed, its roots pinned.
+ *
+ * Stripping a joint leaves a step wherever a stripped vertex sits beside one that had nothing to
+ * strip. Diffusing the hair against itself, with the scalp held, turns that step into the falloff
+ * the rigger never painted.
+ */
+const HAIR_DIFFUSION_PASSES = 24;
+
+/**
+ * Joints waist-length hair may hang from: the upper spine, the neck chain and the head.
+ *
+ * Removing only the thighs was not enough. The rigger's own summary of the hair is
+ * `R_Clavicle 37% / L_Clavicle 22% / Head 21% / Spine02 5%` — 59% of a head of hair is attached to
+ * the SHOULDER BLADES. A clavicle rotates when the arm goes up, so on `greet` it swung a black
+ * sheet out from under her raised arm and across the costume, which is the defect this list
+ * removes. Hair that lies over a shoulder does not turn with that shoulder; it hangs from the head.
+ *
+ * Anything outside the list walks up the skeleton until it reaches something in it, and falls back
+ * to `Spine02` if it never does — which is what a thigh does, and what the spine below the chest
+ * does, since walking up from there leads away from the head rather than toward it.
+ */
+const HAIR_CARRIERS = ['Spine02', 'NeckTwist01', 'NeckTwist02', 'Head'];
+
+/**
+ * Height, as a fraction of the figure, a dark region must reach before it counts as hair.
+ *
+ * Darkness alone is not hair. A shadowed fold on the inner thigh reads rgb(60,66,51) — brightest
+ * channel 66, under the threshold — and lifting it onto the upper spine put it 63 cm from the leg
+ * vertex beside it, which was worse than leaving it alone. Hair grows from a scalp, so the test is
+ * topological as well as tonal: a dark region is hair only if the connected surface it belongs to
+ * REACHES THE HEAD. The real hair runs y 0.28 to 0.96; the shadowed folds do not come near.
+ */
+const HAIR_ROOT_HEIGHT = 0.8;
 
 /**
  * Passes of majority vote over the surface graph after the per-vertex fabric test.
@@ -259,6 +329,33 @@ const BODY_HARD_EDGE = 1.6;
 /** Passes of the softener. Each halves the excess on any edge still over the threshold. */
 const BODY_SOFTEN_PASSES = 3;
 
+
+/**
+ * Laplace passes across a weld membrane, with its ring pinned to the geometry it is sewn to.
+ *
+ * Enough to reach the middle of the widest strip: the field has to travel from both rings and meet,
+ * and diffusion covers roughly the square root of the pass count per pass. The widest bridge here
+ * is about 20 vertices across.
+ */
+const WELD_DIFFUSION_PASSES = 90;
+
+/**
+ * Graph steps the weld's blend is allowed to spread into the surface around it.
+ *
+ * The bridges here are one or two vertices thick — a razor of triangles across the inner thigh —
+ * so a diffusion confined to the weld itself has no interior to work in and barely moves: the two
+ * sides stayed at 0.90/0.10 and 63 cm apart. The travel has to go SOMEWHERE. Two limbs that
+ * separate by 79 cm and are joined by a membrane will stretch it by 79 cm; the only choice is over
+ * how many edges, and a thin strip means very few.
+ *
+ * So the blend runs on into the legs on both sides. Every edge it crosses takes a share, and at
+ * this width no edge takes enough to be seen. It costs local distortion — the inner thigh of each
+ * leg partly follows the other — in a place a floor-length gown covers. This is the one repair in
+ * this file where spreading a discontinuity is the right answer, and it is right here because the
+ * discontinuity cannot be removed: unlike the gown, a weld has nowhere else to hang from.
+ */
+const WELD_MARGIN = 18;
+
 /** Position quantisation is ~0.03 mm, so 0.01 mm rounding welds only genuinely coincident vertices. */
 const WELD_KEY = 1e5;
 
@@ -304,8 +401,13 @@ export interface GarmentReport {
   legShareAfter: number;
   /** Distinct rigid panels the drapery was partitioned into. */
   panels: number;
-  /** Triangles dropped because they welded two limbs together in the source mesh. */
-  weldedTrianglesDropped: number;
+  /** Hair vertices found, and how many were carrying a joint hair cannot hang from. */
+  hairVertices: number;
+  hairStripped: number;
+  /** Triangles made rigid because they welded two limbs together in the source mesh. */
+  weldedTriangles: number;
+  /** Connected regions those triangles form; each is bound as one rigid patch. */
+  weldedRegions: number;
   /** Body edges still over the hard-boundary threshold when the last softening pass ran. */
   softenedEdges: number;
   bodyVertices: number;
@@ -324,72 +426,6 @@ function limbOf(name: string): string {
   if (name.startsWith('L_')) return leg ? 'L-leg' : 'L-arm';
   if (name.startsWith('R_')) return leg ? 'R-leg' : 'R-arm';
   return 'trunk';
-}
-
-/** Distance from every vertex to the nearest bone segment of the skeleton's rest pose. */
-function skeletonReach(position: Float32Array, count: number, rig: EncodedRig): Float32Array {
-  const world: Float64Array[] = [];
-  for (const bone of rig.bones) {
-    const local = composeTRS(bone.position, bone.quaternion, bone.scale);
-    world.push(bone.parent < 0 ? local : multiply(world[bone.parent], local));
-  }
-  const segments: number[][] = [];
-  for (let b = 1; b < rig.bones.length; b += 1) {
-    const parent = rig.bones[b].parent;
-    if (parent < 0) continue;
-    const p = world[parent], c = world[b];
-    if (Math.hypot(p[12] - c[12], p[13] - c[13], p[14] - c[14]) < 1e-4) continue;
-    segments.push([p[12], p[13], p[14], c[12], c[13], c[14]]);
-  }
-  // A stub at every leaf, so a hand, a toe or the crown of the head is covered by something and
-  // not measured against the segment behind it.
-  const hasChild = new Set(rig.bones.map((bone) => bone.parent));
-  for (let b = 0; b < rig.bones.length; b += 1) {
-    if (hasChild.has(b)) continue;
-    const m = world[b];
-    segments.push([m[12], m[13], m[14], m[12], m[13] + 0.02, m[14]]);
-  }
-  const out = new Float32Array(count);
-  for (let v = 0; v < count; v += 1) {
-    const px = position[v * 3], py = position[v * 3 + 1], pz = position[v * 3 + 2];
-    let best = Infinity;
-    for (const [ax, ay, az, bx, by, bz] of segments) {
-      const dx = bx - ax, dy = by - ay, dz = bz - az;
-      const len2 = dx * dx + dy * dy + dz * dz;
-      let t = len2 > 0 ? ((px - ax) * dx + (py - ay) * dy + (pz - az) * dz) / len2 : 0;
-      t = t < 0 ? 0 : t > 1 ? 1 : t;
-      const d = Math.hypot(px - (ax + dx * t), py - (ay + dy * t), pz - (az + dz * t));
-      if (d < best) best = d;
-    }
-    out[v] = best;
-  }
-  return out;
-}
-
-function composeTRS(p: readonly number[], q: readonly number[], s: readonly number[]): Float64Array {
-  const out = new Float64Array(16);
-  const [x, y, z, w] = q;
-  const x2 = x + x, y2 = y + y, z2 = z + z;
-  const xx = x * x2, xy = x * y2, xz = x * z2;
-  const yy = y * y2, yz = y * z2, zz = z * z2;
-  const wx = w * x2, wy = w * y2, wz = w * z2;
-  out[0] = (1 - (yy + zz)) * s[0]; out[1] = (xy + wz) * s[0]; out[2] = (xz - wy) * s[0];
-  out[4] = (xy - wz) * s[1]; out[5] = (1 - (xx + zz)) * s[1]; out[6] = (yz + wx) * s[1];
-  out[8] = (xz + wy) * s[2]; out[9] = (yz - wx) * s[2]; out[10] = (1 - (xx + yy)) * s[2];
-  out[12] = p[0]; out[13] = p[1]; out[14] = p[2]; out[15] = 1;
-  return out;
-}
-
-function multiply(a: Float64Array, b: Float64Array): Float64Array {
-  const out = new Float64Array(16);
-  for (let c = 0; c < 4; c += 1) {
-    const b0 = b[c * 4], b1 = b[c * 4 + 1], b2 = b[c * 4 + 2], b3 = b[c * 4 + 3];
-    out[c * 4] = a[0] * b0 + a[4] * b1 + a[8] * b2 + a[12] * b3;
-    out[c * 4 + 1] = a[1] * b0 + a[5] * b1 + a[9] * b2 + a[13] * b3;
-    out[c * 4 + 2] = a[2] * b0 + a[6] * b1 + a[10] * b2 + a[14] * b3;
-    out[c * 4 + 3] = a[3] * b0 + a[7] * b1 + a[11] * b2 + a[15] * b3;
-  }
-  return out;
 }
 
 /**
@@ -480,16 +516,56 @@ export function separateGarment(
   const weld = weldPositions(position, count);
   const adj = buildAdjacency(index, weld);
 
-  // --- 1. fabric test: purple, or simply out of the body's reach ---
-  const reach = skeletonReach(position, count, rig);
+  // --- 1. find the body, and let the costume be what is left ---
+  // Hair first, because the skin test cannot see it: black has no warmth either way.
+  const isHair = new Uint8Array(count);
+  {
+    const votes = new Map<number, { yes: number; total: number }>();
+    for (let v = 0; v < count; v += 1) {
+      const root = weld[v];
+      let tally = votes.get(root);
+      if (!tally) { tally = { yes: 0, total: 0 }; votes.set(root, tally); }
+      tally.total += 1;
+      if (Math.max(colourSrgb[v * 3], colourSrgb[v * 3 + 1], colourSrgb[v * 3 + 2]) < HAIR_LUMINANCE) tally.yes += 1;
+    }
+    const dark = new Uint8Array(count);
+    for (let v = 0; v < count; v += 1) {
+      const tally = votes.get(weld[v])!;
+      if (tally.yes * 2 >= tally.total) dark[v] = 1;
+    }
+    // Hair grows from a scalp: a dark region is hair only if it reaches the head. Without this a
+    // shadowed fold on the inner thigh, rgb(60,66,51), was called hair and lifted onto the spine.
+    const visited = new Set<number>();
+    for (let v = 0; v < count; v += 1) {
+      const root = weld[v];
+      if (!dark[root] || visited.has(root)) continue;
+      visited.add(root);
+      const members: number[] = [root];
+      const stack = [root];
+      let highest = position[root * 3 + 1];
+      while (stack.length) {
+        const u = stack.pop()!;
+        if (position[u * 3 + 1] > highest) highest = position[u * 3 + 1];
+        for (const w of adj.get(u) ?? []) {
+          if (!dark[w] || visited.has(w)) continue;
+          visited.add(w); members.push(w); stack.push(w);
+        }
+      }
+      if (highest < HAIR_ROOT_HEIGHT) continue;
+      const region = new Set(members);
+      for (let q = 0; q < count; q += 1) if (dark[q] && region.has(weld[q])) isHair[q] = 1;
+    }
+  }
+
+  // Then skin, by warmth, voted per welded point so a split-index seam cannot straddle the test.
   const fabricVotes = new Map<number, { yes: number; total: number }>();
   for (let v = 0; v < count; v += 1) {
     const root = weld[v];
     let tally = fabricVotes.get(root);
     if (!tally) { tally = { yes: 0, total: 0 }; fabricVotes.set(root, tally); }
     tally.total += 1;
-    const purple = colourSrgb[v * 3 + 2] - colourSrgb[v * 3 + 1] >= FABRIC_MARGIN;
-    if (purple || reach[v] >= FABRIC_REACH) tally.yes += 1;
+    const skin = colourSrgb[v * 3] - colourSrgb[v * 3 + 2] >= SKIN_WARMTH;
+    if (!skin && !isHair[v]) tally.yes += 1;
   }
   let isFabric = new Uint8Array(count);
   for (let v = 0; v < count; v += 1) {
@@ -509,6 +585,9 @@ export function separateGarment(
     }
     isFabric = next;
   }
+  // Hair is never costume, whatever the vote smeared onto it.
+  for (let v = 0; v < count; v += 1) if (isHair[v]) isFabric[v] = 0;
+
   // Absorb the small non-fabric islands: trim sewn into the gown, which the colour test reads as
   // body because it is grey, and which then animates against the cloth around it.
   let absorbedIslands = 0;
@@ -787,12 +866,260 @@ export function separateGarment(
     }
   }
 
-  // --- 5. soften the body's unpainted joint boundaries ---
-  // Written into their OWN copy, not into `skinIndex`. That array carries the garment's rebinding
-  // and is what `liftInto` reads the seam from; the body mesh binds from these instead, so the two
-  // repairs stay separable and the gate can still re-run either mesh against the untouched source.
+  // The body's own copy of the weights. Steps 5 and 6 write here and not into `skinIndex`: that
+  // array carries the garment's rebinding and is what `liftInto` reads the seam from, so keeping
+  // them apart lets the gate re-run either mesh against the untouched source.
   const bodyIndex = sourceIndex.slice();
   const bodyWeight = sourceWeight.slice();
+
+  /**
+   * Regions where the generator welded two limbs together, made rigid.
+   *
+   * It fuses surfaces that come close: at the inner thigh, where the legs almost touch under the
+   * skirt, and behind the torso where the arms pass the back. A triangle there has one corner on
+   * the left calf and the next on the right, so the moment the legs split it is stretched across
+   * the gap — 68 cm on `preset:biped:angry_03` — and that is the fan of splinters thrown out of the
+   * hip. The garment has none of them; rebinding it to the trunk removed every one.
+   *
+   * AN EARLIER VERSION DELETED THESE TRIANGLES, AND THAT WAS WRONG. Deleting one opens a hole, and
+   * a hole in a closed shell shows what is behind it — here the black hair and the unlit inside of
+   * the body, which appeared as black wedges through the costume on `greet` and `walk`. A
+   * reconstruction may not tear the mesh it was given.
+   *
+   * A SECOND VERSION HARMONISED EACH TRIANGLE ON ITS OWN, and a third made each connected STRIP
+   * rigid. Both only moved the tear to the border of whatever had been locked — 436 mm and 406 mm
+   * against 258 mm for simply deleting them. What a weld actually is, is a membrane, and the fix
+   * is to let it behave like one: see the diffusion below.
+   */
+  const OPPOSED_LIMBS = (a: number, b: number, c: number, joints: Uint16Array, weights: Float32Array): boolean => {
+    const dominant = (v: number): string => {
+      let best = 0, bestW = -1;
+      for (let k = 0; k < INFLUENCES; k += 1) {
+        if (weights[v * INFLUENCES + k] > bestW) { bestW = weights[v * INFLUENCES + k]; best = joints[v * INFLUENCES + k]; }
+      }
+      return limbOf(rig.bones[best].name);
+    };
+    const limbs = [dominant(a), dominant(b), dominant(c)];
+    for (let i = 0; i < 3; i += 1) {
+      for (let j = i + 1; j < 3; j += 1) {
+        if (limbs[i] === 'trunk' || limbs[j] === 'trunk') continue;
+        if (limbs[i] !== limbs[j]) return true;
+      }
+    }
+    return false;
+  };
+
+  let weldedTriangles = 0;
+  let weldedRegions = 0;
+  {
+    const faces: number[] = [];
+    for (let f = 0; f < index.length; f += 3) {
+      if (OPPOSED_LIMBS(index[f], index[f + 1], index[f + 2], sourceIndex, sourceWeight)) faces.push(f);
+    }
+    weldedTriangles = faces.length;
+
+    // Union-find over the welded faces, joined where they share a welded position.
+    const owner = new Map<number, number>();
+    const parent = new Int32Array(faces.length);
+    for (let i = 0; i < faces.length; i += 1) parent[i] = i;
+    const find = (x: number): number => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+    faces.forEach((f, i) => {
+      for (let e = 0; e < 3; e += 1) {
+        const key = weld[index[f + e]];
+        const seen = owner.get(key);
+        if (seen === undefined) { owner.set(key, i); continue; }
+        const ra = find(seen), rb = find(i);
+        if (ra !== rb) parent[ra] = rb;
+      }
+    });
+
+    const regions = new Map<number, number[]>();
+    faces.forEach((f, i) => {
+      const root = find(i);
+      let list = regions.get(root);
+      if (!list) { list = []; regions.set(root, list); }
+      list.push(f);
+    });
+    weldedRegions = regions.size;
+
+    /**
+     * Each region is DIFFUSED, not locked.
+     *
+     * Rigid was the obvious answer and it was wrong: a bridge bound to one blend of two limbs
+     * cannot follow either, so the tear simply moves to its border and the body's worst went from
+     * 258 mm to 406 mm. A weld is a membrane. Let it behave like one — hold the ring where it meets
+     * real geometry at the binding that geometry has, and let the inside interpolate. The same
+     * total travel is then spread over every small edge across the strip instead of landing on the
+     * one edge in the middle, and a few millimetres each is nothing where 79 cm was a splinter.
+     */
+    const boundary = new Set<number>();
+    const interior: number[] = [];
+    {
+      const inRegion = new Set<number>();
+      for (const list of regions.values()) for (const f of list) for (let e = 0; e < 3; e += 1) inRegion.add(weld[index[f + e]]);
+      // Grow into the surrounding surface, so the blend has room. Without this the strip is one or
+      // two vertices thick and there is nothing between its two pinned sides to interpolate.
+      let frontier = [...inRegion];
+      for (let step = 0; step < WELD_MARGIN; step += 1) {
+        const next: number[] = [];
+        for (const v of frontier) {
+          for (const w of adj.get(v) ?? []) {
+            // A garment vertex is NOT excluded. In the body mesh its copy carries the body's
+            // weights, so it is an ordinary part of this surface; the garment mesh binds from
+            // `liftedIndex` and cannot see anything written here. Excluding them is what left the
+            // worst bridge pinned on both sides at 0.90/0.10 and 63 cm apart — one of its two
+            // vertices was garment, so the blend was never allowed to reach it.
+            if (inRegion.has(w)) continue;
+            inRegion.add(w); next.push(w);
+          }
+        }
+        frontier = next;
+      }
+      for (const v of inRegion) {
+        let touchesOutside = false;
+        for (const w of adj.get(v) ?? []) if (!inRegion.has(w)) { touchesOutside = true; break; }
+        if (touchesOutside) boundary.add(v); else interior.push(v);
+      }
+    }
+    if (interior.length) {
+      const slotOf = new Map<number, number>();
+      const all = [...boundary, ...interior];
+      all.forEach((v, i) => slotOf.set(v, i));
+      let field = new Float32Array(all.length * boneCount);
+      all.forEach((v, i) => {
+        for (let k = 0; k < INFLUENCES; k += 1) field[i * boneCount + bodyIndex[v * INFLUENCES + k]] += bodyWeight[v * INFLUENCES + k];
+      });
+      const near = all.map((v) => Int32Array.from((adj.get(v) ?? []).filter((w) => slotOf.has(w)).map((w) => slotOf.get(w)!)));
+      let scratch = new Float32Array(field.length);
+      for (let pass = 0; pass < WELD_DIFFUSION_PASSES; pass += 1) {
+        for (let i = 0; i < all.length; i += 1) {
+          const base = i * boneCount;
+          // The ring is pinned: it is where the membrane is sewn to geometry that is not a weld.
+          if (boundary.has(all[i]) || near[i].length === 0) {
+            for (let j = 0; j < boneCount; j += 1) scratch[base + j] = field[base + j];
+            continue;
+          }
+          const inv = 1 / near[i].length;
+          for (let j = 0; j < boneCount; j += 1) {
+            let acc = 0;
+            for (let n = 0; n < near[i].length; n += 1) acc += field[near[i][n] * boneCount + j];
+            scratch[base + j] = acc * inv;
+          }
+        }
+        const previous = field; field = scratch; scratch = previous;
+      }
+      const dense = new Float64Array(boneCount);
+      for (const v of interior) {
+        const base = slotOf.get(v)! * boneCount;
+        for (let j = 0; j < boneCount; j += 1) dense[j] = field[base + j];
+        writeTopInfluences(dense, v, bodyIndex, bodyWeight);
+      }
+    }
+
+    // Split copies of one position must agree, or this opens a seam of its own.
+    for (let v = 0; v < count; v += 1) {
+      const root = weld[v];
+      if (root === v) continue;
+      for (let k = 0; k < INFLUENCES; k += 1) {
+        bodyIndex[v * INFLUENCES + k] = bodyIndex[root * INFLUENCES + k];
+        bodyWeight[v * INFLUENCES + k] = bodyWeight[root * INFLUENCES + k];
+      }
+    }
+  }
+
+  // --- 5. take the hair off the legs ---
+  // A lift, not a drape. The hair is re-expressed in the joints it may hang from and left where it
+  // is; it is NOT run through the gown's panel machinery. That was tried, on an earlier split, and
+  // cost the GARMENT three and a half times its quality — 45.8 mm worst to 202.1, 0.045 mm mean to
+  // 0.157 — because waist-length hair lies against the gown, so the two share a surface
+  // neighbourhood and their panel blends run into each other. A lift touches only the hair.
+  let hairVertices = 0;
+  let hairStripped = 0;
+  {
+    for (let v = 0; v < count; v += 1) if (isHair[v]) hairVertices += 1;
+
+    // Every joint the hair uses, re-expressed as the nearest joint it may actually hang from.
+    const hairCarrier = new Int32Array(boneCount);
+    {
+      const allowed = new Set(HAIR_CARRIERS);
+      const fallback = rig.bones.findIndex((bone) => bone.name === 'Spine02');
+      for (let b = 0; b < boneCount; b += 1) {
+        let at = b;
+        let guard = 0;
+        while (!allowed.has(rig.bones[at].name) && rig.bones[at].parent >= 0 && guard < 64) {
+          at = rig.bones[at].parent;
+          guard += 1;
+        }
+        hairCarrier[b] = allowed.has(rig.bones[at].name) ? at : (fallback >= 0 ? fallback : b);
+      }
+    }
+
+    const dense = new Float64Array(boneCount);
+    for (let v = 0; v < count; v += 1) {
+      if (!isHair[v]) continue;
+      dense.fill(0);
+      let changed = false;
+      for (let k = 0; k < INFLUENCES; k += 1) {
+        const w = bodyWeight[v * INFLUENCES + k];
+        if (w <= 0) continue;
+        const joint = bodyIndex[v * INFLUENCES + k];
+        const lifted = hairCarrier[joint];
+        if (lifted !== joint) changed = true;
+        dense[lifted] += w;
+      }
+      if (!changed) continue;
+      writeTopInfluences(dense, v, bodyIndex, bodyWeight);
+      hairStripped += 1;
+    }
+
+    // Smooth the step the removal leaves, hair against hair, with the roots pinned.
+    const strands: number[] = [];
+    for (let v = 0; v < count; v += 1) if (isHair[v] && weld[v] === v) strands.push(v);
+    if (strands.length) {
+      const slotOf = new Map<number, number>();
+      strands.forEach((v, i) => slotOf.set(v, i));
+      const near = strands.map((v) => Int32Array.from((adj.get(v) ?? []).filter((w) => slotOf.has(w)).map((w) => slotOf.get(w)!)));
+      // A strand that touches something that is not hair is a root, and roots do not move.
+      const pinned = strands.map((v) => (adj.get(v) ?? []).some((w) => !isHair[w]));
+      let field = new Float32Array(strands.length * boneCount);
+      strands.forEach((v, i) => {
+        for (let k = 0; k < INFLUENCES; k += 1) field[i * boneCount + bodyIndex[v * INFLUENCES + k]] += bodyWeight[v * INFLUENCES + k];
+      });
+      let scratch = new Float32Array(field.length);
+      for (let pass = 0; pass < HAIR_DIFFUSION_PASSES; pass += 1) {
+        for (let i = 0; i < strands.length; i += 1) {
+          const base = i * boneCount;
+          if (pinned[i] || near[i].length === 0) {
+            for (let j = 0; j < boneCount; j += 1) scratch[base + j] = field[base + j];
+            continue;
+          }
+          const inv = 0.5 / near[i].length;
+          for (let j = 0; j < boneCount; j += 1) {
+            let acc = 0;
+            for (let n = 0; n < near[i].length; n += 1) acc += field[near[i][n] * boneCount + j];
+            scratch[base + j] = 0.5 * field[base + j] + acc * inv;
+          }
+        }
+        const previous = field; field = scratch; scratch = previous;
+      }
+      for (let i = 0; i < strands.length; i += 1) {
+        if (pinned[i]) continue;
+        const base = i * boneCount;
+        for (let j = 0; j < boneCount; j += 1) dense[j] = field[base + j];
+        writeTopInfluences(dense, strands[i], bodyIndex, bodyWeight);
+      }
+      for (let v = 0; v < count; v += 1) {
+        const root = weld[v];
+        if (root === v || !isHair[v]) continue;
+        for (let k = 0; k < INFLUENCES; k += 1) {
+          bodyIndex[v * INFLUENCES + k] = bodyIndex[root * INFLUENCES + k];
+          bodyWeight[v * INFLUENCES + k] = bodyWeight[root * INFLUENCES + k];
+        }
+      }
+    }
+  }
+
+  // --- 6. soften the body's unpainted joint boundaries ---
   // The garment is finished; this is the body's own defect. Only edges over `BODY_HARD_EDGE` are
   // touched, and only between two vertices that are both body — a rim edge into the garment is left
   // alone, because the two sides belong to different meshes and are meant to be able to part.
@@ -881,45 +1208,6 @@ export function separateGarment(
     }
   }
 
-  /**
-   * Triangles that bridge two limbs, which no binding can deform coherently.
-   *
-   * The generator fuses surfaces that come close: at the inner thigh, where the legs almost touch
-   * under the skirt, and behind the torso where the arms pass the back. A triangle there has one
-   * corner on the left calf and the next on the right, so the moment the legs split it is stretched
-   * across the gap — 68 cm on `preset:biped:angry_03` — and that is the fan of splinters that comes
-   * out of the hip. There is no correct binding for it, because it is not a real surface: it is two
-   * surfaces welded by a mesh generator that could not tell them apart.
-   *
-   * Measured on the finished meshes: 419 of the body's 80,540 triangles, 0.52%, at y 0.09-0.78 and
-   * an average radius of 0.087 — the midline, between the legs and between the arms, under the
-   * floor-length gown and behind the back. The garment has none: rebinding it to the trunk removed
-   * every one. Dropping them opens a hole in a place nothing sees, and closes the last tear.
-   */
-  const isOpposedWeld = (
-    a: number, b: number, c: number,
-    pickIndex: () => Uint16Array, pickWeight: () => Float32Array,
-  ): boolean => {
-    const dominant = (v: number): string => {
-      const joints = pickIndex(), weights = pickWeight();
-      let best = 0, bestW = -1;
-      for (let k = 0; k < INFLUENCES; k += 1) {
-        if (weights[v * INFLUENCES + k] > bestW) { bestW = weights[v * INFLUENCES + k]; best = joints[v * INFLUENCES + k]; }
-      }
-      return limbOf(rig.bones[best].name);
-    };
-    const limbs = [dominant(a), dominant(b), dominant(c)];
-    for (let i = 0; i < 3; i += 1) {
-      for (let j = i + 1; j < 3; j += 1) {
-        if (limbs[i] === 'trunk' || limbs[j] === 'trunk') continue;
-        if (limbs[i] !== limbs[j]) return true;
-      }
-    }
-    return false;
-  };
-
-  let weldedTrianglesDropped = 0;
-
   const partition = (wantGarment: boolean): MeshPartition => {
     const remap = new Int32Array(count).fill(-1);
     const sourceVertex: number[] = [];
@@ -935,18 +1223,9 @@ export function separateGarment(
     // corners on `R_ToeBase` and one on `Hip`, throwing a 73 cm splinter across the floor.
     const pickIndex = (): Uint16Array => (wantGarment ? liftedIndex : bodyIndex);
     const pickWeight = (): Float32Array => (wantGarment ? liftedWeight : bodyWeight);
-    const weldIndex = (): Uint16Array => (wantGarment ? liftedIndex : sourceIndex);
-    const weldWeight = (): Float32Array => (wantGarment ? liftedWeight : sourceWeight);
     for (let f = 0; f < index.length; f += 3) {
       const votes = isGarment[index[f]] + isGarment[index[f + 1]] + isGarment[index[f + 2]];
       if ((votes >= 2) !== wantGarment) continue;
-      // Tested against the SOURCE binding, not the softened one. Softening blends a disjoint pair
-      // into a merely lopsided one, and a weld that has been blended is still a weld: judging it
-      // afterwards let every one of them through and left the worst body tear at 300 mm.
-      if (isOpposedWeld(index[f], index[f + 1], index[f + 2], weldIndex, weldWeight)) {
-        weldedTrianglesDropped += 1;
-        continue;
-      }
       triangles.push(local(index[f]), local(index[f + 1]), local(index[f + 2]));
     }
     const n = sourceVertex.length;
@@ -975,7 +1254,7 @@ export function separateGarment(
       fabricVertices, absorbedIslands, fabricComponents, drapeComponents, garmentVertices, seamVertices,
       maxDrapeDepth, reboundVertices, limbCorrections,
       panels: new Set(Array.from(panel)).size,
-      weldedTrianglesDropped, softenedEdges,
+      hairVertices, hairStripped, weldedTriangles, weldedRegions, softenedEdges,
       legShareBefore: garmentWeight > 0 ? legBefore / garmentWeight : 0,
       legShareAfter: garmentWeight > 0 ? legAfter / garmentWeight : 0,
       bodyVertices: body.sourceVertex.length,
