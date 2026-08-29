@@ -1,0 +1,278 @@
+# Monster Tree — img2threejs `animated-character`, Stage R
+
+A treant rebuilt from `public/references/monster-tree.jpg`, built **on top of** the playground's
+own export rather than re-deriving it. The geometry was already measured; nothing here re-sculpts
+it. What this stage adds is the rig work, the costume separation, the effects and the lighting —
+and a measurement harness for all of it.
+
+Open it with `npm run build && npm run preview`, then `/showcase.html`.
+Run the numbers with `node scripts/measure-monster-tree-rig.mjs` (add `--json` for the machine-readable form).
+
+---
+
+## What the export already had
+
+| | |
+|---|---|
+| surface | 64,307 vertices · 115,350 triangles, quantised and embedded as code |
+| rig | 41 bones, root `Root`, skin binding for every vertex |
+| clips | 16, retargeted, keyframes unquantised |
+| parts | **1** — rigging merges the mesh, so the export is one skinned shell |
+| levels of detail | 1 |
+
+`glb-parts.json` labels that single part a `body-shell` "hypothesis" at confidence 0.20. That
+warning is about the **part label**. It does **not** apply to the bone names: `L_Forearm`,
+`R_ToeBase`, `Spine02` and the other 38 are the rig's own names out of the GLB, and everything in
+this demo anchors to them directly.
+
+### One level of detail, on purpose
+
+`skinIndex`/`skinWeight` address vertices by their position in the buffer. A decimation pass
+collapses vertices, so the binding would end up pointing at vertices that no longer exist and the
+figure would tear open the moment a clip ran. For a skinned shell a second LOD is not a quality
+trade — it is a correctness bug. There is one level and there should be.
+
+---
+
+## Three defects in the export's rig path
+
+Each was **measured**, not assumed. A fourth suspect was measured and cleared, which is why the
+measuring came first.
+
+### 1. The authored bind pose was being thrown away
+
+`buildRiggedModel` calls `mesh.bind(skeleton)` with no bind matrix. three responds by running
+`skeleton.calculateInverses()`, which overwrites the GLB's authored `inverseBind` matrices that
+`buildSkeleton` had just passed in, re-deriving them from whatever rest pose the bones are in.
+
+Those are not the same matrices here. Measured across all 41 bones, the authored inverse bind and
+the inverse of the rest-pose bone world differ by a **uniform 4.43e-3 rig units** — 8.8 mm after the
+normalise scale — on every single bone. So the export skins the figure against a bind pose the GLB
+does not declare. `rig.ts` passes an explicit identity bind matrix, which keeps the authored
+inverses.
+
+### 2. The documented update call froze the animation
+
+The export's README says:
+
+```ts
+updateMonster1(model, clock.getElapsedTime());
+```
+
+which reaches `group.userData.update = (_elapsed, delta) => mixer.update(delta ?? 0)` — a second
+argument nothing passes. Measured: after 60 calls covering one second, `mixer.time` is **0.0000**.
+The clip never advances. This build differences the elapsed value it is given, and the same 60
+calls leave `mixer.time` at **0.9833**.
+
+### 3. The costume was skinned, so the leather stretched
+
+Covered in full below.
+
+### Cleared: the double-scale that wasn't
+
+The export sets `mesh.scale` **after** `mesh.bind()`, which looks like a textbook double-transform:
+the bind matrix is captured at scale 1 while the bone world matrices carry the 1.9899× normalise
+scale. It is not one. In three's default `AttachedBindMode` the renderer recomputes
+`bindMatrixInverse = meshWorld⁻¹` every frame, and that fresh inverse cancels the stale bind
+matrix. Gate **R0** measures the export's own builder at a median skin scale of **1.98986** —
+applied 1.0×, rendered height 1.9, exactly right.
+
+This build still puts the normalise scale on a group above the bones instead. Not because the
+export is broken, but because relying on that cancellation hides the scale from the expression that
+actually drives the skin:
+
+```
+world = meshWorld · bindMatrixInverse · (boneWorld · boneInverse) · bindMatrix · v
+      = boneWorld · boneInverse · bindMatrix · v          (meshWorld cancels)
+```
+
+The skin follows the **skeleton's** place in the scene graph, not the mesh's.
+
+---
+
+## The costume: separate meshes that cannot stretch
+
+The export ships the leather bracers and gauntlets baked into the same skinned shell as the bark.
+Smooth-skinning a stiff leather sleeve across the elbow and the wrist shears it. Measured, with the
+costume left fused, as the largest change in a vertex pair's distance across all 16 clips:
+
+| piece | shear when fused | shear when split |
+|---|---|---|
+| `bracer-l` | **21.3%** of the pair's rest length | **0** |
+| `bracer-r` | **29.2%** | **0** |
+| `glove-l` | 5.2% | **0** |
+| `glove-r` | 0.0% | **0** |
+
+Exactly zero, by construction — one rotation, one translation, one constant scale, applied once to
+every vertex, so no two vertices in a piece **can** change their distance.
+
+### Which triangles are leather
+
+There are no material IDs in the export to appeal to, so the band was measured. Taking the median
+`R − G` of each vertex colour along each arm axis independently, the leather fraction rises from
+~5% on the upper arm to **23–40%** over arm-axis `|z| ∈ [0.258, 0.425]`, then falls back past the
+glove cuff — and it does so at the *same* arm coordinate on the left and the right. That agreement
+is what makes it a feature rather than noise. The wrist cut at 0.335 is where the hand bone takes
+over as dominant bone. 13,884 triangles move; 101,466 stay on the shell.
+
+This is a hypothesis confirmed by symmetry and by the render. It is not a labelled asset.
+
+### How a piece is driven
+
+Not by its nearest bone, and not by a blend of its bones. By a **per-frame least-squares rigid
+fit** to the motion its own vertices would have had if they had stayed skinned. Measured as the
+largest distance between a piece vertex and that skinned position, over all 16 clips:
+
+| piece | nearest bone | blend of its 4 bones | least-squares fit |
+|---|---|---|---|
+| `bracer-l` | 0.0881 | 0.2424 | **0.0532** |
+| `bracer-r` | 0.0497 | 0.1457 | **0.0290** |
+| `glove-l` | 0.0118 | 0.0122 | **0.0109** |
+| `glove-r` | 0.0000 | 0.0000 | **0.0000** |
+
+Binding to the nearest bone ignores that each bracer's proximal ring is ~26% weighted to the upper
+arm, so its seam stands open during a punch. Blending the four bones' delta *transforms* is worse
+still — averaging translations of deltas taken about different centres is not the average of the
+motion, and the error grows with the distance between the bones. The fit asks directly for the
+rigid transform closest to the real deformation, which is by definition the best a rigid piece can
+do, and it spreads the residual over the piece instead of piling it onto one edge.
+
+Rotation comes from the polar decomposition of the covariance matrix, iterated as
+`R ← (R + R⁻ᵀ)/2` — no SVD, which three does not carry. Scale is **fixed** at the normalise scale
+rather than solved: the best-fit scale swings about 8% over a punch, because linear blend skinning
+really does compress the inside of a bent elbow, and a bracer that shrinks and swells is the exact
+deformation this split exists to remove. Fixing it costs 0.0005 in tracking and buys rigidity by
+construction.
+
+Fitting on 49 samples is as good as fitting on all 1,734 vertices (0.05321 vs 0.05396), so it is
+49.
+
+### The seam
+
+| piece | worst gap, all clips | of figure height |
+|---|---|---|
+| `bracer-l` | 0.0534 | 2.8% |
+| `bracer-r` | 0.0319 | 1.7% |
+| `glove-l` | 0.0006 | 0.03% |
+| `glove-r` | 0.0000 | 0% |
+
+The gloves are near-perfect because their cut ring is weighted purely to the hand bone, which the
+glove also rides. The bracers cannot do better while staying rigid: their ring is genuinely
+blended into the elbow. Moving the cut distally to escape that blend would delete the bracer
+entirely, so the residual is accepted and reported rather than hidden.
+
+---
+
+## Clips play in place
+
+Only `Hip` carries translation, and its track is in `Root`'s local frame, not world space. Root's
+rest quaternion (-0.5, 0.5, 0.5, 0.5) maps a local `(a, b, c)` to world `(-b, c, -a)`, so the hip's
+local **z is world up** and local x/y are the two horizontal axes. Holding x and y at their
+first-frame values stops the drift — `front_kick_01` moves the hip 0.431 and `dance_01` 0.864,
+enough to walk the figure out of a fixed frame mid-move — while leaving the crouch in a kick and
+the 0.412 drop in `defeat_03` intact. Zeroing all three instead would pin the pelvis at a fixed
+height and make every one of those moves slide rather than settle. Pass `inPlace: false` for the
+clips exactly as retargeted.
+
+---
+
+## Skills, named by measurement
+
+The 16 clips ship under Tripo retarget-library names like `box_01` and `fire`, and nobody has
+confirmed what they look like. So each skill's name, lead limb and impact frame come from
+`tools/measure-rig.mjs`, which walks every clip at 40 poses and records how far each tracked bone
+travels from rest and when it peaks. Effects fire on that measured peak, not on a guessed beat.
+
+| skill | clip | measured |
+|---|---|---|
+| Bark Strike | `box_01` | L_Hand leads at 1.321, peaks 0.54 s |
+| Splinter Combo | `box_02` | both hands clear 1.0; R_Hand peaks 1.87 s |
+| Heartwood Uppercut | `box_03` | L_Hand 1.099 at 0.62 s, Spine02 0.626 behind it |
+| Rootfall Kick | `front_kick_01` | R_ToeBase 2.323 at 1.02 s — the largest excursion in the set |
+| Grovebreaker Stomp | `front_kick_02` | R_ToeBase 1.820 at 0.68 s |
+| Wildfire Sap | `fire` | L_Hand 0.771 while Head moves 0.035 — a planted cast, not a swing |
+| Deadfall | `defeat_03` | L_Hand 1.838, Head 1.408 — the figure goes down |
+| Idle / Guard | `idle`, `standing_relax` | long cycles, feet planted |
+
+`fire` is inference: a torso that barely moves while an arm extends is what a planted cast looks
+like and what a running attack does not. It is still inference — the pose has not been reviewed
+visually.
+
+---
+
+## VFX — all hand-written
+
+The img2threejs skill has **no particle subsystem, no trail subsystem and no shader library**.
+Every effect here was written for this demo, in plain three, with **no dependency added**: the
+spore field and impact bursts are `THREE.Points` with a `ShaderMaterial`, the palm trails are a
+ribbon strip, the shockwaves are additive rings, and every texture is painted into a `<canvas>`.
+
+Everything anchors to `actionProfile.sockets` — and every socket is a measured vertex centroid on a
+real bone, not a coordinate someone typed:
+
+| socket | bone | kind | measured from |
+|---|---|---|---|
+| `eye-l` / `eye-r` | `Head` | effect | the green-dominant vertex clusters on the head, split at the midline (55 and 28 vertices) |
+| `crown` | `Head` | effect | the 200 highest vertices bound to the head — the branch antlers |
+| `chest-core` | `Spine02` | effect | centroid of the 5,697 vertices bound to Spine01/Spine02 |
+| `grip-l` / `grip-r` | `L_Hand` / `R_Hand` | grip | the 150 most distal vertices on each hand |
+| `foot-l` / `foot-r` | `L_ToeBase` / `R_ToeBase` | attachment | centroid of each foot's vertices |
+
+The eye sockets double as a chirality check. They land at z = −0.023 and +0.021, mirrored about the
+head midline, and the rig puts `L_Hand` at z = −0.35 and `R_Hand` at +0.33. With forward = +x and
+up = +y, right = forward × up = +z, so the rig's own L/R prefixes agree with the measured geometry:
+a mirrored pair, not a rotated one.
+
+### Colour
+
+Everything emissive is `setHSL` off **`LIFE_HUE` = 82.5°**, the hue measured off the character's
+iris in the reference photograph. Saturation and lightness are pushed past the measured values —
+an emissive channel has to out-run the albedo it sits on — but the hue never moves. So the eye
+glow, the drifting motes, the swing trails and the ground rings are all the same green the
+character already has.
+
+The lights are the same story: key tinted `#726a5c`, fill `#8b8c69`, rim at the life hue, bounce
+`#4b3e2b`, all sampled off the photograph. There is no neutral white light in the rig. The key sits
+at intensity 7.0 because the measured bark albedo is only `#4b3e2b` — about 0.06 in linear — and
+lighting this figure at the intensities a mid-grey subject wants leaves it a silhouette.
+
+---
+
+## The measurement harness
+
+```
+node scripts/measure-monster-tree-rig.mjs          # human-readable
+node scripts/measure-monster-tree-rig.mjs --json   # machine-readable, exit 1 on failure
+```
+
+| gate | what it measures |
+|---|---|
+| **R0** | the export's own builder, measured the same way as R2, for comparison |
+| **R1** | every clip seeked to ≥ 5 points, skinned on the CPU → `maxSampledBindingDelta` |
+| **R2** | rest pose as a similarity fit — catches a normalise scale applied twice |
+| **R3** | within-piece vertex-pair distances across every pose → costume rigidity |
+| **R4** | the two copies of each shared cut-ring vertex → seam gap |
+| **R5** | bone indices in range, weights normalised, LOD count |
+
+R1 currently reports all 16 clips driving the skin, `maxSampledBindingDelta` **2.085**, nothing
+`unevaluated`. A clip that exists is not a clip that runs: one whose delta is ~0 fails, and a clip
+that cannot be evaluated is reported `unevaluated` with the input it was missing rather than
+defaulted to a pass.
+
+The harness caught two of its own bugs before it caught anything else — comparing local-space rest
+distances against world-space posed ones (which reads a perfectly rigid piece as 13% sheared), and
+pairing seam vertices by proximity instead of by shared identity. Both are fixed; both are why the
+numbers above are worth quoting.
+
+---
+
+## What this is not
+
+- **Not photogrammetry, not a hand-sculpted procedural model.** It is the img2threejs GLB fast
+  lane: a generated mesh used as a measurement instrument, embedded as code.
+- **Hidden sides are generated, not observed.** One photograph cannot confirm the back.
+- **The costume split is a hypothesis.** Symmetric across both arms and confirmed in the render,
+  but the export carries no material IDs to check it against.
+- **The clip poses have not been reviewed visually.** Skill names rest on kinematics alone.
+- **No AI-vision likeness review has run.** The spec is still ready to hand to the full img2threejs
+  skill for the judgement passes.

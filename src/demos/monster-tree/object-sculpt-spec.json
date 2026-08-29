@@ -1,0 +1,564 @@
+{
+  "targetName": "Monster Tree",
+  "targetId": "monster-tree",
+  "schemaVersion": "1.5.1-playground-glb-fastlane",
+  "terminologyProfile": "core_3d",
+  "sourceImage": "tree.jpeg",
+  "suitability": {
+    "status": "accepted",
+    "route": "glb-fast-lane",
+    "note": "A generated GLB carries measured bounds and surfaces, so the single-image intake steps that recover structure from one photo are not applicable here."
+  },
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryDomain": "character",
+      "subjectClass": "character",
+      "source": "user"
+    },
+    "complexity": "moderate",
+    "partCount": 1,
+    "triangleBudget": "source"
+  },
+  "qualityContract": {
+    "qualityBar": "measured-surface",
+    "exactnessTier": "measured",
+    "definitionOfDone": [
+      "Every part in the download renders from embedded data with no runtime asset fetch.",
+      "Part identity is labelled as a hypothesis until a render review confirms it.",
+      "Colour, roughness and metalness are measured from the source, not invented."
+    ],
+    "notDone": [
+      "AI-vision review against the reference (the skill's stage 4) has not run in the browser.",
+      "No authored animation beyond the idle motion; pivots exist, clips do not.",
+      "Hidden sides are whatever the generator hallucinated; a single photo cannot confirm them."
+    ]
+  },
+  "coordinateFrame": {
+    "front": "subject faces +x \u2014 MEASURED, and it corrects this spec's original \"subject faces -z\"",
+    "up": "+y; feet at y = 0 after normalisation",
+    "lateral": "z; the character's own right is +z (right = forward x up)",
+    "scaleReference": "figure height 1.9 model units (source generator: Tripo auto-rig)",
+    "evidence": "the two green-dominant vertex clusters on the Head bone (the eyes) sit at x = +0.091, forward of the head centroid at x = +0.034, and the arms run along +/-z; the rig places R_Hand at z = +0.33 and L_Hand at z = -0.35, agreeing with the measured eye clusters at z = +0.021 and z = -0.023, so the rig's own L_/R_ prefixes are a mirrored pair and not a rotated one"
+  },
+  "viewEvidence": [
+    {
+      "id": "glb-node:0",
+      "view": "glb-baseline",
+      "observations": [
+        "world AABB min [-0.216085,0,-0.99388] max [0.216085,1.9,0.99388]",
+        "height fraction range [0,1]",
+        "partHypothesis \"body-shell\" by measured-world-bounds",
+        "centre at 50% of figure height in band \"thigh\"; lateral 0.00 (midline); depth 0.00 (centre); 100.0% of figure volume"
+      ],
+      "confidence": 0.2
+    }
+  ],
+  "componentTree": [
+    {
+      "id": "root",
+      "name": "Monster 1 (root)",
+      "level": "macro",
+      "role": "body",
+      "importance": 1,
+      "confidence": 0.9,
+      "primitive": "measured-surface-group",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Root pivot for the whole figure; children are measured surface parts.",
+      "parent": null,
+      "dimensions": {
+        "width": 0.227458,
+        "height": 1,
+        "depth": 1.046189,
+        "units": "relative",
+        "confidence": 0.9
+      },
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "fidelityTier": "measured-surface",
+      "evidenceRefs": [
+        "glb-baseline"
+      ]
+    },
+    {
+      "id": "body-shell",
+      "name": "body shell",
+      "level": "macro",
+      "role": "body",
+      "importance": 0.2,
+      "confidence": 0.2,
+      "primitive": "measured-surface",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Measured triangle surface of GLB node 0, 115,350 triangles after intake. Identity \"body-shell\" is a bounds hypothesis.",
+      "geometryDescriptor": {
+        "topologyIntent": "embedded measured surface (quantised positions, oct normals, sampled vertex colours)",
+        "edgeTreatment": {
+          "type": "source",
+          "bevelRadius": 0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "none \u2014 colour is per vertex",
+        "normalStrategy": "source vertex normals, 16-bit octahedral"
+      },
+      "parent": "root",
+      "attachment": {
+        "to": "root",
+        "socket": "body-shell-pivot",
+        "kind": "pivot-at-bounds-centre"
+      },
+      "dimensions": {
+        "width": 0.227458,
+        "height": 1,
+        "depth": 1.046189,
+        "units": "relative",
+        "confidence": 0.9
+      },
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "material": "body-shell-material",
+      "joints": [
+        {
+          "id": "body-shell-pivot",
+          "type": "free",
+          "note": "group.userData.pivots[id] \u2014 rotate/translate without rebuilding geometry"
+        }
+      ],
+      "localFeatures": [],
+      "evidenceRefs": [
+        "glb-node:0"
+      ],
+      "details": [
+        {
+          "id": "body-shell-provenance",
+          "description": "partHypothesis \"body-shell\" at confidence 0.20 from measured-world-bounds: centre at 50% of figure height in band \"thigh\"; lateral 0.00 (midline); depth 0.00 (centre); 100.0% of figure volume \u2014 ambiguity: spans footwear / lower-leg / knee / thigh / hip-waist / torso / shoulder-neck / head; spans most of the figure height (shell or body, not a limb)"
+        }
+      ],
+      "fidelityTier": "measured-surface"
+    }
+  ],
+  "materials": [
+    {
+      "id": "body-shell-material",
+      "name": "body shell surface",
+      "type": "standard",
+      "shaderModel": "MeshStandardMaterial / PBR, vertex-coloured",
+      "baseColor": "#FFFFFF",
+      "color": "#FFFFFF",
+      "albedo": {
+        "dominant": "#FFFFFF",
+        "samplingNotes": "per-vertex colour sampled from the source albedo texture at each vertex UV; the factor above is the multiplier, not the colour"
+      },
+      "roughness": {
+        "value": 0.851,
+        "source": "median of the source metallic-roughness texture over this part"
+      },
+      "metalness": {
+        "value": 0.0078,
+        "source": "median of the source metallic-roughness texture over this part"
+      },
+      "normal": "source had a normal map; NOT carried (vertex normals only)",
+      "doubleSided": false,
+      "alphaMode": "OPAQUE",
+      "emissive": "#000000",
+      "notes": "Measured from the generated GLB, not authored. Refine by observation against the reference."
+    }
+  ],
+  "buildPasses": [
+    {
+      "id": "blockout",
+      "goal": "Proportions and part layout from the measured GLB bounds.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "completed-by-measurement",
+      "evidence": [
+        "playground intake log"
+      ]
+    },
+    {
+      "id": "structural-pass",
+      "goal": "Part surfaces carried as measured geometry with locked seams.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "completed-by-measurement",
+      "evidence": [
+        "playground intake log"
+      ]
+    },
+    {
+      "id": "material-pass",
+      "goal": "Per-vertex albedo and per-part roughness/metalness medians from the source.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "completed-by-measurement",
+      "evidence": [
+        "playground intake log"
+      ]
+    },
+    {
+      "id": "interaction-pass",
+      "goal": "Pivots per part exist; authored motion, sockets and destruction groups are still to do.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "pending-authoring",
+      "evidence": []
+    }
+  ],
+  "glbBaseline": {
+    "status": "hypothesis-requires-render-confirmation",
+    "source": {
+      "sha256": "",
+      "bytes": 8860248,
+      "generator": "Tripo auto-rig",
+      "nodes": 41,
+      "meshes": 1,
+      "triangles": 115350,
+      "vertices": 64307,
+      "textured": false,
+      "skinned": true
+    },
+    "namesUsedAsEvidence": false,
+    "nodeCount": 1,
+    "intakeSteps": [
+      "skeleton: 41 bones, root \"Root\"",
+      "clips: preset:biped:run_upstairs (0.67s), preset:biped:standing_relax (14.10s), preset:biped:box_01 (1.80s), preset:biped:box_02 (2.27s), preset:biped:box_03 (2.07s)",
+      "figure 0.43 x 1.90 x 1.99 after normalisation"
+    ],
+    "note": "Surfaces are the GLB's measured triangles, quantised and embedded as code; the GLB itself is not shipped or fetched. Part names are bounds hypotheses."
+  },
+  "pipelineRouting": {
+    "version": 1,
+    "track": "character-glb-fast-lane",
+    "source": "playground",
+    "status": "resolved",
+    "classification": {
+      "kind": "character",
+      "confidence": 1,
+      "provider": "playground"
+    }
+  },
+  "animationAnchors": [
+    "root group supports whole-object translation, rotation, scale and visibility",
+    "group.userData.pivots[<part-id>] is a pivot group at each part's bounds centre",
+    "group.userData.update(elapsedSeconds) drives the built-in idle motion"
+  ],
+  "risks": [
+    {
+      "id": "hypothesis-labels",
+      "severity": "medium",
+      "note": "Part names come from bounds bands; a boot can be called a knee pad. Confirm in the viewer before publishing."
+    },
+    {
+      "id": "generator-hidden-sides",
+      "severity": "medium",
+      "note": "Back and underside geometry is generated, not observed."
+    },
+    {
+      "id": "vertex-colour-resolution",
+      "severity": "low",
+      "note": "Colour resolution equals vertex density; decimation lowers both."
+    },
+    {
+      "id": "costume-band-boundary",
+      "severity": "low",
+      "note": "the costume cut is a warmth-profile hypothesis, not a labelled asset. Leather outside the band stays on the skinned shell and still deforms; it keeps its leather vertex colour, so the join is not visible, but it is not rigid either."
+    },
+    {
+      "id": "bracer-seam",
+      "severity": "low",
+      "note": "the bracer seam ring is ~26% weighted to the upper arm, so a rigid piece cannot track it exactly. Worst measured gap 0.053 on a 1.9 figure (2.8%), during a punch. The gloves, whose ring is pure hand, measure 0.0006 and 0.0."
+    },
+    {
+      "id": "clip-appearance-unconfirmed",
+      "severity": "medium",
+      "note": "skill names come from each clip's measured kinematics, not from a visual review of the pose. The Tripo preset names were not used as evidence."
+    }
+  ],
+  "provenance": {
+    "generatedAt": "2026-08-29 13:58:22 UTC",
+    "playgroundVersion": "0.1.0",
+    "sourceImage": {
+      "kind": "upload",
+      "filename": "tree.jpeg",
+      "prompt": null,
+      "editPrompt": null,
+      "imageModel": null,
+      "tripoImageTaskId": null
+    },
+    "provider": "tripo",
+    "animation": {
+      "rigTaskId": "edb7abc8-1de2-4d43-bd72-f07666cf6fbb",
+      "retargetTaskId": "e0caa6c2-57fd-4ca6-ad68-45ad7ed2c568",
+      "rigType": "biped",
+      "spec": "tripo",
+      "clips": [
+        "preset:biped:run_upstairs",
+        "preset:biped:standing_relax",
+        "preset:biped:box_01",
+        "preset:biped:box_02",
+        "preset:biped:box_03",
+        "preset:biped:defeat_03",
+        "preset:biped:fire",
+        "preset:biped:front_kick_01",
+        "preset:biped:front_kick_02",
+        "preset:biped:dance_01",
+        "preset:biped:dance_02",
+        "preset:biped:dance_03",
+        "preset:biped:dance_04",
+        "preset:biped:dance_05",
+        "preset:biped:dance_06",
+        "preset:biped:idle"
+      ]
+    },
+    "tripo": {
+      "modelTaskId": "fe4c4ac4-830c-4385-94fc-1b44a2923289",
+      "modelVersion": "v3.1-20260211",
+      "textureQuality": "detailed",
+      "faceLimit": 120000,
+      "segmentationTaskId": "eaeb6e40-629e-4f37-80cf-68a67f7f6e07",
+      "segmentationVersion": "v2.0-20260430",
+      "segmentationGranularity": "detailed",
+      "assetUrl": null,
+      "views": [
+        "front"
+      ]
+    }
+  },
+  "performanceBudget": {
+    "triangles": 115350,
+    "parts": 1,
+    "drawCalls": 1
+  },
+  "profile": "animated-character",
+  "stage": "R",
+  "rig": {
+    "source": "embedded in src/rigData.ts \u2014 skeleton, skin binding and clips all shipped as code",
+    "boneNames": "REAL. These are the rig's own names out of the GLB, not bounds-band hypotheses. The hypothesis warning on glb-parts.json applies to the part LABELS, never to these.",
+    "bones": 41,
+    "root": "Root",
+    "vertices": 64307,
+    "clips": 16,
+    "chainHistogram": {
+      "spine": "Root>Hip>Waist>Spine01>Spine02>NeckTwist01>NeckTwist02>Head (8)",
+      "legs": "2 x Thigh>Calf>Foot>ToeBase with 2 twist bones per segment (9 each)",
+      "arms": "2 x Clavicle>Upperarm>Forearm>Hand with 2 twist bones per segment (8 each)"
+    },
+    "rolesUnclaimed": [
+      "no finger or thumb bones \u2014 a grip socket is the hand, not a fist that can close",
+      "no jaw or eye bones \u2014 the face is rigid, so the eye glow is an attached effect, not a driven one",
+      "no branch/crown bones \u2014 the antlers ride the Head rigidly and cannot sway independently"
+    ],
+    "bonesWithoutRole": [
+      "12 twist bones (\u2026Twist01/02) carry no clip authored FOR them; they are interpolation helpers that the retargeted clips do drive"
+    ],
+    "levelsOfDetail": 1,
+    "lodRationale": "one level, deliberately: skinIndex/skinWeight address vertices by position in the buffer, so decimating the shell would leave the binding pointing at vertices that no longer exist and the figure would tear open as soon as a clip ran"
+  },
+  "costumeSeparation": {
+    "why": "a stiff leather sleeve smooth-skinned across the elbow and the wrist shears",
+    "measuredShearWhenFused": {
+      "bracer-l": "21.3% of a vertex pair's rest length",
+      "bracer-r": "29.2%",
+      "glove-l": "5.2%",
+      "glove-r": "0.0%"
+    },
+    "method": "four triangle sets lifted out of the shell into their own non-skinned meshes, each driven by a per-frame least-squares rigid fit (polar decomposition, scale locked to the normalise scale) to the motion its own vertices would have had if they had stayed skinned",
+    "bandEvidence": "warmth profile (median R-G of vertex colour) along each arm independently: the leather fraction rises from ~5% on the upper arm to 23-40% over arm-axis |z| in [0.258, 0.425] and falls back past the glove cuff, at the same coordinate on both arms",
+    "status": "hypothesis-confirmed-by-symmetry-and-render \u2014 the export carries no material IDs",
+    "pieces": [
+      {
+        "id": "bracer-l",
+        "bone": "L_Forearm",
+        "triangles": 3226
+      },
+      {
+        "id": "glove-l",
+        "bone": "L_Hand",
+        "triangles": 3236
+      },
+      {
+        "id": "bracer-r",
+        "bone": "R_Forearm",
+        "triangles": 3588
+      },
+      {
+        "id": "glove-r",
+        "bone": "R_Hand",
+        "triangles": 3834
+      }
+    ]
+  },
+  "actionProfile": {
+    "sockets": [
+      {
+        "id": "eye-l",
+        "bone": "Head",
+        "kind": "effect",
+        "position": [
+          0.090812,
+          0.774975,
+          -0.022809
+        ],
+        "samples": 55,
+        "method": "green-dominant vertex cluster on Head, -z half"
+      },
+      {
+        "id": "eye-r",
+        "bone": "Head",
+        "kind": "effect",
+        "position": [
+          0.090407,
+          0.776162,
+          0.020694
+        ],
+        "samples": 28,
+        "method": "green-dominant vertex cluster on Head, +z half"
+      },
+      {
+        "id": "crown",
+        "bone": "Head",
+        "kind": "effect",
+        "position": [
+          -0.000206,
+          0.938544,
+          0.019751
+        ],
+        "samples": 200,
+        "method": "200 highest-y vertices bound to Head"
+      },
+      {
+        "id": "chest-core",
+        "bone": "Spine02",
+        "kind": "effect",
+        "position": [
+          0.025349,
+          0.569349,
+          -0.005744
+        ],
+        "samples": 5697,
+        "method": "centroid of vertices bound to Spine01/Spine02"
+      },
+      {
+        "id": "grip-l",
+        "bone": "L_Hand",
+        "kind": "grip",
+        "position": [
+          -0.025648,
+          0.633802,
+          -0.486637
+        ],
+        "samples": 150,
+        "method": "150 most distal vertices bound to L_Hand"
+      },
+      {
+        "id": "grip-r",
+        "bone": "R_Hand",
+        "kind": "grip",
+        "position": [
+          0.015116,
+          0.634081,
+          0.487081
+        ],
+        "samples": 150,
+        "method": "150 most distal vertices bound to R_Hand"
+      },
+      {
+        "id": "foot-l",
+        "bone": "L_ToeBase",
+        "kind": "attachment",
+        "position": [
+          0.004422,
+          0.014675,
+          -0.109638
+        ],
+        "samples": 1549,
+        "method": "centroid of vertices bound to L_Foot/L_ToeBase"
+      },
+      {
+        "id": "foot-r",
+        "bone": "R_ToeBase",
+        "kind": "attachment",
+        "position": [
+          0.012655,
+          0.014349,
+          0.106667
+        ],
+        "samples": 1595,
+        "method": "centroid of vertices bound to R_Foot/R_ToeBase"
+      }
+    ],
+    "note": "every socket is a measured vertex centroid on a real bone; no effect is placed by coordinate",
+    "rootMotion": "Hip carries all translation. Clips play in place by holding its local x/y (the two horizontal axes under Root's rest rotation) and keeping local z, which is world up \u2014 so a fall still falls. front_kick_01 moves the hip 0.431 and dance_01 0.864 without it."
+  },
+  "vfx": {
+    "authored": "HAND-WRITTEN for this demo. The img2threejs skill has no particle, trail or shader subsystem.",
+    "dependenciesAdded": "none \u2014 THREE.Points, THREE.Mesh, ShaderMaterial and canvas-painted textures only",
+    "effects": [
+      "spore field (Points, seeded PRNG)",
+      "eye glow (Sprite + PointLight)",
+      "palm trails (ribbon strip, ShaderMaterial)",
+      "ground shockwave (additive ring)",
+      "chest core (additive sphere + PointLight)",
+      "impact burst (Points)"
+    ],
+    "colourSource": "every emissive channel is setHSL off LIFE_HUE = 82.5 degrees, the hue measured off the character's iris in the reference; bark/moss/leather tints are measured hexes"
+  },
+  "reviewHistory": [
+    {
+      "passId": "stage-R-animated-character",
+      "action": "continue",
+      "summary": "Stage R: rig verified by measurement, costume separated into four rigid meshes, VFX and skills authored, lighting derived from the measured palette.",
+      "gates": {
+        "R5_skinIntegrity": "pass",
+        "R0_exportBaseline": "measured",
+        "R2_restPose": "pass",
+        "R1_bindingMotion": "pass",
+        "R3_rigidCostume": "pass",
+        "R4_seam": "measured"
+      },
+      "maxSampledBindingDelta": 2.08474,
+      "clipsMeasured": 16,
+      "clipsUnevaluated": [],
+      "maxRigidStrain": 0,
+      "maxSeamGap": 0.05338,
+      "evidence": "node tools/measure-rig.mjs --json"
+    }
+  ]
+}
