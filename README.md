@@ -86,6 +86,7 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 
 | Exhibit | Kind | Status | Author |
 | --- | :-: | :-: | --- |
+| [Monster Cute — Rigged, Animated and Dressed](https://img2threejs.io/#/demo/monster-cute)<br><sub>41 real bones, 33 clips all proven to reach the skeleton, and effects anchored to sockets measured off its own fur, horns and fangs.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Mouse Warrior — Rigged Surface Character](https://img2threejs.io/#/demo/warrior)<br><sub>47 Surface&nbsp;Nets regions bound to a human-structured rig, with a code-native attack clip.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Dual-Sword Warrior — TypeScript procedural surfaces](https://img2threejs.io/#/demo/girl-character)<br><sub>Encoded Surface Nets streamed as high / medium / low quality TypeScript modules.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Low-Poly Humanoid — Rigged Character](https://img2threejs.io/#/demo/low-poly-humanoid)<br><sub>Nine panel-driven actions, from Run and Jump to Roundhouse and Dodge.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |

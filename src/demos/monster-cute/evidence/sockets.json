@@ -1,0 +1,278 @@
+{
+  "measuredFrom": "src/rigData.ts bind matrices + skin weights, and src/surfaceData.high.ts vertex colours",
+  "authored": "the socket SET is authored; every socket POSITION is measured, and every socket names a bone this rig really has",
+  "frame": {
+    "lateralAxis": "z",
+    "leftSign": -1,
+    "depthAxis": "x",
+    "frontSign": 1,
+    "headForwardLocal": [
+      -0.0871107628883977,
+      0,
+      -0.9961986322962911
+    ],
+    "note": "measured from the L_Hand/R_Hand bind positions and the eye cluster, not assumed from the coordinateFrame note in the spec"
+  },
+  "gates": {
+    "maxSkinIndex": 40,
+    "boneCount": 41,
+    "maxWeightError": 4.470348358154297e-8
+  },
+  "sockets": [
+    {
+      "id": "effect:palm.l",
+      "kind": "effect",
+      "bone": "L_Hand",
+      "offset": [
+        0.00043150287870297177,
+        0.05583018204874424,
+        -0.021338434959285446
+      ],
+      "bindPoint": [
+        -0.05141472143405037,
+        0.4760707980721883,
+        -0.4344898547771295
+      ],
+      "derivation": "centroid of the 6133 vertices whose dominant joint is L_Hand",
+      "sampleCount": 6133
+    },
+    {
+      "id": "grip:hand.l",
+      "kind": "grip",
+      "bone": "L_Hand",
+      "offset": [
+        0.00043150287870297177,
+        0.05583018204874424,
+        -0.021338434959285446
+      ],
+      "bindPoint": [
+        -0.05141472143405037,
+        0.4760707980721883,
+        -0.4344898547771295
+      ],
+      "derivation": "same point as effect:palm.l; a held prop parents here",
+      "sampleCount": 6133
+    },
+    {
+      "id": "effect:palm.r",
+      "kind": "effect",
+      "bone": "R_Hand",
+      "offset": [
+        0.0026156510471498917,
+        0.050398299963804905,
+        -0.015288756607455711
+      ],
+      "bindPoint": [
+        0.015117681492347426,
+        0.47590816318654316,
+        0.4412407882363886
+      ],
+      "derivation": "centroid of the 5346 vertices whose dominant joint is R_Hand",
+      "sampleCount": 5346
+    },
+    {
+      "id": "grip:hand.r",
+      "kind": "grip",
+      "bone": "R_Hand",
+      "offset": [
+        0.0026156510471498917,
+        0.050398299963804905,
+        -0.015288756607455711
+      ],
+      "bindPoint": [
+        0.015117681492347426,
+        0.47590816318654316,
+        0.4412407882363886
+      ],
+      "derivation": "same point as effect:palm.r; a held prop parents here",
+      "sampleCount": 5346
+    },
+    {
+      "id": "effect:horn.l",
+      "kind": "effect",
+      "bone": "Head",
+      "offset": [
+        -0.1552499564469754,
+        0.2103422683199404,
+        0.04955557861374216
+      ],
+      "bindPoint": [
+        -0.046503402292728424,
+        0.7378377318382263,
+        -0.14819049835205078
+      ],
+      "derivation": "highest vertex of the 1682 grey cap vertices on the left of the measured lateral axis (z)",
+      "sampleCount": 1682
+    },
+    {
+      "id": "effect:horn.r",
+      "kind": "effect",
+      "bone": "Head",
+      "offset": [
+        0.1432911772378476,
+        0.2179092913553501,
+        0.024901753584067442
+      ],
+      "bindPoint": [
+        -0.021848050877451897,
+        0.7378152012825012,
+        0.15044637024402618
+      ],
+      "derivation": "highest vertex of the 1620 grey cap vertices on the right of the measured lateral axis (z)",
+      "sampleCount": 1620
+    },
+    {
+      "id": "effect:eye.l",
+      "kind": "effect",
+      "bone": "Head",
+      "offset": [
+        -0.0823150348622115,
+        0.09356420322782344,
+        -0.1213374616159289
+      ],
+      "bindPoint": [
+        0.1229004134582806,
+        0.6171968959973363,
+        -0.07812497645389033
+      ],
+      "derivation": "centroid of the 393 eye-white vertices on the left of the cluster midline; the eye/fang split is the widest gap in the near-white height distribution, at y=0.5670 (gap 0.0190)",
+      "sampleCount": 393
+    },
+    {
+      "id": "effect:eye.r",
+      "kind": "effect",
+      "bone": "Head",
+      "offset": [
+        0.06128366908441599,
+        0.09195978135455929,
+        -0.13166890605607495
+      ],
+      "bindPoint": [
+        0.13316742500832845,
+        0.6119628720455341,
+        0.06539189015087243
+      ],
+      "derivation": "centroid of the 333 eye-white vertices on the right of the cluster midline; the eye/fang split is the widest gap in the near-white height distribution, at y=0.5670 (gap 0.0190)",
+      "sampleCount": 333
+    },
+    {
+      "id": "effect:mouth",
+      "kind": "effect",
+      "bone": "Head",
+      "offset": [
+        -0.011934438077478144,
+        0.03184750951875415,
+        -0.13648222671680924
+      ],
+      "bindPoint": [
+        0.1372542843104355,
+        0.5535985795514924,
+        -0.009270344661282643
+      ],
+      "derivation": "midpoint of the two fang lobes (72 + 28 near-white head vertices below y=0.5670)",
+      "sampleCount": 100
+    },
+    {
+      "id": "attachment:wrist.l",
+      "kind": "attachment",
+      "bone": "L_ForearmTwist02",
+      "offset": [
+        -0.010205493404751187,
+        0.02372660008744737,
+        -0.04419377106398718
+      ],
+      "bindPoint": [
+        -0.05272516671633757,
+        0.4880832672991556,
+        -0.36372956008856294
+      ],
+      "derivation": "centroid of the 1913 dark vertices on the L forearm chain; carried by L_ForearmTwist02, the joint that drives most of them",
+      "sampleCount": 1913
+    },
+    {
+      "id": "attachment:wrist.r",
+      "kind": "attachment",
+      "bone": "R_ForearmTwist02",
+      "offset": [
+        0.010542423238594167,
+        0.02350956219763667,
+        -0.02288813803171147
+      ],
+      "bindPoint": [
+        0.004301854185764476,
+        0.4878648421890383,
+        0.3672105500767956
+      ],
+      "derivation": "centroid of the 1911 dark vertices on the R forearm chain; carried by R_ForearmTwist02, the joint that drives most of them",
+      "sampleCount": 1911
+    },
+    {
+      "id": "effect:core",
+      "kind": "effect",
+      "bone": "Spine02",
+      "offset": [
+        0.0021915365547783925,
+        0.06768042787740502,
+        0.18403959447086782
+      ],
+      "bindPoint": [
+        -0.18457083704270721,
+        0.4509428668589819,
+        0.002258053395626154
+      ],
+      "derivation": "centroid of the skin driven by Spine02 — the chest",
+      "sampleCount": 273
+    },
+    {
+      "id": "effect:belly",
+      "kind": "effect",
+      "bone": "Spine01",
+      "offset": [
+        -0.011426062320910969,
+        0.03674359536948041,
+        -0.16628427875979399
+      ],
+      "bindPoint": [
+        0.16395731312327813,
+        0.3045724651729392,
+        -0.014827828465076322
+      ],
+      "derivation": "centroid of the pale front patch",
+      "sampleCount": 3458
+    },
+    {
+      "id": "effect:foot.l",
+      "kind": "effect",
+      "bone": "L_ToeBase",
+      "offset": [
+        -0.001540279178618216,
+        0.01624653439549594,
+        -0.021462764658875564
+      ],
+      "bindPoint": [
+        0.018674737085615668,
+        0.0005751733997920596,
+        -0.05930476543931838
+      ],
+      "derivation": "centroid of the lowest 10% (136) of the 1364 vertices driven by L_ToeBase — the sole",
+      "sampleCount": 136
+    },
+    {
+      "id": "effect:foot.r",
+      "kind": "effect",
+      "bone": "R_ToeBase",
+      "offset": [
+        0.006195291020959157,
+        0.017469919660350487,
+        -0.020025565735942812
+      ],
+      "bindPoint": [
+        0.023507680133982023,
+        0.0004401100354890575,
+        0.05712885370241924
+      ],
+      "derivation": "centroid of the lowest 10% (142) of the 1428 vertices driven by R_ToeBase — the sole",
+      "sampleCount": 142
+    }
+  ]
+}

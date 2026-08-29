@@ -10,6 +10,9 @@ graphify-out/
 
 __pycache__/
 
+# esbuild scratch for the pipeline measurement runners (pipelines/*/run-ts.mjs)
+.build/
+
 # The 87 MB reference GLB is symlinked in, never committed. Same for the render
 # archive and the local Python venv the measurement pipeline runs in.
 public/models/*.glb
@@ -17,3 +20,6 @@ public/baseline/
 public/mesh/
 .renders/
 .venv/
+
+# esbuild scratch for the pipeline measurement runners (pipelines/*/run-ts.mjs)
+.build/

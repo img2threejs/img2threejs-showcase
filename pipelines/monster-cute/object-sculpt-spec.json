@@ -1,0 +1,848 @@
+{
+  "targetName": "Monster Cute",
+  "targetId": "monster-cute",
+  "schemaVersion": "1.5.1-playground-glb-fastlane",
+  "terminologyProfile": "core_3d",
+  "sourceImage": "monster-cute.jpeg",
+  "suitability": {
+    "status": "accepted",
+    "route": "glb-fast-lane",
+    "note": "A generated GLB carries measured bounds and surfaces, so the single-image intake steps that recover structure from one photo are not applicable here."
+  },
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryDomain": "character",
+      "subjectClass": "character",
+      "source": "user"
+    },
+    "complexity": "complex",
+    "partCount": 1,
+    "triangleBudget": "source"
+  },
+  "qualityContract": {
+    "qualityBar": "measured-surface",
+    "exactnessTier": "measured",
+    "definitionOfDone": [
+      "Every part in the download renders from embedded data with no runtime asset fetch.",
+      "Part identity is labelled as a hypothesis until a render review confirms it.",
+      "Colour, roughness and metalness are measured from the source, not invented.",
+      "Every clip is seeked to at least 5 times and its binding delta compared against its own track values (Gate R1).",
+      "Every VFX emitter resolves to a socket measured on a bone the rig really has.",
+      "Effect and light colours are measured off the character or a stated HSL move from one."
+    ],
+    "notDone": [
+      "AI-vision review against the reference (the skill's stage 4) has not run. The renders in evidence/renders are captures, not a scored comparison sheet.",
+      "Hidden sides are whatever the generator hallucinated; a single photo cannot confirm them.",
+      "No skin-integrity sweep (G10). Tearing under motion was not measured over a pose sweep; nothing in this build claims it was.",
+      "No foot-contact gate (G8). The source clips' footSlide was not measured, so 'skating' is not ruled out on any of them.",
+      "The part label \"body-shell\" is still a bounds hypothesis at confidence 0.20. Only the BONE names are confirmed."
+    ]
+  },
+  "coordinateFrame": {
+    "front": "subject faces -z (toward the default camera)",
+    "up": "+y; feet at y = 0 after normalisation",
+    "scaleReference": "figure height 1.9 model units (source generator: Tripo auto-rig)",
+    "measuredCorrection": {
+      "note": "The 'front' line above says the subject faces -z. Measurement disagrees and the measurement wins: the arm span runs along Z (2.57 units against a 1.01-unit body depth), so Z is the LATERAL axis, and the dark eye cluster sits on the +X side of the Head joint, so +X is the face. The camera exported in MONSTER_CUTE_CAMERA points at the character's back.",
+      "lateralAxis": "z",
+      "characterLeftIs": "-z",
+      "depthAxis": "x",
+      "faceDirection": "+x",
+      "evidence": "evidence/sockets.json frame block; derived in tools/measure.ts from the L_Hand/R_Hand bind positions and the iris cluster"
+    }
+  },
+  "viewEvidence": [
+    {
+      "id": "glb-node:0",
+      "view": "glb-baseline",
+      "observations": [
+        "world AABB min [-0.504707,0,-1.286243] max [0.504707,1.9,1.286243]",
+        "height fraction range [0,1]",
+        "partHypothesis \"body-shell\" by measured-world-bounds",
+        "centre at 50% of figure height in band \"thigh\"; lateral 0.00 (midline); depth 0.00 (centre); 100.0% of figure volume"
+      ],
+      "confidence": 0.2
+    }
+  ],
+  "componentTree": [
+    {
+      "id": "root",
+      "name": "Monster Cute (root)",
+      "level": "macro",
+      "role": "body",
+      "importance": 1,
+      "confidence": 0.9,
+      "primitive": "measured-surface-group",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Root pivot for the whole figure; children are measured surface parts.",
+      "parent": null,
+      "dimensions": {
+        "width": 0.531271,
+        "height": 1,
+        "depth": 1.35394,
+        "units": "relative",
+        "confidence": 0.9
+      },
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "fidelityTier": "measured-surface",
+      "evidenceRefs": [
+        "glb-baseline"
+      ]
+    },
+    {
+      "id": "body-shell",
+      "name": "body shell",
+      "level": "macro",
+      "role": "body",
+      "importance": 0.2,
+      "confidence": 0.2,
+      "primitive": "measured-surface",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Measured triangle surface of GLB node 0, 192,082 triangles after intake. Identity \"body-shell\" is a bounds hypothesis.",
+      "geometryDescriptor": {
+        "topologyIntent": "embedded measured surface (quantised positions, oct normals, sampled vertex colours)",
+        "edgeTreatment": {
+          "type": "source",
+          "bevelRadius": 0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "none \u2014 colour is per vertex",
+        "normalStrategy": "source vertex normals, 16-bit octahedral"
+      },
+      "parent": "root",
+      "attachment": {
+        "to": "root",
+        "socket": "body-shell-pivot",
+        "kind": "pivot-at-bounds-centre"
+      },
+      "dimensions": {
+        "width": 0.531271,
+        "height": 1,
+        "depth": 1.35394,
+        "units": "relative",
+        "confidence": 0.9
+      },
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "material": "body-shell-material",
+      "joints": [
+        {
+          "id": "body-shell-pivot",
+          "type": "free",
+          "note": "group.userData.pivots[id] \u2014 rotate/translate without rebuilding geometry"
+        }
+      ],
+      "localFeatures": [],
+      "evidenceRefs": [
+        "glb-node:0"
+      ],
+      "details": [
+        {
+          "id": "body-shell-provenance",
+          "description": "partHypothesis \"body-shell\" at confidence 0.20 from measured-world-bounds: centre at 50% of figure height in band \"thigh\"; lateral 0.00 (midline); depth 0.00 (centre); 100.0% of figure volume \u2014 ambiguity: spans footwear / lower-leg / knee / thigh / hip-waist / torso / shoulder-neck / head; spans most of the figure height (shell or body, not a limb)"
+        }
+      ],
+      "fidelityTier": "measured-surface"
+    }
+  ],
+  "materials": [
+    {
+      "id": "body-shell-material",
+      "name": "body shell surface",
+      "type": "standard",
+      "shaderModel": "MeshStandardMaterial / PBR, vertex-coloured",
+      "baseColor": "#FFFFFF",
+      "color": "#FFFFFF",
+      "albedo": {
+        "dominant": "#FFFFFF",
+        "samplingNotes": "per-vertex colour sampled from the source albedo texture at each vertex UV; the factor above is the multiplier, not the colour"
+      },
+      "roughness": {
+        "value": 0.9647,
+        "source": "median of the source metallic-roughness texture over this part"
+      },
+      "metalness": {
+        "value": 0.0353,
+        "source": "median of the source metallic-roughness texture over this part"
+      },
+      "normal": "source had a normal map; NOT carried (vertex normals only)",
+      "doubleSided": false,
+      "alphaMode": "OPAQUE",
+      "emissive": "#000000",
+      "notes": "Measured from the generated GLB, not authored. Refine by observation against the reference.",
+      "emissiveDrivenAtRuntime": "src/vfx drives material.emissive and emissiveIntensity for the idle aura, the charge glow and the impact flash. The base colour and the vertex colours are never touched."
+    }
+  ],
+  "buildPasses": [
+    {
+      "id": "blockout",
+      "goal": "Proportions and part layout from the measured GLB bounds.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "completed-by-measurement",
+      "evidence": [
+        "playground intake log"
+      ]
+    },
+    {
+      "id": "structural-pass",
+      "goal": "Part surfaces carried as measured geometry with locked seams.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "completed-by-measurement",
+      "evidence": [
+        "playground intake log"
+      ]
+    },
+    {
+      "id": "material-pass",
+      "goal": "Per-vertex albedo and per-part roughness/metalness medians from the source.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "completed-by-measurement",
+      "evidence": [
+        "playground intake log"
+      ]
+    },
+    {
+      "id": "interaction-pass",
+      "goal": "Pivots per part exist; authored motion, sockets and destruction groups are still to do.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "pending-authoring",
+      "evidence": []
+    }
+  ],
+  "glbBaseline": {
+    "status": "hypothesis-requires-render-confirmation",
+    "source": {
+      "sha256": "",
+      "bytes": 12114648,
+      "generator": "Tripo auto-rig",
+      "nodes": 41,
+      "meshes": 1,
+      "triangles": 192082,
+      "vertices": 101298,
+      "textured": false,
+      "skinned": true
+    },
+    "namesUsedAsEvidence": false,
+    "nodeCount": 1,
+    "intakeSteps": [
+      "skeleton: 41 bones, root \"Root\"",
+      "clips: preset:climb (3.50s), preset:dive (2.75s), preset:hurt (13.88s), preset:jump (2.25s), preset:shoot (9.08s)",
+      "figure 1.01 x 1.90 x 2.57 after normalisation"
+    ],
+    "note": "Surfaces are the GLB's measured triangles, quantised and embedded as code; the GLB itself is not shipped or fetched. Part names are bounds hypotheses."
+  },
+  "pipelineRouting": {
+    "version": 1,
+    "track": "character-glb-fast-lane",
+    "source": "playground",
+    "status": "resolved",
+    "classification": {
+      "kind": "character",
+      "confidence": 1,
+      "provider": "playground"
+    }
+  },
+  "animationAnchors": [
+    "root group supports whole-object translation, rotation, scale and visibility",
+    "group.userData.pivots[<part-id>] is a pivot group at each part's bounds centre",
+    "group.userData.update(elapsedSeconds) drives the built-in idle motion"
+  ],
+  "risks": [
+    {
+      "id": "hypothesis-labels",
+      "severity": "medium",
+      "note": "Part names come from bounds bands; a boot can be called a knee pad. Confirm in the viewer before publishing."
+    },
+    {
+      "id": "generator-hidden-sides",
+      "severity": "medium",
+      "note": "Back and underside geometry is generated, not observed."
+    },
+    {
+      "id": "vertex-colour-resolution",
+      "severity": "low",
+      "note": "Colour resolution equals vertex density; decimation lowers both."
+    },
+    {
+      "id": "no-destruction-groups",
+      "severity": "medium",
+      "note": "A rigged single shell has no part decomposition, so destruction anchors do not exist for this model. Nothing was invented to substitute."
+    },
+    {
+      "id": "inferred-vfx-bindings",
+      "severity": "low",
+      "note": "hornArc, hearts, beam and impactFlash are bound by CLIP NAME. No kinematic feature separates anger from any other in-place gesture. Marked 'inferred' in the spec, in the code and in the viewer UI."
+    },
+    {
+      "id": "hold-in-place-skate",
+      "severity": "low",
+      "note": "The viewer cancels the hip's planar travel by default so the figure stays framed. Locomotion clips then skate: that is what their real 1.3H-2.6H travel looks like once the world stops moving. Toggle it off to see the untouched motion."
+    }
+  ],
+  "provenance": {
+    "generatedAt": "2026-08-29 13:55:33 UTC",
+    "playgroundVersion": "0.1.0",
+    "sourceImage": {
+      "kind": "upload",
+      "filename": "monster-cute.jpeg",
+      "prompt": null,
+      "editPrompt": null,
+      "imageModel": null,
+      "tripoImageTaskId": null
+    },
+    "provider": "tripo",
+    "animation": {
+      "rigTaskId": "5f8541e9-3ccf-4848-9125-82d403c04b0c",
+      "retargetTaskId": "531bcd43-d95f-4db3-83bf-63f5dcd3d1b0",
+      "rigType": "biped",
+      "spec": "tripo",
+      "clips": [
+        "preset:climb",
+        "preset:dive",
+        "preset:hurt",
+        "preset:jump",
+        "preset:shoot",
+        "preset:turn",
+        "preset:walk",
+        "preset:biped:jump_down",
+        "preset:biped:look_around",
+        "preset:biped:run",
+        "preset:biped:sit",
+        "preset:biped:afraid",
+        "preset:biped:agree",
+        "preset:biped:angry_01",
+        "preset:biped:angry_02",
+        "preset:biped:angry_03",
+        "preset:biped:cry",
+        "preset:biped:depressed",
+        "preset:biped:freaky",
+        "preset:biped:frustrated_01",
+        "preset:biped:frustrated_02",
+        "preset:biped:greet_01",
+        "preset:biped:greet_02",
+        "preset:biped:greet_03",
+        "preset:biped:greet_04",
+        "preset:biped:heart_pose",
+        "preset:biped:scared_02",
+        "preset:biped:dance_01",
+        "preset:biped:dance_02",
+        "preset:biped:dance_03",
+        "preset:biped:dance_04",
+        "preset:biped:dance_05",
+        "preset:biped:dance_06"
+      ]
+    },
+    "tripo": {
+      "modelTaskId": "d3739c6f-34c9-4839-8643-5ff04570f966",
+      "modelVersion": "v3.1-20260211",
+      "textureQuality": "detailed",
+      "faceLimit": 200000,
+      "segmentationTaskId": "c6ace206-9c3c-4eed-ad2f-c7e887938c70",
+      "segmentationVersion": "v2.0-20260430",
+      "segmentationGranularity": "detailed",
+      "assetUrl": null,
+      "views": [
+        "front"
+      ]
+    },
+    "stageR": "img2threejs 1.5.2 Stage R, profile animated-character, applied on top of the playground GLB fast-lane export"
+  },
+  "performanceBudget": {
+    "triangles": 192082,
+    "parts": 1,
+    "drawCalls": 1
+  },
+  "actionProfile": {
+    "version": 1,
+    "status": "authored-for-this-showcase",
+    "provenance": "This block did NOT ship in the playground export. The export carried exactly one socket \u2014 \"body-shell-pivot\", a pivot at the part's bounds centre \u2014 and no actionProfile at all. The socket SET below was authored; every socket POSITION was measured (tools/measure.ts) and every socket names a bone this rig really has.",
+    "frame": {
+      "lateralAxis": "z",
+      "leftSign": -1,
+      "depthAxis": "x",
+      "frontSign": 1,
+      "headForwardLocal": [
+        -0.0871107628883977,
+        0,
+        -0.9961986322962911
+      ],
+      "note": "measured from the L_Hand/R_Hand bind positions and the eye cluster, not assumed from the coordinateFrame note in the spec"
+    },
+    "boneSource": "src/rigData.ts \u2014 41 bones emitted by Tripo auto-rig; these are the rig's own names, not hypotheses",
+    "sockets": [
+      {
+        "id": "effect:palm.l",
+        "kind": "effect",
+        "bone": "L_Hand",
+        "offsetInBoneLocalSpace": [
+          0.00043150287870297177,
+          0.05583018204874424,
+          -0.021338434959285446
+        ],
+        "bindPointInMeshSpace": [
+          -0.05141472143405037,
+          0.4760707980721883,
+          -0.4344898547771295
+        ],
+        "derivation": "centroid of the 6133 vertices whose dominant joint is L_Hand",
+        "sampleCount": 6133,
+        "measured": true
+      },
+      {
+        "id": "grip:hand.l",
+        "kind": "grip",
+        "bone": "L_Hand",
+        "offsetInBoneLocalSpace": [
+          0.00043150287870297177,
+          0.05583018204874424,
+          -0.021338434959285446
+        ],
+        "bindPointInMeshSpace": [
+          -0.05141472143405037,
+          0.4760707980721883,
+          -0.4344898547771295
+        ],
+        "derivation": "same point as effect:palm.l; a held prop parents here",
+        "sampleCount": 6133,
+        "measured": true
+      },
+      {
+        "id": "effect:palm.r",
+        "kind": "effect",
+        "bone": "R_Hand",
+        "offsetInBoneLocalSpace": [
+          0.0026156510471498917,
+          0.050398299963804905,
+          -0.015288756607455711
+        ],
+        "bindPointInMeshSpace": [
+          0.015117681492347426,
+          0.47590816318654316,
+          0.4412407882363886
+        ],
+        "derivation": "centroid of the 5346 vertices whose dominant joint is R_Hand",
+        "sampleCount": 5346,
+        "measured": true
+      },
+      {
+        "id": "grip:hand.r",
+        "kind": "grip",
+        "bone": "R_Hand",
+        "offsetInBoneLocalSpace": [
+          0.0026156510471498917,
+          0.050398299963804905,
+          -0.015288756607455711
+        ],
+        "bindPointInMeshSpace": [
+          0.015117681492347426,
+          0.47590816318654316,
+          0.4412407882363886
+        ],
+        "derivation": "same point as effect:palm.r; a held prop parents here",
+        "sampleCount": 5346,
+        "measured": true
+      },
+      {
+        "id": "effect:horn.l",
+        "kind": "effect",
+        "bone": "Head",
+        "offsetInBoneLocalSpace": [
+          -0.1552499564469754,
+          0.2103422683199404,
+          0.04955557861374216
+        ],
+        "bindPointInMeshSpace": [
+          -0.046503402292728424,
+          0.7378377318382263,
+          -0.14819049835205078
+        ],
+        "derivation": "highest vertex of the 1682 grey cap vertices on the left of the measured lateral axis (z)",
+        "sampleCount": 1682,
+        "measured": true
+      },
+      {
+        "id": "effect:horn.r",
+        "kind": "effect",
+        "bone": "Head",
+        "offsetInBoneLocalSpace": [
+          0.1432911772378476,
+          0.2179092913553501,
+          0.024901753584067442
+        ],
+        "bindPointInMeshSpace": [
+          -0.021848050877451897,
+          0.7378152012825012,
+          0.15044637024402618
+        ],
+        "derivation": "highest vertex of the 1620 grey cap vertices on the right of the measured lateral axis (z)",
+        "sampleCount": 1620,
+        "measured": true
+      },
+      {
+        "id": "effect:eye.l",
+        "kind": "effect",
+        "bone": "Head",
+        "offsetInBoneLocalSpace": [
+          -0.0823150348622115,
+          0.09356420322782344,
+          -0.1213374616159289
+        ],
+        "bindPointInMeshSpace": [
+          0.1229004134582806,
+          0.6171968959973363,
+          -0.07812497645389033
+        ],
+        "derivation": "centroid of the 393 eye-white vertices on the left of the cluster midline; the eye/fang split is the widest gap in the near-white height distribution, at y=0.5670 (gap 0.0190)",
+        "sampleCount": 393,
+        "measured": true
+      },
+      {
+        "id": "effect:eye.r",
+        "kind": "effect",
+        "bone": "Head",
+        "offsetInBoneLocalSpace": [
+          0.06128366908441599,
+          0.09195978135455929,
+          -0.13166890605607495
+        ],
+        "bindPointInMeshSpace": [
+          0.13316742500832845,
+          0.6119628720455341,
+          0.06539189015087243
+        ],
+        "derivation": "centroid of the 333 eye-white vertices on the right of the cluster midline; the eye/fang split is the widest gap in the near-white height distribution, at y=0.5670 (gap 0.0190)",
+        "sampleCount": 333,
+        "measured": true
+      },
+      {
+        "id": "effect:mouth",
+        "kind": "effect",
+        "bone": "Head",
+        "offsetInBoneLocalSpace": [
+          -0.011934438077478144,
+          0.03184750951875415,
+          -0.13648222671680924
+        ],
+        "bindPointInMeshSpace": [
+          0.1372542843104355,
+          0.5535985795514924,
+          -0.009270344661282643
+        ],
+        "derivation": "midpoint of the two fang lobes (72 + 28 near-white head vertices below y=0.5670)",
+        "sampleCount": 100,
+        "measured": true
+      },
+      {
+        "id": "attachment:wrist.l",
+        "kind": "attachment",
+        "bone": "L_ForearmTwist02",
+        "offsetInBoneLocalSpace": [
+          -0.010205493404751187,
+          0.02372660008744737,
+          -0.04419377106398718
+        ],
+        "bindPointInMeshSpace": [
+          -0.05272516671633757,
+          0.4880832672991556,
+          -0.36372956008856294
+        ],
+        "derivation": "centroid of the 1913 dark vertices on the L forearm chain; carried by L_ForearmTwist02, the joint that drives most of them",
+        "sampleCount": 1913,
+        "measured": true
+      },
+      {
+        "id": "attachment:wrist.r",
+        "kind": "attachment",
+        "bone": "R_ForearmTwist02",
+        "offsetInBoneLocalSpace": [
+          0.010542423238594167,
+          0.02350956219763667,
+          -0.02288813803171147
+        ],
+        "bindPointInMeshSpace": [
+          0.004301854185764476,
+          0.4878648421890383,
+          0.3672105500767956
+        ],
+        "derivation": "centroid of the 1911 dark vertices on the R forearm chain; carried by R_ForearmTwist02, the joint that drives most of them",
+        "sampleCount": 1911,
+        "measured": true
+      },
+      {
+        "id": "effect:core",
+        "kind": "effect",
+        "bone": "Spine02",
+        "offsetInBoneLocalSpace": [
+          0.0021915365547783925,
+          0.06768042787740502,
+          0.18403959447086782
+        ],
+        "bindPointInMeshSpace": [
+          -0.18457083704270721,
+          0.4509428668589819,
+          0.002258053395626154
+        ],
+        "derivation": "centroid of the skin driven by Spine02 \u2014 the chest",
+        "sampleCount": 273,
+        "measured": true
+      },
+      {
+        "id": "effect:belly",
+        "kind": "effect",
+        "bone": "Spine01",
+        "offsetInBoneLocalSpace": [
+          -0.011426062320910969,
+          0.03674359536948041,
+          -0.16628427875979399
+        ],
+        "bindPointInMeshSpace": [
+          0.16395731312327813,
+          0.3045724651729392,
+          -0.014827828465076322
+        ],
+        "derivation": "centroid of the pale front patch",
+        "sampleCount": 3458,
+        "measured": true
+      },
+      {
+        "id": "effect:foot.l",
+        "kind": "effect",
+        "bone": "L_ToeBase",
+        "offsetInBoneLocalSpace": [
+          -0.001540279178618216,
+          0.01624653439549594,
+          -0.021462764658875564
+        ],
+        "bindPointInMeshSpace": [
+          0.018674737085615668,
+          0.0005751733997920596,
+          -0.05930476543931838
+        ],
+        "derivation": "centroid of the lowest 10% (136) of the 1364 vertices driven by L_ToeBase \u2014 the sole",
+        "sampleCount": 136,
+        "measured": true
+      },
+      {
+        "id": "effect:foot.r",
+        "kind": "effect",
+        "bone": "R_ToeBase",
+        "offsetInBoneLocalSpace": [
+          0.006195291020959157,
+          0.017469919660350487,
+          -0.020025565735942812
+        ],
+        "bindPointInMeshSpace": [
+          0.023507680133982023,
+          0.0004401100354890575,
+          0.05712885370241924
+        ],
+        "derivation": "centroid of the lowest 10% (142) of the 1428 vertices driven by R_ToeBase \u2014 the sole",
+        "sampleCount": 142,
+        "measured": true
+      }
+    ]
+  },
+  "vfx": {
+    "status": "authored-for-this-showcase",
+    "subsystem": null,
+    "provenance": "img2threejs has no particle, trail or shader subsystem \u2014 the skill emits geometry, materials, a rig and clips and stops there. Everything under src/vfx/ is hand-written for this showcase in plain three.js with no added dependency, and no texture files: the round sprite is cut in a fragment shader and the heart is a THREE.Shape.",
+    "colourPolicy": "Every effect colour is a measured region colour or a stated HSL move away from one. src/characterProfile.ts ACCENT. Nothing was picked by eye.",
+    "effects": [
+      {
+        "id": "motes",
+        "anchor": "effect:core",
+        "colour": "ACCENT.mote (from belly #80a8ba)",
+        "basis": "ambient, always on"
+      },
+      {
+        "id": "aura",
+        "anchor": "material.emissive on the skinned shell",
+        "colour": "ACCENT.energy (from fur #4487a4)",
+        "basis": "ambient; uses the emissive channel the spec measured as #000000, i.e. unused"
+      },
+      {
+        "id": "handTrails",
+        "anchor": "effect:palm.l / effect:palm.r",
+        "colour": "ACCENT.energy",
+        "basis": "measured \u2014 bound when handRange >= 0.40H or the clip classifies dash/run"
+      },
+      {
+        "id": "footDust",
+        "anchor": "effect:foot.l / effect:foot.r",
+        "colour": "ACCENT.dust (from horn #728592)",
+        "basis": "measured \u2014 bound when the clip is not 'planted'; each puff is triggered by the sole socket crossing the ground band while descending"
+      },
+      {
+        "id": "landingWave",
+        "anchor": "effect:foot.l / effect:foot.r",
+        "colour": "ACCENT.energy",
+        "basis": "measured \u2014 bound when rise >= 0.15H; magnitude read from the hip's fall speed at contact"
+      },
+      {
+        "id": "hornArc",
+        "anchor": "effect:horn.l <-> effect:horn.r",
+        "colour": "ACCENT.energy + ACCENT.core",
+        "basis": "INFERRED \u2014 bound on clips NAMED angry/freaky/frustrated"
+      },
+      {
+        "id": "palmCharge",
+        "anchor": "effect:palm.l / effect:palm.r",
+        "colour": "ACCENT.energy + ACCENT.core",
+        "basis": "measured on 'gesture' clips; INFERRED on the clip named shoot"
+      },
+      {
+        "id": "beam",
+        "anchor": "effect:palm.r, aimed along the measured head-local forward vector",
+        "colour": "ACCENT.core",
+        "basis": "INFERRED \u2014 fired on the clip named shoot, and on the manual 'blast' cue"
+      },
+      {
+        "id": "hearts",
+        "anchor": "effect:core, offset forward",
+        "colour": "ACCENT.impact (from wristband #32314d)",
+        "basis": "INFERRED \u2014 bound on the clip named heart_pose"
+      },
+      {
+        "id": "impactFlash",
+        "anchor": "material.emissive + effect:core",
+        "colour": "ACCENT.impact",
+        "basis": "INFERRED \u2014 on the clip named hurt, and on the manual 'hurt' cue"
+      }
+    ],
+    "cues": [
+      "cast",
+      "blast",
+      "slam",
+      "hurt",
+      "sparkle"
+    ],
+    "destructionGroups": "NOT AVAILABLE. The spec carries no destructionGroups and cannot: rigging merged the surface, so this model is a single skinned shell of 192,082 triangles with one part hypothesis (\"body-shell\", confidence 0.20). There is no part decomposition to break apart, and no destruction anchor was invented to stand in for one."
+  },
+  "rig": {
+    "source": "src/rigData.ts, embedded by the playground export",
+    "generator": "Tripo auto-rig",
+    "bones": 41,
+    "root": "Root",
+    "boneNamesAreReal": true,
+    "boneNameNote": "These are the rig's own joint names, not the bounds-derived part hypotheses that carry the 0.20 confidence elsewhere in this spec. The hypothesis warning applies to the PART label \"body-shell\"; it does not apply to Root/Hip/Pelvis/Head/L_Hand/R_ToeBase and the rest.",
+    "skin": {
+      "vertices": 101298,
+      "influencesPerVertex": 4,
+      "maxSkinIndex": 40,
+      "maxWeightError": 4.470348358154297e-08
+    },
+    "singleShell": true,
+    "levelsOfDetail": 1,
+    "decimation": "REFUSED. The rigged model is one skinned shell at a single level of detail. A decimate pass rewrites the vertex set, so skinIndex/skinWeight would point at vertices that no longer exist and the figure would tear the moment a clip ran. geometryDescriptor.decimate is absent from this spec and must stay absent while the rig is bound."
+  },
+  "animation": {
+    "clips": 33,
+    "gateR1": {
+      "criterion": "maxSampledBindingDelta <= 2^-23 over >= 5 sampled times x every clip",
+      "verdict": "pass",
+      "maxSampledBindingDelta": 5.960464477539063e-08,
+      "epsilon": 1.1920928955078125e-07,
+      "seeksPerClip": 9,
+      "clipsMeasured": 33,
+      "unevaluated": [],
+      "evidence": "evidence/gate-r1.json, produced by tools/gate_r1.ts"
+    },
+    "scaleDeltaTripwire": {
+      "fired": false,
+      "note": "no clip moves a joint's scale away from its rest value (max 6.00e-7, limit 1e-6). Every one of the 1,353 tracks does carry a scale channel, but each holds the rest value; the rest pose itself is 1 +/- 1.07e-5, which is exporter quantisation, not animation.",
+      "maxScaleFromRest": 6e-07,
+      "maxScaleFromUnity": 1.067e-05
+    },
+    "loopRule": "poseReturn <= 0.5 deg per rotation joint AND hipReturn <= 0.01H, measured per clip",
+    "loopable": [
+      "preset:biped:agree",
+      "preset:biped:cry",
+      "preset:biped:frustrated_01",
+      "preset:biped:frustrated_02"
+    ],
+    "runtime": {
+      "mixer": "THREE.AnimationMixer, advanced with the frame DELTA (never elapsed time)",
+      "crossFade": "0.28 s by default on every clip change; a hard cut pops on the first frame",
+      "api": "createAnimator(rigged) -> play(name|index, fade), seek(name, t), stop(), update(dt)",
+      "autoRepeat": "29 of 33 clips do not return to their first pose, so by the measured loop rule they are one-shots. The viewer restarts them by cross-fading the clip into a clone of itself. This hides a discontinuity that is really there; it does not make the clip loop, and loops() keeps reporting the measurement."
+    }
+  },
+  "lighting": {
+    "status": "authored-for-this-showcase",
+    "rig": "src/lighting.ts createMonsterCuteStageLights()",
+    "policy": "every light takes its colour from a measured region of the character",
+    "lights": [
+      {
+        "role": "key",
+        "type": "DirectionalLight",
+        "colour": "sclera #d7d3ce",
+        "why": "the only slightly warm colour on the figure"
+      },
+      {
+        "role": "fill",
+        "type": "DirectionalLight",
+        "colour": "belly #80a8ba"
+      },
+      {
+        "role": "rim",
+        "type": "DirectionalLight",
+        "colour": "ACCENT.energy, from fur #4487a4"
+      },
+      {
+        "role": "bounce",
+        "type": "PointLight",
+        "colour": "fur-deep #236a8b"
+      },
+      {
+        "role": "ambient",
+        "type": "HemisphereLight",
+        "colour": "sky fur-light #5a9bb5 / ground wristband #32314d"
+      }
+    ],
+    "note": "createMonsterCuteLookDevLights() (neutral white) is still exported and is the right rig for judging surface colour."
+  }
+}

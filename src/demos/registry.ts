@@ -88,6 +88,16 @@ import {
   prewarmLeesin,
 } from './leesin/leesinDemo';
 
+import {
+  createMonsterCuteRigged,
+  prewarmMonsterCute,
+  prewarmMonsterCuteRig,
+} from './monster-cute/createMonsterCuteModel';
+import { createAnimator } from './monster-cute/animation';
+import { createMonsterCuteVfx } from './monster-cute/vfx';
+import { createMonsterCuteGround, createMonsterCuteStageLights } from './monster-cute/lighting';
+import { frontCamera } from './monster-cute/characterProfile';
+
 export interface DemoEntry {
   /** route id, e.g. 'crown-chest' */
   id: string;
@@ -201,7 +211,159 @@ export interface DemoEntry {
 const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
+/** Framing solved from the measured facing rather than typed in. */
+const MONSTER_CUTE_FRAMING = frontCamera();
+
 const authored: DemoEntry[] = [
+  {
+    id: 'monster-cute',
+    title: 'Monster Cute \u2014 Rigged, Animated and Dressed',
+    subjectClass: 'character',
+    blurb:
+      'A cute blue horned monster measured from one reference image by the img2threejs playground, '
+      + 'then taken through Stage R of the 1.5.2 rigging pipeline. One skinned shell on 41 real bones '
+      + 'with 33 embedded clips \u2014 each seeked to nine times, worst sampled binding delta 5.96e-8 '
+      + 'against a 2\u207b\u00b2\u00b3 limit, so every clip is proven to reach the skeleton rather than '
+      + 'assumed to. The effect layer is hand-written plain Three.js anchored to sockets measured out of '
+      + 'the character\u2019s own vertices \u2014 horn tips, palms, fangs, soles, wristbands \u2014 and '
+      + 'every effect and light colour is sampled off its fur, belly, horns or wristbands.',
+    referenceImage: `${BASE}references/monster-cute/reference.jpg`,
+    referenceKind: 'image',
+    sourcePath: 'src/demos/monster-cute/createMonsterCuteModel.ts',
+    sourceUrl: `${REPO}/src/demos/monster-cute/createMonsterCuteModel.ts`,
+    generatedWith: 'img2threejs playground \u00b7 Tripo v3.1-20260211 measurement \u00b7 GLB fast lane \u00b7 1.5.2 Stage R',
+    prompt:
+      'Take the playground download as measured and build on top of it: use the embedded rig as it '
+      + 'stands, prove every clip actually drives the skeleton, then anchor a hand-written effect layer '
+      + 'to sockets measured out of the character rather than to typed-in coordinates.',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'placeholder',
+    updatedAt: '2026-08-29',
+    // Framing solved from the MEASURED facing. The spec's own coordinateFrame note says the subject
+    // faces -z; the arm span runs 2.57 units along Z against a 1.01-unit body depth, and the dark iris
+    // cluster sits on the +X side of the Head joint. The camera the export shipped points at its back.
+    cameraPosition: [MONSTER_CUTE_FRAMING.position.x, MONSTER_CUTE_FRAMING.position.y, MONSTER_CUTE_FRAMING.position.z],
+    cameraTarget: [MONSTER_CUTE_FRAMING.target.x, MONSTER_CUTE_FRAMING.target.y, MONSTER_CUTE_FRAMING.target.z],
+    cameraFov: MONSTER_CUTE_FRAMING.fov,
+    accent: '#4487a4',
+    backgroundGradient: { inner: '#12222b', outer: '#070d11' },
+    exposure: 1.0,
+    environmentIntensity: 0.24,
+    toneMapping: 'aces',
+    // Two chunks: the surface level and the 15 MB rig payload. Both are dynamic imports, so a
+    // visitor looking at any other demo in this gallery never downloads either.
+    prewarm: () => Promise.all([prewarmMonsterCute('high'), prewarmMonsterCuteRig()]).then(() => undefined),
+    // Own rig via installLights so the Viewer skips its default studio rig: five character-coloured
+    // lights on top of a full white studio wash the fur out to near-white.
+    installLights: (scene) => {
+      const stage = createMonsterCuteStageLights();
+      stage.group.userData.tick = (_dt: number, elapsed: number) => { stage.update(elapsed); };
+      scene.add(stage.group, createMonsterCuteGround());
+    },
+    build: (scene) => {
+      /**
+       * Returns an EMPTY group and fills it in when `prewarm` settles.
+       *
+       * `build()` is synchronous by the DemoEntry contract and the page calls it before `prewarm`
+       * has resolved, but this character cannot be constructed until its surface level and its rig
+       * payload have both landed — `createMonsterCuteRigged` throws rather than build half a
+       * skeleton. So the group is handed back immediately and populated from the same cached
+       * prewarm promise the page is already awaiting.
+       */
+      const host = new THREE.Group();
+      host.name = 'monster-cute';
+      scene.add(host);
+
+      let advance: ((dt: number, elapsed: number) => void) | null = null;
+      // Set NOW, not when the rig lands. The viewer collects `userData.tick` once, and whether that
+      // sweep happens before or after the payload resolves is a race; a hook that exists from the
+      // first frame and does nothing until there is something to advance cannot lose it.
+      host.userData.tick = (dt: number, elapsed: number) => { advance?.(dt, elapsed); };
+
+      void Promise.all([prewarmMonsterCute('high'), prewarmMonsterCuteRig()]).then(() => {
+        const rigged = createMonsterCuteRigged();
+        const animator = createAnimator(rigged);
+        const vfx = createMonsterCuteVfx(rigged);
+        host.add(rigged.group, vfx.group);
+
+        // Nine of the 33 clips travel. The gallery camera is fixed, so the hip's planar drift is
+        // cancelled each frame to keep the figure on its mark; locomotion then skates, which is
+        // what 0.45H-2.56H of real travel looks like once the world stops moving underneath it.
+        const hip = rigged.mesh.skeleton.bones.find((bone) => bone.name === 'Hip');
+        rigged.group.updateMatrixWorld(true);
+        const restHip = hip ? hip.getWorldPosition(new THREE.Vector3()) : null;
+        const hipNow = new THREE.Vector3();
+        const holdOnMark = (): void => {
+          if (!hip || !restHip) return;
+          hip.getWorldPosition(hipNow);
+          rigged.group.position.x -= hipNow.x - restHip.x;
+          rigged.group.position.z -= hipNow.z - restHip.z;
+          rigged.group.updateMatrixWorld(true);
+        };
+
+        // dance_01 measured the widest hip-relative hand range of the set (1.02H), so the trails
+        // have something to react to the moment the demo opens.
+        const OPENING = 'preset:biped:dance_01';
+        let active = OPENING;
+        const listeners = new Set<(name: string) => void>();
+        const select = (name: string): void => {
+          animator.play(name, 0.3);
+          vfx.setClip(name);
+          active = name;
+          for (const listener of listeners) listener(active);
+        };
+        select(OPENING);
+
+        // The mixer wants a DELTA. Handing it elapsed time makes the first frame jump to wherever
+        // the clip is by then and every frame after it race away.
+        advance = (dt, elapsed) => {
+          animator.update(dt);
+          holdOnMark();
+          // No camera argument: the effect layer captures the real one in onBeforeRender, because
+          // this hook is only handed (dt, elapsed).
+          vfx.update(dt, elapsed);
+        };
+
+        const label = (name: string): string =>
+          name.replace(/^preset:(biped:)?/, '').replace(/_/g, ' ');
+
+        host.userData.sculptRuntime = {
+          animationController: {
+            actions: animator.names.map((name) => ({
+              id: name,
+              label: label(name),
+              // Measured, not assumed: only 4 of the 33 return to their own first pose.
+              loop: animator.loops(name),
+            })),
+            get active() { return active; },
+            play: (name: string) => select(name),
+            stop: () => { animator.stop(); },
+            subscribe: (listener: (name: string) => void) => {
+              listeners.add(listener);
+              listener(active);
+              return () => { listeners.delete(listener); };
+            },
+          },
+          // The gallery's effect panel is a one-of-N picker, so each entry fires its cue when
+          // chosen. Every one of these is anchored to a measured socket on a real bone.
+          strikeVfx: {
+            elements: [
+              { id: 'cast', label: 'Horn arc' },
+              { id: 'blast', label: 'Palm bolt' },
+              { id: 'slam', label: 'Ground slam' },
+              { id: 'hurt', label: 'Impact flash' },
+              { id: 'sparkle', label: 'Sparkle' },
+            ],
+            current: 'cast',
+            setElement: (id: string) => { vfx.cue(id as Parameters<typeof vfx.cue>[0]); },
+          },
+        };
+      });
+
+      return host;
+    },
+  },
   {
     id: 'leesin',
     title: 'Lee Sin \u2014 Game Character',
