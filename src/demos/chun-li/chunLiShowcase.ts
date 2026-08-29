@@ -4,6 +4,7 @@ import { createChunLiVfx, type ChunLiVfx } from './chunLiVfx';
 import {
   AURA_SURGES,
   CHUN_LI_ACTIONS,
+  CHUN_LI_IDLE_CLIP,
   CHUN_LI_IDLE_ID,
   FIGURE_HEIGHT,
   GROUND_SLAM,
@@ -97,7 +98,8 @@ export function createChunLiShowcase(options: ChunLiOptions = {}): THREE.Group {
   let pending: string | null = null;
   let clipTime = 0;
   let hitstop = 0;
-  let lockArmed = false;
+  /** Seconds the root lock keeps running after switching AWAY from a travelling clip. */
+  let lockHold = 0;
   let primed = false;
   const fired = { strikes: 0, footfalls: 0, orbs: 0, strides: 0 };
 
@@ -116,17 +118,41 @@ export function createChunLiShowcase(options: ChunLiOptions = {}): THREE.Group {
   const notify = (): void => listeners.forEach((listener) => listener(action.id));
 
   function switchTo(next: ChunLiAction, fade: number): void {
+    // Read BEFORE `action` is reassigned: the hold is a property of the clip being left, not the
+    // one being entered. Checking it after the reassignment silently never armed on the one switch
+    // that needs it — sprint to anything — which is the whole case this exists for.
+    const leavingLocked = ROOT_LOCKED_CLIPS[action.clip] !== undefined;
     action = next;
     clipTime = 0;
     hitstop = 0;
-    lockArmed = false;
-    compensation.set(0, 0, 0);
+    /**
+     * THE ROOT LOCK HAS TO OUTLIVE THE CLIP THAT NEEDED IT.
+     *
+     * `sprint` carries the hips 3.71 H per loop, and the lock cancels that by pushing the model
+     * group the other way. Dropping the compensation on the switch frame — which is what this used
+     * to do — put the figure back wherever the travel had taken her: measured off the live page,
+     * pressing Stop mid-sprint threw her to x=3.79 and she then slid to x=2.15 over the next 175 ms
+     * and kept going. That slide is the outgoing clip's root returning to zero across the 0.3 s
+     * cross-fade, and for its whole length nothing was compensating for it.
+     *
+     * Holding the lock across the fade keeps `compensation` tracking the hip the whole way down, so
+     * the figure does not move at all: the correction shrinks to nothing exactly as the root it was
+     * correcting does.
+     */
+    if (leavingLocked) lockHold = fade + 0.1;
     // A Kikoken in flight belongs to the action that threw it. Leaving it alive across a switch
     // puts an orb in the middle of a sprint with nothing that fired it.
     vfx.reset();
+    // The pose is about to jump. Everything measured as a difference against last frame has to be
+    // seeded again on the other side of that jump — see the priming block in the ticker.
+    primed = false;
     if (bound) {
       bound.play(next.clip, fade);
-      bound.modelGroup.position.copy(bound.baseOffset);
+      // Only safe to snap the group back when nothing is still being corrected for.
+      if (lockHold <= 0) {
+        compensation.set(0, 0, 0);
+        bound.modelGroup.position.copy(bound.baseOffset);
+      }
       for (const limb of Object.values(bound.limbs)) limb.filled = 0;
     } else {
       pending = next.id;
@@ -242,27 +268,57 @@ export function createChunLiShowcase(options: ChunLiOptions = {}): THREE.Group {
     state.modelGroup.updateMatrixWorld(true);
     readAnchors(state);
 
-    if (!primed) {
-      updateFacing(state);
-      primed = true;
-      for (const limb of Object.values(state.limbs)) limb.previous.copy(limb.anchor.world);
-    } else {
-      updateFacing(state);
-    }
-
     // Root lock, computed in the group's own frame so the correction is a function of the animation
-    // only and never of the correction already applied.
-    if (ROOT_LOCKED_CLIPS[action.clip] !== undefined) {
+    // only and never of the correction already applied. `lockReference` is sampled ONCE at bind
+    // from the resting pose and never re-armed: re-seeding it per switch made the reference
+    // whatever the travel had reached at that instant, which is the wrong place to hold her.
+    if (lockHold > 0) lockHold = Math.max(0, lockHold - dt);
+    if (ROOT_LOCKED_CLIPS[action.clip] !== undefined || lockHold > 0) {
       scratch.copy(state.joints.hip.world);
       state.modelGroup.worldToLocal(scratch);
-      if (!lockArmed) { lockReference.copy(scratch); lockArmed = true; }
       compensation.set(lockReference.x - scratch.x, 0, lockReference.z - scratch.z);
       state.modelGroup.position.copy(state.baseOffset).add(compensation);
       // Re-resolve the bones: the effects spawn off world positions, and a stride's worth of
       // correction is a visible offset on the dust it throws.
       state.modelGroup.updateMatrixWorld(true);
       readAnchors(state);
-      updateFacing(state);
+    } else if (compensation.lengthSq() > 0) {
+      // The hold has run out and the root has settled: give the group its authored offset back.
+      compensation.set(0, 0, 0);
+      state.modelGroup.position.copy(state.baseOffset);
+      state.modelGroup.updateMatrixWorld(true);
+      readAnchors(state);
+    }
+
+    // Facing is resolved AFTER the lock, on anchors that will not move again this frame, and
+    // before the priming block below so its seeding branch still sees `primed === false`.
+    updateFacing(state);
+
+    /**
+     * PRIMING, AND WHY IT RUNS AGAIN AFTER EVERY SWITCH.
+     *
+     * Changing action teleports the pose. Both things this block seeds are DIFFERENCES against the
+     * previous frame, so on the frame after a switch both were being measured across that teleport:
+     *
+     *   - Limb speed came back at about 6.8 H/s on all four limbs at once — above the ribbon gate
+     *     for every clip in the demo — so pressing Stop lit up four trails and a spray of motes
+     *     that no movement had caused.
+     *   - Facing re-read its axis from the jumped pose while keeping its old sign by continuity,
+     *     which is a sign decision taken against a frame that never existed.
+     *
+     * Clearing `primed` in `switchTo` puts both back on a known frame instead: the speed is
+     * differenced against a pose that is really there, and facing re-seeds from the toe test.
+     *
+     * NOTE that facing legitimately SWEEPS during a clip and that is not this bug. `box_01` alone
+     * turns the clavicle line through yaw 47-91 degrees, so reading [1, 0, 0.01] at one moment and
+     * [0.79, 0, 0.61] at another is the torso turning, not drift.
+     */
+    if (!primed) {
+      primed = true;
+      for (const limb of Object.values(state.limbs)) {
+        limb.previous.copy(limb.anchor.world);
+        limb.filled = 0;
+      }
     }
 
     const step = dt * scale;
@@ -453,6 +509,16 @@ export function createChunLiShowcase(options: ChunLiOptions = {}): THREE.Group {
       };
     }
     root.add(rigged.group);
+    /**
+     * The lock's reference: where the hips sit in the group's own frame at rest. Taken here, from
+     * the idle clip's first frame, so it means the same thing for every clip and every switch.
+     */
+    rigged.play(CHUN_LI_IDLE_CLIP, 0);
+    rigged.update(0);
+    rigged.group.updateMatrixWorld(true);
+    const hipBone = joints.hip.bone;
+    hipBone.getWorldPosition(lockReference);
+    rigged.group.worldToLocal(lockReference);
     bound = {
       play: rigged.play,
       update: rigged.update,

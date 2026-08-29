@@ -93,7 +93,7 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 
 | Exhibit | Kind | Status | Author |
 | --- | :-: | :-: | --- |
-| [Chun-Li — Measured-Impact Ki VFX](https://img2threejs.io/#/demo/chun-li)<br><sub>Nine clips swept at 400 samples: strikes fire where the limb arrives, and Kikoken is timed off the palms.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
+| [Chun-Li — Measured-Impact Ki VFX](https://img2threejs.io/#/demo/chun-li)<br><sub>Eight clips swept at 400 samples: strikes fire where the limb arrives, and Kikoken is thrown down the arm.</sub> | character | ✅ | [Hoài Nhớ](https://github.com/hoainho) |
 | [Mouse Warrior — Rigged Surface Character](https://img2threejs.io/#/demo/warrior)<br><sub>47 Surface&nbsp;Nets regions bound to a human-structured rig, with a code-native attack clip.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Dual-Sword Warrior — TypeScript procedural surfaces](https://img2threejs.io/#/demo/girl-character)<br><sub>Encoded Surface Nets streamed as high / medium / low quality TypeScript modules.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Low-Poly Humanoid — Rigged Character](https://img2threejs.io/#/demo/low-poly-humanoid)<br><sub>Nine panel-driven actions, from Run and Jump to Roundhouse and Dodge.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |

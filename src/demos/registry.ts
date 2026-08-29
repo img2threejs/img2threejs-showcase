@@ -223,13 +223,13 @@ const authored: DemoEntry[] = [
     referenceImage: `${BASE}references/chun-li.jpg`,
     sourcePath: 'src/demos/chun-li/chunLiVfx.ts',
     sourceUrl: `${REPO}/src/demos/chun-li/chunLiVfx.ts`,
-    generatedWith: 'img2threejs playground \u00b7 Tripo v3.1-20260211 measurement \u00b7 GLB fast lane \u00b7 measured-event VFX',
+    generatedWith: 'img2threejs playground \u00b7 Tripo measurement \u00b7 GLB fast lane \u00b7 measured-event VFX',
     prompt:
       'Full body Chun-Li character in T pose: blue qipao with gold trim, white sash, spiked bracelets, '
       + 'white boots, hair buns with ribbons.',
     author: 'Ho\u00e0i Nh\u1edb',
     authorUrl: 'https://github.com/hoainho',
-    status: 'placeholder',
+    status: 'final',
     /**
      * Authored on the side she actually faces, which is not where the playground's own framing put
      * it. Her clavicles span Z \u2014 the T-pose arms measure 1.85 units deep against 0.36 wide \u2014
