@@ -15,6 +15,7 @@ import {
 import { buildRegionGeometries, segmentCostume, type Region, type SegmentationResult } from './costumeSegmentation';
 import { createClothRig, planCostumeRig, type ClothRig } from './clothRig';
 import { createFrostVfx, VFX_LAYERS, type FrostVfx, type VfxLayer } from './frostVfx';
+import { createWalkClip } from './walkClip';
 
 /**
  * Luc Tuyet Ky — an ice-empress character rebuilt as code-only Three.js, with the costume split off
@@ -54,26 +55,46 @@ export const LUC_TUYET_KY_CAMERA = {
   fov: 30,
 };
 
+/** The authored walk, kept out of the `preset:` namespace so its provenance is legible. */
+export const WALK_CLIP_NAME = 'authored:walk';
+
 /** Clip names as they were retargeted, in the order the skeleton carries them. Empty before prewarm. */
 export function lucTuyetKyClips(): string[] {
   return loaded?.rig.clips.map((clip) => clip.name) ?? [];
 }
 
-/** The clips worth surfacing in the viewer, with the labels a reader can act on. */
-const actionId = (label: string): string => label.toLowerCase().replace(/\s+/g, '-');
-
+/**
+ * The clips the viewer offers, chosen by measurement rather than by name.
+ *
+ * All eighteen presets were driven through the rig and scored on what they do to the mesh and on how
+ * far they throw the figure about. The set below is the calm end of that table; everything cut is
+ * listed with the number that cut it, so the choice can be argued with:
+ *
+ *   kept    dance_06  body 0.018  hip speed 0.09   the stillest of them
+ *           dance_04  body 0.025  hip speed 0.51
+ *           dance_01  body 0.025  hip speed 0.34   23 s, the longest phrase
+ *           dance_02  body 0.028  hip speed 0.88
+ *
+ *   cut     defeat_03 hip speed 54.0, airborne 56% of frames — a broken retarget, not a performance
+ *           flee_02   body 0.074, hair 0.024, a foot to 0.91 of figure height, airborne 25%
+ *           lift_heavy body 0.080, the worst in the set: a squat deep enough to put the hem
+ *                     through the floor
+ *           front_kick_01 a foot to 1.87 of figure height — nearly head height
+ *           heart_pose body 0.049 · dance_05 body 0.048 · angry_03 body 0.037, dress 0.015
+ *           angry_01, freaky, defeat_02, afraid, agree, greet_01 — calm enough, but not dances
+ *
+ * `Walk` is not in that table because the rig has no walk: the presets contain one locomotion clip
+ * and it is a flee. It is authored in `walkClip.ts` and measured by the same gate as the rest.
+ */
 const FEATURED_CLIPS: Array<{ clip: string; label: string }> = [
-  { clip: 'preset:biped:dance_02', label: 'Dance' },
-  { clip: 'preset:biped:dance_05', label: 'Spin' },
-  { clip: 'preset:biped:front_kick_01', label: 'Front Kick' },
-  { clip: 'preset:biped:flee_02', label: 'Run' },
-  { clip: 'preset:biped:greet_01', label: 'Greet' },
-  { clip: 'preset:biped:angry_01', label: 'Angry' },
-  { clip: 'preset:biped:heart_pose', label: 'Heart Pose' },
-  { clip: 'preset:biped:afraid', label: 'Afraid' },
-  { clip: 'preset:biped:lift_heavy', label: 'Lift' },
-  { clip: 'preset:biped:defeat_02', label: 'Defeat' },
+  { clip: WALK_CLIP_NAME, label: 'Walk' },
+  { clip: 'preset:biped:dance_06', label: 'Slow Dance' },
+  { clip: 'preset:biped:dance_04', label: 'Court Dance' },
+  { clip: 'preset:biped:dance_01', label: 'Long Dance' },
+  { clip: 'preset:biped:dance_02', label: 'Sleeve Dance' },
 ];
+
+const actionId = (label: string): string => label.toLowerCase().replace(/\s+/g, '-');
 
 /** The panel's buttons. Static, so they can be published before the rig payload lands. */
 const FEATURED_ACTIONS: LucTuyetKyAction[] = FEATURED_CLIPS.map((entry) => ({
@@ -542,7 +563,8 @@ function assembleLucTuyetKy(group: THREE.Group, options: LucTuyetKyOptions, tick
   const model = createLucTuyetKy(options, group);
   const { mixer, cloth, vfx, skeleton } = model;
   if (!loaded) throw new Error('createLucTuyetKy() cannot have succeeded without a prewarm');
-  const clips = buildClips(loaded.rig);
+  // Built from the bind pose the skeleton is still in, before any action has posed it.
+  const clips = [...buildClips(loaded.rig), createWalkClip(model.skeleton.bones, WALK_CLIP_NAME)];
   const byName = new Map(clips.map((clip) => [clip.name, clip] as const));
 
   const clipForAction = new Map(

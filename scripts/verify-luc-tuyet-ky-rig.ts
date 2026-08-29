@@ -31,6 +31,7 @@ import { SURFACE_MODEL, SURFACE_STREAM } from '../src/demos/luc-tuyet-ky/surface
 import { RIG } from '../src/demos/luc-tuyet-ky/rigData';
 import { buildRegionGeometries, segmentCostume } from '../src/demos/luc-tuyet-ky/costumeSegmentation';
 import { createLucTuyetKy, prewarmLucTuyetKy } from '../src/demos/luc-tuyet-ky/createLucTuyetKyModel';
+import { createWalkClip } from '../src/demos/luc-tuyet-ky/walkClip';
 
 /** Joints the costume must never be weighted to — the ones that made it lurch. */
 const LEG_JOINT = /Thigh|Calf|Foot|Toe/;
@@ -133,7 +134,7 @@ for (const region of regions) {
 }
 
 // ---------------------------------------------------------------- 6. no slivers under load
-const clips = buildClips(RIG);
+const clips = [...buildClips(RIG), createWalkClip(model.skeleton.bones, 'authored:walk')];
 const figure = model.group.getObjectByName('luc-tuyet-ky-figure') as THREE.Group;
 const hip = model.skeleton.bones.find((bone) => bone.name === 'Hip') as THREE.Bone;
 
@@ -204,10 +205,9 @@ function hemEnvelope(): { p95: number; lowest: number } {
 const bindHem = hemEnvelope();
 ok(`bind hem: radius p95 ${bindHem.p95.toFixed(3)}, lowest y ${bindHem.lowest.toFixed(3)}`);
 
-const FEATURED = [
-  'dance_02', 'dance_05', 'front_kick_01', 'flee_02', 'greet_01',
-  'angry_01', 'heart_pose', 'afraid', 'lift_heavy', 'defeat_02',
-];
+// Exactly the clips the viewer offers a button for, the authored walk included. The gate holds the
+// walk to the same ceilings as the presets — an authored clip gets no benefit of the doubt.
+const FEATURED = ['authored:walk', 'dance_06', 'dance_04', 'dance_01', 'dance_02'];
 for (const suffix of FEATURED) {
   const clip = clips.find((c) => c.name.endsWith(suffix));
   assert.ok(clip, `clip ${suffix} missing`);

@@ -226,7 +226,11 @@ const authored: DemoEntry[] = [
       + 'joint rings of their own that hang from the pelvis and the head — zero leg influence remains, '
       + 'so nothing can drag them. They swing instead, as verlet strands with a hard length constraint '
       + 'and sphere colliders on both thighs and both calves: the legs can push the gown, never pull '
-      + 'it. Six generated frost layers on top, no texture fetched.',
+      + 'it. The clip list is measured, not curated by name — all eighteen presets were scored on '
+      + 'what they do to the mesh, and only the calm end is offered: a flee that leaves the ground '
+      + 'a quarter of the time and a squat that puts the hem through the floor are not here. The '
+      + 'walk is authored, because the rig ships no walk. Six generated frost layers on top, no '
+      + 'texture fetched.',
     referenceImage: `${BASE}references/luc-tuyet-ky.jpg`,
     sourcePath: 'src/demos/luc-tuyet-ky/createLucTuyetKyModel.ts',
     sourceUrl: `${REPO}/src/demos/luc-tuyet-ky/createLucTuyetKyModel.ts`,
@@ -249,7 +253,7 @@ const authored: DemoEntry[] = [
     // flood fills over 160k vertices on top. Without a prewarm that whole cost lands on the frame that
     // is supposed to put the character on screen.
     prewarm: () => prewarmLucTuyetKy().then(() => undefined),
-    defaultAnimation: 'dance',
+    defaultAnimation: 'walk',
     installLights: (scene) => {
       scene.background = makeLucTuyetKyBackground();
       scene.add(createLucTuyetKyLookDevLights());

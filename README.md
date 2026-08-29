@@ -86,7 +86,7 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 
 | Exhibit | Kind | Status | Author |
 | --- | :-: | :-: | --- |
-| [Luc Tuyet Ky — Costume Split Off The Body](https://img2threejs.io/#/demo/luc-tuyet-ky)<br><sub>One fused Tripo shell cut into body, gown and hair on its measured radial histogram; the costume is re-weighted onto its own verlet-solved joints and carries zero leg influence. Frost VFX in six generated layers.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
+| [Luc Tuyet Ky — Costume Split Off The Body](https://img2threejs.io/#/demo/luc-tuyet-ky)<br><sub>One fused Tripo shell cut into body, gown and hair on its measured radial histogram; the costume is re-weighted onto its own verlet-solved joints and carries zero leg influence. Gentle dances plus an authored walk, picked by measuring all eighteen presets. Frost VFX in six generated layers.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Mouse Warrior — Rigged Surface Character](https://img2threejs.io/#/demo/warrior)<br><sub>47 Surface&nbsp;Nets regions bound to a human-structured rig, with a code-native attack clip.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Dual-Sword Warrior — TypeScript procedural surfaces](https://img2threejs.io/#/demo/girl-character)<br><sub>Encoded Surface Nets streamed as high / medium / low quality TypeScript modules.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Low-Poly Humanoid — Rigged Character](https://img2threejs.io/#/demo/low-poly-humanoid)<br><sub>Nine panel-driven actions, from Run and Jump to Roundhouse and Dodge.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
