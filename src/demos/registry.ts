@@ -87,6 +87,9 @@ import {
   createLeesinModel,
   prewarmLeesin,
 } from './leesin/leesinDemo';
+import { createChunLiShowcase } from './chun-li/chunLiShowcase';
+import { createChunLiStageLights } from './chun-li/chunLiStage';
+import { prewarmChunLi } from './chun-li/createChunLiModel';
 
 export interface DemoEntry {
   /** route id, e.g. 'crown-chest' */
@@ -202,6 +205,58 @@ const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
 const authored: DemoEntry[] = [
+  {
+    id: 'chun-li',
+    updatedAt: '2026-08-29',
+    title: 'Chun-Li \u2014 Measured-Impact Ki VFX',
+    subjectClass: 'character',
+    blurb:
+      'A code-only measured reconstruction (244,468 triangles in one embedded surface stream) on its own '
+      + '41-bone rig with twenty-seven embedded clips, wearing an effects layer whose every timing was '
+      + 'measured rather than authored: the nine exposed clips were swept at 400 samples to find where a '
+      + 'hand or foot actually ARRIVES rather than where it is fastest, where weight meets the floor, and '
+      + 'where the palms close on the ki. A strike carries a windup charge, camera-facing ribbons off the '
+      + 'limb, shock rings down the travel axis, a gold contact light and 40-105 ms of hitstop. Kikoken is '
+      + 'choreographed against the measured palm curves of cast_a_spell \u2014 gather, feint, gather, throw '
+      + 'at t=2.505 s \u2014 and the orb flies 0.95 figure heights before it bursts. Nothing is fetched: '
+      + 'geometry, per-vertex colour and every keyframe are TypeScript.',
+    referenceImage: `${BASE}references/chun-li.jpg`,
+    sourcePath: 'src/demos/chun-li/chunLiVfx.ts',
+    sourceUrl: `${REPO}/src/demos/chun-li/chunLiVfx.ts`,
+    generatedWith: 'img2threejs playground \u00b7 Tripo v3.1-20260211 measurement \u00b7 GLB fast lane \u00b7 measured-event VFX',
+    prompt:
+      'Full body Chun-Li character in T pose: blue qipao with gold trim, white sash, spiked bracelets, '
+      + 'white boots, hair buns with ribbons.',
+    author: 'Ho\u00e0i Nh\u1edb',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'placeholder',
+    /**
+     * Authored on the side she actually faces, which is not where the playground's own framing put
+     * it. Her clavicles span Z \u2014 the T-pose arms measure 1.85 units deep against 0.36 wide \u2014
+     * so the facing normal is X, and the download's +Z camera watched every kick from the side.
+     * Sweeping the clavicle line across the nine clips puts the facing at yaw 71-103 degrees, so
+     * this is a three-quarter on +X: the guard reads, the Kikoken travels toward the lens rather
+     * than across it, and the kicking leg does not foreshorten into a point.
+     */
+    cameraPosition: [4.55, 1.16, 2.35],
+    cameraTarget: [0, 0.95, 0],
+    cameraFov: 30,
+    accent: '#4fc3ff',
+    backgroundGradient: { inner: '#16203a', outer: '#05070e' },
+    exposure: 0.92,
+    environmentIntensity: 0.5,
+    toneMapping: 'aces',
+    // The level of detail lives in its own chunk, so it has to be fetched before build() runs.
+    prewarm: () => prewarmChunLi().then(() => undefined),
+    // A warm key, a low cool fill, and a rim stronger than either \u2014 so a blue figure keeps her
+    // silhouette through a burst of blue particles crossing in front of it.
+    installLights: (scene) => scene.add(createChunLiStageLights()),
+    build: (scene) => {
+      const group = createChunLiShowcase({ castShadow: true, receiveShadow: true });
+      scene.add(group);
+      return group;
+    },
+  },
   {
     id: 'leesin',
     title: 'Lee Sin \u2014 Game Character',

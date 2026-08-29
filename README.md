@@ -45,6 +45,11 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 <table>
 <tr>
 <td width="33%" align="center">
+<a href="https://img2threejs.io/#/demo/chun-li"><img src=".github/readme-assets/chun-li.png" width="100%" alt="Chun-Li — Measured-Impact Ki VFX"></a><br>
+<b><a href="https://img2threejs.io/#/demo/chun-li">Chun-Li</a></b><br>
+<sub>Ki trails, shock rings and a thrown Kikoken, every timing measured off the clips.</sub>
+</td>
+<td width="33%" align="center">
 <a href="https://img2threejs.io/#/demo/sony-wf1000xm3"><img src=".github/readme-assets/sony-wf1000xm3.png" width="100%" alt="Sony WF-1000XM3 Earbuds + Case"></a><br>
 <b><a href="https://img2threejs.io/#/demo/sony-wf1000xm3">Sony WF-1000XM3</a></b><br>
 <sub>The lid opens, both buds rise and spin a full turn, then settle back.</sub>
@@ -54,13 +59,13 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 <b><a href="https://img2threejs.io/#/demo/issaca-shotgun">ISSACA 12 Gauge</a></b><br>
 <sub>Muzzle flash, full recoil kick, and a brass slug that ejects and tumbles.</sub>
 </td>
+</tr>
+<tr>
 <td width="33%" align="center">
 <a href="https://img2threejs.io/#/demo/gerber-knife"><img src=".github/readme-assets/gerber-knife.png" width="100%" alt="Gerber Paracord Knife"></a><br>
 <b><a href="https://img2threejs.io/#/demo/gerber-knife">Gerber Paracord Knife</a></b><br>
 <sub>Skeletonized tanto under ~13 turns of woven orange kernmantle cord.</sub>
 </td>
-</tr>
-<tr>
 <td width="33%" align="center">
 <a href="https://img2threejs.io/#/demo/doraemon-house"><img src=".github/readme-assets/doraemon-house.png" width="100%" alt="Doraemon House isometric diorama"></a><br>
 <b><a href="https://img2threejs.io/#/demo/doraemon-house">Doraemon House</a></b><br>
@@ -71,6 +76,8 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 <b><a href="https://img2threejs.io/#/demo/warhauler">War-Hauler "SECTOR 07"</a></b><br>
 <sub>Armored 6-wheeler with glowing reactor hubs and drifting exhaust smoke.</sub>
 </td>
+</tr>
+<tr>
 <td width="33%" align="center">
 <a href="https://img2threejs.io/#/demo/crown-chest"><img src=".github/readme-assets/crown-chest.png" width="100%" alt="Crowned Loot Chest"></a><br>
 <b><a href="https://img2threejs.io/#/demo/crown-chest">Crowned Loot Chest</a></b><br>
@@ -86,6 +93,7 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 
 | Exhibit | Kind | Status | Author |
 | --- | :-: | :-: | --- |
+| [Chun-Li — Measured-Impact Ki VFX](https://img2threejs.io/#/demo/chun-li)<br><sub>Nine clips swept at 400 samples: strikes fire where the limb arrives, and Kikoken is timed off the palms.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Mouse Warrior — Rigged Surface Character](https://img2threejs.io/#/demo/warrior)<br><sub>47 Surface&nbsp;Nets regions bound to a human-structured rig, with a code-native attack clip.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Dual-Sword Warrior — TypeScript procedural surfaces](https://img2threejs.io/#/demo/girl-character)<br><sub>Encoded Surface Nets streamed as high / medium / low quality TypeScript modules.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Low-Poly Humanoid — Rigged Character](https://img2threejs.io/#/demo/low-poly-humanoid)<br><sub>Nine panel-driven actions, from Run and Jump to Roundhouse and Dodge.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
