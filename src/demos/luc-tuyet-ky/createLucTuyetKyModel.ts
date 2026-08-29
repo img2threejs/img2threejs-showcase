@@ -12,8 +12,8 @@ import {
   type EncodedRig,
   type Quality,
 } from './meshCodec';
-import { buildRegionGeometries, segmentCostume, type Region, type RegionGeometry, type SegmentationResult } from './costumeSegmentation';
-import { createClothRig, planCostumeRig, type ClothRig } from './clothRig';
+import { buildRegionGeometries, segmentCostume, SEAM_FALLOFF_HOPS, type Region, type SegmentationResult } from './costumeSegmentation';
+import { createClothRig, planCostumeRig, type ClothRig, type VertexWeights } from './clothRig';
 import { createFrostVfx, VFX_LAYERS, type FrostVfx, type VfxLayer } from './frostVfx';
 
 /**
@@ -60,6 +60,8 @@ export function lucTuyetKyClips(): string[] {
 }
 
 /** The clips worth surfacing in the viewer, with the labels a reader can act on. */
+const actionId = (label: string): string => label.toLowerCase().replace(/\s+/g, '-');
+
 const FEATURED_CLIPS: Array<{ clip: string; label: string }> = [
   { clip: 'preset:biped:dance_02', label: 'Dance' },
   { clip: 'preset:biped:dance_05', label: 'Spin' },
@@ -72,6 +74,11 @@ const FEATURED_CLIPS: Array<{ clip: string; label: string }> = [
   { clip: 'preset:biped:lift_heavy', label: 'Lift' },
   { clip: 'preset:biped:defeat_02', label: 'Defeat' },
 ];
+
+/** The panel's buttons. Static, so they can be published before the rig payload lands. */
+const FEATURED_ACTIONS: LucTuyetKyAction[] = FEATURED_CLIPS.map((entry) => ({
+  id: actionId(entry.label), label: entry.label, loop: true,
+}));
 
 function loadLevel(quality: Quality): Promise<{ SURFACE_MODEL: EncodedModel; SURFACE_STREAM: string }> {
   switch (quality) {
@@ -163,28 +170,6 @@ function makeRegionMaterial(region: Region, part: DecodedPart, castShadow: boole
   return material;
 }
 
-/**
- * Copy the auto-rig's own weights onto a split region.
- *
- * Only the body takes this path. The costume regions get their weights from `planCostumeRig`
- * instead — that replacement IS the fix, and running this for them would put the leg influence
- * straight back.
- */
-function bindWithSourceWeights(region: RegionGeometry, skinIndex: Uint16Array, skinWeight: Float32Array): void {
-  const count = region.sourceVertex.length;
-  const index = new Uint16Array(count * 4);
-  const weight = new Float32Array(count * 4);
-  for (let i = 0; i < count; i += 1) {
-    const source = region.sourceVertex[i];
-    for (let k = 0; k < 4; k += 1) {
-      index[i * 4 + k] = skinIndex[source * 4 + k];
-      weight[i * 4 + k] = skinWeight[source * 4 + k];
-    }
-  }
-  region.geometry.setAttribute('skinIndex', new THREE.BufferAttribute(index, 4));
-  region.geometry.setAttribute('skinWeight', new THREE.BufferAttribute(weight, 4));
-}
-
 export function createLucTuyetKy(options: LucTuyetKyOptions = {}, host?: THREE.Group): LucTuyetKyModel {
   if (!loaded || !decoded) {
     throw new Error('call prewarmLucTuyetKy() and await it before createLucTuyetKy() — the level of detail is loaded on demand');
@@ -217,11 +202,76 @@ export function createLucTuyetKy(options: LucTuyetKyOptions = {}, host?: THREE.G
   const regions = buildRegionGeometries(part, segmentation);
   const costume = planCostumeRig(part, regions, bodyBones);
 
+  /*
+   * One weight set per SOURCE vertex, applied to every mesh that holds a copy of it.
+   *
+   * This is what keeps the character watertight. Splitting the shell duplicates each border vertex
+   * into two meshes, and the first revision let each copy take its own mesh's rule — the gown copy
+   * onto the skirt joints, the body copy keeping the auto-rig's. They agreed in bind pose and then
+   * came apart the moment anything moved: 1,094 shared vertices between body and gown, measured up
+   * to 0.25 of figure height apart during a dance, which on screen is a hole at the waist with the
+   * unlit inside of the model showing through it. Resolving weights from the source vertex instead
+   * of from the mesh makes both copies identical by construction, so there is no gap to open.
+   *
+   * Away from the seam the body returns to its own weights over `SEAM_FALLOFF_HOPS` rings rather
+   * than in one step, because a step would simply move the tear inward by one ring.
+   */
   const sourceSkinIndex = decodeUint16s(RIG.skinIndex);
   const sourceSkinWeight = decodeFloats(RIG.skinWeight);
+
+  const originalWeights = (source: number): VertexWeights => ({
+    index: [
+      sourceSkinIndex[source * 4], sourceSkinIndex[source * 4 + 1],
+      sourceSkinIndex[source * 4 + 2], sourceSkinIndex[source * 4 + 3],
+    ],
+    weight: [
+      sourceSkinWeight[source * 4], sourceSkinWeight[source * 4 + 1],
+      sourceSkinWeight[source * 4 + 2], sourceSkinWeight[source * 4 + 3],
+    ],
+  });
+
+  /** Mix two influence sets and keep the four heaviest, renormalised. */
+  const mixWeights = (a: VertexWeights, b: VertexWeights, t: number): VertexWeights => {
+    const pooled = new Map<number, number>();
+    for (let k = 0; k < 4; k += 1) {
+      if (a.weight[k] > 0) pooled.set(a.index[k], (pooled.get(a.index[k]) ?? 0) + a.weight[k] * (1 - t));
+      if (b.weight[k] > 0) pooled.set(b.index[k], (pooled.get(b.index[k]) ?? 0) + b.weight[k] * t);
+    }
+    const ranked = [...pooled.entries()].sort((x, y) => y[1] - x[1]).slice(0, 4);
+    const total = ranked.reduce((sum, [, w]) => sum + w, 0) || 1;
+    const index: [number, number, number, number] = [0, 0, 0, 0];
+    const weight: [number, number, number, number] = [0, 0, 0, 0];
+    ranked.forEach(([bone, w], k) => { index[k] = bone; weight[k] = w / total; });
+    if (!ranked.length) weight[0] = 1;
+    return { index, weight };
+  };
+
+  const weightForSource = (source: number): VertexWeights => {
+    const region = segmentation.vertexRegion[source];
+    if (region !== 0) {
+      // Gown and hair proper: the ring rule alone, so no leg joint reaches them.
+      return costume.ringWeightsAt(source, region as 1 | 2) ?? originalWeights(source);
+    }
+    const hop = segmentation.seamHop[source];
+    if (hop === 0 || hop > SEAM_FALLOFF_HOPS) return originalWeights(source);
+    const ring = costume.ringWeightsAt(source, segmentation.seamRegion[source] as 1 | 2);
+    if (!ring) return originalWeights(source);
+    return mixWeights(ring, originalWeights(source), hop / SEAM_FALLOFF_HOPS);
+  };
+
   for (const region of regions) {
-    if (region.region === 'body') bindWithSourceWeights(region, sourceSkinIndex, sourceSkinWeight);
-    else costume.bindRegion(region, bodyBones.length);
+    const count = region.sourceVertex.length;
+    const skinIndex = new Uint16Array(count * 4);
+    const skinWeight = new Float32Array(count * 4);
+    for (let i = 0; i < count; i += 1) {
+      const { index, weight } = weightForSource(region.sourceVertex[i]);
+      for (let k = 0; k < 4; k += 1) {
+        skinIndex[i * 4 + k] = index[k];
+        skinWeight[i * 4 + k] = weight[k];
+      }
+    }
+    region.geometry.setAttribute('skinIndex', new THREE.BufferAttribute(skinIndex, 4));
+    region.geometry.setAttribute('skinWeight', new THREE.BufferAttribute(skinWeight, 4));
   }
 
   const meshes: Record<Region, THREE.SkinnedMesh | null> = { body: null, dress: null, hair: null };
@@ -329,27 +379,76 @@ export function createLucTuyetKy(options: LucTuyetKyOptions = {}, host?: THREE.G
 /** Where the deferred build parks the real per-frame updater; see `createLucTuyetKyModel`. */
 interface TickHolder { current: ((deltaSeconds: number, elapsedSeconds: number) => void) | null }
 
-function assembleLucTuyetKy(group: THREE.Group, options: LucTuyetKyOptions, tickHolder: TickHolder): void {
+/**
+ * The animation transport the detail page binds to, published before the rig exists.
+ *
+ * The page reads `sculptRuntime.animationController` and builds its clip buttons from
+ * `controller.actions` at the moment it mounts the panel. An earlier revision created the controller
+ * only once the 18 MB payload had decoded, so whether the buttons appeared at all came down to which
+ * of two `prewarm` continuations happened to run first — and in the production build it lost every
+ * time: the model animated on its own default clip and the panel stayed empty, with no way to pick a
+ * clip. The action list is a static property of this character, so it is published immediately and
+ * the transport behind it is swapped in later.
+ */
+interface ControllerShell {
+  setActive(id: string): void;
+  attach(play: (id: string) => void, stop: () => void, time: () => number): void;
+}
+
+function createControllerShell(group: THREE.Group, actions: LucTuyetKyAction[]): ControllerShell {
+  let active = 'idle';
+  let live: { play: (id: string) => void; stop: () => void; time: () => number } | null = null;
+  /** A press that arrived before the rig did; replayed on attach so no input is silently dropped. */
+  let pending: string | null = null;
+  const listeners = new Set<(value: string) => void>();
+  const announce = (): void => { for (const listener of listeners) listener(active); };
+
+  group.userData.sculptRuntime ??= {};
+  (group.userData.sculptRuntime as Record<string, unknown>).animationController = {
+    actions: actions as ReadonlyArray<LucTuyetKyAction>,
+    get active(): string { return active; },
+    get time(): number { return live?.time() ?? 0; },
+    play: (id: string): void => {
+      if (live) live.play(id);
+      else { pending = id; active = id; announce(); }
+    },
+    stop: (): void => {
+      pending = null;
+      if (live) live.stop();
+      else { active = 'idle'; announce(); }
+    },
+    subscribe: (listener: (value: string) => void): (() => void) => {
+      listeners.add(listener);
+      listener(active);
+      return () => listeners.delete(listener);
+    },
+  };
+
+  return {
+    setActive: (id: string): void => { active = id; announce(); },
+    attach: (play, stop, time): void => {
+      live = { play, stop, time };
+      play(pending ?? active !== 'idle' ? (pending ?? active) : actions[0]?.id);
+      pending = null;
+    },
+  };
+}
+
+function assembleLucTuyetKy(group: THREE.Group, options: LucTuyetKyOptions, tickHolder: TickHolder, shell: ControllerShell): void {
   const model = createLucTuyetKy(options, group);
   const { mixer, cloth, vfx, skeleton, holdInPlace } = model;
   if (!loaded) throw new Error('createLucTuyetKy() cannot have succeeded without a prewarm');
   const clips = buildClips(loaded.rig);
   const byName = new Map(clips.map((clip) => [clip.name, clip] as const));
 
-  const actions: LucTuyetKyAction[] = FEATURED_CLIPS
-    .filter((entry) => byName.has(entry.clip))
-    .map((entry) => ({ id: entry.label.toLowerCase().replace(/\s+/g, '-'), label: entry.label, loop: true }));
   const clipForAction = new Map(
     FEATURED_CLIPS
       .filter((entry) => byName.has(entry.clip))
-      .map((entry) => [entry.label.toLowerCase().replace(/\s+/g, '-'), byName.get(entry.clip) as THREE.AnimationClip]),
+      .map((entry) => [actionId(entry.label), byName.get(entry.clip) as THREE.AnimationClip]),
   );
 
-  let active = 'idle';
   let current: THREE.AnimationAction | null = null;
-  const listeners = new Set<(active: string) => void>();
-  const announce = (): void => { for (const listener of listeners) listener(active); };
-
+  const setActive = shell.setActive;
   const play = (id: string): void => {
     const clip = clipForAction.get(id);
     if (!clip) return;
@@ -360,8 +459,7 @@ function assembleLucTuyetKy(group: THREE.Group, options: LucTuyetKyOptions, tick
     if (current && current !== next) next.crossFadeFrom(current, 0.28, false).play();
     else next.play();
     current = next;
-    active = id;
-    announce();
+    setActive(id);
   };
 
   const stop = (): void => {
@@ -372,21 +470,8 @@ function assembleLucTuyetKy(group: THREE.Group, options: LucTuyetKyOptions, tick
     // the body is no longer in.
     skeleton.pose();
     cloth.reset();
-    active = 'idle';
-    announce();
-  };
-
-  const controller = {
-    actions: actions as ReadonlyArray<LucTuyetKyAction>,
-    get active(): string { return active; },
-    get time(): number { return current?.time ?? 0; },
-    play,
-    stop,
-    subscribe: (listener: (value: string) => void): (() => void) => {
-      listeners.add(listener);
-      listener(active);
-      return () => listeners.delete(listener);
-    },
+    holdInPlace();
+    setActive('idle');
   };
 
   tickHolder.current = (deltaSeconds: number, elapsedSeconds: number): void => {
@@ -400,10 +485,9 @@ function assembleLucTuyetKy(group: THREE.Group, options: LucTuyetKyOptions, tick
   // Exposed for the rig-tuning harness in scripts/, which sweeps the cloth constants against the
   // measured hem envelope rather than against anyone's eye.
   group.userData.clothStrands = cloth.strands;
-  group.userData.sculptRuntime ??= {};
   const runtime = group.userData.sculptRuntime as Record<string, unknown>;
   runtime.route = 'img2threejs GLB fast lane — pure Three.js, no loader and no runtime fetch. Geometry, per-vertex colour, the 41-joint skeleton and all 18 clips are embedded as code.';
-  runtime.animationController = controller;
+  // NOT reassigned: the shell published at build() is the object the page is already bound to.
   runtime.costumeSeparation = {
     why: 'The auto-rig bound the gown to the leg twist joints and the hair to Spine01 and the clavicles, so the costume was dragged by the limbs and the front panel tore in a split stance.',
     meshes: (['body', 'dress', 'hair'] as const).map((region) => ({
@@ -413,6 +497,7 @@ function assembleLucTuyetKy(group: THREE.Group, options: LucTuyetKyOptions, tick
     })),
     cut: 'Seeded on the measured bimodal radial histogram of the shell (gown panels sit outside r=0.085 of figure height where the leg reaches 0.05), grown along mesh edges and stopped at the belt line.',
     straddlingTriangles: decoded?.segmentation.straddlingTriangles ?? 0,
+    seam: `every border vertex resolves its weights from the source vertex, so the ${SEAM_FALLOFF_HOPS}-ring falloff closes the body/costume seam exactly rather than approximately`,
     costumeJoints: cloth.bones.length,
     legInfluenceOnCostume: 0,
     solver: 'verlet strands, hard length constraint, sphere colliders on both thighs and both calves',
@@ -431,7 +516,9 @@ function assembleLucTuyetKy(group: THREE.Group, options: LucTuyetKyOptions, tick
     group.userData.disposeFrostVfx = () => vfx.dispose();
   }
 
-  if (actions.length) play(actions[0].id);
+  // Hand the live transport to the controller the page has been holding since `build()` returned,
+  // and honour a button the viewer pressed while the payload was still decoding.
+  shell.attach(play, stop, () => current?.time ?? 0);
 }
 
 /**
@@ -461,6 +548,8 @@ export function createLucTuyetKyModel(options: LucTuyetKyOptions = {}): THREE.Gr
    * lose, because the reference the viewer captured is always the one that gets the call.
    */
   const tickHolder: TickHolder = { current: null };
+  // Published now, from the static featured list, so the clip buttons exist from the first frame.
+  const shell = createControllerShell(group, FEATURED_ACTIONS);
   group.userData.tick = (deltaSeconds: number, elapsedSeconds: number): void => {
     tickHolder.current?.(deltaSeconds, elapsedSeconds);
   };
@@ -469,8 +558,8 @@ export function createLucTuyetKyModel(options: LucTuyetKyOptions = {}): THREE.Gr
     tickHolder.current?.(delta ?? 0, elapsed);
   };
 
-  if (loaded && decoded) assembleLucTuyetKy(group, options, tickHolder);
-  else void prewarmLucTuyetKy().then(() => assembleLucTuyetKy(group, options, tickHolder));
+  if (loaded && decoded) assembleLucTuyetKy(group, options, tickHolder, shell);
+  else void prewarmLucTuyetKy().then(() => assembleLucTuyetKy(group, options, tickHolder, shell));
   return group;
 }
 

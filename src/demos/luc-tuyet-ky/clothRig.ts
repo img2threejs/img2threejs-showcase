@@ -250,6 +250,12 @@ function buildStrandRing(options: StrandRingOptions): { strands: Strand[]; bones
   return { strands, bones };
 }
 
+/** Four joint influences for one vertex, already normalised. */
+export interface VertexWeights {
+  index: [number, number, number, number];
+  weight: [number, number, number, number];
+}
+
 export interface CostumeBinding {
   /**
    * New joints appended to the skeleton, in order.
@@ -261,8 +267,15 @@ export interface CostumeBinding {
    */
   bones: THREE.Bone[];
   strands: Strand[];
-  /** Writes skinIndex/skinWeight onto a region geometry. */
-  bindRegion(region: RegionGeometry, boneOffset: number): void;
+  /**
+   * What a ring would give this source vertex, whatever mesh it ends up in.
+   *
+   * Exposed as a pure function of the SOURCE vertex — not written straight onto a geometry — because
+   * a vertex on a region border exists in two meshes at once, and the only way those copies can be
+   * guaranteed to move together is for both to ask the same question and get the same answer. The
+   * factory is what applies it, uniformly, to every mesh.
+   */
+  ringWeightsAt(source: number, region: 1 | 2): VertexWeights | null;
 }
 
 /**
@@ -335,69 +348,64 @@ export function planCostumeRig(
   const bones = rings.flatMap((r) => r.bones);
   const strands = rings.flatMap((r) => r.strands);
 
-  const bindRegion = (region: RegionGeometry, boneOffset: number): void => {
-    const ring = rings.find((r) => r.region === region.region);
-    if (!ring) return;
-    // Where this ring's joints start in the merged skeleton.
-    let base = boneOffset;
-    for (const other of rings) {
-      if (other === ring) break;
-      base += other.bones.length;
+  // Where each ring's joints start once they are appended after the body's.
+  const ringBase = new Map<number, number>();
+  {
+    let base = bodyBones.length;
+    for (const ring of rings) {
+      ringBase.set(ring.region === 'dress' ? 1 : 2, base);
+      base += ring.bones.length;
+    }
+  }
+
+  const ringWeightsAt = (source: number, region: 1 | 2): VertexWeights | null => {
+    const ring = rings.find((r) => (r.region === 'dress' ? 1 : 2) === region);
+    const base = ringBase.get(region);
+    if (!ring || base === undefined) return null;
+
+    const x = part.position[source * 3] - ring.axis.x;
+    const y = part.position[source * 3 + 1];
+    const z = part.position[source * 3 + 2] - ring.axis.z;
+
+    if (y >= ring.rigidAbove) {
+      // The bodice seam and the scalp cap ride the body joint outright, which is what keeps the
+      // gown's top ring welded to the waist and the hair cap welded to the skull.
+      return { index: [ring.anchorBone, 0, 0, 0], weight: [1, 0, 0, 0] };
     }
 
-    const count = region.sourceVertex.length;
-    const skinIndex = new Uint16Array(count * 4);
-    const skinWeight = new Float32Array(count * 4);
     const { levels, sectors } = ring;
+    let angle = Math.atan2(z, x) / (Math.PI * 2);
+    if (angle < 0) angle += 1;
+    const sectorPosition = angle * sectors - 0.5;
+    const sectorLow = Math.floor(sectorPosition);
+    const sectorBlend = sectorPosition - sectorLow;
+    const sectorA = ((sectorLow % sectors) + sectors) % sectors;
+    const sectorB = (sectorA + 1) % sectors;
 
-    for (let i = 0; i < count; i += 1) {
-      const s = region.sourceVertex[i];
-      const x = part.position[s * 3] - ring.axis.x;
-      const y = part.position[s * 3 + 1];
-      const z = part.position[s * 3 + 2] - ring.axis.z;
+    // Levels descend, so the search walks down until the vertex is above the next joint.
+    let level = 0;
+    while (level < levels.length - 2 && y < levels[level + 1]) level += 1;
+    const span = levels[level] - levels[level + 1];
+    const levelBlend = span > 1e-6 ? THREE.MathUtils.clamp((levels[level] - y) / span, 0, 1) : 0;
 
-      if (y >= ring.rigidAbove) {
-        // The bodice seam and the scalp cap ride the body joint outright, which is what keeps the
-        // gown's top ring welded to the waist and the hair cap welded to the skull.
-        skinIndex[i * 4] = ring.anchorBone;
-        skinWeight[i * 4] = 1;
-        continue;
-      }
-
-      let angle = Math.atan2(z, x) / (Math.PI * 2);
-      if (angle < 0) angle += 1;
-      const sectorPosition = angle * sectors - 0.5;
-      const sectorLow = Math.floor(sectorPosition);
-      const sectorBlend = sectorPosition - sectorLow;
-      const sectorA = ((sectorLow % sectors) + sectors) % sectors;
-      const sectorB = (sectorA + 1) % sectors;
-
-      // Levels descend, so the search walks down until the vertex is above the next joint.
-      let level = 0;
-      while (level < levels.length - 2 && y < levels[level + 1]) level += 1;
-      const span = levels[level] - levels[level + 1];
-      const levelBlend = span > 1e-6 ? THREE.MathUtils.clamp((levels[level] - y) / span, 0, 1) : 0;
-
-      const at = (sector: number, l: number): number => base + sector * levels.length + l;
-      const weights: Array<[number, number]> = [
-        [at(sectorA, level), (1 - sectorBlend) * (1 - levelBlend)],
-        [at(sectorB, level), sectorBlend * (1 - levelBlend)],
-        [at(sectorA, level + 1), (1 - sectorBlend) * levelBlend],
-        [at(sectorB, level + 1), sectorBlend * levelBlend],
-      ];
-      let total = 0;
-      for (const [, w] of weights) total += w;
-      for (let k = 0; k < 4; k += 1) {
-        skinIndex[i * 4 + k] = weights[k][0];
-        skinWeight[i * 4 + k] = total > 0 ? weights[k][1] / total : k === 0 ? 1 : 0;
-      }
-    }
-
-    region.geometry.setAttribute('skinIndex', new THREE.BufferAttribute(skinIndex, 4));
-    region.geometry.setAttribute('skinWeight', new THREE.BufferAttribute(skinWeight, 4));
+    const at = (sector: number, l: number): number => base + sector * levels.length + l;
+    const index: [number, number, number, number] = [
+      at(sectorA, level), at(sectorB, level), at(sectorA, level + 1), at(sectorB, level + 1),
+    ];
+    const raw = [
+      (1 - sectorBlend) * (1 - levelBlend),
+      sectorBlend * (1 - levelBlend),
+      (1 - sectorBlend) * levelBlend,
+      sectorBlend * levelBlend,
+    ];
+    const total = raw[0] + raw[1] + raw[2] + raw[3];
+    const weight: [number, number, number, number] = total > 0
+      ? [raw[0] / total, raw[1] / total, raw[2] / total, raw[3] / total]
+      : [1, 0, 0, 0];
+    return { index, weight };
   };
 
-  return { bones, strands, bindRegion };
+  return { bones, strands, ringWeightsAt };
 }
 
 /**

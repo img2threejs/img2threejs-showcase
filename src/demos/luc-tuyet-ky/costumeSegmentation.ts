@@ -64,6 +64,9 @@ export const LANDMARKS = {
   scalpY: 0.895,
 } as const;
 
+/** How many rings of body surface ease back from the costume's weights to their own. */
+export const SEAM_FALLOFF_HOPS = 6;
+
 const SEED_DRESS_Y = [0.12, 0.36] as const;
 const SEED_HAIR_Y = [0.6, 0.99] as const;
 const SEED_HAIR_LUMINANCE = 0.16;
@@ -143,6 +146,13 @@ function buildAdjacency(index: Uint32Array, representative: Int32Array, count: n
 export interface SegmentationResult {
   /** One region id per vertex, indexed like the decoded part. */
   vertexRegion: Uint8Array;
+  /**
+   * Hops from the nearest costume vertex, over the welded mesh graph, for body vertices only.
+   * 255 means "further than the falloff cares about". Costume vertices themselves are 0.
+   */
+  seamHop: Uint8Array;
+  /** Which costume region each body vertex's nearest seam belongs to; 0 where there is none. */
+  seamRegion: Uint8Array;
   /** One region id per triangle, decided by majority of its three corners. */
   triangleRegion: Uint8Array;
   counts: Record<Region, { vertices: number; triangles: number }>;
@@ -226,11 +236,57 @@ export function segmentCostume(part: DecodedPart): SegmentationResult {
     triangleRegion[t] = best;
   }
 
+  /*
+   * Distance from the seam, in hops across the mesh graph.
+   *
+   * The split gives the two sides of a border DIFFERENT weights — that is the entire point — but a
+   * vertex that sits on the border exists in both meshes, and if its two copies are driven
+   * differently the surface pulls apart there and the viewer sees straight through the character.
+   * Measured on the first cut: 1,094 vertices shared between body and gown, coincident in bind pose
+   * and up to 0.25 of figure height apart four seconds into a dance.
+   *
+   * The fix is to make every copy of a vertex resolve to ONE weight set, and to hand the body side a
+   * graded return to its own weights over the next few rings rather than a step. This field is that
+   * grading: 0 on the costume, 1 on its immediate body neighbours, and so on outward.
+   */
+  const seamHop = new Uint8Array(count).fill(255);
+  const seamRegion = new Uint8Array(count);
+  {
+    let frontier: number[] = [];
+    for (let i = 0; i < count; i += 1) {
+      if (vertexRegion[i] === 0) continue;
+      seamHop[i] = 0;
+      seamRegion[i] = vertexRegion[i];
+      frontier.push(i);
+    }
+    for (let hop = 1; hop <= SEAM_FALLOFF_HOPS; hop += 1) {
+      const next: number[] = [];
+      for (const v of frontier) {
+        for (let k = offset[v]; k < offset[v + 1]; k += 1) {
+          const w = neighbour[k];
+          if (vertexRegion[w] !== 0 || seamHop[w] !== 255) continue;
+          seamHop[w] = hop;
+          seamRegion[w] = seamRegion[v];
+          next.push(w);
+        }
+      }
+      frontier = next;
+      if (!frontier.length) break;
+    }
+    // The walk only ever visited welded representatives; split copies inherit their twin's grading.
+    for (let i = 0; i < count; i += 1) {
+      if (representative[i] !== i && seamHop[i] === 255) {
+        seamHop[i] = seamHop[representative[i]];
+        seamRegion[i] = seamRegion[representative[i]];
+      }
+    }
+  }
+
   const counts = { body: { vertices: 0, triangles: 0 }, dress: { vertices: 0, triangles: 0 }, hair: { vertices: 0, triangles: 0 } };
   for (let i = 0; i < count; i += 1) counts[REGIONS[vertexRegion[i]]].vertices += 1;
   for (let t = 0; t < triangleCount; t += 1) counts[REGIONS[triangleRegion[t]]].triangles += 1;
 
-  return { vertexRegion, triangleRegion, counts, straddlingTriangles };
+  return { vertexRegion, seamHop, seamRegion, triangleRegion, counts, straddlingTriangles };
 }
 
 export interface RegionGeometry {
