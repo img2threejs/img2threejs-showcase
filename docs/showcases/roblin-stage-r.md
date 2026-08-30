@@ -289,9 +289,106 @@ Every one of these looked fine, or nearly fine, in a still.
    96-intensity spot. Capped at 0.4, and the eight simultaneous bolts got their own light budget.
 7. **The bolt read as a laser.** 26 ribbon segments at that speed laid down four units of additive
    ribbon that bloom welded into a continuous white beam with the core invisible inside it.
+8. **The bolt's glow was being done by the bloom pass, not by the effect.** The halo was a plain
+   additive sphere; under bloom it read as a glow, and in the gallery build — which renders with no
+   post-processing — the identical sphere was a hard-edged flat disc. The falloff now lives in the
+   material: rendered back-side, `-dot(N, V)` is 1 at the centre of the sphere and 0 at its rim,
+   which is the orb profile for one dot product. The bolt's travelling point light came down with
+   it, from `7 + 70r` to `5 + 46r`; at the old strength it washed the figure to near-white as it
+   passed, which bloom had been hiding.
+9. **The feet were being sliced off by the floor they stood on.** Invisible at gallery framing and
+   obvious the moment you zoom in. The stage disc and the shadow catcher are both TRANSPARENT
+   materials, both were writing depth, and both sat at y ≈ 0 — the same plane the toes are grounded
+   to. A transparent surface that writes depth occludes whatever is drawn after it at its own
+   plane. Both now have `depthWrite: false` and sit a few millimetres below zero. `minDistance` came
+   down from 1.0 to 0.25 in the same pass: at 1.0 the camera could not reach the feet at all.
+10. **Every effect was aimed down the TORSO, not the limb.** This is what the whole
+    `motion.ts` / `cueScan.ts` rework exists for — see the section below.
 
 The debug handle that made most of this measurable is left in place on `window.roblin`
-(`pause()`, `resume()`, `steps()`, plus the scene, sockets, animator and gate report).
+(`pause()`, `resume()`, `steps()`, plus the scene, camera, controls, sockets, animator, motion,
+trails, cues and the gate report).
+
+---
+
+## Aiming at the limb instead of at the body
+
+The first effect layer fired everything along the body's forward axis. That is wrong the moment a
+clip does anything, and it showed.
+
+`src/roblin/motion.ts` measures two things per socket, every frame, from bone world matrices:
+
+* **axis** — where the limb POINTS: the direction from a named parent bone through the socket. For a
+  hand that is the forearm running out through the palm; for a foot, the ankle out through the toe.
+  Each socket names its own parent in `axisFrom`.
+* **velocity** — where the limb is GOING: the socket's world displacement per second, smoothed,
+  because a raw frame difference on a 60Hz clip is far too noisy to aim with.
+
+`aim` blends them by speed, with a **cap** that depends on the caller. A trail wants the travel
+direction — it is drawing the path. A projectile wants where the arm points, so casting caps the
+velocity term at 0.3. That cap is not a preference: measured on a real jab, an uncapped blend threw
+the bolt **21 degrees above horizontal**, because at the strike the hand is still rising even while
+the arm is extended level.
+
+Three defects fell out of building it, none visible in a still:
+
+* **A clip change reads as a teleport.** Cutting between clips snaps the pose, and differencing
+  across that snap measured **9.2 units per second** on a kick whose real peak is 7.5 — enough to
+  fire a full-strength trail out of a cut. Any single-frame displacement over a third of the figure
+  height is now dropped rather than smoothed.
+* **The scanner and the runtime disagreed.** They used different velocity windows and different
+  caps, so a cue that scanned as level launched skyward. They now share both.
+* **The scanner's last samples were garbage.** The forward difference clamped its second seek to the
+  clip end and still divided by the whole step, inflating speed to **28.9 units per second** at
+  t = 0.987 on a clip whose real peak is 4.4.
+
+### Cue times are scanned, not guessed
+
+`src/roblin/cueScan.ts` seeks each clip — the same instrument as Gate R1, and for the same reason:
+sampling a *playing* clip against wall time is at the mercy of cross-fades and frame pacing, and
+measurements taken that way disagreed with themselves between runs.
+
+It scores each sample as *pointing forward × moving fast × not aimed at the sky*, and reports the
+best separated strikes per clip and per hand. The results retargeted every skill:
+
+```
+box_03  L at 0.226  fwd 0.896  up  0.007  3.67 u/s   -> Toxic Bolt
+box_02  R at 0.277  fwd 0.960  up -0.212  3.03 u/s   -> Ember Volley, first of a one-two
+box_02  L at 0.289  fwd 0.976  up -0.017  3.55 u/s   -> twelve thousandths later
+box_02  R at 0.686  fwd 0.989  up  0.191  4.40 u/s   -> the cross, fastest hand in the clip
+```
+
+**And it found a real problem with the clip the skill was named after.** `preset:biped:fire`
+produces **zero** candidates: across its whole duration the hand holds a fixed aim about 42 degrees
+above horizontal and never moves — it is a static aiming POSE, not a firing motion. Gate R1 had
+already reported it with by far the lowest inter-sample delta of the sixteen clips and it was
+flagged as "the clip a denser probe should look at first"; this is what a denser probe found. Toxic
+Bolt now runs on `box_03`, which contains an actual strike.
+
+Verified at the call site rather than inferred: wrapping `vfx.bolt` and comparing the direction
+passed in against `motion.aim` at that instant gives **0.0 degrees**, while the same direction sits
+**9 to 16 degrees off the torso axis**. The bolts follow the hands.
+
+### Trails
+
+`src/roblin/vfx/limbTrails.ts` puts a wake on both hands and both feet. Nothing about it is keyed to
+a clip name or a cue: it watches the measured speed, and when a limb exceeds a threshold it draws a
+ribbon along the path the limb is actually travelling and sheds sparks backwards down it, carrying a
+fraction of the limb's own velocity. A punch, a kick, a cast wind-up and a dance flourish all get
+the right streak for free; a limb standing still gets nothing.
+
+Thresholds are in figure heights per second, and they were set against measured peaks:
+
+| clip | fastest hand | fastest foot | trail |
+|---|---|---|---|
+| idle | 0.10 | 0.01 | none |
+| run_upstairs | 2.36 | 2.64 | 0.46 |
+| box_02 | 6.09 | 4.42 | 1.00 |
+| front_kick_01 | 6.76 | 7.48 | 0.99 |
+
+The ribbon shader gained a hot centreline in the same pass. It had been varying alpha along the
+length only, never across the width, so every pixel of the strip got the same colour and a wake
+rendered as a flat painted band.
 
 ---
 

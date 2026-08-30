@@ -31,6 +31,8 @@ export interface FootstepEvent {
   impactSpeed: number;
   /** How far above the floor the toe actually planted, in figure heights. */
   clearance: number;
+  /** The socket id, so the caller can ask the motion tracker for this foot's direction. */
+  id: string;
 }
 
 export interface FootstepWatcher {
@@ -89,6 +91,7 @@ export function createFootstepWatcher(
             foot.primed = false;
             onStep({
               socket: foot.socket,
+              id: foot.socket.def.id,
               at: here.clone(),
               impactSpeed: Math.abs(foot.previousVy),
               clearance: (here.y - groundY) / figureHeight,

@@ -5,6 +5,7 @@ import type { RigFrame } from './rigFrame';
 import type { SocketRig } from './sockets';
 import type { VfxSystem } from './vfx/vfxSystem';
 import type { LightRig } from './lighting';
+import type { LimbMotion } from './motion';
 
 /**
  * Roblin's three ranged skills.
@@ -12,6 +13,12 @@ import type { LightRig } from './lighting';
  * Each one is a REAL clip driving a real skeleton, with effects released by cues read off the
  * mixer's own clock, fired from a real socket on a real bone, aimed down the MEASURED forward
  * axis. There is no hand-placed muzzle position anywhere in this file.
+ *
+ * AIM COMES FROM THE HAND, not from the torso. Every cast reads `motion.aim(socket)`, which is the
+ * direction the forearm points blended toward the direction the hand is actually travelling — see
+ * motion.ts. The first version fired everything down the body's forward axis, and it showed: the
+ * `fire` clip brings both arms across the chest, so the bolt left sideways from a hand pointing
+ * somewhere else entirely.
  *
  * Colour discipline: `toxic` is the signature and carries the two skills that come out of the
  * hands; `ember` carries the volley so two casts in a row do not look identical; `steel` appears
@@ -28,6 +35,8 @@ import type { LightRig } from './lighting';
 export interface SkillContext {
   frame: RigFrame;
   sockets: SocketRig;
+  /** Per-limb measured velocity and pointing axis. Every cast direction comes from here. */
+  motion: LimbMotion;
   animator: Animator;
   vfx: VfxSystem;
   lights: LightRig;
@@ -58,7 +67,7 @@ const EMBER_DEEP = new THREE.Color(VFX.emberDeep.value);
 const STEEL = new THREE.Color(VFX.steel.value);
 
 export function createSkills(ctx: SkillContext): Skill[] {
-  const { frame, sockets, animator, vfx, lights, groundY, root } = ctx;
+  const { frame, sockets, animator, vfx, lights, groundY, root, motion } = ctx;
   const h = frame.figureHeight;
   const orientation = new THREE.Quaternion();
 
@@ -66,28 +75,48 @@ export function createSkills(ctx: SkillContext): Skill[] {
   const forwardNow = (): THREE.Vector3 =>
     frame.forward.clone().applyQuaternion(root.getWorldQuaternion(orientation)).normalize();
 
-  /** Charge glow that gathers at a socket before release. */
+  /**
+   * Charge glow that gathers at a socket before release.
+   *
+   * The swirl axis is the HAND'S axis, so the gathering spirals around the forearm and reads as
+   * energy being drawn into the palm rather than as a cloud that happens to sit near a hand.
+   */
   const charge = (socketId: string, colour: THREE.Color, count: number): void => {
     const at = sockets.get(socketId).worldPosition();
+    const axis = motion.axis(socketId);
     vfx.burst(at, {
       count,
       colour: colour.clone().multiplyScalar(1.4),
       colourEnd: colour,
-      // Inward speeds: negative radius is not a thing, so the swirl does the gathering instead.
-      speed: [0.1, 0.5],
+      // Emitted backwards along the arm and swirled around it: with drag this high the particles
+      // stall and curl into the palm instead of escaping.
+      direction: axis.clone().negate(),
+      spread: 1.25,
+      speed: [0.12, 0.65],
       life: [0.22, 0.5],
-      size: [h * 0.012, h * 0.03],
-      spread: Math.PI,
+      size: [h * 0.01, h * 0.028],
       gravity: -0.35,
-      drag: 3.4,
-      swirl: 5.5,
-      jitter: h * 0.05,
+      drag: 4.2,
+      swirl: 7.0,
+      jitter: h * 0.045,
+      inherit: motion.velocity(socketId).multiplyScalar(0.5),
     });
     vfx.flash(at, colour, 3.2, 0.3, h * 1.6);
   };
 
-  /** What every bolt does when it arrives. Shared so all three impacts read as the same world. */
+  /**
+   * What every bolt does when it arrives. Shared so all three impacts read as the same world.
+   *
+   * A floor hit and an airburst are not the same event and no longer render as one. The ground ring
+   * is the signature of something striking the floor, so it is scaled by how close the detonation
+   * actually was to it: a bolt that goes off at chest height gets a faint mark under it and spends
+   * its energy on the burst instead. The first version drew a full-size ring under every airburst,
+   * which read as two unrelated effects going off at once.
+   */
   const impact = (at: THREE.Vector3, direction: THREE.Vector3, colour: THREE.Color, scale: number): void => {
+    const height = Math.max(0, at.y - groundY);
+    const grounded = THREE.MathUtils.clamp(1 - height / (h * 0.45), 0, 1);
+
     vfx.burst(at, {
       count: Math.round(170 * scale),
       colour: colour.clone().multiplyScalar(1.7),
@@ -97,14 +126,15 @@ export function createSkills(ctx: SkillContext): Skill[] {
       // which left the debris hanging in the air as sparse dots — fireflies, not a splash.
       life: [0.22, 0.5],
       size: [h * 0.016, h * 0.055],
-      // A hemisphere opening upward: a floor hit throws its splash up, not into the floor.
+      // A floor hit throws its splash UP off the ground; an airburst throws it everywhere. The
+      // cone opens out as the detonation gets further from the floor.
       direction: frame.up.clone(),
-      spread: Math.PI * 0.45,
+      spread: Math.PI * (0.45 + 0.55 * (1 - grounded)),
       gravity: 5.5,
       drag: 1.5,
       jitter: h * 0.03,
     });
-    // A thin fan of steel-white sparks along the travel direction — the reflected shrapnel.
+    // A thin fan of steel-white sparks back along the travel direction — the reflected shrapnel.
     vfx.burst(at, {
       count: Math.round(26 * scale),
       colour: STEEL,
@@ -120,17 +150,32 @@ export function createSkills(ctx: SkillContext): Skill[] {
     // Sub-linear on purpose: eight impacts at scale 0.34 should not add up to more light than
     // one impact at scale 1.
     vfx.flash(at, colour, 78 * scale * scale, 0.3, h * (3.5 + 1.5 * scale));
-    // `at` is already on the floor for the aimed skills; the nudge keeps the ring off the stage
-    // surface so the two do not z-fight.
+    // A flare punched back along the bolt's own path — the direction it came in on, kept visible
+    // for the one frame the detonation reads in.
+    vfx.flare(at, direction, new THREE.Color(0xffffff).lerp(colour, 0.5),
+      h * 0.42 * scale, h * 0.3 * scale, 0.16);
+
     const onGround = at.clone();
     onGround.y = groundY + 0.004;
-    // Two rings, not one: a tight fast one for the hit and a wider slow one for the aftermath. A
-    // single ring at the old 0.95 x height was so wide it ran off the bottom of the frame.
-    vfx.shockwave(onGround, h * 0.3 * scale, new THREE.Color(0xffffff).lerp(colour, 0.6), 0.26, 0.32);
-    vfx.shockwave(onGround, h * 0.62 * scale, colour, 0.55, 0.2);
+    if (grounded > 0.05) {
+      // Two rings, not one: a tight fast one for the hit and a wider slow one for the aftermath.
+      vfx.shockwave(onGround, h * 0.3 * scale * grounded, new THREE.Color(0xffffff).lerp(colour, 0.6), 0.26, 0.32);
+      vfx.shockwave(onGround, h * 0.62 * scale * grounded, colour, 0.55, 0.2);
+    } else {
+      // Nothing struck the floor, but the light from the burst still lands on it.
+      vfx.shockwave(onGround, h * 0.5 * scale, colour.clone().multiplyScalar(0.25), 0.5, 0.45);
+    }
     lights.surge(colour, 0.55 * scale);
   };
 
+  /**
+   * Fire a bolt from a socket, down the direction that socket is actually pointing.
+   *
+   * The range is solved, not authored: the aim is intersected with the floor, so a hand pointing
+   * down puts the impact on the ground where it is pointing, and a hand pointing level or up sends
+   * the bolt out to its maximum reach and detonates it in the air. That is what makes the effect
+   * follow the animation instead of the animation happening next to the effect.
+   */
   const launch = (
     socketId: string,
     colour: THREE.Color,
@@ -139,21 +184,25 @@ export function createSkills(ctx: SkillContext): Skill[] {
     scale: number,
   ): void => {
     const from = sockets.get(socketId).worldPosition();
-    const forward = forwardNow();
+    // Cap 0.3: a projectile is aimed by where the arm POINTS. Letting the hand's travel direction
+    // dominate sent bolts 21 degrees into the sky off a level jab, because a striking hand is still
+    // rising as the arm reaches full extension.
+    const direction = motion.aim(socketId, undefined, 0.3);
 
-    // Aim at a point ON THE FLOOR rather than straight down the forward axis. A level shot
-    // detonates in mid-air and throws its ground ring somewhere else entirely, so the burst, the
-    // ring and the flash all read as three unrelated events. Landing the bolt on the floor puts
-    // them in one place and lets the impact light the ground, which is the whole point of giving
-    // the impact a real light.
-    const aim = sockets.get('effect:core').worldPosition();
-    aim.y = groundY;
-    // Measured, not solved on paper: the flight was sampled frame by frame through the debug
-    // handle and projected to normalised device coordinates. At 1.85 the detonation landed at
-    // ndc.x 1.11, off the right edge; a floor hit at 1.5 sat at ndc.y -0.73, close enough to the
-    // bottom edge that the ring ran off it. 1.25 keeps the whole impact inside the frame.
-    aim.addScaledVector(forward, h * 1.15);
-    const direction = aim.clone().sub(from).normalize();
+    // Solved against the default framing, not chosen: projecting the firing line shows the last
+    // on-screen point at about 2.8 world units along forward, and the muzzle already sits ~0.4 out.
+    // 2.4 was fine while the aim still angled downward into the floor; once the cues were fixed and
+    // the bolts left level, that same reach put every detonation past the right edge. Measured back
+    // down from there: 1.45 landed at ndc.x 0.83, hard against the edge; 1.15 sits near 0.55.
+    const maxReach = h * 1.15;
+    let range = maxReach;
+    // Only a meaningfully downward aim gets a floor solution; near-horizontal would solve to a
+    // distance out past the stage and read as a mistake.
+    if (direction.y < -0.08) {
+      const toFloor = (groundY - from.y) / direction.y;
+      if (toFloor > 0) range = Math.min(range, toFloor);
+    }
+    range = Math.max(h * 0.45, range);
 
     vfx.bolt({
       from,
@@ -161,24 +210,42 @@ export function createSkills(ctx: SkillContext): Skill[] {
       // Slow enough to read as a travelling object rather than a hitscan line — at the earlier
       // 6.2 the whole flight was over inside four frames.
       speed: h * 4.2,
-      range: aim.distanceTo(from),
+      range,
       core: new THREE.Color(0xffffff).lerp(colour, 0.55),
       halo,
       radius: h * radius,
       sparkRate: 190,
       onImpact: (at, dir) => impact(at, dir, halo, scale),
     });
+
+    // Muzzle: a directional flare along the aim, a cone of sparks down it, and a light.
+    vfx.flare(from, direction, new THREE.Color(0xffffff).lerp(halo, 0.45),
+      h * 0.5 * scale, h * 0.17 * scale, 0.14);
     vfx.burst(from, {
-      count: 40,
+      count: Math.round(46 * scale),
       colour: halo.clone().multiplyScalar(1.5),
       colourEnd: halo.clone().multiplyScalar(0.1),
       direction,
-      spread: 0.9,
-      speed: [1.5, 5],
-      life: [0.16, 0.4],
-      size: [h * 0.008, h * 0.028],
+      spread: 0.55,
+      speed: [2.0, 6.5],
+      life: [0.12, 0.34],
+      size: [h * 0.006, h * 0.024],
       gravity: 1.2,
-      drag: 3,
+      drag: 3.6,
+      inherit: motion.velocity(socketId).multiplyScalar(0.4),
+    });
+    // A thin ring of blowback perpendicular to the aim — the recoil the muzzle pushes sideways.
+    vfx.burst(from, {
+      count: Math.round(14 * scale),
+      colour: STEEL,
+      colourEnd: halo,
+      direction: direction.clone().negate(),
+      spread: 1.4,
+      speed: [0.6, 2.2],
+      life: [0.14, 0.3],
+      size: [h * 0.004, h * 0.011],
+      gravity: 2.0,
+      drag: 4.0,
     });
     vfx.flash(from, halo, 26, 0.2, h * 2.6);
     lights.surge(halo, 0.75);
@@ -188,15 +255,18 @@ export function createSkills(ctx: SkillContext): Skill[] {
     {
       id: 'toxic-bolt',
       label: 'Toxic Bolt',
-      clip: 'preset:biped:fire',
+      clip: 'preset:biped:box_03',
       colour: VFX.toxic.hex,
-      description: 'single heavy bolt from effect:cast-primary (R_Hand), released at 40% of the fire clip',
-      cast: () => animator.once('preset:biped:fire', {
+      description: 'one heavy bolt on the scanned strike at 22.6% of box_03 — left hand, aim 0.90 forward and level',
+      cast: () => animator.once('preset:biped:box_03', {
         fade: 0.14,
         cues: [
-          { at: 0.10, fire: () => charge('effect:cast-primary', TOXIC, 70) },
-          { at: 0.26, fire: () => charge('effect:cast-primary', SPORE, 50) },
-          { at: 0.40, fire: () => launch('effect:cast-primary', SPORE, TOXIC, 0.052, 1.15) },
+          { at: 0.08, fire: () => charge('effect:cast-secondary', TOXIC, 70) },
+          { at: 0.16, fire: () => charge('effect:cast-secondary', SPORE, 50) },
+          // 0.226 comes out of cueScan.ts, not out of anyone's judgement: seeking box_03 puts the
+          // left hand's only real strike there — aim 0.896 along forward, 0.007 above level (as
+          // level as anything in the set), 3.67 units per second.
+          { at: 0.226, fire: () => launch('effect:cast-secondary', SPORE, TOXIC, 0.052, 1.15) },
         ],
       }),
     },
@@ -205,17 +275,20 @@ export function createSkills(ctx: SkillContext): Skill[] {
       label: 'Ember Volley',
       clip: 'preset:biped:box_02',
       colour: VFX.ember.hex,
-      description: 'three lighter bolts alternating between both hand sockets, on the boxing clip',
+      description: 'a one-two-cross on the three scanned strikes of box_02 — right 27.7%, left 28.9%, right 68.6%',
       cast: () => animator.once('preset:biped:box_02', {
         fade: 0.12,
-        timeScale: 1.15,
         cues: [
-          { at: 0.14, fire: () => charge('effect:cast-primary', EMBER, 34) },
-          { at: 0.22, fire: () => launch('effect:cast-primary', EMBER, EMBER, 0.03, 0.6) },
-          { at: 0.40, fire: () => charge('effect:cast-secondary', EMBER, 34) },
-          { at: 0.48, fire: () => launch('effect:cast-secondary', EMBER, EMBER_DEEP, 0.03, 0.6) },
-          { at: 0.66, fire: () => charge('effect:cast-primary', EMBER, 44) },
-          { at: 0.74, fire: () => launch('effect:cast-primary', EMBER, EMBER, 0.036, 0.8) },
+          // Every one of these is a scanned peak, not a guess at where a punch might be. box_02 is
+          // a genuine combination and the scan finds all of it:
+          //   R 0.277  fwd 0.960  up -0.212  3.03 u/s
+          //   L 0.289  fwd 0.976  up -0.017  3.55 u/s   <- twelve thousandths later: a real one-two
+          //   R 0.686  fwd 0.989  up  0.191  4.40 u/s   <- the cross, and the fastest hand in the clip
+          { at: 0.21, fire: () => charge('effect:cast-primary', EMBER, 30) },
+          { at: 0.277, fire: () => launch('effect:cast-primary', EMBER, EMBER_DEEP, 0.028, 0.55) },
+          { at: 0.289, fire: () => launch('effect:cast-secondary', EMBER, EMBER, 0.03, 0.62) },
+          { at: 0.60, fire: () => charge('effect:cast-primary', EMBER, 46) },
+          { at: 0.686, fire: () => launch('effect:cast-primary', EMBER, EMBER, 0.04, 0.9) },
         ],
       }),
     },
@@ -261,11 +334,15 @@ export function createSkills(ctx: SkillContext): Skill[] {
               // bolt lights and their eight impact flashes landed on top of it.
               vfx.flash(core, TOXIC, 13, 0.34, h * 2.2);
               lights.surge(TOXIC, 0.55);
+              // A flare up the body's own up axis, so the nova reads as erupting out of the figure.
+              vfx.flare(core, frame.up, SPORE, h * 0.9, h * 0.5, 0.3);
               // Eight bolts fanned about the MEASURED up axis, so the ring is level with the
-              // figure's own stance rather than with world +Y.
+              // figure's own stance rather than with world +Y. Tilted slightly down so they land.
               for (let i = 0; i < 8; i += 1) {
                 const direction = forwardNow()
-                  .applyAxisAngle(frame.up, (i / 8) * Math.PI * 2);
+                  .applyAxisAngle(frame.up, (i / 8) * Math.PI * 2)
+                  .addScaledVector(frame.up, -0.28)
+                  .normalize();
                 vfx.bolt({
                   from: core.clone(),
                   direction,
@@ -342,7 +419,17 @@ export function createAmbientAura(ctx: Pick<SkillContext, 'frame' | 'sockets' | 
   };
 }
 
-/** Dust and a ring for one measured footfall. Colour is the ground bounce, not the magic. */
+/**
+ * Dust and a ring for one measured footfall.
+ *
+ * The spray is aimed, not symmetric. A planting foot is still sliding — backwards under a runner,
+ * forwards into a stamp — and the dust it throws goes the other way, fanned around the reversed
+ * travel direction and tilted up off the floor. The foot's own pointing axis sets which way the
+ * fan leans, so a foot landing side-on throws its dust sideways. A symmetric puff, which is what
+ * this was first, reads as a decal switching on under the ankle.
+ *
+ * Colour is the ground bounce, not the magic: displaced floor should not compete with the casts.
+ */
 export function footstepEffect(
   vfx: VfxSystem,
   at: THREE.Vector3,
@@ -351,8 +438,12 @@ export function footstepEffect(
   up: THREE.Vector3,
   groundY: number,
   clearance = 0,
-  /** Velocity the dust inherits — the floor's, so a puff drifts backwards under a runner. */
+  /** Velocity the dust inherits — the floor's under a runner, plus the foot's own slide. */
   inherit?: THREE.Vector3,
+  /** The foot's world velocity at contact. Sets which way the spray fans. */
+  footVelocity?: THREE.Vector3,
+  /** The foot's pointing axis (ankle through toe). Tilts the fan. */
+  footAxis?: THREE.Vector3,
 ): void {
   // Scaled by the MEASURED descent speed, so a heavy landing is visibly heavier than a shuffle.
   // Then faded by how far above the floor the toe actually planted: the stair-climb clip lands one
@@ -363,16 +454,26 @@ export function footstepEffect(
   const ground = at.clone();
   ground.y = groundY + 0.002;
 
+  // Away from where the foot came from, lifted off the floor. Falls back to straight up when the
+  // foot planted with no measurable horizontal travel.
+  const spray = new THREE.Vector3();
+  if (footVelocity && footVelocity.lengthSq() > 1e-6) {
+    spray.copy(footVelocity).setY(0).negate();
+    if (footAxis) spray.addScaledVector(footAxis, figureHeight * 0.35);
+    spray.normalize().addScaledVector(up, 0.55).normalize();
+  } else {
+    spray.copy(up);
+  }
+
   // Dust first, in the leather colours: it is displaced ground, not magic, so it must not compete
-  // with the casts for the toxic hue. The first pass used `ember-deep` at 22 particles and it was
-  // invisible under a running figure — dark particles on a dark floor.
+  // with the casts for the toxic hue.
   vfx.burst(ground, {
     count: Math.round(40 * strength),
     colour: new THREE.Color(VFX.ember.value).multiplyScalar(0.55),
     colourEnd: new THREE.Color(VFX.bounce.value),
-    direction: up.clone(),
-    spread: 1.35,
-    speed: [0.35 * strength, 1.8 * strength],
+    direction: spray,
+    spread: 0.95,
+    speed: [0.35 * strength, 1.9 * strength],
     life: [0.35, 0.9],
     size: [figureHeight * 0.016, figureHeight * 0.055],
     gravity: 0.55,
@@ -385,9 +486,9 @@ export function footstepEffect(
     count: Math.round(18 * strength),
     colour: new THREE.Color(VFX.spore.value),
     colourEnd: new THREE.Color(VFX.venom.value),
-    direction: up.clone(),
-    spread: 0.8,
-    speed: [0.7 * strength, 2.8 * strength],
+    direction: spray,
+    spread: 0.6,
+    speed: [0.7 * strength, 3.0 * strength],
     life: [0.25, 0.6],
     size: [figureHeight * 0.007, figureHeight * 0.022],
     gravity: 2.2,

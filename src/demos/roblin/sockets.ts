@@ -38,6 +38,12 @@ export interface SocketDef {
   /** A name from rigData.ts. Verified against the live skeleton at build time. */
   bone: string;
   side: BodySide;
+  /**
+   * The bone the socket's POINTING axis is measured from — see motion.ts. The axis runs from this
+   * bone through the socket, so a hand socket measured from the forearm points out through the
+   * palm and a toe socket measured from the ankle points out along the foot.
+   */
+  axisFrom?: string;
   /** Multiples of `unit`, along (forward, up, outward). */
   offset: [number, number, number];
   /** Which measured length the offset multiplies. */
@@ -48,51 +54,61 @@ export interface SocketDef {
 export const SOCKET_DEFS: readonly SocketDef[] = [
   {
     id: 'effect:cast-primary', kind: 'effect', bone: BONES.handR, side: 'right',
+    axisFrom: BONES.forearmR,
     offset: [0.55, 0.12, 0.0], unit: 'forearm',
     purpose: 'muzzle of a ranged cast — a palm-length ahead of the right hand',
   },
   {
     id: 'effect:cast-secondary', kind: 'effect', bone: BONES.handL, side: 'left',
+    axisFrom: BONES.forearmL,
     offset: [0.55, 0.12, 0.0], unit: 'forearm',
     purpose: 'second muzzle, for volleys that alternate hands',
   },
   {
     id: 'effect:core', kind: 'effect', bone: BONES.spineUpper, side: 'centre',
+    axisFrom: BONES.spineLower,
     offset: [0.07, 0.0, 0.0], unit: 'height',
     purpose: 'chest emitter — the charge that a cast draws from and the idle aura pulses at',
   },
   {
     id: 'effect:crown', kind: 'effect', bone: BONES.head, side: 'centre',
+    axisFrom: BONES.neck,
     offset: [0.0, 0.11, 0.0], unit: 'height',
     purpose: 'above the skull, for rising motes and the nova column',
   },
   {
     id: 'effect:shoulder-l', kind: 'effect', bone: BONES.clavicleL, side: 'left',
+    axisFrom: BONES.spineUpper,
     offset: [0.0, 0.03, 0.075], unit: 'height',
     purpose: 'left shoulder wisp',
   },
   {
     id: 'effect:shoulder-r', kind: 'effect', bone: BONES.clavicleR, side: 'right',
+    axisFrom: BONES.spineUpper,
     offset: [0.0, 0.03, 0.075], unit: 'height',
     purpose: 'right shoulder wisp — the reflection of shoulder-l',
   },
   {
     id: 'grip:left', kind: 'grip', bone: BONES.handL, side: 'left',
+    axisFrom: BONES.forearmL,
     offset: [0.0, 0.0, 0.0], unit: 'forearm',
     purpose: 'where a held prop would sit; unused by the effects but part of the action profile',
   },
   {
     id: 'grip:right', kind: 'grip', bone: BONES.handR, side: 'right',
+    axisFrom: BONES.forearmR,
     offset: [0.0, 0.0, 0.0], unit: 'forearm',
     purpose: 'the mirror of grip:left',
   },
   {
     id: 'attachment:step-l', kind: 'attachment', bone: BONES.toeL, side: 'left',
+    axisFrom: BONES.footL,
     offset: [0.0, 0.0, 0.0], unit: 'forearm',
     purpose: 'ground contact for the left foot — the footstep detector watches this one',
   },
   {
     id: 'attachment:step-r', kind: 'attachment', bone: BONES.toeR, side: 'right',
+    axisFrom: BONES.footR,
     offset: [0.0, 0.0, 0.0], unit: 'forearm',
     purpose: 'the mirror of attachment:step-l',
   },
@@ -197,6 +213,7 @@ export function createSockets(frame: RigFrame): SocketRig {
           side: def.side,
           offsetBodyFrame: { forward: def.offset[0], up: def.offset[1], outward: def.offset[2] },
           offsetUnit: def.unit,
+          axisFrom: def.axisFrom,
           purpose: def.purpose,
         })),
       };

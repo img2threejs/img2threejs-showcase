@@ -64,6 +64,12 @@ export function createStage(frame: RigFrame): Stage {
       }
     `,
     transparent: true,
+    // NO DEPTH WRITE, and this is the fix for a real defect: the toes are grounded to y = 0 and the
+    // floor sits at y = 0 too. A transparent surface that writes depth is drawn in the transparent
+    // pass and then occludes anything at or below its own plane, so the bottom of each foot was
+    // being cut away by the floor it was standing on — invisible at gallery framing, obvious the
+    // moment you zoom in on the feet.
+    depthWrite: false,
   });
 
   // A disc, not an infinite plane: the edge fading into black is what keeps the backdrop from
@@ -71,14 +77,19 @@ export function createStage(frame: RigFrame): Stage {
   const ground = new THREE.Mesh(new THREE.CircleGeometry(h * 5.5, 96), material);
   ground.rotation.x = -Math.PI / 2;
   ground.name = 'roblin-ground';
+  // Below the feet, not level with them, and drawn first.
+  ground.position.y = -0.004;
+  ground.renderOrder = -2;
 
   // Shadows land on their own surface so the shader floor above stays cheap and unlit.
-  const shadowCatcher = new THREE.Mesh(
-    new THREE.CircleGeometry(h * 3.2, 64),
-    new THREE.ShadowMaterial({ opacity: 0.45 }),
-  );
+  const shadowMaterial = new THREE.ShadowMaterial({ opacity: 0.45 });
+  // Same reason as the floor above: ShadowMaterial is transparent and writes depth by default, and
+  // at y = +0.001 it was slicing the last millimetre off every toe.
+  shadowMaterial.depthWrite = false;
+  const shadowCatcher = new THREE.Mesh(new THREE.CircleGeometry(h * 3.2, 64), shadowMaterial);
   shadowCatcher.rotation.x = -Math.PI / 2;
-  shadowCatcher.position.y = 0.001;
+  shadowCatcher.position.y = -0.002;
+  shadowCatcher.renderOrder = -1;
   shadowCatcher.receiveShadow = true;
 
   group.add(ground, shadowCatcher);

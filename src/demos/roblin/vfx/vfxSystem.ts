@@ -3,6 +3,7 @@ import { ParticleField } from './particles';
 import { BoltPool, type BoltOptions } from './projectile';
 import { Shockwave } from './shockwave';
 import { GroundGlow } from './groundGlow';
+import { Flare } from './flare';
 
 /**
  * The whole effect layer, in one object.
@@ -49,6 +50,7 @@ export class VfxSystem {
   readonly bolts: BoltPool;
   readonly glow: GroundGlow;
   private readonly waves: Shockwave[];
+  private readonly flares: Flare[];
   private readonly flashes: Flash[];
   private elapsed = 0;
 
@@ -58,6 +60,7 @@ export class VfxSystem {
     this.bolts = new BoltPool(this.particles, 14);
     this.glow = new GroundGlow(figureHeight * 0.72, auraColour);
     this.waves = Array.from({ length: 8 }, () => new Shockwave());
+    this.flares = Array.from({ length: 6 }, () => new Flare());
     // Impact lights are pooled for the same reason bolts are: `new PointLight` mid-cast forces the
     // renderer to recompile every material that can receive light, which drops a frame every time.
     // Five, not eight: a radial skill lands its impacts together, and the sixth simultaneous
@@ -71,6 +74,7 @@ export class VfxSystem {
 
     this.root.add(this.particles.points, this.bolts.group, this.glow.mesh);
     for (const wave of this.waves) this.root.add(wave.mesh);
+    for (const flare of this.flares) this.root.add(flare.mesh);
     for (const flash of this.flashes) this.root.add(flash.light);
   }
 
@@ -102,6 +106,22 @@ export class VfxSystem {
     free?.fire(at, radius, colour, duration, thickness);
   }
 
+  /**
+   * A directional muzzle flare. Unlike `flash`, this one has an ORIENTATION — it is what puts the
+   * hand's aim into the single frame a discharge is visible for.
+   */
+  flare(
+    at: THREE.Vector3,
+    aim: THREE.Vector3,
+    colour: THREE.Color,
+    length: number,
+    girth: number,
+    duration = 0.13,
+  ): void {
+    const free = this.flares.find((f) => !f.busy);
+    free?.fire(at, aim, colour, length, girth, duration);
+  }
+
   /** A short, bright point light. This is what makes an impact read as light rather than as paint. */
   flash(at: THREE.Vector3, colour: THREE.Color, peak: number, duration = 0.24, distance = 8): void {
     const free = this.flashes.find((f) => f.t >= f.duration);
@@ -120,6 +140,7 @@ export class VfxSystem {
     this.particles.update(delta);
     this.bolts.update(delta, cameraPosition);
     for (const wave of this.waves) wave.update(delta);
+    for (const flare of this.flares) flare.update(delta, cameraPosition);
     for (const flash of this.flashes) {
       if (flash.t >= flash.duration) continue;
       flash.t += delta;
@@ -144,5 +165,6 @@ export class VfxSystem {
     this.bolts.dispose();
     this.glow.dispose();
     for (const wave of this.waves) wave.dispose();
+    for (const flare of this.flares) flare.dispose();
   }
 }

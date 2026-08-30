@@ -11,6 +11,9 @@ import { createStage } from './stage';
 import { VfxSystem } from './vfx/vfxSystem';
 import { createSkills, createAmbientAura, footstepEffect, type Skill } from './skills';
 import { createFootstepWatcher } from './footsteps';
+import { createLimbMotion } from './motion';
+import { createLimbTrails } from './vfx/limbTrails';
+import { scanCues, formatCueScan } from './cueScan';
 import { VFX, paletteReport } from './palette';
 import { probeClips, formatProbeReport } from './clipProbe';
 
@@ -127,6 +130,15 @@ export function createRoblinModel(scene: THREE.Scene): THREE.Group {
     for (const line of frame.log) console.log(line);
     for (const line of sockets.log) console.log(line);
     console.groupEnd();
+
+    // Strike times for the combat clips, found by seeking rather than guessed. The cue numbers in
+    // skills.ts came from this scan; running it here means a clip change cannot silently
+    // invalidate them without the console saying so.
+    console.groupCollapsed('%cRoblin — measured strike cues (seek scan)', 'color:#c8ff3d');
+    for (const line of formatCueScan(scanCues(rigged.mesh, rigged.clips, sockets, frame, {
+      sockets: ['effect:cast-primary', 'effect:cast-secondary', 'attachment:step-l', 'attachment:step-r'],
+    }))) console.log(line);
+    console.groupEnd();
   }
 
   const lights = createRoblinLightRig(frame);
@@ -135,7 +147,21 @@ export function createRoblinModel(scene: THREE.Scene): THREE.Group {
   // lamp pointed at the floor instead of as a pool the figure stands in.
   const vfx = new VfxSystem(frame.figureHeight, new THREE.Color(VFX.venom.value));
   const animator = createAnimator(rigged, 'preset:biped:idle');
-  const skills = createSkills({ frame, sockets, animator, vfx, lights, groundY: 0, root: group });
+  const motion = createLimbMotion(sockets, frame);
+  const skills = createSkills({ frame, sockets, animator, vfx, lights, groundY: 0, root: group, motion });
+
+  // Speed-driven wakes on both hands and both feet, keyed to nothing but the measured limb speed,
+  // so all sixteen clips get the streaks their own motion earns. Hands carry the signature hue and
+  // feet the leather one, so a kick never looks like a cast.
+  const trails = createLimbTrails(
+    [
+      { socketId: 'effect:cast-primary', colour: VFX.toxic.value, spark: VFX.spore.value, sparkEnd: VFX.venom.value, width: 0.07, quiet: 0.5, loud: 2.6, sparkRate: 110 },
+      { socketId: 'effect:cast-secondary', colour: VFX.toxic.value, spark: VFX.spore.value, sparkEnd: VFX.venom.value, width: 0.07, quiet: 0.5, loud: 2.6, sparkRate: 110 },
+      { socketId: 'attachment:step-l', colour: VFX.ember.value, spark: VFX.ember.value, sparkEnd: VFX.emberDeep.value, width: 0.058, quiet: 0.7, loud: 3.2, sparkRate: 75 },
+      { socketId: 'attachment:step-r', colour: VFX.ember.value, spark: VFX.ember.value, sparkEnd: VFX.emberDeep.value, width: 0.058, quiet: 0.7, loud: 3.2, sparkRate: 75 },
+    ],
+    sockets, motion, vfx, frame.figureHeight,
+  );
   const aura = createAmbientAura({ frame, sockets, vfx });
   const footsteps = createFootstepWatcher(
     [sockets.get('attachment:step-l'), sockets.get('attachment:step-r')],
@@ -149,7 +175,7 @@ export function createRoblinModel(scene: THREE.Scene): THREE.Group {
   // The character group is added here too, alongside the rest: `build` owns putting its own model
   // in the scene — the registry contract is "adds the model and returns the group", not "returns a
   // group for the caller to add".
-  scene.add(group, lights.group, stage.group, vfx.root);
+  scene.add(group, lights.group, stage.group, vfx.root, trails.group);
 
   const stepSockets = ['attachment:step-l', 'attachment:step-r'];
   const core = new THREE.Vector3();
@@ -250,6 +276,9 @@ export function createRoblinModel(scene: THREE.Scene): THREE.Group {
 
     animator.update(dt);
     group.updateMatrixWorld(true);
+    // Velocities and pointing axes are read AFTER the pose has advanced and matrices are current;
+    // every aim in the effect layer comes from here.
+    motion.update(dt);
 
     // Ground the climb. `preset:biped:run_upstairs` is a STAIR CLIMB — the only locomotion clip the
     // rig ships — and its root motion lifts the figure clear of a flat floor. The lowest toe is
@@ -269,7 +298,10 @@ export function createRoblinModel(scene: THREE.Scene): THREE.Group {
     footsteps.update(dt, (step) => {
       // The dust inherits the floor's motion, not the figure's, so it is left behind exactly the
       // way it would be if Roblin were the thing moving.
-      footstepEffect(vfx, step.at, step.impactSpeed, frame.figureHeight, frame.up, 0, step.clearance, travelVelocity);
+      footstepEffect(
+        vfx, step.at, step.impactSpeed, frame.figureHeight, frame.up, 0, step.clearance,
+        travelVelocity, motion.velocity(step.id), motion.axis(step.id),
+      );
     });
 
     sockets.get('effect:core').worldPosition(core);
@@ -277,6 +309,7 @@ export function createRoblinModel(scene: THREE.Scene): THREE.Group {
     vfx.glow.setIntensity(animator.busy ? 1.0 : 0.62);
 
     lights.update(dt);
+    trails.update(dt, cameraPosition);
     vfx.update(dt, cameraPosition);
   };
 

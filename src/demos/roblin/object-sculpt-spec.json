@@ -36,7 +36,8 @@
       "The sprint's ground speed (1.15 figure-heights per second) and turn rate are AUTHORED. All 16 clips are in-place, so there is no root motion to measure a ground speed from.",
       "preset:biped:run_upstairs is a stair climb used as a flat-ground run. Its climb is cancelled by a measured running-minimum of the lowest toe, and its left foot plants 0.335 above the floor, which is why that foot's dust is faded rather than suppressed.",
       "The three combat clips are reused presets, not bespoke animation. dance_05 in particular is a dance clip standing in for a spin-cast, and it reads as one.",
-      "No destruction groups: the rigged model is one merged shell and there is nothing to separate."
+      "No destruction groups: the rigged model is one merged shell and there is nothing to separate.",
+      "preset:biped:fire is a STATIC AIMING POSE \u2014 the seek scan finds zero forward strikes in it and Gate R1 already reported it with the lowest inter-sample delta of the sixteen. It is no longer used by a skill; box_03 and box_02 carry the casts instead."
     ]
   },
   "coordinateFrame": {
@@ -596,19 +597,19 @@
     "skills": [
       {
         "id": "toxic-bolt",
-        "clip": "preset:biped:fire",
-        "socket": "effect:cast-primary",
+        "clip": "preset:biped:box_03",
+        "socket": "effect:cast-secondary",
         "colour": "#d3f52c",
-        "release": "cue at 0.40 of the clip, read off the mixer clock",
-        "note": "one heavy bolt, aimed at a floor point 1.15 figure-heights down the measured forward axis"
+        "release": "cue at 0.226, found by seeking the clip (cueScan.ts): aim 0.896 forward, 0.007 above level, 3.67 u/s",
+        "aim": "the left hand's own pointing axis at that instant, not the torso forward axis"
       },
       {
         "id": "ember-volley",
         "clip": "preset:biped:box_02",
         "socket": "effect:cast-primary + effect:cast-secondary",
         "colour": "#f68e23",
-        "release": "cues at 0.22, 0.48 and 0.74, alternating hands",
-        "note": "three lighter bolts in the leather hue, so two casts in a row do not look identical"
+        "release": "scanned cues at 0.277 (R), 0.289 (L) and 0.686 (R) \u2014 a real one-two-cross",
+        "aim": "each bolt follows the hand that threw it"
       },
       {
         "id": "spore-nova",
@@ -616,7 +617,7 @@
         "socket": "effect:core + effect:crown",
         "colour": "#e6f19d",
         "release": "cues at 0.18 and 0.42",
-        "note": "eight bolts fanned about the measured up axis plus a column from the crown socket"
+        "aim": "radial about the measured up axis, tilted down so the bolts land"
       },
       {
         "id": "sprint",
@@ -624,9 +625,18 @@
         "socket": "attachment:step-l + attachment:step-r",
         "colour": "#f68e23 dust, #e6f19d sparks",
         "release": "per footfall, detected from each toe bone's own descent",
-        "note": "The clip is a STAIR CLIMB \u2014 the only locomotion clip the rig ships \u2014 so its root motion lifts the figure off a flat floor and its left toe never returns below 0.335. Both are corrected by measurement, not by hand-tuned constants: see notDone."
+        "aim": "dust fans along the reversed measured travel of the planting foot"
       }
-    ]
+    ],
+    "limbTrails": {
+      "note": "Speed-driven wakes on both hands and both feet, keyed to no clip at all \u2014 a limb that exceeds a measured speed draws a wake along the path it is travelling. Thresholds are in figure heights per second. Measured: idle 0.10 u/s (no trail), run 2.6, box 6.1, kick 7.5.",
+      "sockets": [
+        "effect:cast-primary",
+        "effect:cast-secondary",
+        "attachment:step-l",
+        "attachment:step-r"
+      ]
+    }
   },
   "gateR1": {
     "name": "clip binding probe",
@@ -776,7 +786,7 @@
   },
   "vfx": {
     "authored": "by hand, for this showcase",
-    "note": "The img2threejs skill has NO particle subsystem, no trail renderer, no shockwave and no impact-flash primitive. Every effect in src/roblin/vfx/ is this showcase's own code against plain three: a pooled additive point-sprite field with a procedural disc in the shader, a camera-facing ribbon trail, an expanding ground ring, an additive floor pool, and a pooled projectile with a travelling point light. No new dependency, no texture file, no fetch.",
+    "note": "The img2threejs skill has NO particle subsystem, no trail renderer, no shockwave and no impact-flash primitive. Every effect in src/roblin/vfx/ is this showcase's own code against plain three: a pooled additive point-sprite field with a procedural disc in the shader, a camera-facing ribbon trail, an expanding ground ring, an additive floor pool, and a pooled projectile with a travelling point light. No new dependency, no texture file, no fetch. Added in the rework: a directional muzzle flare, speed-driven limb trails, and a per-limb motion tracker (velocity + pointing axis) that every aim in the effect layer now reads from.",
     "anchoring": "Every effect is positioned from a socket's world matrix or from the measured body axes. No literal world coordinate appears in the effect code.",
     "palette": "src/roblin/palette.ts \u2014 measured from the reference photo and the model's own vertex colours, then boosted. Each colour records its derivation; `steel` is the one authored hue and says so."
   }

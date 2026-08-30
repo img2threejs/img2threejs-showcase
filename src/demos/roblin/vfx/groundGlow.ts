@@ -48,7 +48,9 @@ export class GroundGlow {
     });
     this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), material);
     this.mesh.rotation.x = -Math.PI / 2;
-    this.mesh.renderOrder = 0;
+    // Additive and depth-write-free already, but it still has to be drawn UNDER the figure rather
+    // than sorted against it, or a foot standing in the pool flickers against it.
+    this.mesh.renderOrder = -1;
     this.mesh.name = 'roblin-ground-glow';
   }
 
