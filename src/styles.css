@@ -1956,6 +1956,68 @@ body.intro-active { overflow: hidden; }
   margin: 0;
 }
 
+/* Provenance badges.
+   The markup has been in the demo panel since it was written, but no rules for `.badge` ever
+   existed — so every demo rendered its subject class, its four provenance steps and its status as
+   one run-on sentence of inline text. These are the first rules the class has had, which means they
+   land on the whole gallery, not just one demo.
+
+   Built from the tokens the rest of the page uses: the chip is `.btn`'s own surface, border and
+   4px radius at a smaller size, in the mono face the site reserves for machine facts. The one
+   accent stays scarce, as the palette note at the top of this file asks — amber fills a `final`
+   status and nothing else. */
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.badge {
+  /* inline-block, NOT inline-flex. `brand()` wraps the product name in its own span, and inside a
+     flex container the text following that span becomes a separate anonymous flex item whose
+     leading whitespace is stripped — "img2threejs playground" rendered as one word. Inline layout
+     keeps the space that is actually in the markup. */
+  display: inline-block;
+  vertical-align: middle;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  padding: 0.3rem 0.48rem;
+  color: var(--paper-dim);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  /* Long steps wrap inside their own chip rather than pushing the 300px panel sideways. */
+  overflow-wrap: anywhere;
+}
+
+/* The subject class is the one fact worth reading first, so it gets the brighter foreground and a
+   stronger rule — weight rather than colour, which keeps the accent free. */
+.badge-subject {
+  color: var(--paper);
+  border-color: var(--rule-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.badge-status {
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+/* `placeholder` is a caveat, so it recedes and its dashed rule says "not settled" without a word. */
+.badge-status.status-placeholder {
+  color: var(--paper-faint);
+  border-style: dashed;
+}
+
+.badge-status.status-final {
+  color: var(--ink);
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
 .demo-animations {
   display: flex;
   flex-direction: column;

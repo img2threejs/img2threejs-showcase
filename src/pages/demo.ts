@@ -36,6 +36,26 @@ let panelExpanded: boolean | null = null;
  * Returns a cleanup function the router must call before switching routes.
  * If `id` is unknown, redirects to home and returns a no-op cleanup.
  */
+/**
+ * One badge per step of the provenance line.
+ *
+ * `generatedWith` is authored as middot-separated steps — the pipeline, the measurement instrument,
+ * the route, the version — and it was rendered as a SINGLE badge, so the whole chain ran together
+ * into one sentence that reads as prose rather than as the separate facts it is. Splitting on the
+ * separator is enough; nothing about the authored strings has to change, and every demo in the
+ * registry already follows the convention.
+ *
+ * `brand` is applied per part, so an "img2threejs" appearing in any step still gets its gradient.
+ */
+function provenanceBadges(generatedWith: string): string {
+  return generatedWith
+    .split('\u00b7')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => `<span class="badge">${brand(part)}</span>`)
+    .join('\n                ');
+}
+
 export function renderDemo(mount: HTMLElement, id: string): () => void {
   const demo = getDemo(id);
   if (!demo) {
@@ -88,8 +108,8 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
             </figure>
             <div class="demo-meta">
               <div class="badges">
-                <span class="badge badge-${demo.subjectClass}">${demo.subjectClass}</span>
-                <span class="badge">${brand(demo.generatedWith)}</span>
+                <span class="badge badge-subject badge-${demo.subjectClass}">${demo.subjectClass}</span>
+                ${provenanceBadges(demo.generatedWith)}
                 <span class="badge badge-status status-${demo.status}">${demo.status}</span>
               </div>
               <p>${demo.blurb}</p>
