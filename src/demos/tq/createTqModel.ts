@@ -58,7 +58,6 @@ const CLIP_ACTIONS = [
   { id: 'clip:run', label: 'Run', clip: 'preset:run' },
   { id: 'clip:sprint', label: 'Sprint', clip: 'preset:biped:flee_02' },
   { id: 'clip:jump', label: 'Jump', clip: 'preset:jump' },
-  { id: 'clip:hurt', label: 'Hurt', clip: 'preset:hurt' },
 ];
 
 const IDLE_CLIP = 'preset:biped:dance_02';
