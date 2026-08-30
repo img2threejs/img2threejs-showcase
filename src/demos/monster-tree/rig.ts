@@ -8,7 +8,7 @@ import {
   type EncodedModel,
   type EncodedRig,
 } from './meshCodec';
-import { COSTUME_PIECES, COSTUME_RLE, COSTUME_RLE_TRIANGLES, SOCKETS } from './measured';
+import { ALBEDO_WHITE_BALANCE, COSTUME_PIECES, COSTUME_RLE, COSTUME_RLE_TRIANGLES, SOCKETS } from './measured';
 
 export type SocketKind = 'effect' | 'grip' | 'attachment';
 
@@ -150,6 +150,7 @@ function extractTriangles(
   colour: Float32Array,
   skinIndex: Uint16Array | null,
   skinWeight: Float32Array | null,
+  grain: Float32Array | null,
 ): { geometry: THREE.BufferGeometry; kept: number[] } {
   const remap = new Int32Array(position.length / 3).fill(-1);
   const kept: number[] = [];
@@ -197,11 +198,100 @@ function extractTriangles(
     geometry.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4));
   }
 
+  if (grain) {
+    const gr = new Float32Array(n * 3);
+    for (let i = 0; i < n; i += 1) {
+      const v = kept[i];
+      gr[i * 3] = grain[v * 3];
+      gr[i * 3 + 1] = grain[v * 3 + 1];
+      gr[i * 3 + 2] = grain[v * 3 + 2];
+    }
+    geometry.setAttribute('aGrain', new THREE.BufferAttribute(gr, 3));
+  }
+
   const Index = n <= 65535 ? Uint16Array : Uint32Array;
   geometry.setIndex(new THREE.BufferAttribute(Index.from(triangles), 1));
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   return { geometry, kept };
+}
+
+/**
+ * The direction wood grain runs at every vertex, taken from the rig rather than invented.
+ *
+ * Each bone's axis is measured in BIND space, bone position to child position — `L_Forearm` comes
+ * out [0.00, 0.00, -1.00] (along the arm), `L_Thigh` [-0.09, -0.99, -0.11] (down the leg),
+ * `Spine02` [-0.02, 0.96, -0.29] (up the torso). A vertex takes the axis of the bone it is most
+ * strongly weighted to, so the grain in `bark.ts` elongates along whichever limb the vertex
+ * belongs to. That is what makes the wood read as body parts instead of one carved plank.
+ *
+ * Two details:
+ *  - Twist helpers are skipped when choosing a bone's child. `L_Forearm` has both `L_ForearmTwist01`
+ *    and `L_Hand` as children; the twist bone sits at the SAME position as its parent, so picking it
+ *    would give a zero-length axis for exactly the bones whose direction matters most.
+ *  - A leaf bone has no child to aim at, so it inherits the direction from its parent instead. 13
+ *    of the 41 bones resolve this way. `Hip` is the one genuinely degenerate case — `Pelvis` sits on
+ *    top of it — and falls back to +Y, which is the right answer for a hip regardless.
+ */
+function grainDirections(
+  rig: EncodedRig,
+  skeleton: THREE.Skeleton,
+  skinIndex: Uint16Array,
+  skinWeight: Float32Array,
+  vertexCount: number,
+): Float32Array {
+  const bindPosition = skeleton.boneInverses.map((m) =>
+    new THREE.Vector3().setFromMatrixPosition(m.clone().invert()));
+
+  const children: number[][] = rig.bones.map(() => []);
+  rig.bones.forEach((b, i) => { if (b.parent >= 0) children[b.parent].push(i); });
+
+  const axis = rig.bones.map((bone, i) => {
+    const kids = children[i];
+    const solid = kids.filter((k) => !/Twist/.test(rig.bones[k].name));
+    const target = solid.length ? solid[0] : (kids.length ? kids[0] : -1);
+    const direction = new THREE.Vector3();
+    if (target >= 0) direction.subVectors(bindPosition[target], bindPosition[i]);
+    else if (bone.parent >= 0) direction.subVectors(bindPosition[i], bindPosition[bone.parent]);
+    return direction.lengthSq() > 1e-12 ? direction.normalize() : new THREE.Vector3(0, 1, 0);
+  });
+
+  const out = new Float32Array(vertexCount * 3);
+  const blended = new THREE.Vector3();
+  for (let v = 0; v < vertexCount; v += 1) {
+    // The DOMINANT bone only sets the reference direction. The value written is the weighted
+    // blend of all four influences, which is what keeps the field continuous.
+    //
+    // Taking the dominant bone's axis outright makes the grain jump wherever influence hands over
+    // from one bone to the next — at the pectorals, the shoulders, the neck. The relief built on
+    // top of it then seams along every one of those boundaries, and the figure reads as though a
+    // stippled chain were drawn around each muscle group. Blending the axes the same way the skin
+    // blends its bones removes the discontinuity at its source.
+    let best = -1;
+    let dominant = 0;
+    for (let k = 0; k < 4; k += 1) {
+      const w = skinWeight[v * 4 + k];
+      if (w > best) { best = w; dominant = skinIndex[v * 4 + k]; }
+    }
+    const reference = axis[dominant];
+
+    blended.set(0, 0, 0);
+    for (let k = 0; k < 4; k += 1) {
+      const w = skinWeight[v * 4 + k];
+      if (w <= 0) continue;
+      const a = axis[skinIndex[v * 4 + k]];
+      // Grain is an AXIS, not an arrow: a limb pointing -Z and its neighbour pointing +Z describe
+      // the same fibre direction. Averaging them unflipped cancels to zero and the frame collapses,
+      // so each term is folded into the dominant bone's hemisphere first.
+      const sign = a.dot(reference) < 0 ? -w : w;
+      blended.addScaledVector(a, sign);
+    }
+    const direction = blended.lengthSq() > 1e-10 ? blended.normalize() : reference;
+    out[v * 3] = direction.x;
+    out[v * 3 + 1] = direction.y;
+    out[v * 3 + 2] = direction.z;
+  }
+  return out;
 }
 
 /** One sampled vertex of a costume piece, with the skin binding it had before it was lifted out. */
@@ -372,6 +462,17 @@ export function buildMonsterTreeRig(
     throw new Error('rig: skin binding does not cover the surface vertex count');
   }
 
+  // White-balance the baked albedo to the reference before anything reads it. The decoder leaves
+  // vertex colours in linear space, so the measured per-channel gains apply directly. See
+  // ALBEDO_WHITE_BALANCE for the measurement: the mesh's blue channel is a third of what the
+  // photograph's bark has, and no light rig can put back a channel the albedo does not carry.
+  const [gainR, gainG, gainB] = ALBEDO_WHITE_BALANCE;
+  for (let i = 0; i < part.colour.length; i += 3) {
+    part.colour[i] = Math.min(1, part.colour[i] * gainR);
+    part.colour[i + 1] = Math.min(1, part.colour[i + 1] * gainG);
+    part.colour[i + 2] = Math.min(1, part.colour[i + 2] * gainB);
+  }
+
   const triangleCount = part.index.length / 3;
   const costumeMap = options.fuseCostume
     ? new Uint8Array(triangleCount)
@@ -396,9 +497,10 @@ export function buildMonsterTreeRig(
   const boneByName: Record<string, THREE.Bone> = {};
   for (const bone of bones) boneByName[bone.name] = bone;
 
+  const grain = grainDirections(rig, skeleton, skinIndex, skinWeight, part.position.length / 3);
   const shellGeometry = extractTriangles(
     (f) => costumeMap[f] === 0,
-    part.index, part.position, part.normal, part.colour, skinIndex, skinWeight,
+    part.index, part.position, part.normal, part.colour, skinIndex, skinWeight, grain,
   ).geometry;
 
   const material = new THREE.MeshStandardMaterial({
@@ -435,7 +537,7 @@ export function buildMonsterTreeRig(
       const code = i + 1;
       const { geometry, kept } = extractTriangles(
         (f) => costumeMap[f] === code,
-        part.index, part.position, part.normal, part.colour, null, null,
+        part.index, part.position, part.normal, part.colour, null, null, null,
       );
       const mesh = new THREE.Mesh(geometry, leather);
       mesh.name = spec.id;
