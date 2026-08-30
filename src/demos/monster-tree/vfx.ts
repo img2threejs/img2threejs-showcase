@@ -364,6 +364,17 @@ class Trail implements Tickable {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(segments * 6), 3));
     geometry.setAttribute('aAlpha', new THREE.BufferAttribute(new Float32Array(segments * 2), 1));
+    // -1 and +1 on the two edges of every rib, and 0..1 along the length. With two vertices across
+    // the width these interpolate to clean gradients, which is all the fragment shader needs to
+    // shade the ribbon as a volume instead of a flat band.
+    const side = new Float32Array(segments * 2);
+    const along = new Float32Array(segments * 2);
+    for (let i = 0; i < segments; i += 1) {
+      side[i * 2] = -1; side[i * 2 + 1] = 1;
+      along[i * 2] = i / segments; along[i * 2 + 1] = i / segments;
+    }
+    geometry.setAttribute('aSide', new THREE.BufferAttribute(side, 1));
+    geometry.setAttribute('aAlong', new THREE.BufferAttribute(along, 1));
     const index: number[] = [];
     for (let i = 0; i < segments - 1; i += 1) {
       const a = i * 2;
@@ -377,20 +388,62 @@ class Trail implements Tickable {
     // both fragile and silent when it breaks: the injection simply does not apply and the ribbon
     // draws as one opaque untapered slab across the frame. Twelve lines of GLSL are cheaper.
     const material = new THREE.ShaderMaterial({
-      uniforms: { uColour: { value: colour } },
+      uniforms: {
+        uColour: { value: colour },
+        uEmber: { value: new THREE.Color(PALETTE.eyeCore).convertSRGBToLinear() },
+        uAsh: { value: new THREE.Color(PALETTE.barkDark).convertSRGBToLinear() },
+        uTime: { value: 0 },
+      },
       vertexShader: `
         attribute float aAlpha;
+        attribute float aSide;
+        attribute float aAlong;
         varying float vAlpha;
+        varying float vSide;
+        varying float vAlong;
         void main() {
           vAlpha = aAlpha;
+          vSide = aSide;
+          vAlong = aAlong;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }`,
       fragmentShader: `
-        uniform vec3 uColour;
+        uniform vec3 uColour; uniform vec3 uEmber; uniform vec3 uAsh; uniform float uTime;
         varying float vAlpha;
+        varying float vSide;
+        varying float vAlong;
+        float sHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float sNoise(vec2 p) {
+          vec2 i = floor(p), f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(sHash(i), sHash(i + vec2(1,0)), f.x),
+                     mix(sHash(i + vec2(0,1)), sHash(i + vec2(1,1)), f.x), f.y);
+        }
         void main() {
-          if (vAlpha < 0.004) discard;
-          gl_FragColor = vec4(uColour, vAlpha);
+          float across = clamp(1.0 - abs(vSide), 0.0, 1.0);
+
+          // A HOT CORE inside a soft body. A single flat colour across the width is what makes a
+          // trail read as a strip of tape; a bright thin centre falling away to nothing reads as
+          // something burning through the air.
+          float body = pow(across, 1.1);
+          float core = pow(across, 7.0);
+
+          // Break the edge up. Real embers do not have a clean outline, and a mathematically
+          // perfect ribbon is the single strongest tell that a trail was drawn rather than shed.
+          float grain = sNoise(vec2(vAlong * 34.0, vSide * 3.0 + uTime * 1.7));
+          body *= 0.62 + 0.38 * grain;
+          // Tear holes in the tail, where a real trail is already coming apart.
+          body *= smoothstep(0.0, 0.35, 1.0 - vAlong) + 0.25;
+
+          // Cools along its length: near-white at the fist, the sap green behind it, ash at the
+          // tail. One colour end to end is the other half of why a trail looks like a light streak.
+          vec3 colour = mix(uEmber, uColour, smoothstep(0.0, 0.32, vAlong));
+          colour = mix(colour, uAsh, smoothstep(0.45, 1.0, vAlong));
+          colour += core * 1.4;
+
+          float a = vAlpha * body;
+          if (a < 0.004) discard;
+          gl_FragColor = vec4(colour, a);
         }`,
       transparent: true,
       depthWrite: false,
@@ -414,7 +467,8 @@ class Trail implements Tickable {
     this.filled = 1;
   }
 
-  tick(dt: number, _elapsed: number): boolean {
+  tick(dt: number, elapsed: number): boolean {
+    (this.object.material as THREE.ShaderMaterial).uniforms.uTime.value = elapsed;
     const wasIdle = this.fade < 0.02 && this.strength === 0;
     this.fade += (this.strength - this.fade) * Math.min(1, dt * 9);
     if (this.fade < 0.02 && this.strength === 0) {
@@ -450,10 +504,10 @@ class Trail implements Tickable {
       if (dir.lengthSq() < 1e-12) dir.set(0, 1, 0);
       side.crossVectors(dir.normalize(), this.view);
       if (side.lengthSq() < 1e-12) side.set(1, 0, 0);
-      offset.copy(side.normalize()).multiplyScalar(this.width * (1 - i / n) ** 1.4 * (i < this.filled ? 1 : 0));
+      offset.copy(side.normalize()).multiplyScalar(this.width * (1 - i / n) ** 0.7 * (i < this.filled ? 1 : 0));
       position.setXYZ(i * 2, p.x + offset.x, p.y + offset.y, p.z + offset.z);
       position.setXYZ(i * 2 + 1, p.x - offset.x, p.y - offset.y, p.z - offset.z);
-      const a = i < this.filled ? (1 - i / n) ** 2.4 * this.fade * 0.85 : 0;
+      const a = i < this.filled ? (1 - i / n) ** 1.5 * this.fade * 0.95 : 0;
       alpha.setX(i * 2, a);
       alpha.setX(i * 2 + 1, a);
     }
@@ -1140,7 +1194,19 @@ class ToxinBloom implements Tickable {
  * its base as at its tip; and the shin spurs stand off 2.1x the limb radius, which is what sets
  * how wide a fork leaves its parent.
  */
-const FLARE_RATIO = 0.078 / 0.037;   // measured: trunk base radius over trunk top radius
+/**
+ * How thick a branch is at its base, as a fraction of its own length, and how much of that it
+ * keeps at the tip. Both measured off the character's crown twigs by slicing the crown into
+ * horizontal slabs and sizing each cross-section: 0.0140 radius at the base falling to 0.0038 at
+ * the tips over roughly 0.13 of run.
+ *
+ * These are the numbers that decide whether grown wood reads as a BRANCH or as a post. The first
+ * pass used 0.060 for roots and 0.130 for grove trunks — two to three times too thick — and no
+ * amount of forking or gnarl rescued it, because a shape that stout is a trunk whatever is done to
+ * its silhouette.
+ */
+const BRANCH_THICKNESS = 0.045;
+const BRANCH_TIP_RATIO = 0.27;
 
 /** One tapered cylinder, oriented from `a` to `b`, with grain running along its axis. */
 function taperedSegment(a: THREE.Vector3, b: THREE.Vector3, rA: number, rB: number): THREE.BufferGeometry {
@@ -1202,22 +1268,23 @@ function growBranch(
   const steps = depth === 2 ? 5 : 3;
   let point = origin.clone();
   let heading = direction.clone().normalize();
-  const forkAt = 1 + Math.floor(random() * (steps - 1));
+  const forkAt = Math.max(1, Math.floor(random() * (steps - 1)));
 
   for (let i = 0; i < steps; i += 1) {
     const t0 = i / steps;
     const t1 = (i + 1) / steps;
     // Taper from a flared base to a fine tip, on the trunk's own measured ratio.
-    const r0 = baseRadius * (1 - t0 * (1 - 1 / FLARE_RATIO));
-    const r1 = baseRadius * (1 - t1 * (1 - 1 / FLARE_RATIO));
+    const r0 = baseRadius * (1 - t0 * (1 - BRANCH_TIP_RATIO));
+    const r1 = baseRadius * (1 - t1 * (1 - BRANCH_TIP_RATIO));
 
     // Gnarl: the heading wanders every step, so no segment continues the last one exactly.
-    // Gentle wander. At twice this the segments zigzag and the branch reads as bent wire rather
-    // than as something that grew.
+    // Crooked. Dead wood is not straight, and a thin straight shaft reads as a pole no matter how
+    // it is shaded — which is what the first thin pass produced. The wander is biased sideways
+    // rather than vertically so a branch bends across its own line instead of nodding.
     heading = heading.clone().add(new THREE.Vector3(
-      (random() - 0.5) * 0.28,
-      (random() - 0.5) * 0.16,
-      (random() - 0.5) * 0.28,
+      (random() - 0.5) * 0.52,
+      (random() - 0.5) * 0.22,
+      (random() - 0.5) * 0.52,
     )).normalize();
 
     const next = point.clone().addScaledVector(heading, length / steps);
@@ -1226,10 +1293,10 @@ function growBranch(
     // Hang a real branch off the character wherever this one forks. The generated taper carries
     // the trunk's measured proportions; the stock carries its SHAPE, which no amount of tuning a
     // cylinder was going to produce.
-    if (stock && i >= forkAt) {
+    if (stock && depth <= 1 && i >= steps - 2) {
       const side = new THREE.Vector3(random() - 0.5, random() * 0.5 + 0.25, random() - 0.5).normalize();
       const lean = heading.clone().multiplyScalar(0.55).addScaledVector(side, 0.8).normalize();
-      const size = length * (0.55 + random() * 0.5);
+      const size = length * (0.45 + random() * 0.35);
       const instance = stock.clone();
       instance.applyMatrix4(new THREE.Matrix4().compose(
         next.clone(),
@@ -1243,8 +1310,18 @@ function growBranch(
       // A fork leaves at a wide angle — the measured spur stands 2.1x its limb's radius off the
       // axis, which is a branch leaving at roughly 40 degrees, not a twig hugging the trunk.
       const side = new THREE.Vector3(random() - 0.5, random() * 0.35, random() - 0.5).normalize();
-      const forkDir = heading.clone().multiplyScalar(0.80).addScaledVector(side, 0.52).normalize();
-      growBranch(next, forkDir, length * (0.42 + random() * 0.2), r1 * 0.72, depth - 1, random, out);
+      // A wide fork. At a narrow angle the child hugs its parent and the pair reads as one
+      // slightly thicker shaft; the fork has to be plainly visible to be a fork at all.
+      const forkDir = heading.clone().multiplyScalar(0.72).addScaledVector(side, 0.7).normalize();
+      growBranch(next, forkDir, length * (0.52 + random() * 0.2), r1 * 0.7, depth - 1, random, out, stock);
+      // A second, smaller twig on the same node now and then. Kept to a third: two forks at every
+      // node of a depth-4 recursion is exponential, and the grove came up as a thicket that buried
+      // the character and halved the frame rate.
+      if (random() < 0.30) {
+        const twigSide = new THREE.Vector3(random() - 0.5, random() * 0.4, random() - 0.5).normalize();
+        const twigDir = heading.clone().multiplyScalar(0.5).addScaledVector(twigSide, 0.92).normalize();
+        growBranch(next, twigDir, length * (0.42 + random() * 0.22), r1 * 0.52, depth - 1, random, out, stock);
+      }
     }
     point = next;
   }
@@ -1283,11 +1360,11 @@ class GroveEruption implements Tickable {
     for (let i = 0; i < count; i += 1) {
       const angle = (i / count) * Math.PI * 2 + random() * 0.9;
       const dist = spread * Math.sqrt(random());
-      const height = scale * (0.34 + random() * 0.38);
+      const height = scale * (0.30 + random() * 0.30);
       const lean = new THREE.Vector3((random() - 0.5) * 0.3, 1, (random() - 0.5) * 0.3).normalize();
 
       const parts: THREE.BufferGeometry[] = [];
-      growBranch(new THREE.Vector3(), lean, height, scale * 0.045, 3, random, parts, stock);
+      growBranch(new THREE.Vector3(), lean, height, height * BRANCH_THICKNESS, 3, random, parts, stock);
       const geometry = mergeGeometries(parts);
       for (const g of parts) g.dispose();
       if (!geometry) continue;
@@ -1339,7 +1416,6 @@ class BranchLance implements Tickable {
     origin: THREE.Vector3,
     direction: THREE.Vector3,
     reach: number,
-    thickness: number,
     private readonly duration: number,
     seed: number,
     material: THREE.Material,
@@ -1352,7 +1428,7 @@ class BranchLance implements Tickable {
     const parts: THREE.BufferGeometry[] = [];
     // Depth 1, not 3: a lance is a spike with a couple of barbs, not a bush. More forking makes it
     // read as foliage and the thrust stops being legible as a thrust.
-    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), reach, thickness, 1, random, parts, stock);
+    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), reach, reach * BRANCH_THICKNESS * 1.2, 2, random, parts, stock);
     const geometry = mergeGeometries(parts) ?? new THREE.BufferGeometry();
     for (const g of parts) g.dispose();
 
@@ -1739,7 +1815,6 @@ export class MonsterTreeVfx {
       world,
       direction,
       (options.reach ?? 1.1) * this.scale,
-      this.scale * 0.022,
       options.duration ?? 1.4,
       (Math.random() * 1e9) | 0,
       this.rootMaterial,

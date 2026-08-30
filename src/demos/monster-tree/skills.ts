@@ -158,7 +158,7 @@ export const SKILLS: Skill[] = [
             distance: 3.4,
             links: 6,
             onArrive: (at) => {
-              vfx.grove(at, { count: 9, spread: 0.8 });
+              vfx.grove(at, { count: 7, spread: 0.85 });
               vfx.burstAt(at, { count: 130, speed: 1.9, spread: 0.6 });
             },
           });
@@ -225,7 +225,7 @@ export const SKILLS: Skill[] = [
           // A ring of trees around the figure, at a radius that clears its own footprint.
           const centre = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
           centre.y = 0;
-          vfx.grove(centre, { count: 11, spread: 1.15, duration: 11 });
+          vfx.grove(centre, { count: 8, spread: 1.35, duration: 11 });
           vfx.shockwave(rig.sockets['foot-l'], 1.7, 1.1);
           vfx.toxin(rig.sockets['foot-l'], { radius: 1.4, duration: 11 });
         },
@@ -401,6 +401,7 @@ export class SkillRunner {
   private active: Skill;
   private fired = new Set<number>();
   private previousTime = 0;
+  private emberClock = 0;
   /** The skill returned to when a one-shot finishes. */
   restingId = 'idle';
 
@@ -463,6 +464,20 @@ export class SkillRunner {
       const t = time / clip.duration;
       const strength = t < 0.7 ? 1 : Math.max(0, 1 - (t - 0.7) / 0.3);
       for (const key of this.active.trails) this.vfx.trails[key].strength = strength;
+
+      // Embers shed off the swing while it is fast. A trail alone is a clean surface moving through
+      // clean air, which is most of why one reads as a drawn streak rather than as something
+      // burning: nothing is coming OFF it. A few sparks a frame, thrown backwards along the arc,
+      // give the ribbon a wake.
+      this.emberClock += _dt;
+      if (strength > 0.35 && this.emberClock > 0.045) {
+        this.emberClock = 0;
+        for (const key of this.active.trails) {
+          this.vfx.burst(this.rig.sockets[key], {
+            count: 3, speed: 0.35, duration: 0.75, spread: 1, gravity: -0.9, lightness: 0.72,
+          });
+        }
+      }
     }
 
     if (!this.active.loop && time < this.previousTime) {

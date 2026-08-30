@@ -20,12 +20,15 @@ export type SocketKind = 'effect' | 'grip' | 'attachment';
  * nothing like the gnarled forms the figure is actually made of. This takes the geometry instead
  * of imitating it.
  *
- * The source is the shoulder spur cluster: the triangles bound to a clavicle that stand more than
- * 0.09 from the shoulder axis. Measured, that is 2,526 triangles spanning 0.208 in height — a real
- * branch off the character's torso, forked and irregular, and the closest thing on the body to
- * what a young tree looks like. The crown antlers were the other candidate and lost: at
- * 0.118 x 0.095 x 0.256 they spread sideways far more than they rise, so they read as a crown
- * rather than as a limb.
+ * The source is the CROWN, above y 0.90 — the thin dry twigs over the skull. Measured by slicing
+ * the crown into horizontal slabs and sizing each twig's cross-section, they run 0.0140 radius at
+ * the base down to 0.0038 at the tips: genuinely slender dead wood, tapering to about a quarter of
+ * its base.
+ *
+ * The shoulder spur cluster was tried first and was wrong. It is a real branch off the torso, but
+ * extracting it drags a lump of shoulder mass along with it, and 2,526 triangles of body wall
+ * instanced on a trunk reads as a slab, not a twig. Thinness is what makes wood read as a branch,
+ * and the shoulder had none to give.
  *
  * Normalised to unit height with its base at the origin, so an instance is placed by scale and
  * rotation alone.
@@ -48,15 +51,8 @@ function extractBranchStock(
     }
     return boneNames[bone];
   };
-  // The shoulder axis, from the measured clavicle rest position.
-  const AXIS_X = 0.036;
-  const AXIS_Y = 0.666;
-  const inStock = (v: number): boolean => {
-    if (dominant(v) !== 'L_Clavicle') return false;
-    const dx = position[v * 3] - AXIS_X;
-    const dy = position[v * 3 + 1] - AXIS_Y;
-    return Math.hypot(dx, dy) > 0.09;
-  };
+  const inStock = (v: number): boolean =>
+    dominant(v) === 'Head' && position[v * 3 + 1] > 0.90;
 
   const keep = new Set<number>();
   for (let v = 0; v < position.length / 3; v += 1) if (inStock(v)) keep.add(v);
