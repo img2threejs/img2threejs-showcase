@@ -838,6 +838,47 @@ class RuneCircle implements Tickable {
  * see the far side of is what makes a stomp feel like it moved earth. Each root is a tapered,
  * slightly bent tube on its own delay, so they erupt as a ragged burst rather than a fence.
  */
+/**
+ * A single spike, tapering to an actual point.
+ *
+ * Deliberately NOT `growBranch`. A lance shares nothing with a branch except being made of wood:
+ * it forks nowhere, carries no twigs, and its whole job is to arrive somewhere sharp. Driving it
+ * through the branch recursion gave a thicket on the end of the character's arm — every fork and
+ * every instanced twig working against the one thing a thrust has to read as.
+ *
+ * Three differences do the work. It tapers on a POWER curve to exactly zero rather than to the
+ * measured 0.27 a branch keeps, so the last segment is a true cone and the tip is a point. It
+ * barely wanders, because a spear that meanders is not aimed. And it is thinner than a branch of
+ * the same length — a shaft that reads as sharp has to be slender along its whole run, not only
+ * at the end.
+ */
+function growSpike(
+  length: number,
+  baseRadius: number,
+  random: () => number,
+  out: THREE.BufferGeometry[],
+): void {
+  const steps = 7;
+  let point = new THREE.Vector3();
+  let heading = new THREE.Vector3(0, 1, 0);
+  for (let i = 0; i < steps; i += 1) {
+    const t0 = i / steps;
+    const t1 = (i + 1) / steps;
+    // ^1.7 keeps the shaft close to full thickness for most of its run and then collapses to a
+    // point over the last segment. A linear taper reads as a long cone, which is a carrot.
+    const r0 = baseRadius * (1 - t0) ** 1.7;
+    const r1 = baseRadius * (1 - t1) ** 1.7;
+    heading = heading.clone().add(new THREE.Vector3(
+      (random() - 0.5) * 0.06,
+      0,
+      (random() - 0.5) * 0.06,
+    )).normalize();
+    const next = point.clone().addScaledVector(heading, length / steps);
+    out.push(taperedSegment(point, next, r0, r1));
+    point = next;
+  }
+}
+
 class RootEruption implements Tickable {
   readonly object: THREE.Group;
   private readonly roots: Array<{ mesh: THREE.Mesh; delay: number; full: number }> = [];
@@ -1413,22 +1454,19 @@ class BranchLance implements Tickable {
   private age = 0;
 
   constructor(
-    origin: THREE.Vector3,
+    private readonly source: THREE.Object3D,
     direction: THREE.Vector3,
     reach: number,
     private readonly duration: number,
     seed: number,
     material: THREE.Material,
-    stock: THREE.BufferGeometry | null,
   ) {
     this.object = new THREE.Group();
     this.object.name = 'vfx:branch-lance';
     const random = mulberry32(seed);
 
     const parts: THREE.BufferGeometry[] = [];
-    // Depth 1, not 3: a lance is a spike with a couple of barbs, not a bush. More forking makes it
-    // read as foliage and the thrust stops being legible as a thrust.
-    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), reach, reach * BRANCH_THICKNESS * 1.2, 2, random, parts, stock);
+    growSpike(reach, reach * 0.013, random, parts);
     const geometry = mergeGeometries(parts) ?? new THREE.BufferGeometry();
     for (const g of parts) g.dispose();
 
@@ -1436,14 +1474,32 @@ class BranchLance implements Tickable {
     this.shaft.castShadow = true;
     this.shaft.scale.set(1, 0.001, 1);
     this.object.add(this.shaft);
-    this.object.position.copy(origin);
+    // Orientation is fixed at the cue; only the position rides the fist. See `follow`.
     this.object.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+    this.follow();
+  }
+
+  /**
+   * Ride the fist, every frame — POSITION only.
+   *
+   * Two failures bracket this. Placed once and left in world space, the lance is abandoned the
+   * moment the arm keeps moving, and this move doubles the arm's length, so the shaft ended up
+   * hanging in mid-air with a visible gap to the hand holding it. Made to track the forearm's
+   * heading as well, it then followed the arm down through the follow-through and finished
+   * pointing at the floor — the opposite of a thrust.
+   *
+   * A thrust goes where it was aimed. The direction is captured once, at the instant of the
+   * strike; the position keeps up with the fist so the two stay joined.
+   */
+  private follow(): void {
+    this.object.position.setFromMatrixPosition(this.source.matrixWorld);
   }
 
   tick(dt: number): boolean {
     this.age += dt;
     const t = this.age / this.duration;
     if (t >= 1) return false;
+    this.follow();
     // Out hard, hold briefly, snap back — the withdrawal is faster than the strike.
     const out = t < 0.22 ? 1 - (1 - t / 0.22) ** 4 : (t < 0.62 ? 1 : 1 - (t - 0.62) / 0.38);
     this.shaft.scale.y = Math.max(0.001, out);
@@ -1602,6 +1658,16 @@ export class MonsterTreeVfx {
    */
   private readonly rootMaterial: THREE.MeshStandardMaterial;
   private readonly rootBark: BarkSurface;
+  /**
+   * The lance's own material, brighter than grown wood.
+   *
+   * A root or a grove tree is scenery and can sit in shadow; the lance is the move. Measured on
+   * the render, the spike is geometrically correct at 2.56 long and 0.15 across — and completely
+   * invisible, because it is dark wood in front of a dark stage while the swing trail beside it is
+   * additive and blazing. Sap running hot along the shaft is what makes a thrust legible.
+   */
+  private readonly lanceMaterial: THREE.MeshStandardMaterial;
+  private readonly lanceBark: BarkSurface;
   /** A branch taken off the character's shoulder; every grown thing instances it. */
   private readonly stock: THREE.BufferGeometry | null;
   /**
@@ -1654,6 +1720,20 @@ export class MonsterTreeVfx {
     });
     this.rootBark = patchBarkSurface(this.rootMaterial);
 
+    this.lanceMaterial = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      color: new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(),
+      roughness: 0.75,
+      metalness: 0,
+      // Lit, but nowhere near clipping. At 1.9 the shaft blew out to flat pale yellow and lost
+      // every bit of the taper that makes it read as sharp; even at 0.6 the emissive swamped the
+      // shading and the spike came back as a uniform green bar. Low enough that the bark shader's
+      // own grain and sap still describe the surface.
+      emissive: lifeColour(0.20, 0.95),
+      emissiveIntensity: 0.30,
+    });
+    this.lanceBark = patchBarkSurface(this.lanceMaterial);
+
     this.spores = new SporeField(bounds, 460, this.dot);
     this.group.add(this.spores.object);
 
@@ -1697,6 +1777,7 @@ export class MonsterTreeVfx {
     this.wisps.gather = value;
     this.veins?.setCharge(value);
     this.rootBark.setCharge(value);
+    this.lanceBark.setCharge(value);
   }
 
   get charge(): number {
@@ -1808,17 +1889,15 @@ export class MonsterTreeVfx {
     this.delay(links * 0.075, () => options.onArrive?.(target));
   }
 
-  /** A branch lance driven out of a socket along a direction, then withdrawn. */
+  /** A branch lance driven out of a socket along the limb, riding it for its whole life. */
   lance(at: THREE.Object3D, direction: THREE.Vector3, options: { reach?: number; duration?: number } = {}): void {
-    const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
     const effect = new BranchLance(
-      world,
+      at,
       direction,
       (options.reach ?? 1.1) * this.scale,
       options.duration ?? 1.4,
       (Math.random() * 1e9) | 0,
-      this.rootMaterial,
-      this.stock,
+      this.lanceMaterial,
     );
     effect.object.traverse((o) => { o.userData.isHighlight = true; });
     this.group.add(effect.object);
@@ -1952,6 +2031,7 @@ export class MonsterTreeVfx {
     }
     this.veins?.setTime(this.elapsed);
     this.rootBark.setTime(this.elapsed);
+    this.lanceBark.setTime(this.elapsed);
     this.spores.tick(dt, this.elapsed);
     this.wisps.tick(dt, this.elapsed);
     this.mist.tick(dt, this.elapsed);

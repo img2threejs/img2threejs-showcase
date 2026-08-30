@@ -375,6 +375,32 @@ depth-4 recursion the growth is exponential, and the grove came up as a thicket 
 character and halved the frame rate to 30. A second twig now appears at one node in three, grove
 trees recurse to depth 3, and the ring frames the figure instead of swallowing it. 84 fps.
 
+### The lance is not a branch
+
+Impaling Bough drove its spike through the same `growBranch` recursion as everything else, and got
+a thicket on the end of the character's arm — every fork and every instanced twig working against
+the one thing a thrust has to read as. A lance shares nothing with a branch except being wood.
+
+`growSpike` is separate and does three things differently. It tapers on a **power curve to exactly
+zero** rather than to the 0.27 a branch keeps, so the last segment is a true cone and the tip is a
+point. It barely wanders, because a spear that meanders is not aimed. And it is far thinner —
+radius 0.013 of its length against a branch's 0.045.
+
+Getting it on screen took four corrections, each of which produced a different wrong object:
+
+| symptom | cause |
+|---|---|
+| invisible | dark wood on a dark stage next to an additive trail; it needed its own lit material |
+| blown-out pale plank | emissive at 1.9 clipped and erased the taper — now 0.30 |
+| a bar lying across the frame | reach 1.35 made it longer than the character is tall — now 0.8 |
+| floating, detached from the hand | placed once at the cue while the arm kept moving, and this move *doubles* the arm's length |
+
+The last one has a matching failure on the other side: made to track the forearm's heading as well
+as its position, the lance then followed the arm down through the follow-through and finished
+pointing at the floor. A thrust goes where it was **aimed** — so the direction is captured once, at
+the strike, from the character's facing, while the position keeps up with the fist. Its life is
+0.85 s, short enough to be gone before the arm retracts.
+
 ### The swing trail
 
 A flat band of one colour with hard edges is a strip of tape moving through the air, which is

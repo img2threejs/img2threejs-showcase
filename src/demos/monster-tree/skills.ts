@@ -158,7 +158,10 @@ export const SKILLS: Skill[] = [
             distance: 3.4,
             links: 6,
             onArrive: (at) => {
-              vfx.grove(at, { count: 7, spread: 0.85 });
+              // Dense: this is the point of the move, a stand of trees tearing up where the
+              // fracture arrives. Packed tighter than it is wide so it reads as a thicket rather
+              // than a scattering.
+              vfx.grove(at, { count: 18, spread: 0.7 });
               vfx.burstAt(at, { count: 130, speed: 1.9, spread: 0.6 });
             },
           });
@@ -186,8 +189,15 @@ export const SKILLS: Skill[] = [
       {
         at: 0.46,
         run: (rig, vfx) => {
-          const heading = aim(rig, 'L_Forearm', 'grip-l');
-          vfx.lance(rig.sockets['grip-l'], heading, { reach: 1.35, duration: 1.5 });
+          // 0.8 of figure height. At 1.35 the shaft came out longer than the character is tall, and
+          // a spear that outreaches its wielder by half reads as a prop lying across the frame.
+          // It rides the grip socket and aims down the forearm, so it stays in the fist.
+          // 0.85s, not 1.5. The lance rides the fist, and box_01 spends its back half retracting the
+          // arm — a shaft that outlives the thrust gets carried down and ends up pointing at the
+          // floor, which is the opposite of what it was for.
+          // Aimed along the character's facing rather than the forearm: at the strike frame the
+          // forearm is already angling down, and a spear should go where the figure is pointed.
+          vfx.lance(rig.sockets['grip-l'], facing(rig), { reach: 0.8, duration: 0.85 });
           vfx.burst(rig.sockets['grip-l'], { count: 70, speed: 1.7, spread: 0.5 });
         },
       },
