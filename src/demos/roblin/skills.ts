@@ -180,7 +180,8 @@ export function createSkills(ctx: SkillContext): Skill[] {
     vfx.flare(at, direction, STEEL, h * 0.3 * scale, h * 0.07 * scale, 0.08);
     vfx.flash(at, STEEL, 60 * scale * scale, 0.16, h * (2.5 + 1.5 * scale));
 
-    // The spark fan: fast, thin, heavy, and thrown back along the way the scrap came in.
+    // The spark fan: STREAKS, not dots. A spark leaving at ten units a second is a line pointing
+    // where it is going, and drawing it as a circle is what made every impact read as confetti.
     vfx.burst(at, {
       count: Math.round(80 * scale),
       colour: STEEL,
@@ -189,26 +190,36 @@ export function createSkills(ctx: SkillContext): Skill[] {
       spread: 0.85,
       speed: [5, 13],
       life: [0.14, 0.4],
-      size: [h * 0.003, h * 0.009],
+      size: [h * 0.005, h * 0.013],
       gravity: 11,
       drag: 0.7,
       flicker: 0.4,
+      shape: 'streak',
+      stretch: 0.28,
     });
-    // The dust it knocks loose: slow, dull, in the leather colours, and it lingers after the
-    // sparks have gone — which is the contrast that makes a strike feel like it hit something.
+    // The dust it knocks loose: alpha-blended MATTER, so it has weight and hides what is behind it.
+    // As additive glow this was a luminous cloud, which is the one thing dust is not.
     vfx.burst(at, {
-      count: Math.round(55 * scale),
-      colour: EMBER.clone().multiplyScalar(0.5),
-      colourEnd: EMBER_ASH,
+      count: Math.round(30 * scale),
+      // Alpha-blended smoke can only be seen against what is behind it, and behind it is BLACK.
+      // Darkened dust is therefore invisible by construction — the first version of this layer
+      // could not be seen at all. Real dust is visible because it CATCHES light, so it is mixed up
+      // toward a warm grey rather than down toward the shadow colour.
+      colour: EMBER.clone().lerp(new THREE.Color(0xffffff), 0.35).multiplyScalar(0.85),
+      colourEnd: EMBER_ASH.clone().lerp(new THREE.Color(0xffffff), 0.2).multiplyScalar(0.5),
       direction: direction.clone().negate(),
       spread: Math.PI * 0.6,
       speed: [0.4 * scale, 2.0 * scale],
-      life: [0.5, 1.3],
-      size: [h * 0.014, h * 0.05],
-      gravity: 1.1,
+      life: [0.6, 1.6],
+      size: [h * 0.09, h * 0.4],
+      gravity: 0.5,
       drag: 2.4,
       swirl: 0.8,
-      jitter: h * 0.04,
+      jitter: h * 0.05,
+      shape: 'smoke',
+      spin: 1.4,
+      layer: 'matter',
+      opacity: 0.19,
     });
 
     if (grounded > 0.05) {
@@ -246,25 +257,32 @@ export function createSkills(ctx: SkillContext): Skill[] {
       spread: Math.PI * 0.55,
       speed: [1.2 * scale, 4.4 * scale],
       life: [0.3, 0.7],
-      size: [h * 0.012, h * 0.05],
+      size: [h * 0.016, h * 0.06],
       gravity: 8.5,
       drag: 1.1,
       jitter: h * 0.02,
+      // Wet gobs stretch as they are flung and round off as they slow, which is what the stretch
+      // term does for free: it scales with the particle's own speed.
+      shape: 'streak',
+      stretch: 0.16,
     });
-    // Fine mist that hangs where the glob burst.
+    // Mist that HANGS. Alpha-blended so it reads as vapour occupying space rather than as a glow.
     vfx.burst(at, {
-      count: Math.round(55 * scale),
-      colour: TOXIC,
-      colourEnd: VENOM,
+      count: Math.round(18 * scale),
+      colour: TOXIC.clone().multiplyScalar(0.55),
+      colourEnd: VENOM.clone().multiplyScalar(0.45),
       spread: Math.PI,
-      speed: [0.25 * scale, 1.4 * scale],
-      life: [0.8, 1.9],
-      size: [h * 0.008, h * 0.03],
-      gravity: -0.25,
+      speed: [0.25 * scale, 1.2 * scale],
+      life: [1.0, 2.4],
+      size: [h * 0.1, h * 0.44],
+      gravity: -0.3,
       drag: 1.9,
       swirl: 1.1,
-      jitter: h * 0.06,
-      flicker: 0.35,
+      jitter: h * 0.07,
+      shape: 'smoke',
+      spin: 0.9,
+      layer: 'matter',
+      opacity: 0.17,
     });
 
     // The puddle. Laid under an airburst too — what bursts in the air still rains down.
@@ -383,10 +401,12 @@ export function createSkills(ctx: SkillContext): Skill[] {
       spread: 0.35,
       speed: [4, 9],
       life: [0.1, 0.26],
-      size: [h * 0.003, h * 0.008],
+      size: [h * 0.005, h * 0.012],
       gravity: 9,
       drag: 1.0,
       flicker: 0.5,
+      shape: 'streak',
+      stretch: 0.25,
     });
     vfx.flash(from, EMBER, 16, 0.14, h * 1.8);
     lights.surge(EMBER, 0.45);
@@ -686,18 +706,22 @@ export function footstepEffect(
   // Dust first, in the leather colours: it is displaced ground, not magic, so it must not compete
   // with the casts for the toxic hue.
   vfx.burst(ground, {
-    count: Math.round(40 * strength),
-    colour: new THREE.Color(VFX.ember.value).multiplyScalar(0.55),
-    colourEnd: new THREE.Color(VFX.bounce.value),
+    count: Math.round(11 * strength),
+    colour: new THREE.Color(VFX.ember.value).lerp(new THREE.Color(0xffffff), 0.14).multiplyScalar(0.5),
+    colourEnd: new THREE.Color(VFX.bounce.value).multiplyScalar(0.5),
     direction: spray,
     spread: 0.95,
     speed: [0.35 * strength, 1.9 * strength],
-    life: [0.35, 0.9],
-    size: [figureHeight * 0.016, figureHeight * 0.055],
-    gravity: 0.55,
+    life: [0.5, 1.2],
+    size: [figureHeight * 0.1, figureHeight * 0.38],
+    gravity: 0.35,
     drag: 2.6,
-    jitter: figureHeight * 0.025,
+    jitter: figureHeight * 0.03,
     inherit,
+    shape: 'smoke',
+    spin: 1.1,
+    layer: 'matter',
+    opacity: 0.18,
   });
   // Then a few bright sparks in the character's own hue, so a footfall still belongs to Roblin.
   vfx.burst(ground, {
@@ -708,10 +732,12 @@ export function footstepEffect(
     spread: 0.6,
     speed: [0.7 * strength, 3.0 * strength],
     life: [0.25, 0.6],
-    size: [figureHeight * 0.007, figureHeight * 0.022],
+    size: [figureHeight * 0.009, figureHeight * 0.026],
     gravity: 2.2,
     drag: 1.8,
     inherit,
+    shape: 'streak',
+    stretch: 0.18,
   });
   // NO glowing ring. Roblin is barefoot and this is a bare foot hitting dirt — the ring was a
   // magic-impact signature borrowed from the casts, and it made every step look like a spell. What

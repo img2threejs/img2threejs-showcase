@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ParticleField } from './particles';
+import { ParticleField, type ParticleShape } from './particles';
 import { BoltPool, type BoltOptions } from './projectile';
 import { Shockwave } from './shockwave';
 import { GroundGlow } from './groundGlow';
@@ -39,6 +39,11 @@ export interface BurstOptions {
   inherit?: THREE.Vector3;
   /** 0 steady, 1 guttering ember. */
   flicker?: number;
+  shape?: ParticleShape;
+  stretch?: number;
+  spin?: number;
+  layer?: 'light' | 'matter';
+  opacity?: number;
 }
 
 interface Flash {
@@ -80,7 +85,7 @@ export class VfxSystem {
       peak: 0,
     }));
 
-    this.root.add(this.particles.points, this.bolts.group, this.glow.mesh);
+    this.root.add(this.particles.object, this.bolts.group, this.glow.mesh);
     for (const wave of this.waves) this.root.add(wave.mesh);
     for (const flare of this.flares) this.root.add(flare.mesh);
     for (const scorch of this.scorches) this.root.add(scorch.mesh);
@@ -109,6 +114,11 @@ export class VfxSystem {
       jitter: options.jitter ?? 0,
       inherit: options.inherit,
       flicker: options.flicker,
+      shape: options.shape,
+      stretch: options.stretch,
+      spin: options.spin,
+      layer: options.layer,
+      opacity: options.opacity,
     });
   }
 
@@ -177,9 +187,12 @@ export class VfxSystem {
     this.glow.update(this.elapsed);
   }
 
-  setViewportHeight(pixels: number): void {
-    this.particles.setViewportHeight(pixels);
-  }
+  /**
+   * No longer needed by the particle field — instanced quads are sized in world units and scale
+   * with perspective on their own, where point sprites had to be told the drawing buffer height.
+   * Kept only so the swarm, which is still point-sprite based, can be driven from one place.
+   */
+  setViewportHeight(_pixels: number): void {}
 
   stats(): { particles: number; bolts: number } {
     return { particles: this.particles.liveCount, bolts: this.bolts.flying };

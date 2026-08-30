@@ -386,6 +386,45 @@ Thresholds are in figure heights per second, and they were set against measured 
 | box_02 | 6.09 | 4.42 | 1.00 |
 | front_kick_01 | 6.76 | 7.48 | 0.99 |
 
+### The particle system, rewritten
+
+Three rounds of colour and parameter work did not fix how the effects read, because the problem was
+not the parameters. **Everything in the showcase was drawn as the same shape.** `THREE.Points` gives
+you one primitive — an axis-aligned square sprite — so a spark, a spore, a gob of bile and a puff of
+dirt were all the same soft circle at different sizes and tints. No amount of tuning makes that look
+like anything but bokeh.
+
+`vfx/particles.ts` is now instanced quads, billboarded in the vertex shader. Three things a point
+sprite cannot do, and all three are what separate an effect from confetti:
+
+* **Stretch.** A spark leaving an impact at thirteen units per second is a LINE pointing where it is
+  going. The quad is aligned to the screen-space projection of its own velocity and elongated along
+  it, so speed becomes shape for free — a fast spark is a streak and the same particle rounds off as
+  it slows, with no second system.
+* **Rotation.** Point sprites cannot spin, so identical un-rotated puffs read as a repeated stamp.
+* **Mass.** Smoke and dust need ALPHA blending to occlude what is behind them. Additive can only
+  brighten, which is why every impact so far had light but no weight. There are now two meshes over
+  one CPU simulation — an additive `light` layer and an alpha-blended `matter` layer — two draw
+  calls for the whole showcase.
+
+Sizes were converted rather than re-tuned by eye, so every previously-reviewed effect kept its
+proportions. A point sprite was drawn at `aSize * uScale / depth` pixels with `uScale = 0.32 * H`;
+its world width is that times the world-per-pixel at its depth, and both the depth and the viewport
+height cancel out to `aSize * 0.64 * tan(fov/2)`.
+
+Three defects surfaced while building it, none of them visible in the code:
+
+1. **Alpha-blended smoke on a black backdrop is invisible by construction.** The first dust layer
+   was darkened toward the shadow colour, which is exactly the wrong direction: real dust is visible
+   because it CATCHES light. It had to be mixed up toward a warm grey — but only a sixth of the way,
+   because at a third it came out pale pink and read as cotton wool.
+2. **The stretch factor was three times too small.** At 0.09 a spark elongated to twice its width,
+   which is not a line. 0.28 is.
+3. **The smoke puffs read as popcorn rings.** `smoothstep(0, 0.85, falloff)` holds full opacity
+   across the inner 40% of the quad and then drops, giving every puff a defined edge — and a cloud
+   whose parts have edges is a pile of discs, not a volume. A plain `pow(falloff, 1.5)` with more
+   puffs at lower opacity merges into one mass.
+
 ### Effects that belong to this character
 
 The first two passes gave Roblin **wizard effects**: polished emissive spheres, then fire — expanding
