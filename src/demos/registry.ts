@@ -214,12 +214,14 @@ const authored: DemoEntry[] = [
     title: 'Monster Tree \u2014 Rigged Treant, Separated Costume',
     subjectClass: 'character',
     blurb:
-      'A treant rebuilt from one photograph as code-only geometry: 41 real rig bones, 16 clips measured '
-      + 'rather than trusted, and a leather costume lifted out of the skinned shell into four rigid meshes. '
-      + 'Left skinned, the bracers shear by up to 29% of a vertex pair\u2019s rest length during a punch; as '
-      + 'rigid pieces driven by a per-frame least-squares fit the shear is exactly 0. Every effect anchors to '
-      + 'a socket measured off the mesh \u2014 the eyes are the green-dominant vertex cluster on the head \u2014 '
-      + 'and every emissive channel is built from the 82.5\u00b0 hue sampled off the character\u2019s own iris.',
+      'A treant rebuilt from one photograph as code-only geometry, then lit from the inside. Sap veins '
+      + 'glow up through the bark from a noise field sampled in bind-pose space, so the light stays in the '
+      + 'wood instead of swimming across it when a clip runs. Spirit wisps hold station around the figure, '
+      + 'rune circles are inscribed underfoot, and roots tear up out of the ground on impact. The leather '
+      + 'costume is lifted out of the skinned shell into four rigid meshes \u2014 left skinned, the bracers '
+      + 'shear by up to 29% of a vertex pair\u2019s rest length during a punch; as rigid pieces the shear is '
+      + 'exactly 0. Every effect anchors to a socket measured off the mesh, and every emissive channel is '
+      + 'built from the 82.5\u00b0 hue sampled off the character\u2019s own iris.',
     referenceImage: `${BASE}references/monster-tree/front.jpg`,
     sourcePath: 'src/demos/monster-tree/createMonsterTreeModel.ts',
     sourceUrl: `${REPO}/src/demos/monster-tree/createMonsterTreeModel.ts`,
@@ -231,7 +233,7 @@ const authored: DemoEntry[] = [
     author: 'Hoài Nhớ',
     authorUrl: 'https://github.com/hoainho',
     status: 'final',
-    updatedAt: '2026-08-29',
+    updatedAt: '2026-08-30',
     cameraPosition: [5.75, 1.55, 3.15],
     cameraTarget: [0, 0.95, 0],
     cameraFov: 30,
