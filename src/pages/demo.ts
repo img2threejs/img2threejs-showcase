@@ -114,15 +114,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
                 <output class="demo-animation-status" id="demo-outfit-status"></output>
               </div>
               <p class="demo-control-note" id="demo-outfit-note" hidden></p>
-              <div class="demo-toggle-list" id="demo-outfit-list"></div>
-            </section>
-            <section class="demo-animations" id="demo-vfx" hidden aria-labelledby="demo-vfx-title">
-              <div class="demo-animations-head">
-                <span class="parts-title" id="demo-vfx-title">Effects</span>
-                <button class="btn demo-vfx-reset" id="demo-vfx-reset" type="button">Reset</button>
-              </div>
-              <p class="demo-control-note" id="demo-vfx-note" hidden></p>
-              <div class="demo-param-list" id="demo-vfx-list"></div>
+              <div class="demo-outfit-list" id="demo-outfit-list"></div>
             </section>
             <section class="demo-parts" id="demo-parts" hidden>
               <div class="parts-head">
@@ -316,157 +308,133 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   }
 
   /**
-   * Sub-assembly visibility, for a model built from more than one mesh.
+   * Per-piece outfit controls, for a model built from more than one mesh.
    *
    * Separate from the parts inspector: that one explains what the model is MADE of, this one changes
-   * what is SHOWN. A rigged character whose outfit is its own skinned mesh can have a piece hidden
-   * without disturbing the body under it, and being able to do that is how a reader confirms the
-   * split is real rather than taking the blurb's word for it.
+   * how it LOOKS. A rigged character whose outfit is its own skinned mesh can have a piece hidden or
+   * redyed without disturbing the body under it, and being able to do that is how a reader confirms
+   * the split is real rather than taking the blurb's word for it.
+   *
+   * `As measured` is always the first swatch, so the colour actually read off the reference is one
+   * click away and a visitor can tell the reconstruction from their own recolour.
    */
-  type ToggleGroups = {
+  type OutfitRuntime = {
     title?: string;
     note?: string;
+    swatches: ReadonlyArray<{ id: string; label: string; hex: string | null }>;
     items: ReadonlyArray<{ id: string; label: string; note?: string; swatch?: string }>;
+    colorOf: (id: string) => string | null;
+    setColor: (id: string, hex: string | null) => void;
     isVisible: (id: string) => boolean;
-    set: (id: string, visible: boolean) => void;
+    setVisible: (id: string, visible: boolean) => void;
   };
-  const toggles = (model.userData.sculptRuntime as { toggleGroups?: ToggleGroups } | undefined)
-    ?.toggleGroups;
-  const toggleSection = mount.querySelector<HTMLElement>('#demo-outfit');
-  const toggleList = mount.querySelector<HTMLElement>('#demo-outfit-list');
-  const toggleCleanups: Array<() => void> = [];
-  if (toggles && toggleSection && toggleList && !capture) {
-    toggleSection.hidden = false;
+  const outfit = (model.userData.sculptRuntime as { outfit?: OutfitRuntime } | undefined)?.outfit;
+  const outfitSection = mount.querySelector<HTMLElement>('#demo-outfit');
+  const outfitList = mount.querySelector<HTMLElement>('#demo-outfit-list');
+  const outfitCleanups: Array<() => void> = [];
+  if (outfit && outfitSection && outfitList && !capture) {
+    outfitSection.hidden = false;
     const heading = mount.querySelector<HTMLElement>('#demo-outfit-title');
-    if (heading && toggles.title) heading.textContent = toggles.title;
+    if (heading && outfit.title) heading.textContent = outfit.title;
     const note = mount.querySelector<HTMLElement>('#demo-outfit-note');
-    if (note && toggles.note) {
-      note.textContent = toggles.note;
+    if (note && outfit.note) {
+      note.textContent = outfit.note;
       note.hidden = false;
     }
     const status = mount.querySelector<HTMLOutputElement>('#demo-outfit-status');
     const syncStatus = (): void => {
       if (!status) return;
-      const shown = toggles.items.filter((item) => toggles.isVisible(item.id)).length;
-      status.value = `${shown}/${toggles.items.length} shown`;
+      const shown = outfit.items.filter((item) => outfit.isVisible(item.id)).length;
+      const dyed = outfit.items.filter((item) => outfit.colorOf(item.id) !== null).length;
+      status.value = dyed ? `${shown}/${outfit.items.length} shown · ${dyed} dyed` : `${shown}/${outfit.items.length} shown`;
     };
-    for (const item of toggles.items) {
-      const row = document.createElement('label');
-      row.className = 'demo-toggle';
-      const box = document.createElement('input');
-      box.type = 'checkbox';
-      box.checked = toggles.isVisible(item.id);
-      const onChange = (): void => {
-        toggles.set(item.id, box.checked);
+
+    for (const item of outfit.items) {
+      const row = document.createElement('div');
+      row.className = 'demo-outfit-row';
+
+      const head = document.createElement('div');
+      head.className = 'demo-outfit-head';
+
+      const eye = document.createElement('button');
+      eye.type = 'button';
+      eye.className = 'demo-outfit-eye';
+      const syncEye = (): void => {
+        const visible = outfit.isVisible(item.id);
+        eye.textContent = visible ? '\u25c9' : '\u25cb';
+        eye.setAttribute('aria-pressed', String(visible));
+        eye.title = `${visible ? 'Hide' : 'Show'} ${item.label}`;
+        row.classList.toggle('is-hidden', !visible);
+      };
+      const onEye = (): void => {
+        outfit.setVisible(item.id, !outfit.isVisible(item.id));
+        syncEye();
         syncStatus();
       };
-      box.addEventListener('change', onChange);
-      toggleCleanups.push(() => box.removeEventListener('change', onChange));
-      row.appendChild(box);
-      if (item.swatch) {
-        const swatch = document.createElement('i');
-        swatch.className = 'demo-toggle-swatch';
-        swatch.style.background = item.swatch;
-        row.appendChild(swatch);
-      }
-      const text = document.createElement('span');
-      text.className = 'demo-toggle-label';
-      text.textContent = item.label;
+      eye.addEventListener('click', onEye);
+      outfitCleanups.push(() => eye.removeEventListener('click', onEye));
+      syncEye();
+
+      const label = document.createElement('span');
+      label.className = 'demo-outfit-label';
+      label.textContent = item.label;
       if (item.note) {
         const small = document.createElement('small');
         small.textContent = item.note;
-        text.appendChild(small);
+        label.appendChild(small);
       }
-      row.appendChild(text);
-      toggleList.appendChild(row);
+      head.append(eye, label);
+
+      const swatches = document.createElement('div');
+      swatches.className = 'demo-outfit-swatches';
+      const buttons: Array<{ hex: string | null; el: HTMLElement }> = [];
+      const syncSelection = (): void => {
+        const current = outfit.colorOf(item.id);
+        for (const b of buttons) b.el.classList.toggle('is-active', b.hex === current);
+        custom.classList.toggle('is-active', current !== null && !outfit.swatches.some((s) => s.hex === current));
+        syncStatus();
+      };
+
+      for (const swatch of outfit.swatches) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'demo-swatch';
+        // "As measured" shows the colour this piece actually is, not a neutral chip.
+        button.style.background = swatch.hex ?? item.swatch ?? '#888';
+        if (swatch.hex === null) button.classList.add('demo-swatch-measured');
+        button.title = swatch.label;
+        button.setAttribute('aria-label', `${item.label}: ${swatch.label}`);
+        const onPick = (): void => {
+          outfit.setColor(item.id, swatch.hex);
+          syncSelection();
+        };
+        button.addEventListener('click', onPick);
+        outfitCleanups.push(() => button.removeEventListener('click', onPick));
+        swatches.appendChild(button);
+        buttons.push({ hex: swatch.hex, el: button });
+      }
+
+      // A free picker beside the presets, so "to taste" is not limited to the nine offered.
+      const custom = document.createElement('label');
+      custom.className = 'demo-swatch demo-swatch-custom';
+      custom.title = `${item.label}: custom colour`;
+      const picker = document.createElement('input');
+      picker.type = 'color';
+      picker.value = outfit.colorOf(item.id) ?? item.swatch ?? '#ffffff';
+      const onCustom = (): void => {
+        outfit.setColor(item.id, picker.value);
+        syncSelection();
+      };
+      picker.addEventListener('input', onCustom);
+      outfitCleanups.push(() => picker.removeEventListener('input', onCustom));
+      custom.appendChild(picker);
+      swatches.appendChild(custom);
+
+      row.append(head, swatches);
+      outfitList.appendChild(row);
+      syncSelection();
     }
     syncStatus();
-  }
-
-  /**
-   * Numeric parameters a demo chooses to expose — effect strengths, mix amounts.
-   *
-   * A slider is worth more than a fixed value here: taking an effect to zero and watching what stops
-   * happening is the fastest way to see which part of a look each system was actually responsible
-   * for. Values are applied live; `Reset` returns every one to the authored default.
-   */
-  type DemoParameters = {
-    title?: string;
-    note?: string;
-    items: ReadonlyArray<{
-      id: string; label: string; min: number; max: number; step: number; value: number; note?: string;
-    }>;
-    set: (id: string, value: number) => void;
-  };
-  const parameters = (model.userData.sculptRuntime as { parameters?: DemoParameters } | undefined)
-    ?.parameters;
-  const paramSection = mount.querySelector<HTMLElement>('#demo-vfx');
-  const paramList = mount.querySelector<HTMLElement>('#demo-vfx-list');
-  const paramResetBtn = mount.querySelector<HTMLButtonElement>('#demo-vfx-reset');
-  const paramCleanups: Array<() => void> = [];
-  if (parameters && paramSection && paramList && !capture) {
-    paramSection.hidden = false;
-    const heading = mount.querySelector<HTMLElement>('#demo-vfx-title');
-    if (heading && parameters.title) heading.textContent = parameters.title;
-    const note = mount.querySelector<HTMLElement>('#demo-vfx-note');
-    if (note && parameters.note) {
-      note.textContent = parameters.note;
-      note.hidden = false;
-    }
-    const resets: Array<() => void> = [];
-    for (const item of parameters.items) {
-      const row = document.createElement('div');
-      row.className = 'demo-param';
-
-      const label = document.createElement('label');
-      label.className = 'demo-param-head';
-      const name = document.createElement('span');
-      name.textContent = item.label;
-      const readout = document.createElement('output');
-      readout.className = 'demo-param-value';
-      readout.value = item.value.toFixed(2);
-      label.append(name, readout);
-
-      const slider = document.createElement('input');
-      slider.type = 'range';
-      slider.className = 'demo-param-slider';
-      slider.min = String(item.min);
-      slider.max = String(item.max);
-      slider.step = String(item.step);
-      slider.value = String(item.value);
-      slider.setAttribute('aria-label', item.label);
-      if (item.note) slider.title = item.note;
-      label.htmlFor = `demo-param-${item.id}`;
-      slider.id = `demo-param-${item.id}`;
-
-      const onInput = (): void => {
-        const value = Number(slider.value);
-        readout.value = value.toFixed(2);
-        parameters.set(item.id, value);
-      };
-      slider.addEventListener('input', onInput);
-      paramCleanups.push(() => slider.removeEventListener('input', onInput));
-
-      resets.push(() => {
-        slider.value = String(item.value);
-        readout.value = item.value.toFixed(2);
-        parameters.set(item.id, item.value);
-      });
-
-      row.append(label, slider);
-      if (item.note) {
-        const hint = document.createElement('small');
-        hint.className = 'demo-param-note';
-        hint.textContent = item.note;
-        row.appendChild(hint);
-      }
-      paramList.appendChild(row);
-    }
-    if (paramResetBtn) {
-      const onReset = (): void => { for (const reset of resets) reset(); };
-      paramResetBtn.addEventListener('click', onReset);
-      paramCleanups.push(() => paramResetBtn.removeEventListener('click', onReset));
-    }
   }
 
   viewer.setExplodeRoot(model);
@@ -867,8 +835,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     animationController?.stop();
     unsubscribeAnimation?.();
     for (const cleanup of animationButtonCleanups) cleanup();
-    for (const cleanup of toggleCleanups) cleanup();
-    for (const cleanup of paramCleanups) cleanup();
+    for (const cleanup of outfitCleanups) cleanup();
     viewer.dispose();
   };
 }

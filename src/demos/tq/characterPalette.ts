@@ -124,3 +124,26 @@ export const SIGNATURE = {
   /** Indigo plate and cloth — the cool counterweight, and the fill light. */
   indigo: new THREE.Color(0x4468ff),
 } as const;
+
+/**
+ * The colours offered for recolouring a piece of the outfit.
+ *
+ * `null` is first and means "as measured" — the colour actually read off the reference. It is kept
+ * at the head of the list so the measured original is never more than one click away, and so a
+ * visitor can always tell the reconstruction apart from their own recolour.
+ *
+ * The rest are dye colours a lacquered-plate armour of this period plausibly took, plus the two
+ * neutrals that read well against gold. They are suggestions, not measurements, and the panel also
+ * offers a free colour picker.
+ */
+export const OUTFIT_SWATCHES: readonly { id: string; label: string; hex: string | null }[] = [
+  { id: 'measured', label: 'As measured', hex: null },
+  { id: 'crimson', label: 'Crimson', hex: '#a8232b' },
+  { id: 'indigo', label: 'Indigo', hex: '#2e3557' },
+  { id: 'gold', label: 'Gold', hex: '#c9a227' },
+  { id: 'jade', label: 'Jade', hex: '#2f7d5e' },
+  { id: 'ivory', label: 'Ivory', hex: '#e8e0cf' },
+  { id: 'obsidian', label: 'Obsidian', hex: '#1c1c24' },
+  { id: 'plum', label: 'Plum', hex: '#6b2a4e' },
+  { id: 'steel', label: 'Steel', hex: '#6d7784' },
+];

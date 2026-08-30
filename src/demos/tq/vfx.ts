@@ -86,7 +86,6 @@ const EMBER_VERT = /* glsl */ `
 const EMBER_FRAG = /* glsl */ `
   uniform vec3 uHot;
   uniform vec3 uCool;
-  uniform float uGain;
   varying float vAge;
   varying float vSeed;
 
@@ -102,7 +101,7 @@ const EMBER_FRAG = /* glsl */ `
     // Sparks overlap heavily under additive blending, so each one has to stay faint or the burst
     // fuses into a single bright mass — which is what the first render produced.
     float alpha = core * (1.0 - vAge) * 0.42 * (0.6 + 0.4 * sin(vSeed * 40.0 + vAge * 12.0));
-    gl_FragColor = vec4(colour * (0.7 + core * 0.6), alpha * uGain);
+    gl_FragColor = vec4(colour * (0.7 + core * 0.6), alpha);
   }
 `;
 
@@ -179,7 +178,6 @@ export class EmberField implements Effect {
         uGravity: { value: options.gravity ?? 0.35 },
         uHot: { value: (options.hot ?? SIGNATURE.gold).clone() },
         uCool: { value: (options.cool ?? SIGNATURE.crimson).clone() },
-        uGain: { value: 1 },
       },
       vertexShader: EMBER_VERT,
       fragmentShader: EMBER_FRAG,
@@ -193,15 +191,6 @@ export class EmberField implements Effect {
     this.object.renderOrder = 10;
     this.object.name = 'vfx:embers';
     markAsEffect(this.object);
-  }
-
-  /** Brightness multiplier, driven by the demo panel. 0 silences the field without destroying it. */
-  set gain(value: number) {
-    this.material.uniforms.uGain.value = value;
-  }
-
-  get gain(): number {
-    return this.material.uniforms.uGain.value as number;
   }
 
   /** Point the emitter at a socket's current world position. */

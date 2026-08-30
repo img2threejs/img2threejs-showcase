@@ -6,8 +6,9 @@ import {
   type TqCharacter,
 } from './createTqCharacter';
 import { createStageLights } from './lighting';
-import { SkillDirector, SKILLS, type VfxGains } from './skills';
-import { COSTUME_REGIONS, REGIONS, SIGNATURE, type RegionId } from './characterPalette';
+import { setRegionTint } from './regionSplit';
+import { SkillDirector, SKILLS } from './skills';
+import { COSTUME_REGIONS, OUTFIT_SWATCHES, REGIONS, SIGNATURE, type RegionId } from './characterPalette';
 
 /**
  * Tq — a Three Kingdoms officer, rigged, split and lit from her own measured palette.
@@ -49,16 +50,6 @@ export function createTqLookDevLights(): THREE.Group {
   return createStageLights(1.9).group;
 }
 
-/**
- * The effect multipliers start at the authored strength.
- *
- * They are exposed to the panel rather than baked because the effects are the point of this demo:
- * the sliders let a reader take the aura to zero and see that the rim really was doing the
- * silhouette work, or take the embers up and watch additive blending fuse them into a single bright
- * mass — a failure this build had to correct once already.
- */
-const DEFAULT_GAINS: VfxGains = { embers: 1, trails: 1, aura: 1, glow: 1, light: 1 };
-
 /** Clips worth offering on their own, beside the four skills. */
 const CLIP_ACTIONS = [
   { id: 'clip:idle', label: 'Idle', clip: 'preset:biped:dance_02' },
@@ -79,8 +70,9 @@ export function createTqModel(options: TqModelOptions = {}): THREE.Group {
   let character: TqCharacter | null = null;
   let director: SkillDirector | null = null;
 
-  const gains: VfxGains = { ...DEFAULT_GAINS };
   const hidden = new Set<RegionId>();
+  // Chosen colour per region; absent means the measured original.
+  const tints = new Map<RegionId, string>();
 
   /**
    * The camera, captured from the render itself.
@@ -156,7 +148,8 @@ export function createTqModel(options: TqModelOptions = {}): THREE.Group {
   // its list before the geometry has arrived. The gate re-measures the real split against these.
   const outfit = {
     title: 'Outfit',
-    note: 'Each piece is its own skinned mesh on one shared skeleton. Hiding the armour leaves the head, hair and hands — the shell has no body modelled underneath it.',
+    note: 'Five skinned meshes on one shared skeleton. Click a colour to redye a piece; the eye hides it.',
+    swatches: OUTFIT_SWATCHES,
     items: (Object.keys(REGIONS) as RegionId[]).map((id) => ({
       id,
       label: REGIONS[id].label,
@@ -165,10 +158,17 @@ export function createTqModel(options: TqModelOptions = {}): THREE.Group {
         COSTUME_REGIONS.includes(id) ? 'costume' : 'body'
       }`,
     })),
+    colorOf: (id: string): string | null => tints.get(id as RegionId) ?? null,
+    setColor: (id: string, hex: string | null): void => {
+      // Remembered here, not only on the material, so a colour chosen while the model was still
+      // loading is applied once it lands.
+      if (hex === null) tints.delete(id as RegionId);
+      else tints.set(id as RegionId, hex);
+      const mesh = character?.meshes.get(id as RegionId);
+      if (mesh) setRegionTint(mesh.material as THREE.Material, hex);
+    },
     isVisible: (id: string): boolean => !hidden.has(id as RegionId),
-    set: (id: string, visible: boolean): void => {
-      // Remembered here rather than read off the mesh, so a piece toggled while the model was still
-      // loading is still hidden once it lands.
+    setVisible: (id: string, visible: boolean): void => {
       if (visible) hidden.delete(id as RegionId);
       else hidden.add(id as RegionId);
       const mesh = character?.meshes.get(id as RegionId);
@@ -176,27 +176,9 @@ export function createTqModel(options: TqModelOptions = {}): THREE.Group {
     },
   };
 
-  // --- vfx ---------------------------------------------------------------------------------------
-  const vfxParameters = {
-    title: 'Skill VFX',
-    note: 'Multipliers on what a skill fires. Cast a skill to see them take effect.',
-    items: [
-      { id: 'embers', label: 'Embers', min: 0, max: 2, step: 0.05, value: gains.embers, note: 'spark count and brightness' },
-      { id: 'trails', label: 'Blade trail', min: 0, max: 2, step: 0.05, value: gains.trails, note: 'ribbon opacity' },
-      { id: 'aura', label: 'Aura rim', min: 0, max: 2, step: 0.05, value: gains.aura, note: 'silhouette fresnel' },
-      { id: 'glow', label: 'Filigree glow', min: 0, max: 3, step: 0.05, value: gains.glow, note: 'emissive on the gold' },
-      { id: 'light', label: 'Accent light', min: 0, max: 2, step: 0.05, value: gains.light, note: 'the lamp a cast drives' },
-    ],
-    set: (id: string, value: number): void => {
-      if (id in gains) gains[id as keyof VfxGains] = value;
-      director?.setGains(gains);
-    },
-  };
-
   const runtime: Record<string, unknown> = {
     animationController,
-    toggleGroups: outfit,
-    parameters: vfxParameters,
+    outfit,
     sockets: {},
     destructionGroups: {},
   };
@@ -226,7 +208,10 @@ export function createTqModel(options: TqModelOptions = {}): THREE.Group {
       const mesh = character.meshes.get(id);
       if (mesh) mesh.visible = false;
     }
-    director.setGains(gains);
+    for (const [id, hex] of tints) {
+      const mesh = character.meshes.get(id);
+      if (mesh) setRegionTint(mesh.material as THREE.Material, hex);
+    }
     character.play(IDLE_CLIP, 0);
     if (active !== 'idle') animationController.play(active);
 

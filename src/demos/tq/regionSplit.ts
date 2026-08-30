@@ -189,7 +189,26 @@ export function copySkinAttributes(
   region.geometry.setAttribute('skinWeight', new THREE.BufferAttribute(outWeight, 4));
 }
 
-/** The region's authored finish, built from the measured palette. */
+/** A recolourable region material: the uniforms the tint is driven through. */
+export interface RegionTint {
+  uTint: { value: THREE.Color };
+  uTintMix: { value: number };
+}
+
+/**
+ * The region's authored finish, built from the measured palette — and recolourable.
+ *
+ * Recolouring by simply setting `material.color` does not work here, because the surface detail IS
+ * the vertex colour: the filigree scrollwork, the scale pattern on the skirt and the fabric weave
+ * are all painted into it. Multiplying that by a new hue gives a muddy product of two colours
+ * (crimson x blue reads as near-black), and turning `vertexColors` off flattens the armour into a
+ * blank shape.
+ *
+ * So the shader is patched instead. The baked colour is reduced to its LUMINANCE — which is where
+ * the pattern actually lives — and that luminance modulates the chosen hue. Ornament and shading
+ * survive; only the colour changes. `uTintMix` at 0 leaves the measured original untouched, so the
+ * as-measured look is always one click away.
+ */
 export function createRegionMaterial(id: RegionId): THREE.MeshPhysicalMaterial {
   const def = REGIONS[id];
   const material = new THREE.MeshPhysicalMaterial({
@@ -208,5 +227,43 @@ export function createRegionMaterial(id: RegionId): THREE.MeshPhysicalMaterial {
   // The bake is dark because it carries its own lighting. Lifting it here keeps the measured hue
   // and only moves the level, which is the part the bake got wrong.
   material.color = new THREE.Color().setScalar(def.material.albedoGain);
+
+  const tint: RegionTint = {
+    uTint: { value: new THREE.Color(0xffffff) },
+    uTintMix: { value: 0 },
+  };
+  material.onBeforeCompile = (shader): void => {
+    shader.uniforms.uTint = tint.uTint;
+    shader.uniforms.uTintMix = tint.uTintMix;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 uTint;\nuniform float uTintMix;')
+      .replace(
+        '#include <color_fragment>',
+        `#ifdef USE_COLOR
+          // Luminance carries the ornament; the hue is what we are replacing.
+          float bakedLuma = dot(vColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+          // 1.9 restores roughly the level the measured colour had at that luminance, so a tinted
+          // piece sits at the same brightness as the original rather than reading washed out.
+          vec3 tinted = uTint * bakedLuma * 1.9;
+          diffuseColor.rgb *= mix(vColor.rgb, tinted, uTintMix);
+        #endif`,
+      );
+  };
+  // A material whose shader is patched needs its own program; without this every region would
+  // share one compiled program and one region's tint uniforms would drive all five.
+  material.customProgramCacheKey = () => `tq-region-${id}`;
+  material.userData.tint = tint;
   return material;
+}
+
+/** Recolour a region. `null` restores the colour measured off the reference. */
+export function setRegionTint(material: THREE.Material, hex: string | null): void {
+  const tint = material.userData.tint as RegionTint | undefined;
+  if (!tint) return;
+  if (hex === null) {
+    tint.uTintMix.value = 0;
+    return;
+  }
+  tint.uTint.value.set(hex);
+  tint.uTintMix.value = 1;
 }

@@ -20,15 +20,6 @@ import type { StageLights } from './lighting';
  * rig. There is not a stage coordinate anywhere in this file.
  */
 
-/** Per-family effect multipliers. 1 is the authored strength; 0 silences that family. */
-export interface VfxGains {
-  embers: number;
-  trails: number;
-  aura: number;
-  glow: number;
-  light: number;
-}
-
 export interface SkillDefinition {
   id: string;
   name: string;
@@ -160,13 +151,6 @@ export class SkillDirector {
   private readonly baseEmissiveIntensity: number;
   private readonly world = new THREE.Vector3();
   private readonly standOff = new THREE.Vector3();
-  /**
-   * Per-family multipliers, driven by the demo panel.
-   *
-   * They scale what a skill asks for rather than replacing it, so a skill's authored balance — a
-   * chop that is mostly trail, a cast that is mostly seal — survives being turned up or down.
-   */
-  private gains: VfxGains = { embers: 1, trails: 1, aura: 1, glow: 1, light: 1 };
   /** Called when a skill finishes on its own, so a caller's UI can stop showing it as active. */
   onRelease: (() => void) | null = null;
 
@@ -207,12 +191,6 @@ export class SkillDirector {
 
   get activeSkill(): SkillDefinition | null {
     return this.active;
-  }
-
-  /** Replace the effect multipliers. Applies immediately, mid-skill included. */
-  setGains(gains: Partial<VfxGains>): void {
-    this.gains = { ...this.gains, ...gains };
-    this.embers.gain = this.gains.embers;
   }
 
   /** Fire a skill by id. Returns false if the id is unknown or its clip is missing from the rig. */
@@ -271,7 +249,7 @@ export class SkillDirector {
         // Fade the ribbon in and out rather than switching it, or the arc appears mid-air.
         const span = Math.max(1e-6, (trail.to - trail.from) * 0.25);
         ribbon.opacity = on
-          ? Math.min(1, Math.min((t - trail.from) / span, (trail.to - t) / span)) * this.gains.trails
+          ? Math.min(1, Math.min((t - trail.from) / span, (trail.to - t) / span))
           : Math.max(0, ribbon.opacity - dt * 4);
         if (on) ribbon.push(at, camera.position);
       }
@@ -283,7 +261,7 @@ export class SkillDirector {
           const at = this.socketWorld(emit.socket);
           if (at) {
             this.embers.setAnchor(at);
-            this.embers.rate = emit.rate * this.gains.embers;
+            this.embers.rate = emit.rate;
             emitting = true;
           }
         }
@@ -298,7 +276,7 @@ export class SkillDirector {
           const at = this.socketWorld(burst.socket);
           if (at) {
             this.embers.setAnchor(at);
-            this.embers.burst(Math.round(burst.count * this.gains.embers));
+            this.embers.burst(burst.count);
           }
           this.fired.add(key);
         }
@@ -331,15 +309,12 @@ export class SkillDirector {
       }
 
       // --- envelopes ---
-      this.aura.strength = skill.aura
-        ? envelope(t, skill.aura.from, skill.aura.mid, skill.aura.to, skill.aura.peak) * this.gains.aura
-        : 0;
+      this.aura.strength = skill.aura ? envelope(t, skill.aura.from, skill.aura.mid, skill.aura.to, skill.aura.peak) : 0;
       this.lights.accent.intensity = skill.accent
-        ? envelope(t, skill.accent.from, skill.accent.mid, skill.accent.to, skill.accent.peak) * this.gains.light
+        ? envelope(t, skill.accent.from, skill.accent.mid, skill.accent.to, skill.accent.peak)
         : 0;
       if (this.goldMaterial && skill.emissive) {
-        this.goldMaterial.emissiveIntensity =
-          envelope(t, skill.emissive.from, skill.emissive.mid, skill.emissive.to, skill.emissive.peak) * this.gains.glow;
+        this.goldMaterial.emissiveIntensity = envelope(t, skill.emissive.from, skill.emissive.mid, skill.emissive.to, skill.emissive.peak);
       }
       // The accent lamp follows the chest socket, but STANDS OFF from it toward the viewer.
       //

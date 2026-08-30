@@ -1987,9 +1987,8 @@ body.intro-active { overflow: hidden; }
   gap: 0.45rem;
 }
 
-/* Outfit toggles and effect sliders — the two control blocks a demo can opt into by publishing
-   `sculptRuntime.toggleGroups` / `sculptRuntime.parameters`. They reuse the `.demo-animations`
-   shell so a panel with all of them reads as one stack rather than three competing cards. */
+/* Outfit controls — the block a demo opts into by publishing `sculptRuntime.outfit`. Reuses the
+   `.demo-animations` shell so a panel carrying all of them reads as one stack, not three cards. */
 
 .demo-control-note {
   margin: 0;
@@ -1998,95 +1997,129 @@ body.intro-active { overflow: hidden; }
   line-height: 1.5;
 }
 
-.demo-toggle-list {
+.demo-outfit-list {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.6rem;
 }
 
-.demo-toggle {
+.demo-outfit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.demo-outfit-row.is-hidden .demo-outfit-label,
+.demo-outfit-row.is-hidden .demo-outfit-swatches {
+  opacity: 0.4;
+}
+
+.demo-outfit-head {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.28rem 0.2rem;
-  border-radius: 0.35rem;
-  cursor: pointer;
-  transition: background 120ms ease;
+  gap: 0.45rem;
 }
 
-.demo-toggle:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.demo-toggle input {
+.demo-outfit-eye {
   flex: none;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-
-.demo-toggle-swatch {
-  width: 0.7rem;
-  height: 0.7rem;
-  flex: none;
-  border-radius: 0.15rem;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-}
-
-.demo-toggle-label {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.78rem;
-  line-height: 1.35;
-}
-
-.demo-toggle-label small {
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: 0.66rem;
-}
-
-.demo-param-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-}
-
-.demo-param-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.78rem;
-  cursor: pointer;
-}
-
-.demo-param-value {
-  color: var(--accent-strong);
-  font-family: var(--mono);
+  width: 1.35rem;
+  height: 1.35rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
   font-size: 0.7rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--accent-strong);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  transition: 120ms;
 }
 
-.demo-param-slider {
-  width: 100%;
-  margin: 0.3rem 0 0;
-  accent-color: var(--accent);
+.demo-outfit-eye:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.demo-outfit-eye[aria-pressed='false'] {
+  color: var(--muted);
+}
+
+.demo-outfit-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.demo-outfit-label small {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.64rem;
+}
+
+.demo-outfit-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  padding-left: 1.8rem;
+}
+
+.demo-swatch {
+  width: 1.05rem;
+  height: 1.05rem;
+  padding: 0;
+  flex: none;
+  cursor: pointer;
+  border-radius: 0.22rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  transition: transform 100ms ease, box-shadow 120ms ease;
+}
+
+.demo-swatch:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.demo-swatch.is-active {
+  box-shadow: 0 0 0 2px var(--accent-strong);
+  border-color: transparent;
+}
+
+/* The "as measured" chip carries a corner mark, so the original is findable at a glance among
+   nine colour squares rather than being just another one of them. */
+.demo-swatch-measured {
+  position: relative;
+}
+
+.demo-swatch-measured::after {
+  content: '';
+  position: absolute;
+  inset: auto -1px -1px auto;
+  width: 0;
+  height: 0;
+  border-left: 0.38rem solid transparent;
+  border-bottom: 0.38rem solid var(--accent-strong);
+}
+
+.demo-swatch-custom {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: conic-gradient(#f44, #fd4, #4f8, #4df, #46f, #d4f, #f44);
+}
+
+.demo-swatch-custom input {
+  width: 200%;
+  height: 200%;
+  padding: 0;
+  border: 0;
+  background: none;
+  opacity: 0;
   cursor: pointer;
 }
 
-.demo-param-note {
-  display: block;
-  margin-top: 0.1rem;
-  color: var(--muted);
-  font-size: 0.66rem;
-  line-height: 1.4;
-}
-
-.demo-vfx-reset {
-  padding: 0.15rem 0.5rem;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
 
 .demo-animation-btn {
   justify-content: center;
