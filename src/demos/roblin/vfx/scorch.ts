@@ -41,7 +41,11 @@ export class Scorch {
 
         // Cheap value noise, so the rim is ragged rather than a perfect circle. A geometric ring
         // reads as a decal; a broken one reads as burn.
-        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        // Wrapped before hashing — see pool.ts for the NaN this avoids.
+        float hash(vec2 p) {
+          p = mod(p, 128.0);
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+        }
         float noise(vec2 p) {
           vec2 i = floor(p), f = fract(p);
           f = f * f * (3.0 - 2.0 * f);
@@ -52,9 +56,10 @@ export class Scorch {
         void main() {
           vec2 p = vUv * 2.0 - 1.0;
           float d = length(p);
-          float ragged = 0.82 + 0.18 * noise(p * 5.0);
+          float ragged = clamp(0.82 + 0.18 * noise(p * 5.0), 0.4, 1.0);
           if (d > ragged) discard;
-          float edge = smoothstep(ragged, ragged * 0.55, d);
+          // Same inverted-smoothstep trap as pool.ts: GLSL requires edge0 < edge1.
+          float edge = 1.0 - smoothstep(ragged * 0.55, ragged, d);
           // The centre burns out first; the rim keeps glowing longest.
           float rim = smoothstep(ragged * 0.45, ragged * 0.95, d);
           // Cools fast and never gets near white: at pow(heat, 0.6) the mark spent most of its

@@ -20,9 +20,19 @@ import type { LimbMotion } from './motion';
  * `fire` clip brings both arms across the chest, so the bolt left sideways from a hand pointing
  * somewhere else entirely.
  *
- * Colour discipline: `toxic` is the signature and carries the two skills that come out of the
- * hands; `ember` carries the volley so two casts in a row do not look identical; `steel` appears
- * only as impact sparks, in small amounts, because it is the one authored hue in the palette.
+ * WHAT ROBLIN IS, because the first two versions of this file ignored it. He is a barefoot goblin
+ * skirmisher in rotting leather with crude steel strapped to his shins. He is not a wizard. The
+ * effects started as polished spheres and then as FIRE, and neither belongs to him: there is no
+ * fire anywhere in his design, and the `ember` hue that carried the volley was measured off his
+ * LEATHER — it is a dirt colour, not a flame colour. So the vocabulary is now his own:
+ *
+ *   BILE     corrosive, thrown in lumps, leaves puddles that bubble and eat the floor
+ *   SCRAP    scavenged metal and grit, flung by the handful, strikes sparks and raises dust
+ *   SPORES   a fungal bloom off a body that has been in a swamp
+ *
+ * Colour discipline is unchanged and still measured: `toxic`/`venom`/`spore` are his skin hue,
+ * `ember`/`ember-deep` his leather, `steel` the hardware. What changed is what those colours are
+ * asked to represent.
  *
  * The clip assignments are honest reuse of a preset library, not bespoke animation:
  *   toxic-bolt   preset:biped:fire         a firing motion — the closest match in the set
@@ -71,12 +81,8 @@ const SPORE = new THREE.Color(VFX.spore.value);
 const EMBER = new THREE.Color(VFX.ember.value);
 const EMBER_DEEP = new THREE.Color(VFX.emberDeep.value);
 const STEEL = new THREE.Color(VFX.steel.value);
-// The volley's own ramp, hottest first. Fire is not one colour and the volley used to be painted in
-// exactly one: `ember` everywhere, from the fist to the last spark.
-// 0.62 toward the ember hue, not 0.22. At 0.22 this was 78% white and every hot thing in the
-// volley — wake head, muzzle, impact shell — rendered as white confetti with an orange fringe.
-// Fire's hottest visible part is still distinctly warm.
-const EMBER_WHITE = new THREE.Color(0xffffff).lerp(EMBER, 0.62);
+// Dust and ash, the cooled end of the leather hue. Used by the scrap volley and the footfalls,
+// which are the two things in this showcase that are literally dirt.
 const EMBER_ASH = new THREE.Color(VFX.bounce.value).multiplyScalar(1.6);
 
 export function createSkills(ctx: SkillContext): Skill[] {
@@ -118,136 +124,159 @@ export function createSkills(ctx: SkillContext): Skill[] {
   };
 
   /**
-   * The volley's wind-up: embers drawn into the fist rather than a generic swirl.
+   * The volley's wind-up: grit collecting in the fist.
    *
-   * Two layers. A tight ring orbiting the hand's own axis — emitted sideways with a strong swirl
-   * and heavy drag so it curls into a disc instead of escaping — and a slow rise of guttering
-   * embers off it. The disc is what makes a fist read as loaded; the rise is what makes it read as
-   * hot rather than merely bright.
+   * Dirt and metal filings, not a glowing charge. They fall toward the hand under gravity and are
+   * caught there by heavy drag, so the fist looks like it is closing around a handful of something
+   * rather than powering up. A couple of steel filings catch the light on the way in — that is the
+   * only bright part, and it comes off the bracer.
    */
-  const emberCharge = (socketId: string, count: number, radius: number): void => {
+  const scrapGather = (socketId: string, count: number): void => {
     const at = sockets.get(socketId).worldPosition();
-    const axis = motion.axis(socketId);
     const carried = motion.velocity(socketId).multiplyScalar(0.6);
     vfx.burst(at, {
       count,
-      colour: EMBER_WHITE,
-      colourEnd: EMBER_DEEP,
-      // Sideways to the arm, then swirled hard about it: the particles never get away from the
-      // fist, they wrap around it.
-      direction: axis.clone(),
-      spread: Math.PI * 0.5,
-      speed: [0.3, 1.0],
-      life: [0.2, 0.45],
-      size: [h * radius * 0.35, h * radius],
-      gravity: -0.6,
-      drag: 6.5,
-      swirl: 16,
-      jitter: h * 0.03,
-      flicker: 0.85,
+      colour: EMBER.clone().multiplyScalar(0.7),
+      colourEnd: EMBER_ASH,
+      spread: Math.PI,
+      speed: [0.25, 0.9],
+      life: [0.18, 0.42],
+      size: [h * 0.006, h * 0.02],
+      gravity: 2.2,
+      drag: 7.5,
+      jitter: h * 0.05,
       inherit: carried,
     });
     vfx.burst(at, {
-      count: Math.round(count * 0.4),
-      colour: EMBER,
-      colourEnd: EMBER_ASH,
-      direction: frame.up.clone(),
-      spread: 0.9,
-      speed: [0.15, 0.7],
-      life: [0.45, 1.0],
-      size: [h * 0.005, h * 0.015],
-      gravity: -0.75,
-      drag: 1.6,
-      jitter: h * 0.05,
-      flicker: 1,
+      count: Math.max(2, Math.round(count * 0.18)),
+      colour: STEEL,
+      colourEnd: EMBER,
+      spread: Math.PI,
+      speed: [0.4, 1.6],
+      life: [0.12, 0.3],
+      size: [h * 0.003, h * 0.008],
+      gravity: 3.0,
+      drag: 5.0,
+      flicker: 0.6,
       inherit: carried,
     });
-    vfx.flash(at, EMBER, 6, 0.32, h * 1.8);
   };
 
   /**
-   * A fireball, not a green splash: the volley's own impact.
+   * A scrap hit: sparks and dust, no fire.
    *
-   * The order matters as much as the parts. A white flare and a hard light on the first frame, then
-   * a fast outward shell of hot debris, then embers that RISE off it instead of falling, then a
-   * scorch that stays after all of it has gone. Without the last one the whole thing reads as a
-   * flash; without the rising embers it reads as gravel.
+   * Steel striking anything hard throws a fan of white-hot sparks that arc, bounce and die fast,
+   * and knocks a slower puff of dirt off whatever it hit. That is the entire event. The fireball
+   * this replaced was borrowing a language — expanding flame shells, rising embers, a burn mark —
+   * that belongs to a different character; Roblin's metal is scavenged, cold and crude.
    */
-  const emberImpact = (at: THREE.Vector3, direction: THREE.Vector3, scale: number): void => {
+  const scrapImpact = (at: THREE.Vector3, direction: THREE.Vector3, scale: number): void => {
     const height = Math.max(0, at.y - groundY);
     const grounded = THREE.MathUtils.clamp(1 - height / (h * 0.45), 0, 1);
     const onGround = at.clone();
     onGround.y = groundY + 0.004;
 
-    // Two flares on the first frame: a ROUND one for the detonation itself and a directional one
-    // punched back along the way the bolt came in. The round one is what an airburst was missing —
-    // with the volley detonating at chest height it never triggers the ground rings, so without it
-    // the impact was a cloud of particles and no event.
-    vfx.flare(at, direction, EMBER_WHITE, h * 0.34 * scale, h * 0.32 * scale, 0.13);
-    vfx.flare(at, direction, EMBER, h * 0.52 * scale, h * 0.1 * scale, 0.17);
-    vfx.flash(at, EMBER, 120 * scale * scale, 0.34, h * (3.5 + 2 * scale));
+    // Short and hard. A strike is a crack of light, not a bloom.
+    vfx.flare(at, direction, STEEL, h * 0.3 * scale, h * 0.07 * scale, 0.08);
+    vfx.flash(at, STEEL, 60 * scale * scale, 0.16, h * (2.5 + 1.5 * scale));
 
-    // The shell: hot, fast, short-lived, thrown back along the way the bolt came in.
+    // The spark fan: fast, thin, heavy, and thrown back along the way the scrap came in.
     vfx.burst(at, {
-      count: Math.round(120 * scale),
-      colour: EMBER_WHITE,
-      colourEnd: EMBER_DEEP,
-      direction: direction.clone().negate(),
-      spread: Math.PI * 0.75,
-      speed: [2.2 * scale, 6.5 * scale],
-      life: [0.16, 0.38],
-      size: [h * 0.012, h * 0.042],
-      gravity: 6.5,
-      drag: 2.2,
-      jitter: h * 0.02,
-      flicker: 0.5,
-    });
-    // The embers: slow, buoyant, guttering, long-lived. This is the half that reads as fire.
-    vfx.burst(at, {
-      count: Math.round(70 * scale),
-      colour: EMBER,
-      colourEnd: EMBER_ASH,
-      direction: frame.up.clone(),
-      spread: Math.PI * 0.55,
-      speed: [0.4 * scale, 2.0 * scale],
-      life: [0.7, 1.7],
-      size: [h * 0.005, h * 0.018],
-      gravity: -0.55,
-      drag: 1.3,
-      swirl: 1.4,
-      jitter: h * 0.05,
-      flicker: 1,
-    });
-    // A few steel sparks that survive the fire and skip away hard.
-    vfx.burst(at, {
-      count: Math.round(18 * scale),
+      count: Math.round(80 * scale),
       colour: STEEL,
       colourEnd: EMBER,
       direction: direction.clone().negate(),
-      spread: 0.5,
-      speed: [4, 10],
-      life: [0.2, 0.45],
-      size: [h * 0.004, h * 0.011],
-      gravity: 7.5,
-      drag: 1.0,
+      spread: 0.85,
+      speed: [5, 13],
+      life: [0.14, 0.4],
+      size: [h * 0.003, h * 0.009],
+      gravity: 11,
+      drag: 0.7,
+      flicker: 0.4,
+    });
+    // The dust it knocks loose: slow, dull, in the leather colours, and it lingers after the
+    // sparks have gone — which is the contrast that makes a strike feel like it hit something.
+    vfx.burst(at, {
+      count: Math.round(55 * scale),
+      colour: EMBER.clone().multiplyScalar(0.5),
+      colourEnd: EMBER_ASH,
+      direction: direction.clone().negate(),
+      spread: Math.PI * 0.6,
+      speed: [0.4 * scale, 2.0 * scale],
+      life: [0.5, 1.3],
+      size: [h * 0.014, h * 0.05],
+      gravity: 1.1,
+      drag: 2.4,
+      swirl: 0.8,
+      jitter: h * 0.04,
     });
 
     if (grounded > 0.05) {
-      vfx.shockwave(onGround, h * 0.34 * scale * grounded, EMBER_WHITE, 0.24, 0.34);
-      vfx.shockwave(onGround, h * 0.7 * scale * grounded, EMBER, 0.5, 0.2);
+      vfx.shockwave(onGround, h * 0.42 * scale * grounded, EMBER, 0.34, 0.3);
     }
-    // The slow half, and ONLY for something that actually hit the floor. Laid under an airburst it
-    // is a metre-wide mark on ground the blast never touched, and with the camera looking slightly
-    // down it lands mostly below the bottom of the frame — a distracting sliver of glow with no
-    // event attached to it.
-    if (grounded > 0.05) {
-      vfx.scorch(onGround, h * (0.2 + 0.2 * scale) * grounded, EMBER, EMBER_ASH, 1.1 + 0.5 * scale);
-    }
-    lights.surge(EMBER, 0.6 * scale);
+    lights.surge(EMBER, 0.4 * scale);
   };
 
-  /** Fire one ember comet from a socket, down that hand's own aim. */
-  const emberBolt = (socketId: string, radius: number, scale: number): void => {
+  /**
+   * A bile hit: splatter, not detonation.
+   *
+   * The difference from a blast is where the energy goes. A blast throws everything outward fast
+   * and is over; a thrown liquid arrives, bursts FORWARD along its own travel, throws heavy gobs
+   * that fall, and then sits there corroding. So the cone opens down the direction of travel
+   * rather than backward, gravity is high enough that the gobs visibly arc, and the pool is the
+   * point of the whole thing rather than a decoration after it.
+   */
+  const bileImpact = (at: THREE.Vector3, direction: THREE.Vector3, scale: number): void => {
+    const height = Math.max(0, at.y - groundY);
+    const grounded = THREE.MathUtils.clamp(1 - height / (h * 0.5), 0, 1);
+    const onGround = at.clone();
+    onGround.y = groundY + 0.004;
+
+    // A short wet flash, not a fireball: bile is not a light source, it is briefly lit BY the
+    // reaction. Kept dim on purpose so the puddle is what the eye ends on.
+    vfx.flare(at, direction, SPORE, h * 0.3 * scale, h * 0.26 * scale, 0.1);
+    vfx.flash(at, VENOM, 34 * scale * scale, 0.26, h * (2.6 + 1.4 * scale));
+
+    // The splatter: forward, wet, heavy.
+    vfx.burst(at, {
+      count: Math.round(90 * scale),
+      colour: SPORE,
+      colourEnd: VENOM,
+      direction: direction.clone(),
+      spread: Math.PI * 0.55,
+      speed: [1.2 * scale, 4.4 * scale],
+      life: [0.3, 0.7],
+      size: [h * 0.012, h * 0.05],
+      gravity: 8.5,
+      drag: 1.1,
+      jitter: h * 0.02,
+    });
+    // Fine mist that hangs where the glob burst.
+    vfx.burst(at, {
+      count: Math.round(55 * scale),
+      colour: TOXIC,
+      colourEnd: VENOM,
+      spread: Math.PI,
+      speed: [0.25 * scale, 1.4 * scale],
+      life: [0.8, 1.9],
+      size: [h * 0.008, h * 0.03],
+      gravity: -0.25,
+      drag: 1.9,
+      swirl: 1.1,
+      jitter: h * 0.06,
+      flicker: 0.35,
+    });
+
+    // The puddle. Laid under an airburst too — what bursts in the air still rains down.
+    vfx.pool(onGround, h * (0.22 + 0.3 * scale), TOXIC, VENOM, 2.4 + 1.2 * scale);
+    if (grounded > 0.05) {
+      vfx.shockwave(onGround, h * 0.5 * scale * grounded, SPORE, 0.45, 0.3);
+    }
+    lights.surge(TOXIC, 0.5 * scale);
+  };
+
+  /** Lob one glob of bile from a socket, down that hand's own aim. */
+  const bileLob = (socketId: string, radius: number, scale: number): void => {
     const from = sockets.get(socketId).worldPosition();
     const direction = motion.aim(socketId, undefined, 0.3);
     const maxReach = h * 1.15;
@@ -261,40 +290,106 @@ export function createSkills(ctx: SkillContext): Skill[] {
     vfx.bolt({
       from,
       direction,
-      speed: h * 4.6,
+      // Slower than a bolt. A thrown lump of liquid is a heavy, readable object, and the wobble and
+      // the dripping only register if there is time to see them.
+      speed: h * 3.4,
       range,
-      core: EMBER_WHITE,
-      halo: EMBER,
+      style: 'gel',
+      core: SPORE,
+      deep: VENOM,
+      halo: TOXIC,
       radius: h * radius,
-      sparkRate: 240,
-      // A wake that cools along its length, and embers that RISE off it — the single change that
-      // stops a recoloured green bolt from looking like a recoloured green bolt.
-      trailHead: EMBER_WHITE,
-      trailTail: EMBER_DEEP,
-      sparkEnd: EMBER_ASH,
-      sparkGravity: -0.9,
-      sparkSize: 0.8,
-      flicker: 0.7,
-      onImpact: (at, dir) => emberImpact(at, dir, scale),
+      sparkRate: 90,
+      trailHead: TOXIC,
+      trailTail: VENOM,
+      sparkEnd: VENOM,
+      // Positive: bile DRIPS off the glob and falls, where a fire trail's embers rise.
+      sparkGravity: 5.5,
+      sparkSize: 1.5,
+      onImpact: (at, dir) => bileImpact(at, dir, scale),
     });
 
-    vfx.flare(from, direction, EMBER_WHITE, h * 0.36 * scale, h * 0.075 * scale, 0.11);
+    // The throw: a wet spray off the hand, no muzzle flash. Nothing about a lobbed glob is a gun.
     vfx.burst(from, {
-      count: Math.round(44 * scale),
-      colour: EMBER_WHITE,
-      colourEnd: EMBER_DEEP,
+      count: Math.round(30 * scale),
+      colour: SPORE,
+      colourEnd: VENOM,
       direction,
-      spread: 0.5,
-      speed: [2.5, 7.0],
-      life: [0.1, 0.3],
-      size: [h * 0.005, h * 0.02],
-      gravity: 1.0,
-      drag: 3.8,
-      flicker: 0.6,
-      inherit: motion.velocity(socketId).multiplyScalar(0.4),
+      spread: 0.8,
+      speed: [0.8, 3.0],
+      life: [0.2, 0.5],
+      size: [h * 0.006, h * 0.022],
+      gravity: 5.0,
+      drag: 2.4,
+      inherit: motion.velocity(socketId).multiplyScalar(0.55),
     });
-    vfx.flash(from, EMBER, 30, 0.18, h * 2.6);
-    lights.surge(EMBER, 0.7);
+    vfx.flash(from, TOXIC, 14, 0.22, h * 2.0);
+    lights.surge(TOXIC, 0.5);
+  };
+
+  /** Fling one piece of scavenged scrap from a socket, down that hand's own aim. */
+  const scrapThrow = (socketId: string, radius: number, scale: number): void => {
+    const from = sockets.get(socketId).worldPosition();
+    const direction = motion.aim(socketId, undefined, 0.3);
+    const maxReach = h * 1.15;
+    let range = maxReach;
+    if (direction.y < -0.08) {
+      const toFloor = (groundY - from.y) / direction.y;
+      if (toFloor > 0) range = Math.min(range, toFloor);
+    }
+    range = Math.max(h * 0.45, range);
+
+    vfx.bolt({
+      from,
+      direction,
+      // Fast and flat — this is thrown metal, and it should cross the gap before the eye settles.
+      speed: h * 6.2,
+      range,
+      style: 'shard',
+      core: STEEL,
+      deep: EMBER_DEEP,
+      halo: EMBER,
+      radius: h * radius,
+      sparkRate: 130,
+      // A short, dull wake: scrap does not burn, it just drags grit behind it.
+      trailHead: EMBER,
+      trailTail: EMBER_ASH,
+      sparkEnd: EMBER_ASH,
+      sparkGravity: 6.0,
+      sparkSize: 0.7,
+      lightScale: 0.55,
+      onImpact: (at, dir) => scrapImpact(at, dir, scale),
+    });
+
+    // The release: grit off the fist and a hard scrape of sparks where it leaves the bracer.
+    vfx.burst(from, {
+      count: Math.round(34 * scale),
+      colour: EMBER,
+      colourEnd: EMBER_ASH,
+      direction,
+      spread: 0.7,
+      speed: [1.2, 4.5],
+      life: [0.16, 0.42],
+      size: [h * 0.006, h * 0.022],
+      gravity: 4.5,
+      drag: 2.8,
+      inherit: motion.velocity(socketId).multiplyScalar(0.5),
+    });
+    vfx.burst(from, {
+      count: Math.round(16 * scale),
+      colour: STEEL,
+      colourEnd: EMBER,
+      direction,
+      spread: 0.35,
+      speed: [4, 9],
+      life: [0.1, 0.26],
+      size: [h * 0.003, h * 0.008],
+      gravity: 9,
+      drag: 1.0,
+      flicker: 0.5,
+    });
+    vfx.flash(from, EMBER, 16, 0.14, h * 1.8);
+    lights.surge(EMBER, 0.45);
   };
 
   /**
@@ -360,96 +455,13 @@ export function createSkills(ctx: SkillContext): Skill[] {
     lights.surge(colour, 0.55 * scale);
   };
 
-  /**
-   * Fire a bolt from a socket, down the direction that socket is actually pointing.
-   *
-   * The range is solved, not authored: the aim is intersected with the floor, so a hand pointing
-   * down puts the impact on the ground where it is pointing, and a hand pointing level or up sends
-   * the bolt out to its maximum reach and detonates it in the air. That is what makes the effect
-   * follow the animation instead of the animation happening next to the effect.
-   */
-  const launch = (
-    socketId: string,
-    colour: THREE.Color,
-    halo: THREE.Color,
-    radius: number,
-    scale: number,
-  ): void => {
-    const from = sockets.get(socketId).worldPosition();
-    // Cap 0.3: a projectile is aimed by where the arm POINTS. Letting the hand's travel direction
-    // dominate sent bolts 21 degrees into the sky off a level jab, because a striking hand is still
-    // rising as the arm reaches full extension.
-    const direction = motion.aim(socketId, undefined, 0.3);
-
-    // Solved against the default framing, not chosen: projecting the firing line shows the last
-    // on-screen point at about 2.8 world units along forward, and the muzzle already sits ~0.4 out.
-    // 2.4 was fine while the aim still angled downward into the floor; once the cues were fixed and
-    // the bolts left level, that same reach put every detonation past the right edge. Measured back
-    // down from there: 1.45 landed at ndc.x 0.83, hard against the edge; 1.15 sits near 0.55.
-    const maxReach = h * 1.15;
-    let range = maxReach;
-    // Only a meaningfully downward aim gets a floor solution; near-horizontal would solve to a
-    // distance out past the stage and read as a mistake.
-    if (direction.y < -0.08) {
-      const toFloor = (groundY - from.y) / direction.y;
-      if (toFloor > 0) range = Math.min(range, toFloor);
-    }
-    range = Math.max(h * 0.45, range);
-
-    vfx.bolt({
-      from,
-      direction,
-      // Slow enough to read as a travelling object rather than a hitscan line — at the earlier
-      // 6.2 the whole flight was over inside four frames.
-      speed: h * 4.2,
-      range,
-      core: new THREE.Color(0xffffff).lerp(colour, 0.55),
-      halo,
-      radius: h * radius,
-      sparkRate: 190,
-      onImpact: (at, dir) => impact(at, dir, halo, scale),
-    });
-
-    // Muzzle: a directional flare along the aim, a cone of sparks down it, and a light.
-    vfx.flare(from, direction, new THREE.Color(0xffffff).lerp(halo, 0.45),
-      h * 0.4 * scale, h * 0.08 * scale, 0.12);
-    vfx.burst(from, {
-      count: Math.round(46 * scale),
-      colour: halo.clone().multiplyScalar(1.5),
-      colourEnd: halo.clone().multiplyScalar(0.1),
-      direction,
-      spread: 0.55,
-      speed: [2.0, 6.5],
-      life: [0.12, 0.34],
-      size: [h * 0.006, h * 0.024],
-      gravity: 1.2,
-      drag: 3.6,
-      inherit: motion.velocity(socketId).multiplyScalar(0.4),
-    });
-    // A thin ring of blowback perpendicular to the aim — the recoil the muzzle pushes sideways.
-    vfx.burst(from, {
-      count: Math.round(14 * scale),
-      colour: STEEL,
-      colourEnd: halo,
-      direction: direction.clone().negate(),
-      spread: 1.4,
-      speed: [0.6, 2.2],
-      life: [0.14, 0.3],
-      size: [h * 0.004, h * 0.011],
-      gravity: 2.0,
-      drag: 4.0,
-    });
-    vfx.flash(from, halo, 26, 0.2, h * 2.6);
-    lights.surge(halo, 0.75);
-  };
-
   return [
     {
       id: 'toxic-bolt',
-      label: 'Toxic Bolt',
+      label: 'Bile Lob',
       clip: 'preset:biped:box_03',
       colour: VFX.toxic.hex,
-      description: 'one heavy bolt on the scanned strike at 22.6% of box_03 — left hand, aim 0.90 forward and level',
+      description: 'one heavy glob of bile on the scanned strike at 22.6% of box_03 — left hand, aim 0.90 forward and level',
       cast: () => animator.once('preset:biped:box_03', {
         fade: 0.14,
         cues: [
@@ -458,13 +470,13 @@ export function createSkills(ctx: SkillContext): Skill[] {
           // 0.226 comes out of cueScan.ts, not out of anyone's judgement: seeking box_03 puts the
           // left hand's only real strike there — aim 0.896 along forward, 0.007 above level (as
           // level as anything in the set), 3.67 units per second.
-          { at: 0.226, fire: () => launch('effect:cast-secondary', SPORE, TOXIC, 0.052, 1.15) },
+          { at: 0.226, fire: () => bileLob('effect:cast-secondary', 0.062, 1.15) },
         ],
       }),
     },
     {
       id: 'ember-volley',
-      label: 'Ember Volley',
+      label: 'Scrap Volley',
       clip: 'preset:biped:box_02',
       colour: VFX.ember.hex,
       description: 'a one-two-cross on the three scanned strikes of box_02 — right 27.7%, left 28.9%, right 68.6%',
@@ -481,16 +493,15 @@ export function createSkills(ctx: SkillContext): Skill[] {
           // firing the same pellet three times. The cross is the payoff and is scaled to look it.
           // Recolour the hand wakes for the length of the combination, so the streaks the punches
           // throw belong to this skill rather than to the character's resting palette.
-          { at: 0.0, fire: () => tintTrails?.(EMBER, EMBER_DEEP, 2.6) },
-          { at: 0.16, fire: () => emberCharge('effect:cast-primary', 30, 0.022) },
-          { at: 0.21, fire: () => emberCharge('effect:cast-secondary', 26, 0.02) },
-          { at: 0.277, fire: () => emberBolt('effect:cast-primary', 0.028, 0.55) },
-          { at: 0.289, fire: () => emberBolt('effect:cast-secondary', 0.031, 0.68) },
-          // A long, visible wind-up on the cross: the fist is loaded for a quarter of the clip.
-          { at: 0.46, fire: () => emberCharge('effect:cast-primary', 34, 0.022) },
-          { at: 0.56, fire: () => emberCharge('effect:cast-primary', 46, 0.028) },
-          { at: 0.63, fire: () => emberCharge('effect:cast-primary', 60, 0.034) },
-          { at: 0.686, fire: () => emberBolt('effect:cast-primary', 0.046, 1.05) },
+          { at: 0.0, fire: () => tintTrails?.(EMBER, EMBER_ASH, 2.6) },
+          { at: 0.16, fire: () => scrapGather('effect:cast-primary', 26) },
+          { at: 0.21, fire: () => scrapGather('effect:cast-secondary', 22) },
+          { at: 0.277, fire: () => scrapThrow('effect:cast-primary', 0.03, 0.6) },
+          { at: 0.289, fire: () => scrapThrow('effect:cast-secondary', 0.033, 0.72) },
+          // A visible wind-up on the cross: grit collects in the fist for a quarter of the clip.
+          { at: 0.50, fire: () => scrapGather('effect:cast-primary', 30) },
+          { at: 0.60, fire: () => scrapGather('effect:cast-primary', 44) },
+          { at: 0.686, fire: () => scrapThrow('effect:cast-primary', 0.046, 1.05) },
         ],
       }),
     },
@@ -571,6 +582,11 @@ export function createSkills(ctx: SkillContext): Skill[] {
  *
  * Rate-based rather than per-frame, so the look does not change with the frame rate. Anchored to
  * `effect:core` and the two shoulder sockets; all three are real bones.
+ *
+ * Toned right down from what it was. The idle used to push a steady column of bright motes UPWARD
+ * off the chest and shoulders, which read as a character ascending — a halo on a goblin who has
+ * been sleeping in a swamp. What is left is a thin seep of spores off the body; the swarm of gnats
+ * around him (vfx/swarm.ts) now carries the ambient character instead.
  */
 export function createAmbientAura(ctx: Pick<SkillContext, 'frame' | 'sockets' | 'vfx'>) {
   const { frame, sockets, vfx } = ctx;
@@ -582,20 +598,20 @@ export function createAmbientAura(ctx: Pick<SkillContext, 'frame' | 'sockets' | 
   return {
     /** `intensity` scales the rate; a cast can push it up briefly. */
     update(delta: number, intensity = 1): void {
-      debt += delta * 26 * intensity;
+      debt += delta * 11 * intensity;
       const count = Math.floor(debt);
       if (count <= 0) return;
       debt -= count;
 
       vfx.burst(sockets.get('effect:core').worldPosition(), {
         count,
-        colour: new THREE.Color(VFX.toxic.value).multiplyScalar(0.7),
-        colourEnd: new THREE.Color(VFX.venom.value).multiplyScalar(0.2),
+        colour: new THREE.Color(VFX.venom.value).multiplyScalar(0.9),
+        colourEnd: new THREE.Color(VFX.venom.value).multiplyScalar(0.1),
         direction: frame.up.clone(),
         spread: 1.1,
-        speed: [0.08, 0.42],
+        speed: [0.06, 0.3],
         life: [0.9, 2.1],
-        size: [h * 0.005, h * 0.016],
+        size: [h * 0.004, h * 0.011],
         // Negative gravity: spores drift UP off a body that is warmer than the air around it.
         gravity: -0.22,
         drag: 0.5,
@@ -697,6 +713,9 @@ export function footstepEffect(
     drag: 1.8,
     inherit,
   });
-  vfx.shockwave(ground, figureHeight * 0.34 * strength, new THREE.Color(VFX.toxic.value), 0.4, 0.28);
-  vfx.flash(ground, new THREE.Color(VFX.toxic.value), 8 * strength, 0.2, figureHeight * 1.4);
+  // NO glowing ring. Roblin is barefoot and this is a bare foot hitting dirt — the ring was a
+  // magic-impact signature borrowed from the casts, and it made every step look like a spell. What
+  // is left is a low dull ring of displaced dust and a very soft bounce of light off the floor.
+  vfx.shockwave(ground, figureHeight * 0.26 * strength, new THREE.Color(VFX.emberDeep.value), 0.5, 0.42);
+  vfx.flash(ground, new THREE.Color(VFX.emberDeep.value), 3.5 * strength, 0.22, figureHeight * 1.1);
 }

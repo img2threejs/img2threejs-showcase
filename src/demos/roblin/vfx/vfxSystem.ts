@@ -5,6 +5,7 @@ import { Shockwave } from './shockwave';
 import { GroundGlow } from './groundGlow';
 import { Flare } from './flare';
 import { Scorch } from './scorch';
+import { Pool } from './pool';
 
 /**
  * The whole effect layer, in one object.
@@ -55,6 +56,7 @@ export class VfxSystem {
   private readonly waves: Shockwave[];
   private readonly flares: Flare[];
   private readonly scorches: Scorch[];
+  private readonly pools: Pool[];
   private readonly flashes: Flash[];
   private elapsed = 0;
 
@@ -66,6 +68,7 @@ export class VfxSystem {
     this.waves = Array.from({ length: 8 }, () => new Shockwave());
     this.flares = Array.from({ length: 6 }, () => new Flare());
     this.scorches = Array.from({ length: 6 }, () => new Scorch());
+    this.pools = Array.from({ length: 6 }, () => new Pool());
     // Impact lights are pooled for the same reason bolts are: `new PointLight` mid-cast forces the
     // renderer to recompile every material that can receive light, which drops a frame every time.
     // Five, not eight: a radial skill lands its impacts together, and the sixth simultaneous
@@ -81,6 +84,7 @@ export class VfxSystem {
     for (const wave of this.waves) this.root.add(wave.mesh);
     for (const flare of this.flares) this.root.add(flare.mesh);
     for (const scorch of this.scorches) this.root.add(scorch.mesh);
+    for (const pool of this.pools) this.root.add(pool.mesh);
     for (const flash of this.flashes) this.root.add(flash.light);
   }
 
@@ -129,6 +133,12 @@ export class VfxSystem {
     free?.fire(at, aim, colour, length, girth, duration);
   }
 
+  /** A caustic puddle that spreads, bubbles and sinks. See pool.ts. */
+  pool(at: THREE.Vector3, radius: number, skin: THREE.Color, deep: THREE.Color, duration = 3): void {
+    const free = this.pools.find((p) => !p.busy);
+    free?.fire(at, radius, skin, deep, duration);
+  }
+
   /** A burn that outlives the blast. See scorch.ts for why the impacts needed a slow half. */
   scorch(at: THREE.Vector3, radius: number, hot: THREE.Color, cool: THREE.Color, duration = 1.4): void {
     const free = this.scorches.find((s) => !s.busy);
@@ -155,6 +165,7 @@ export class VfxSystem {
     for (const wave of this.waves) wave.update(delta);
     for (const flare of this.flares) flare.update(delta, cameraPosition);
     for (const scorch of this.scorches) scorch.update(delta);
+    for (const pool of this.pools) pool.update(delta);
     for (const flash of this.flashes) {
       if (flash.t >= flash.duration) continue;
       flash.t += delta;
@@ -181,5 +192,6 @@ export class VfxSystem {
     for (const wave of this.waves) wave.dispose();
     for (const flare of this.flares) flare.dispose();
     for (const scorch of this.scorches) scorch.dispose();
+    for (const pool of this.pools) pool.dispose();
   }
 }

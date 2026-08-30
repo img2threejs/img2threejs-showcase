@@ -386,7 +386,62 @@ Thresholds are in figure heights per second, and they were set against measured 
 | box_02 | 6.09 | 4.42 | 1.00 |
 | front_kick_01 | 6.76 | 7.48 | 0.99 |
 
-### Ember Volley
+### Effects that belong to this character
+
+The first two passes gave Roblin **wizard effects**: polished emissive spheres, then fire — expanding
+flame shells, rising embers, a burn mark on the floor. Neither belongs to him. He is a barefoot
+goblin skirmisher in rotting leather with crude steel strapped to his shins, and there is no fire
+anywhere in his design. Worse, the `ember` hue that carried the whole fire pass was **measured off
+his leather**: a dirt colour doing duty as a flame colour.
+
+The palette did not change — it is still measured, and every derivation still holds. What changed is
+what those colours are asked to represent:
+
+| | was | is |
+|---|---|---|
+| primary | Toxic Bolt — an emissive orb | **Bile Lob** — a thrown glob that splatters and leaves a puddle |
+| secondary | Ember Volley — a fireball combination | **Scrap Volley** — flung scavenged metal, sparks and dust |
+| ambient | motes rising off the chest | a **swarm of gnats** orbiting him |
+| footfall | a glowing toxic ring | dull displaced dust — he is barefoot |
+
+Four new pieces carry it, all hand-written against plain three like the rest:
+
+* **`vfx/glob.ts`** — the projectile is no longer a sphere. A seeded radial deformation makes each
+  one a different lump; it is squashed along its own velocity the way a thrown droplet is, and it is
+  **rim-shaded rather than flat-emissive**, so it reads as a translucent sac catching light at its
+  edge instead of as a light bulb. The scrap variant is flat-shaded, much darker in the body, spins
+  eight times faster, and glows only on the edge that is biting the air.
+* **`vfx/pool.ts`** — bile leaves a caustic puddle that spreads fast, bubbles the whole time it is
+  eating the floor, and sinks away. The bubbling is three layers of animated value noise thresholded
+  against each other, so blisters appear and pop at different rates with no texture involved.
+* **`vfx/swarm.ts`** — ninety gnats, each integrating a wander force toward a personal target that
+  re-rolls every fifth of a second. That is what produces nervous, non-repeating darting; a sine
+  orbit cannot. They thicken when he moves or casts.
+* The scrap impact is **sparks and dust, nothing else**: a thin fast fan of steel that arcs and
+  dies, and a slow dull puff of leather-coloured dirt that outlives it. That contrast is what makes
+  a strike feel like it hit something.
+
+Two GPU bugs fell out of writing the ground decals, and both were invisible in code review:
+
+1. **The pool rendered as a hard SQUARE.** Its noise seed was offset by up to 40 units, and `sin()`
+   of an argument that large loses enough precision on some drivers to return NaN. NaN fails every
+   comparison, so `d > edge` was false everywhere, the `discard` never fired, and the shader painted
+   its own bounding quad. The hash now wraps its input and the seed is small.
+2. **Two `smoothstep` calls were inverted** — `smoothstep(edge, edge * 0.2, d)`, with edge0 greater
+   than edge1. GLSL leaves that undefined and drivers disagree on the result. Written as
+   `1.0 - smoothstep(lo, hi, d)`.
+
+And one that was only visible on screen: the glob was **almost invisible in flight**. Additive
+blending cannot darken, so a rim-lit body contributes nearly nothing across its middle and reads as
+a faint wire ring. The belly term had to carry real weight — and then be measured back down again,
+because at the first value the glob plus its halo plus its travelling light clipped to white.
+
+### Ember Volley — superseded
+
+The fire pass below is kept for the record; `Scrap Volley` replaced it for the reasons above. The
+machinery it introduced — the wake gradient, the guttering, the directional flare — all survived and
+is used by the effects that replaced it.
+
 
 The volley started life as the toxic bolt recoloured orange, and looked it. It now has its own
 vocabulary, built out of four additions that the rest of the effect layer inherited:

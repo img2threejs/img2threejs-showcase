@@ -596,20 +596,22 @@
     },
     "skills": [
       {
-        "id": "toxic-bolt",
+        "id": "bile-lob",
         "clip": "preset:biped:box_03",
         "socket": "effect:cast-secondary",
         "colour": "#d3f52c",
         "release": "cue at 0.226, found by seeking the clip (cueScan.ts): aim 0.896 forward, 0.007 above level, 3.67 u/s",
-        "aim": "the left hand's own pointing axis at that instant, not the torso forward axis"
+        "aim": "the left hand's own pointing axis at that instant, not the torso forward axis",
+        "note": "a thrown glob of bile \u2014 lumpy, squashed along its own travel, splatters forward and leaves a bubbling caustic pool"
       },
       {
-        "id": "ember-volley",
+        "id": "scrap-volley",
         "clip": "preset:biped:box_02",
         "socket": "effect:cast-primary + effect:cast-secondary",
         "colour": "#f68e23",
         "release": "scanned cues at 0.277 (R), 0.289 (L) and 0.686 (R) \u2014 a real one-two-cross",
-        "aim": "each bolt follows the hand that threw it"
+        "aim": "each bolt follows the hand that threw it",
+        "note": "flung scavenged metal \u2014 sparks and dust on impact, no fire. The earlier fire pass borrowed a language this character does not have."
       },
       {
         "id": "spore-nova",
@@ -788,6 +790,7 @@
     "authored": "by hand, for this showcase",
     "note": "The img2threejs skill has NO particle subsystem, no trail renderer, no shockwave and no impact-flash primitive. Every effect in src/roblin/vfx/ is this showcase's own code against plain three: a pooled additive point-sprite field with a procedural disc in the shader, a camera-facing ribbon trail, an expanding ground ring, an additive floor pool, and a pooled projectile with a travelling point light. No new dependency, no texture file, no fetch. Added in the rework: a directional muzzle flare, speed-driven limb trails, and a per-limb motion tracker (velocity + pointing axis) that every aim in the effect layer now reads from.",
     "anchoring": "Every effect is positioned from a socket's world matrix or from the measured body axes. No literal world coordinate appears in the effect code.",
-    "palette": "src/roblin/palette.ts \u2014 measured from the reference photo and the model's own vertex colours, then boosted. Each colour records its derivation; `steel` is the one authored hue and says so."
+    "palette": "src/roblin/palette.ts \u2014 measured from the reference photo and the model's own vertex colours, then boosted. Each colour records its derivation; `steel` is the one authored hue and says so.",
+    "characterFit": "The effects are goblin, not wizard: bile, scavenged scrap, spores and gnats. Two earlier passes used emissive orbs and then fire, and neither belongs to a barefoot skirmisher in rotting leather \u2014 the ember hue that carried the fire pass was measured off his LEATHER. The palette is unchanged and still measured; what changed is what it represents."
   }
 }

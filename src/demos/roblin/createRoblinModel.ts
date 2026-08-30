@@ -13,6 +13,7 @@ import { createSkills, createAmbientAura, footstepEffect, type Skill } from './s
 import { createFootstepWatcher } from './footsteps';
 import { createLimbMotion } from './motion';
 import { createLimbTrails } from './vfx/limbTrails';
+import { Swarm } from './vfx/swarm';
 import { scanCues, formatCueScan } from './cueScan';
 import { VFX, paletteReport } from './palette';
 import { probeClips, formatProbeReport } from './clipProbe';
@@ -170,6 +171,11 @@ export function createRoblinModel(scene: THREE.Scene): THREE.Group {
     sockets, motion, vfx, frame.figureHeight,
   );
   trailsRef = trails;
+
+  // The flies. Roblin sleeps in a swamp in rotting leather; a loose swarm orbiting him says more
+  // about the character than any amount of glow does. `venom` rather than a bright hue on purpose —
+  // gnats should be almost invisible against the backdrop and only read where they cross the figure.
+  const swarm = new Swarm(90, frame.figureHeight * 0.006, new THREE.Color(VFX.venom.value));
   const aura = createAmbientAura({ frame, sockets, vfx });
   const footsteps = createFootstepWatcher(
     [sockets.get('attachment:step-l'), sockets.get('attachment:step-r')],
@@ -183,7 +189,7 @@ export function createRoblinModel(scene: THREE.Scene): THREE.Group {
   // The character group is added here too, alongside the rest: `build` owns putting its own model
   // in the scene — the registry contract is "adds the model and returns the group", not "returns a
   // group for the caller to add".
-  scene.add(group, lights.group, stage.group, vfx.root, trails.group);
+  scene.add(group, lights.group, stage.group, vfx.root, trails.group, swarm.points);
 
   const stepSockets = ['attachment:step-l', 'attachment:step-r'];
   const core = new THREE.Vector3();
@@ -302,6 +308,13 @@ export function createRoblinModel(scene: THREE.Scene): THREE.Group {
 
     auraPulse = animator.busy ? 2.6 : Math.max(1, auraPulse - dt * 2);
     aura.update(dt, auraPulse);
+
+    swarm.setBounds(
+      sockets.get('effect:core').worldPosition(),
+      new THREE.Vector3(frame.figureHeight * 0.42, frame.figureHeight * 0.5, frame.figureHeight * 0.42),
+    );
+    swarm.stir(Math.min(1, trails.intensity * 0.9 + (animator.busy ? 0.5 : 0)));
+    swarm.update(dt);
 
     footsteps.update(dt, (step) => {
       // The dust inherits the floor's motion, not the figure's, so it is left behind exactly the

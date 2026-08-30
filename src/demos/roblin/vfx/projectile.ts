@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { Ribbon } from './ribbon';
+import { globGeometry, globMaterial, type GlobStyle } from './glob';
 import type { ParticleField } from './particles';
+
+/** The axis a glob's long profile is built on, before it is aimed down its own velocity. */
+const FORWARD = new THREE.Vector3(0, 0, 1);
 
 /**
  * A ranged bolt: core, halo, moving light, ribbon wake and a trail of sparks.
@@ -51,13 +55,24 @@ export interface BoltOptions {
   flicker?: number;
   /** Multiplies the shed spark size. */
   sparkSize?: number;
+  /**
+   * What the projectile IS. 'gel' is a lumpy sac of bile, 'shard' a piece of scavenged scrap,
+   * 'orb' the original smooth magic sphere. See glob.ts.
+   */
+  style?: GlobStyle | 'orb';
+  /** Deep colour inside the glob; the skin colour is `core`. */
+  deep?: THREE.Color;
   /** Called at the point of impact, with the impact position. */
   onImpact?(at: THREE.Vector3, direction: THREE.Vector3): void;
 }
 
 class Bolt {
   readonly group = new THREE.Group();
-  private readonly core: THREE.Mesh;
+  private core: THREE.Mesh;
+  private readonly orbCore: THREE.Mesh;
+  private readonly gelCore: THREE.Mesh;
+  private readonly shardCore: THREE.Mesh;
+  private style: GlobStyle | 'orb' = 'orb';
   private readonly halo: THREE.Mesh;
   private readonly light: THREE.PointLight;
   private readonly ribbon: Ribbon;
@@ -81,11 +96,16 @@ class Bolt {
   private coreColour = new THREE.Color();
   private life = 0;
 
-  constructor(private readonly field: ParticleField) {
-    this.core = new THREE.Mesh(
+  constructor(private readonly field: ParticleField, variant = 0) {
+    // Three bodies, swapped by style rather than rebuilt: allocating geometry mid-cast is exactly
+    // the frame-time spike the pooling exists to avoid.
+    this.orbCore = new THREE.Mesh(
       new THREE.IcosahedronGeometry(1, 2),
       new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }),
     );
+    this.gelCore = new THREE.Mesh(globGeometry('gel', variant), globMaterial('gel'));
+    this.shardCore = new THREE.Mesh(globGeometry('shard', variant), globMaterial('shard'));
+    this.core = this.orbCore;
     // A SHADED halo, not a flat additive sphere.
     //
     // The first version was a MeshBasicMaterial sphere on additive back-side rendering. Under the
@@ -134,7 +154,9 @@ class Bolt {
     // 26 segments at this speed laid down four units of additive ribbon, which bloom welded
     // into one continuous white beam with the core invisible inside it.
     this.ribbon = new Ribbon(14, 0.1, new THREE.Color(0xffffff));
-    this.group.add(this.core, this.halo, this.light);
+    this.group.add(this.orbCore, this.gelCore, this.shardCore, this.halo, this.light);
+    this.gelCore.visible = false;
+    this.shardCore.visible = false;
     this.group.visible = false;
   }
 
@@ -145,6 +167,7 @@ class Bolt {
     const {
       from, direction, speed, range, core, halo, radius, sparkRate, onImpact, lightScale = 1,
       trailHead = halo, trailTail = halo, sparkEnd, sparkGravity = 1.1, flicker = 0, sparkSize = 1,
+      style = 'orb', deep,
     } = options;
     this.group.position.copy(from);
     this.start.copy(from);
@@ -167,15 +190,37 @@ class Bolt {
     // The halo has to stay clearly dimmer than the core. At 3.1x and 0.42 opacity it and the core
     // both clipped to white after tone mapping and bloom, and the bolt lost its shape — it read as
     // a flat disc rather than as a hot centre inside a glow.
-    this.core.scale.setScalar(radius * 0.78);
-    this.halo.scale.setScalar(radius * 3.0);
-    (this.core.material as THREE.MeshBasicMaterial).color.copy(core);
+    this.style = style;
+    this.orbCore.visible = style === 'orb';
+    this.gelCore.visible = style === 'gel';
+    this.shardCore.visible = style === 'shard';
+    this.core = style === 'gel' ? this.gelCore : style === 'shard' ? this.shardCore : this.orbCore;
+
+    if (style === 'orb') {
+      this.core.scale.setScalar(radius * 0.78);
+      (this.core.material as THREE.MeshBasicMaterial).color.copy(core);
+    } else {
+      // Squashed along its own travel: a thrown droplet and a spinning shard both present a longer
+      // profile down the direction they are going, and a perfect sphere is the one shape that
+      // cannot show which way it is moving.
+      const stretch = style === 'gel' ? 1.55 : 1.9;
+      this.core.scale.set(radius * 0.9, radius * 0.9, radius * 0.9 * stretch);
+      this.core.quaternion.setFromUnitVectors(FORWARD, this.direction);
+      const u = (this.core.material as THREE.ShaderMaterial).uniforms;
+      u.uSkin.value.copy(core);
+      u.uDeep.value.copy(deep ?? halo);
+      u.uGlow.value = 1;
+    }
+    // A gel glob is its own bright object and needs far less additive halo than a magic orb, which
+    // was nothing BUT halo. Stacking the orb's halo on top of it is what blew the first version out.
+    this.halo.scale.setScalar(radius * (style === 'orb' ? 3.0 : style === 'shard' ? 1.9 : 2.1));
+    (this.halo.material as THREE.ShaderMaterial).uniforms.uStrength.value = style === 'orb' ? 0.85 : 0.4;
     (this.halo.material as THREE.ShaderMaterial).uniforms.uColour.value.copy(halo);
     this.light.color.copy(halo);
     // Tied to the bolt's own size so a volley pellet does not light the stage like the heavy bolt.
     // Measured down from 7 + 70r: at that strength the bolt's own light washed the figure to near
     // white as it passed, which the bloom pass had been hiding in the standalone build.
-    this.baseIntensity = (5 + radius * 46) * lightScale;
+    this.baseIntensity = (5 + radius * 46) * lightScale * (style === 'gel' ? 0.6 : 1);
     this.light.intensity = this.baseIntensity;
     this.light.distance = radius * 27;
     this.ribbon.setWidth(radius * 1.25);
@@ -208,9 +253,18 @@ class Bolt {
     this.ribbon.push(this.group.position);
     this.ribbon.build(cameraPosition);
 
-    // Spin the core so the facets catch the light and the bolt does not read as a static ball.
-    this.core.rotation.x += delta * 7;
-    this.core.rotation.y += delta * 5;
+    // Tumble. Bile wallows; scrap spins hard. The orb keeps the old constant spin.
+    const tumble = this.style === 'gel' ? 2.2 : this.style === 'shard' ? 16 : 7;
+    this.core.rotateX(delta * tumble);
+    this.core.rotateZ(delta * tumble * 0.62);
+
+    if (this.style !== 'orb') {
+      // Wobble the glob's brightness slowly — a sac of liquid catches the light unevenly as it
+      // turns. Separate from `flicker`, which is the fast guttering a flame does.
+      const u = (this.core.material as THREE.ShaderMaterial).uniforms;
+      this.life += delta;
+      u.uGlow.value = 0.82 + 0.18 * Math.sin(this.life * 9.5);
+    }
 
     if (this.flicker > 0) {
       // The core guts like a flame rather than burning at a constant brightness. Two detuned
@@ -219,7 +273,9 @@ class Bolt {
       const gutter = 0.72 + 0.28
         * (0.5 + 0.5 * Math.sin(this.life * 21)) * (0.6 + 0.4 * Math.sin(this.life * 7.7));
       const k = 1 - this.flicker + this.flicker * gutter;
-      (this.core.material as THREE.MeshBasicMaterial).color.copy(this.coreColour).multiplyScalar(k);
+      if (this.style === 'orb') {
+        (this.core.material as THREE.MeshBasicMaterial).color.copy(this.coreColour).multiplyScalar(k);
+      }
       (this.halo.material as THREE.ShaderMaterial).uniforms.uStrength.value = 0.85 * k;
       this.light.intensity = this.baseIntensity * k;
     }
@@ -257,9 +313,12 @@ class Bolt {
   }
 
   dispose(): void {
-    this.core.geometry.dispose();
+    // Glob geometries are shared out of a cache and are NOT disposed here.
+    this.orbCore.geometry.dispose();
     this.halo.geometry.dispose();
-    (this.core.material as THREE.Material).dispose();
+    for (const mesh of [this.orbCore, this.gelCore, this.shardCore]) {
+      (mesh.material as THREE.Material).dispose();
+    }
     (this.halo.material as THREE.Material).dispose();
     this.ribbon.dispose();
   }
@@ -271,7 +330,8 @@ export class BoltPool {
   readonly group = new THREE.Group();
 
   constructor(field: ParticleField, size = 12) {
-    this.bolts = Array.from({ length: size }, () => new Bolt(field));
+    // Each bolt gets its own deformation variant, so a volley is three different lumps.
+    this.bolts = Array.from({ length: size }, (_, i) => new Bolt(field, i));
     this.group.name = 'roblin-bolts';
     for (const bolt of this.bolts) this.group.add(bolt.group, bolt.ribbonMesh);
   }
