@@ -1,0 +1,783 @@
+{
+  "targetName": "Roblin",
+  "targetId": "monster-1",
+  "schemaVersion": "1.5.2-stage-R-animated-character",
+  "terminologyProfile": "core_3d",
+  "sourceImage": "rolbin.jpeg",
+  "suitability": {
+    "status": "accepted",
+    "route": "glb-fast-lane",
+    "note": "A generated GLB carries measured bounds and surfaces, so the single-image intake steps that recover structure from one photo are not applicable here."
+  },
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryDomain": "character",
+      "subjectClass": "character",
+      "source": "user"
+    },
+    "complexity": "moderate",
+    "partCount": 1,
+    "triangleBudget": "source"
+  },
+  "qualityContract": {
+    "qualityBar": "measured-surface",
+    "exactnessTier": "measured",
+    "definitionOfDone": [
+      "Every part in the download renders from embedded data with no runtime asset fetch.",
+      "Colour, roughness and metalness are measured from the source, not invented.",
+      "Every effect colour and every light colour derives from a measured swatch, with the derivation recorded.",
+      "Every effect anchors to a real bone through a socket; no effect is placed by a literal coordinate.",
+      "Every clip is measured by Gate R1 before it is claimed to run."
+    ],
+    "notDone": [
+      "No AI-vision fidelity review against the reference has been run. The renders in this repo were reviewed by eye for composition and exposure, which is not the same thing.",
+      "Part identity is still a hypothesis: the ONE part is labelled \"body-shell\" from bounds alone. The BONE names are not hypotheses \u2014 they are the rig's own.",
+      "Hidden sides are whatever the generator produced; a single photo cannot confirm them.",
+      "The sprint's ground speed (1.15 figure-heights per second) and turn rate are AUTHORED. All 16 clips are in-place, so there is no root motion to measure a ground speed from.",
+      "preset:biped:run_upstairs is a stair climb used as a flat-ground run. Its climb is cancelled by a measured running-minimum of the lowest toe, and its left foot plants 0.335 above the floor, which is why that foot's dust is faded rather than suppressed.",
+      "The three combat clips are reused presets, not bespoke animation. dance_05 in particular is a dance clip standing in for a spin-cast, and it reads as one.",
+      "No destruction groups: the rigged model is one merged shell and there is nothing to separate."
+    ]
+  },
+  "coordinateFrame": {
+    "asExported": {
+      "front": "subject faces -z (toward the default camera)",
+      "up": "+y; feet at y = 0 after normalisation",
+      "scaleReference": "figure height 1.9 model units (source generator: Tripo auto-rig)"
+    },
+    "correction": "The \"front\" line above is WRONG for this export and was not used. The measured world bounds are 0.45 x 1.90 x 2.11, and a 2.11 \"depth\" on a 1.9-tall figure is a T-pose arm span, not a body depth \u2014 so z is the LATERAL axis and the body faces x. Measured from the bind pose: left (-0.029, 0.000, -1.000), up (-0.069, 0.998, 0.002), forward (0.997, 0.069, -0.029). The exported MONSTER_1_CAMERA, which sits on +z, therefore looks at the character's right ear.",
+    "measuredBy": "src/roblin/rigFrame.ts"
+  },
+  "viewEvidence": [
+    {
+      "id": "glb-node:0",
+      "view": "glb-baseline",
+      "observations": [
+        "world AABB min [-0.226478,0,-1.056407] max [0.226478,1.9,1.056407]",
+        "height fraction range [0,1]",
+        "partHypothesis \"body-shell\" by measured-world-bounds",
+        "centre at 50% of figure height in band \"thigh\"; lateral 0.00 (midline); depth 0.00 (centre); 100.0% of figure volume"
+      ],
+      "confidence": 0.2
+    }
+  ],
+  "componentTree": [
+    {
+      "id": "root",
+      "name": "Monster 1 (root)",
+      "level": "macro",
+      "role": "body",
+      "importance": 1,
+      "confidence": 0.9,
+      "primitive": "measured-surface-group",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Root pivot for the whole figure; children are measured surface parts.",
+      "parent": null,
+      "dimensions": {
+        "width": 0.238398,
+        "height": 1,
+        "depth": 1.112007,
+        "units": "relative",
+        "confidence": 0.9
+      },
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "fidelityTier": "measured-surface",
+      "evidenceRefs": [
+        "glb-baseline"
+      ]
+    },
+    {
+      "id": "body-shell",
+      "name": "body shell",
+      "level": "macro",
+      "role": "body",
+      "importance": 0.2,
+      "confidence": 0.2,
+      "primitive": "measured-surface",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Measured triangle surface of GLB node 0, 113,338 triangles after intake. Identity \"body-shell\" is a bounds hypothesis.",
+      "geometryDescriptor": {
+        "topologyIntent": "embedded measured surface (quantised positions, oct normals, sampled vertex colours)",
+        "edgeTreatment": {
+          "type": "source",
+          "bevelRadius": 0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "none \u2014 colour is per vertex",
+        "normalStrategy": "source vertex normals, 16-bit octahedral"
+      },
+      "parent": "root",
+      "attachment": {
+        "to": "root",
+        "socket": "body-shell-pivot",
+        "kind": "pivot-at-bounds-centre"
+      },
+      "dimensions": {
+        "width": 0.238398,
+        "height": 1,
+        "depth": 1.112007,
+        "units": "relative",
+        "confidence": 0.9
+      },
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "material": "body-shell-material",
+      "joints": [
+        {
+          "id": "body-shell-pivot",
+          "type": "free",
+          "note": "group.userData.pivots[id] \u2014 rotate/translate without rebuilding geometry"
+        }
+      ],
+      "localFeatures": [],
+      "evidenceRefs": [
+        "glb-node:0"
+      ],
+      "details": [
+        {
+          "id": "body-shell-provenance",
+          "description": "partHypothesis \"body-shell\" at confidence 0.20 from measured-world-bounds: centre at 50% of figure height in band \"thigh\"; lateral 0.00 (midline); depth 0.00 (centre); 100.0% of figure volume \u2014 ambiguity: spans footwear / lower-leg / knee / thigh / hip-waist / torso / shoulder-neck / head; spans most of the figure height (shell or body, not a limb)"
+        }
+      ],
+      "fidelityTier": "measured-surface"
+    }
+  ],
+  "materials": [
+    {
+      "id": "body-shell-material",
+      "name": "body shell surface",
+      "type": "standard",
+      "shaderModel": "MeshStandardMaterial / PBR, vertex-coloured",
+      "baseColor": "#FFFFFF",
+      "color": "#FFFFFF",
+      "albedo": {
+        "dominant": "#FFFFFF",
+        "samplingNotes": "per-vertex colour sampled from the source albedo texture at each vertex UV; the factor above is the multiplier, not the colour"
+      },
+      "roughness": {
+        "value": 0.4431,
+        "source": "median of the source metallic-roughness texture over this part"
+      },
+      "metalness": {
+        "value": 0.0353,
+        "source": "median of the source metallic-roughness texture over this part"
+      },
+      "normal": "source had a normal map; NOT carried (vertex normals only)",
+      "doubleSided": false,
+      "alphaMode": "OPAQUE",
+      "emissive": "#000000",
+      "notes": "Measured from the generated GLB, not authored. Refine by observation against the reference."
+    }
+  ],
+  "buildPasses": [
+    {
+      "id": "blockout",
+      "goal": "Proportions and part layout from the measured GLB bounds.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "completed-by-measurement",
+      "evidence": [
+        "playground intake log"
+      ]
+    },
+    {
+      "id": "structural-pass",
+      "goal": "Part surfaces carried as measured geometry with locked seams.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "completed-by-measurement",
+      "evidence": [
+        "playground intake log"
+      ]
+    },
+    {
+      "id": "material-pass",
+      "goal": "Per-vertex albedo and per-part roughness/metalness medians from the source.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "completed-by-measurement",
+      "evidence": [
+        "playground intake log"
+      ]
+    },
+    {
+      "id": "interaction-pass",
+      "goal": "Sockets on real bones, a clip controller with cross-fade and mixer-clock cues, a hand-written effect layer, and a palette-driven light rig.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "authored",
+      "evidence": [
+        ".gate/gate-r1.json",
+        "docs/STAGE-R-REPORT.md",
+        "showcase/reference.jpg"
+      ]
+    }
+  ],
+  "glbBaseline": {
+    "status": "hypothesis-requires-render-confirmation",
+    "source": {
+      "sha256": "",
+      "bytes": 7982304,
+      "generator": "Tripo auto-rig",
+      "nodes": 41,
+      "meshes": 1,
+      "triangles": 113338,
+      "vertices": 62956,
+      "textured": false,
+      "skinned": true
+    },
+    "namesUsedAsEvidence": false,
+    "nodeCount": 1,
+    "intakeSteps": [
+      "skeleton: 41 bones, root \"Root\"",
+      "clips: preset:biped:run_upstairs (0.83s), preset:biped:standing_relax (17.63s), preset:biped:box_01 (2.25s), preset:biped:box_02 (2.83s), preset:biped:box_03 (2.58s)",
+      "figure 0.45 x 1.90 x 2.11 after normalisation"
+    ],
+    "note": "Surfaces are the GLB's measured triangles, quantised and embedded as code; the GLB itself is not shipped or fetched. Part names are bounds hypotheses."
+  },
+  "pipelineRouting": {
+    "version": 1,
+    "track": "character-glb-fast-lane",
+    "source": "playground",
+    "status": "resolved",
+    "classification": {
+      "kind": "character",
+      "confidence": 1,
+      "provider": "playground"
+    }
+  },
+  "animationAnchors": [
+    "root group supports whole-object translation, rotation, scale and visibility",
+    "group.userData.pivots[<part-id>] is a pivot group at each part's bounds centre",
+    "group.userData.update(elapsedSeconds) drives the built-in idle motion"
+  ],
+  "risks": [
+    {
+      "id": "hypothesis-labels",
+      "severity": "medium",
+      "note": "Part names come from bounds bands; a boot can be called a knee pad. Confirm in the viewer before publishing."
+    },
+    {
+      "id": "generator-hidden-sides",
+      "severity": "medium",
+      "note": "Back and underside geometry is generated, not observed."
+    },
+    {
+      "id": "vertex-colour-resolution",
+      "severity": "low",
+      "note": "Colour resolution equals vertex density; decimation lowers both."
+    },
+    {
+      "id": "stair-climb-locomotion",
+      "severity": "medium",
+      "note": "The only locomotion clip is preset:biped:run_upstairs. On a flat stage it both lifts the figure and refuses to plant the left toe. Both are corrected by measurement here, but a project that needs real flat-ground locomotion should retarget a run clip rather than inherit these corrections."
+    }
+  ],
+  "provenance": {
+    "generatedAt": "2026-08-29 13:53:42 UTC",
+    "playgroundVersion": "0.1.0",
+    "sourceImage": {
+      "kind": "upload",
+      "filename": "rolbin.jpeg",
+      "prompt": null,
+      "editPrompt": null,
+      "imageModel": null,
+      "tripoImageTaskId": null
+    },
+    "provider": "tripo",
+    "animation": {
+      "rigTaskId": "a61b58a4-28bb-411a-8204-4af9836464b8",
+      "retargetTaskId": "bbf870ff-5dee-47c5-9978-22fbef0aacc8",
+      "rigType": "biped",
+      "spec": "tripo",
+      "clips": [
+        "preset:biped:run_upstairs",
+        "preset:biped:standing_relax",
+        "preset:biped:box_01",
+        "preset:biped:box_02",
+        "preset:biped:box_03",
+        "preset:biped:defeat_03",
+        "preset:biped:fire",
+        "preset:biped:front_kick_01",
+        "preset:biped:front_kick_02",
+        "preset:biped:dance_01",
+        "preset:biped:dance_02",
+        "preset:biped:dance_03",
+        "preset:biped:dance_04",
+        "preset:biped:dance_05",
+        "preset:biped:dance_06",
+        "preset:biped:idle"
+      ]
+    },
+    "tripo": {
+      "modelTaskId": "40329e23-fc34-4d89-bd29-87402c3c0d6f",
+      "modelVersion": "v3.1-20260211",
+      "textureQuality": "detailed",
+      "faceLimit": 120000,
+      "segmentationTaskId": "0451a43e-bebe-4645-9744-27d6f0b37713",
+      "segmentationVersion": "v2.0-20260430",
+      "segmentationGranularity": "detailed",
+      "assetUrl": null,
+      "views": [
+        "front"
+      ]
+    }
+  },
+  "performanceBudget": {
+    "triangles": 113338,
+    "parts": 1,
+    "drawCalls": 1
+  },
+  "rig": {
+    "status": "embedded-and-measured",
+    "source": "src/rigData.ts \u2014 skeleton, per-vertex skin weights and every clip, shipped as code",
+    "nameAuthority": "The 41 bone names below are the RIG'S OWN, read straight out of rigData.ts. They are NOT bounds hypotheses and carry none of the \"hypothesis-requires-render-confirmation\" caveat that applies to the single part label \"body-shell\".",
+    "boneCount": 41,
+    "rootBone": "Root",
+    "boneNames": [
+      "Root",
+      "Hip",
+      "Pelvis",
+      "L_Thigh",
+      "L_Calf",
+      "L_Foot",
+      "L_ToeBase",
+      "L_CalfTwist01",
+      "L_CalfTwist02",
+      "L_ThighTwist01",
+      "L_ThighTwist02",
+      "R_Thigh",
+      "R_ThighTwist01",
+      "R_ThighTwist02",
+      "R_Calf",
+      "R_Foot",
+      "R_ToeBase",
+      "R_CalfTwist01",
+      "R_CalfTwist02",
+      "Waist",
+      "Spine01",
+      "Spine02",
+      "NeckTwist01",
+      "NeckTwist02",
+      "Head",
+      "L_Clavicle",
+      "L_Upperarm",
+      "L_Forearm",
+      "L_ForearmTwist01",
+      "L_ForearmTwist02",
+      "L_Hand",
+      "L_UpperarmTwist01",
+      "L_UpperarmTwist02",
+      "R_Clavicle",
+      "R_Upperarm",
+      "R_UpperarmTwist01",
+      "R_UpperarmTwist02",
+      "R_Forearm",
+      "R_ForearmTwist01",
+      "R_ForearmTwist02",
+      "R_Hand"
+    ],
+    "vertexCount": 62956,
+    "levelsOfDetail": 1,
+    "decimation": {
+      "allowed": false,
+      "reason": "The model is ONE skinned shell, not separable parts, and skinIndex/skinWeight are per-vertex arrays indexed in lockstep with position. A quadric collapse leaves every weight past the new vertex count addressing a vertex that no longer exists, and the figure tears open the moment a clip runs \u2014 while still looking correct in a static screenshot. This is why exactly one level of detail ships.",
+      "enforcedBy": "assertBindingIntact() in src/roblin/animator.ts, called before the first frame"
+    },
+    "measuredBodyFrame": {
+      "note": "The spec's own coordinateFrame says the subject faces -z. That is wrong for this export: the measured bounds are 0.45 wide by 1.90 tall by 2.11 deep, and a 2.11 \"depth\" on a 1.9-tall figure is a T-pose ARM SPAN. The lateral axis is z and the body faces x. Every axis below was measured from named bones in the bind pose by src/roblin/rigFrame.ts.",
+      "left": "(-0.029, 0.000, -1.000) from L_Hand - R_Hand",
+      "up": "(-0.069, 0.998, 0.002) from Head - Hip, orthogonalised against left",
+      "forward": "(0.997, 0.069, -0.029) = left x up, right-handed",
+      "figureHeight": 1.502307798894961,
+      "armSpan": 1.678,
+      "forearmLength": 0.305,
+      "clavicleSpacing": 0.085
+    }
+  },
+  "actionProfile": {
+    "status": "authored-on-top-of-the-export",
+    "note": "The exported spec had NO actionProfile, no sockets and no destructionGroups \u2014 its interaction-pass was pending-authoring and its only anchors were the root group and one pivot at the body-shell bounds centre. Everything in this block was added afterwards.",
+    "sockets": {
+      "provenance": "derived-from-rig-bones",
+      "note": "The exported spec had no actionProfile. These sockets were derived from the 41 real bones in rigData.ts plus body lengths measured off the bind pose; no coordinate is authored.",
+      "units": {
+        "forearm": 0.304536,
+        "shoulder": 0.084513,
+        "height": 1.502308
+      },
+      "sockets": [
+        {
+          "id": "effect:cast-primary",
+          "kind": "effect",
+          "bone": "R_Hand",
+          "boneNameSource": "rigData.ts \u2014 the rig's own name, not a bounds hypothesis",
+          "side": "right",
+          "offsetBodyFrame": {
+            "forward": 0.55,
+            "up": 0.12,
+            "outward": 0
+          },
+          "offsetUnit": "forearm",
+          "purpose": "muzzle of a ranged cast \u2014 a palm-length ahead of the right hand"
+        },
+        {
+          "id": "effect:cast-secondary",
+          "kind": "effect",
+          "bone": "L_Hand",
+          "boneNameSource": "rigData.ts \u2014 the rig's own name, not a bounds hypothesis",
+          "side": "left",
+          "offsetBodyFrame": {
+            "forward": 0.55,
+            "up": 0.12,
+            "outward": 0
+          },
+          "offsetUnit": "forearm",
+          "purpose": "second muzzle, for volleys that alternate hands"
+        },
+        {
+          "id": "effect:core",
+          "kind": "effect",
+          "bone": "Spine02",
+          "boneNameSource": "rigData.ts \u2014 the rig's own name, not a bounds hypothesis",
+          "side": "centre",
+          "offsetBodyFrame": {
+            "forward": 0.07,
+            "up": 0,
+            "outward": 0
+          },
+          "offsetUnit": "height",
+          "purpose": "chest emitter \u2014 the charge that a cast draws from and the idle aura pulses at"
+        },
+        {
+          "id": "effect:crown",
+          "kind": "effect",
+          "bone": "Head",
+          "boneNameSource": "rigData.ts \u2014 the rig's own name, not a bounds hypothesis",
+          "side": "centre",
+          "offsetBodyFrame": {
+            "forward": 0,
+            "up": 0.11,
+            "outward": 0
+          },
+          "offsetUnit": "height",
+          "purpose": "above the skull, for rising motes and the nova column"
+        },
+        {
+          "id": "effect:shoulder-l",
+          "kind": "effect",
+          "bone": "L_Clavicle",
+          "boneNameSource": "rigData.ts \u2014 the rig's own name, not a bounds hypothesis",
+          "side": "left",
+          "offsetBodyFrame": {
+            "forward": 0,
+            "up": 0.03,
+            "outward": 0.075
+          },
+          "offsetUnit": "height",
+          "purpose": "left shoulder wisp"
+        },
+        {
+          "id": "effect:shoulder-r",
+          "kind": "effect",
+          "bone": "R_Clavicle",
+          "boneNameSource": "rigData.ts \u2014 the rig's own name, not a bounds hypothesis",
+          "side": "right",
+          "offsetBodyFrame": {
+            "forward": 0,
+            "up": 0.03,
+            "outward": 0.075
+          },
+          "offsetUnit": "height",
+          "purpose": "right shoulder wisp \u2014 the reflection of shoulder-l"
+        },
+        {
+          "id": "grip:left",
+          "kind": "grip",
+          "bone": "L_Hand",
+          "boneNameSource": "rigData.ts \u2014 the rig's own name, not a bounds hypothesis",
+          "side": "left",
+          "offsetBodyFrame": {
+            "forward": 0,
+            "up": 0,
+            "outward": 0
+          },
+          "offsetUnit": "forearm",
+          "purpose": "where a held prop would sit; unused by the effects but part of the action profile"
+        },
+        {
+          "id": "grip:right",
+          "kind": "grip",
+          "bone": "R_Hand",
+          "boneNameSource": "rigData.ts \u2014 the rig's own name, not a bounds hypothesis",
+          "side": "right",
+          "offsetBodyFrame": {
+            "forward": 0,
+            "up": 0,
+            "outward": 0
+          },
+          "offsetUnit": "forearm",
+          "purpose": "the mirror of grip:left"
+        },
+        {
+          "id": "attachment:step-l",
+          "kind": "attachment",
+          "bone": "L_ToeBase",
+          "boneNameSource": "rigData.ts \u2014 the rig's own name, not a bounds hypothesis",
+          "side": "left",
+          "offsetBodyFrame": {
+            "forward": 0,
+            "up": 0,
+            "outward": 0
+          },
+          "offsetUnit": "forearm",
+          "purpose": "ground contact for the left foot \u2014 the footstep detector watches this one"
+        },
+        {
+          "id": "attachment:step-r",
+          "kind": "attachment",
+          "bone": "R_ToeBase",
+          "boneNameSource": "rigData.ts \u2014 the rig's own name, not a bounds hypothesis",
+          "side": "right",
+          "offsetBodyFrame": {
+            "forward": 0,
+            "up": 0,
+            "outward": 0
+          },
+          "offsetUnit": "forearm",
+          "purpose": "the mirror of attachment:step-l"
+        }
+      ]
+    },
+    "destructionGroups": {
+      "present": false,
+      "reason": "A rigged model here is ONE merged skinned shell with a single material and a single draw call. There are no separable parts to break it into, so there is nothing honest to declare. Destruction groups would need either the pre-rig segmented parts or a re-cut of the shell, and neither is in this download."
+    },
+    "skills": [
+      {
+        "id": "toxic-bolt",
+        "clip": "preset:biped:fire",
+        "socket": "effect:cast-primary",
+        "colour": "#d3f52c",
+        "release": "cue at 0.40 of the clip, read off the mixer clock",
+        "note": "one heavy bolt, aimed at a floor point 1.15 figure-heights down the measured forward axis"
+      },
+      {
+        "id": "ember-volley",
+        "clip": "preset:biped:box_02",
+        "socket": "effect:cast-primary + effect:cast-secondary",
+        "colour": "#f68e23",
+        "release": "cues at 0.22, 0.48 and 0.74, alternating hands",
+        "note": "three lighter bolts in the leather hue, so two casts in a row do not look identical"
+      },
+      {
+        "id": "spore-nova",
+        "clip": "preset:biped:dance_05",
+        "socket": "effect:core + effect:crown",
+        "colour": "#e6f19d",
+        "release": "cues at 0.18 and 0.42",
+        "note": "eight bolts fanned about the measured up axis plus a column from the crown socket"
+      },
+      {
+        "id": "sprint",
+        "clip": "preset:biped:run_upstairs",
+        "socket": "attachment:step-l + attachment:step-r",
+        "colour": "#f68e23 dust, #e6f19d sparks",
+        "release": "per footfall, detected from each toe bone's own descent",
+        "note": "The clip is a STAIR CLIMB \u2014 the only locomotion clip the rig ships \u2014 so its root motion lifts the figure off a flat floor and its left toe never returns below 0.335. Both are corrected by measurement, not by hand-tuned constants: see notDone."
+      }
+    ]
+  },
+  "gateR1": {
+    "name": "clip binding probe",
+    "ranBy": "npm run gate:r1 (Node, no browser) and again in the page at boot",
+    "question": "does each clip actually move the skin, or does it merely exist?",
+    "method": "Every clip is seeked to 7 times across its duration. At each seek 913 evenly-spaced vertices are pushed through applyBoneTransform \u2014 the same maths the shader runs \u2014 and compared against the true bind pose from Skeleton.pose().",
+    "samplesPerClip": 7,
+    "sampledVertices": 913,
+    "motionThresholdFraction": 0.005,
+    "bindPoseNote": "bind pose spans 2.110 laterally against 1.896 tall \u2014 a T-pose. Lowering the arms alone displaces a fingertip by about 1.05 units, so a bindDelta over 100% of figure height is expected and is not a defect.",
+    "maxSampledBindingDelta": 2.832009,
+    "maxSampledBindingDeltaFractionOfHeight": 1.8851,
+    "passed": 16,
+    "failed": 0,
+    "unevaluated": 0,
+    "perClip": [
+      {
+        "clip": "preset:biped:run_upstairs",
+        "duration": 0.833,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.391135,
+        "maxInterSampleDelta": 0.737657,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:standing_relax",
+        "duration": 17.625,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.23708,
+        "maxInterSampleDelta": 0.298727,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:box_01",
+        "duration": 2.25,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.879472,
+        "maxInterSampleDelta": 0.87216,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:box_02",
+        "duration": 2.833,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.776637,
+        "maxInterSampleDelta": 1.444149,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:box_03",
+        "duration": 2.583,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.581298,
+        "maxInterSampleDelta": 0.97492,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:defeat_03",
+        "duration": 5.583,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 2.315823,
+        "maxInterSampleDelta": 2.141926,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:fire",
+        "duration": 1.542,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.301717,
+        "maxInterSampleDelta": 0.047707,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:front_kick_01",
+        "duration": 2.542,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 2.832009,
+        "maxInterSampleDelta": 2.190731,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:front_kick_02",
+        "duration": 1.417,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.787078,
+        "maxInterSampleDelta": 2.081206,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:dance_01",
+        "duration": 23.208,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 2.168082,
+        "maxInterSampleDelta": 2.088417,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:dance_02",
+        "duration": 12.833,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.708432,
+        "maxInterSampleDelta": 0.8493,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:dance_03",
+        "duration": 12.833,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.724539,
+        "maxInterSampleDelta": 1.675411,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:dance_04",
+        "duration": 10.833,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.33855,
+        "maxInterSampleDelta": 1.316774,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:dance_05",
+        "duration": 2.917,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.545493,
+        "maxInterSampleDelta": 0.949257,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:dance_06",
+        "duration": 10.917,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.364828,
+        "maxInterSampleDelta": 0.937032,
+        "verdict": "pass"
+      },
+      {
+        "clip": "preset:biped:idle",
+        "duration": 15.375,
+        "tracksResolvedToBone": "123/123",
+        "maxSampledBindingDelta": 1.238815,
+        "maxInterSampleDelta": 0.294008,
+        "verdict": "pass"
+      }
+    ],
+    "evidence": ".gate/gate-r1.json"
+  },
+  "vfx": {
+    "authored": "by hand, for this showcase",
+    "note": "The img2threejs skill has NO particle subsystem, no trail renderer, no shockwave and no impact-flash primitive. Every effect in src/roblin/vfx/ is this showcase's own code against plain three: a pooled additive point-sprite field with a procedural disc in the shader, a camera-facing ribbon trail, an expanding ground ring, an additive floor pool, and a pooled projectile with a travelling point light. No new dependency, no texture file, no fetch.",
+    "anchoring": "Every effect is positioned from a socket's world matrix or from the measured body axes. No literal world coordinate appears in the effect code.",
+    "palette": "src/roblin/palette.ts \u2014 measured from the reference photo and the model's own vertex colours, then boosted. Each colour records its derivation; `steel` is the one authored hue and says so."
+  }
+}

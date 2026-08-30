@@ -59,6 +59,10 @@ import {
   prewarmGirlCharacter,
 } from './girl-character/createGirlCharacterModel';
 import {
+  createRoblinModel,
+  installRoblinLights,
+} from './roblin/createRoblinModel';
+import {
   createTalonDopplerRubyModel,
   createTalonDopplerRubyLookDevLights,
   makeTalonDopplerRubyBackground,
@@ -905,6 +909,54 @@ export const demos: DemoEntry[] = [
       scene.add(group);
       return group;
     },
+  },
+  {
+    id: 'roblin',
+    title: 'Roblin — rigged, armed and lit from its own colours',
+    subjectClass: 'character',
+    blurb:
+      'A goblin skirmisher rebuilt as ONE measured skinned shell — 113,338 triangles, 41 real bones, '
+      + '16 embedded clips, nothing fetched at runtime. The playground measured the surface and the '
+      + 'rig; everything else was authored on top: ten sockets derived from the real bones (the '
+      + 'export shipped none), a clip controller with cross-fades and cues read off the mixer clock, '
+      + 'three ranged skills, and a hand-written effect layer in plain three with no textures. Every '
+      + 'effect and light colour is measured — from the reference photo and from the model\'s own '
+      + '62,956 vertex colours — then boosted, with each derivation recorded. Gate R1 seeks all 16 '
+      + 'clips and measures whether each one actually moves the skin: 16 pass, 0 unevaluated, '
+      + 'maxSampledBindingDelta 2.832. The single part label is still a bounds hypothesis; the bone '
+      + 'names are not.',
+    referenceImage: `${BASE}references/roblin.jpg`,
+    sourcePath: 'src/demos/roblin/createRoblinModel.ts',
+    sourceUrl: `${REPO}/src/demos/roblin/createRoblinModel.ts`,
+    generatedWith: 'img2threejs playground · Tripo v3.1-20260211 measurement · GLB fast lane · 1.5.2 Stage R animated-character',
+    prompt:
+      'Take the playground export past the geometry it already measured: use the embedded rig as-is, '
+      + 'derive sockets from the real bone names, drive the embedded clips with cross-fades and '
+      + 'measured release cues, and add ranged attack, impact and movement effects plus a light rig '
+      + 'coloured entirely from the character\'s own measured palette.',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'placeholder',
+
+    // NOT the export's own MONSTER_1_CAMERA. That camera sits on +z, and this rig's measured lateral
+    // axis is ALSO z — the T-pose arm span is what makes the exported bounding box 2.11 "deep" on a
+    // 1.9-tall figure — so it looks straight at the character's right ear. These numbers come out of
+    // frameCamera() in stage.ts, which builds the view from the measured body basis, and they put the
+    // camera on the side that lets a bolt cross the frame instead of leaving it.
+    cameraPosition: [3.84, 1.32, -3.45],
+    cameraTarget: [0.83, 0.87, -0.02],
+    cameraFov: 32,
+    accent: '#d3f52c',
+    backgroundGradient: { inner: '#0b0f08', outer: '#05060a' },
+    // The gallery renders without the bloom pass the standalone build uses, so the effects lean on
+    // additive blending and travelling point lights instead; a little more exposure keeps them read.
+    exposure: 1.05,
+    environmentIntensity: 0.22,
+    toneMapping: 'aces',
+    installLights: installRoblinLights,
+    // No `prewarm`: this model has ONE level of detail and `build` is synchronous by contract, so
+    // the surface is imported statically. See the note on `buildRigged` in createRoblinModel.ts.
+    build: (scene) => createRoblinModel(scene),
   },
 ];
 
