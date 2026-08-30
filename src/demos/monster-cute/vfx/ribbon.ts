@@ -13,9 +13,12 @@ import * as THREE from 'three';
 
 const VERTEX = /* glsl */ `
   attribute float aFade;
+  attribute float aSide;
   varying float vFade;
+  varying float vSide;
   void main() {
     vFade = aFade;
+    vSide = aSide;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
@@ -24,10 +27,14 @@ const FRAGMENT = /* glsl */ `
   uniform vec3 uColor;
   uniform float uOpacity;
   varying float vFade;
+  varying float vSide;
   void main() {
+    // Feathered across the ribbon as well as along it. With a hard edge the strip reads as a sheet
+    // lying on whatever is behind it; with a soft one it reads as light.
+    float across = 1.0 - vSide * vSide;
     // vFade^1.5 rather than squared: squaring crushed the tail to nothing and the trail read
     // as a short blob at the wrist instead of a streak.
-    gl_FragColor = vec4(uColor * (0.6 + 0.7 * vFade), pow(vFade, 1.6) * uOpacity * 0.75);
+    gl_FragColor = vec4(uColor * (0.6 + 0.7 * vFade), pow(vFade, 1.6) * across * uOpacity * 0.75);
   }
 `;
 
@@ -36,6 +43,7 @@ export class Ribbon {
   private readonly samples: THREE.Vector3[];
   private readonly positions: Float32Array;
   private readonly fades: Float32Array;
+  private readonly sides: Float32Array;
   private readonly material: THREE.ShaderMaterial;
   private readonly width: number;
   private filled = 0;
@@ -50,10 +58,13 @@ export class Ribbon {
     this.samples = Array.from({ length: segments }, () => new THREE.Vector3());
     this.positions = new Float32Array(segments * 2 * 3);
     this.fades = new Float32Array(segments * 2);
+    this.sides = new Float32Array(segments * 2);
+    for (let i = 0; i < segments; i += 1) { this.sides[i * 2] = -1; this.sides[i * 2 + 1] = 1; }
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
     geometry.setAttribute('aFade', new THREE.BufferAttribute(this.fades, 1));
+    geometry.setAttribute('aSide', new THREE.BufferAttribute(this.sides, 1));
     // Two triangles per segment pair, wound as a strip laid out by hand so the index buffer is
     // static and only the vertex positions move.
     const index: number[] = [];
@@ -104,10 +115,22 @@ export class Ribbon {
     if (this.filled < this.samples.length) this.filled += 1;
     if (this.filled < 3) { this.mesh.visible = false; return; }
 
-    for (let i = 0; i < this.samples.length; i += 1) {
-      const here = this.samples[Math.min(i, this.filled - 1)];
-      const ahead = this.samples[Math.max(0, Math.min(i, this.filled - 1) - 1)];
-      const behind = this.samples[Math.min(this.filled - 1, Math.min(i, this.filled - 1) + 1)];
+    /**
+     * Only the segments that actually exist are drawn.
+     *
+     * The history refills from zero after every reset — and it resets on each clip change, and
+     * again whenever the hand slows enough for the trail to fade out. While it was refilling, every
+     * vertex past `filled` clamped onto the SAME oldest sample but kept its own tapering width, so
+     * the tail collapsed into a single point and the strip fanned out from it as one large
+     * triangle. Against the pale belly that fan read as a hard-edged translucent wedge — exactly
+     * like a tear in the mesh, which is what it was mistaken for. Shrinking the draw range to the
+     * real segments removes it at the source; there is nothing to clamp.
+     */
+    const live = this.filled;
+    for (let i = 0; i < live; i += 1) {
+      const here = this.samples[i];
+      const ahead = this.samples[Math.max(0, i - 1)];
+      const behind = this.samples[Math.min(live - 1, i + 1)];
       this.tmpDir.subVectors(ahead, behind);
       if (this.tmpDir.lengthSq() < 1e-12) this.tmpDir.set(0, 1, 0);
       this.tmpToCamera.subVectors(cameraPosition, here);
@@ -116,7 +139,9 @@ export class Ribbon {
       if (this.tmpSide.lengthSq() < 1e-12) this.tmpSide.set(1, 0, 0);
       this.tmpSide.normalize();
 
-      const age = i / (this.samples.length - 1);
+      // Taper over the samples that exist, not over the buffer's capacity, so a half-filled trail
+      // still reaches zero width at its own tail instead of ending abruptly mid-width.
+      const age = i / (live - 1);
       const halfWidth = (this.width * (1 - age) ** 1.5) / 2;
       const fade = (1 - age) ** 1.5;
 
@@ -131,6 +156,7 @@ export class Ribbon {
     }
 
     const geometry = this.mesh.geometry;
+    geometry.setDrawRange(0, (live - 1) * 6);
     (geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
     (geometry.getAttribute('aFade') as THREE.BufferAttribute).needsUpdate = true;
     this.mesh.visible = true;

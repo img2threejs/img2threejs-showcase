@@ -42,7 +42,25 @@ export function createMonsterCuteStageLights(): StageLights {
   key.position.set(1.5 * H, 1.55 * H, 0.95 * H);   // front-right and above, relative to the measured +X facing
   key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048);
-  key.shadow.bias = -0.0012;
+  /**
+   * `normalBias`, not a bigger depth `bias`.
+   *
+   * The belly is a big, gently curved, almost unbroken surface, and across a wide band of it the
+   * face normal sits nearly perpendicular to the key direction. That is the worst case for a
+   * shadow map: neighbouring surface points land in the same depth texel, so the surface shadows
+   * ITSELF in stripes. On this model it read as a hard diagonal trough carved across the belly that
+   * appeared the moment a clip ran and vanished in bind pose — convincing enough to look like torn
+   * skin, but the geometry was never involved. Moving the light with the pose frozen removed it
+   * entirely, which is what identified it.
+   *
+   * `normalBias` offsets the shadow lookup ALONG THE SURFACE NORMAL, which is exactly the geometry
+   * that causes the error, so it scales with how oblique the surface is. Depth `bias` cannot do
+   * that: the value needed to cover the belly detaches contact shadows everywhere else (the feet
+   * start floating). So the depth bias goes back to a token amount and `normalBias` does the work.
+   */
+  key.shadow.bias = -0.0002;
+  key.shadow.normalBias = 0.035 * H;
+  key.shadow.radius = 2;
   // A shadow camera fitted to the figure rather than left at its default 5-unit box: the default
   // spreads the same map over 25x the area and the contact shadow under the feet goes soft.
   const extent = 1.35 * H;

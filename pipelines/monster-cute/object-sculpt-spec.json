@@ -321,6 +321,11 @@
       "id": "hold-in-place-skate",
       "severity": "low",
       "note": "The viewer cancels the hip's planar travel by default so the figure stays framed. Locomotion clips then skate: that is what their real 1.3H-2.6H travel looks like once the world stops moving. Toggle it off to see the untouched motion."
+    },
+    {
+      "id": "belly-shadow-acne",
+      "severity": "low",
+      "note": "The belly self-shadowed in stripes under animation and read as a torn mesh. Cause was the shadow map, not the skin: a wide band of that surface is near-perpendicular to the key light. Fixed with shadow.normalBias = 0.035H. Confirmed by moving the light with the pose frozen, which removed it while the geometry was untouched. Reweighting and dual quaternion skinning were both measured and both rejected \u2014 DQS made the fold metrics worse, because there was no linear-blend collapse to fix."
     }
   ],
   "provenance": {
@@ -843,6 +848,14 @@
         "colour": "sky fur-light #5a9bb5 / ground wristband #32314d"
       }
     ],
-    "note": "createMonsterCuteLookDevLights() (neutral white) is still exported and is the right rig for judging surface colour."
+    "note": "createMonsterCuteLookDevLights() (neutral white) is still exported and is the right rig for judging surface colour.",
+    "shadow": {
+      "caster": "key",
+      "mapSize": 2048,
+      "bias": -0.0002,
+      "normalBias": "0.035 * figure height",
+      "radius": 2,
+      "why": "normalBias rather than depth bias: the belly is a large gently curved surface whose normal runs nearly perpendicular to the key across a wide band, which is the worst case for a shadow map. A depth bias large enough to clear it detaches the contact shadow under the feet."
+    }
   }
 }
