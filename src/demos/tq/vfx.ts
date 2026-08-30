@@ -687,6 +687,10 @@ export class AuraShell implements Effect {
       // beyond the draw, and it can never fall out of step with the body.
       const shell = new THREE.SkinnedMesh(mesh.geometry, material);
       shell.bind(mesh.skeleton, mesh.bindMatrix);
+      // Match the source's bind mode, or the rim would be skinned in a different space from the
+      // surface it traces and would sit somewhere else entirely.
+      shell.bindMode = mesh.bindMode;
+      shell.bindMatrixInverse.copy(mesh.bindMatrixInverse);
       shell.scale.copy(mesh.scale);
       shell.frustumCulled = false;
       shell.renderOrder = 8;
@@ -703,9 +707,12 @@ export class AuraShell implements Effect {
       material.uniforms.uTime.value = this.time;
       material.uniforms.uStrength.value = this.strength;
     }
-    // A rim traces a surface, so it has to disappear with it. Hiding a costume piece while its
-    // shell kept drawing left a glowing outline of armour that was no longer on screen.
-    for (const { shell, source } of this.pairs) shell.visible = source.visible;
+    // A rim traces a surface, so it follows that surface: hidden when it is hidden, and moved when
+    // an explode moves it. Without the position copy the rim stays behind while the piece flies out.
+    for (const { shell, source } of this.pairs) {
+      shell.visible = source.visible;
+      shell.position.copy(source.position);
+    }
     this.object.visible = this.strength > 0.001;
     return true;
   }

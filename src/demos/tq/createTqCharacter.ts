@@ -42,8 +42,10 @@ import { neutraliseRootMotion, type RootMotion } from './rigFix';
 export interface TqCharacter {
   /** Root group — position/rotate this to place the character. */
   group: THREE.Group;
-  /** Container holding the five skinned meshes; the bone root lives under the first of them. */
+  /** Container holding the five skinned meshes, each free to be moved by an explode. */
   figure: THREE.Group;
+  /** Holds the bone root and the normalisation scale. */
+  skeletonHolder: THREE.Group;
   /** One skinned mesh per region, keyed by region id. */
   meshes: Map<RegionId, THREE.SkinnedMesh>;
   /** The single skeleton every mesh reads. */
@@ -153,22 +155,42 @@ export function createTqCharacter(options: TqCharacterOptions = {}): TqCharacter
     meshes.set(region.id, mesh);
   }
 
-  // --- bind in the export's exact order, because the order is what makes the bind correct ---
+  // --- bind, then DETACH, so the meshes can be moved independently -------------------------------
   //
-  // `three`'s `bind()` recomputes the inverse bind matrices from the bones' CURRENT world matrices
-  // whenever no explicit bind matrix is passed. So the bones must already be parented under the
-  // mesh and sitting at their unscaled rest pose at the moment of the call. Binding first and
-  // parenting afterwards — the arrangement that reads more naturally — leaves the bones with stale
-  // world matrices and inverts against the identity instead: measured, that put the rest-pose
-  // binding error at 8.6e-1 world units instead of 3.2e-8. The gate caught it; this order fixes it.
+  // `three` binds a SkinnedMesh in "attached" mode by default, and in that mode `updateMatrixWorld`
+  // recomputes `bindMatrixInverse` as the inverse of the mesh's own world matrix every frame. The
+  // skinning then reads `bindMatrixInverse * boneMatrix * bindMatrix * p`, so the mesh's transform
+  // cancels itself out exactly: translating a skinned mesh moves nothing on screen. That is why the
+  // gallery's explode control appeared to do nothing here — it wrote offsets into `position` that
+  // the GPU undid, and only the camera dolly betrayed that anything had happened.
   //
-  // The carrier is the mesh that owns the bone root, mirroring `buildRiggedModel`. The normalisation
-  // scale then goes on EVERY mesh, so each one's model matrix matches the carrier's and all five
-  // read the same bone matrices out of the one shared skeleton.
+  // In "detached" mode `bindMatrixInverse` is the inverse of the BIND matrix and stays fixed, so the
+  // mesh's transform survives and an offset actually separates the piece. The cost is that the
+  // normalisation scale can no longer live on the meshes — it would be applied twice — so it moves
+  // onto the skeleton, which is where it conceptually belongs anyway: the bones define the figure's
+  // size, and each mesh's transform is then free to mean "where this piece has been moved to".
+  //
+  // Binding still happens while the bones sit at their unscaled rest pose and the meshes are
+  // unparented, because `bind()` recomputes the inverse bind matrices from the bones' current world
+  // matrices. Binding after parenting or scaling put the rest-pose binding error at 8.6e-1 world
+  // units instead of 3.2e-8 when it was measured.
+  const skeletonHolder = new THREE.Group();
+  skeletonHolder.name = 'tq:skeleton';
+  skeletonHolder.add(root);
+  skeletonHolder.updateMatrixWorld(true);
+
   const ordered = [...meshes.values()];
-  const carrier = ordered[0];
-  carrier.add(root);
-  for (const mesh of ordered) mesh.bind(skeleton);
+  for (const mesh of ordered) {
+    mesh.bind(skeleton);
+    mesh.bindMode = THREE.DetachedBindMode;
+    mesh.bindMatrixInverse.copy(mesh.bindMatrix).invert();
+  }
+
+  // The figure's size now rides the skeleton. Both this and `figure` must stay at identity apart
+  // from what is set here: in detached mode the skinned vertices already come out in the skeleton's
+  // space, so any extra transform on an ancestor shared with the meshes would be applied twice.
+  skeletonHolder.scale.setScalar(rig.normalise.scale);
+  skeletonHolder.position.set(rig.normalise.offset[0], rig.normalise.offset[1], rig.normalise.offset[2]);
 
   const figure = new THREE.Group();
   figure.name = 'tq:figure';
@@ -176,9 +198,7 @@ export function createTqCharacter(options: TqCharacterOptions = {}): TqCharacter
 
   const group = new THREE.Group();
   group.name = 'tq';
-  group.add(figure);
-  for (const mesh of ordered) mesh.scale.setScalar(rig.normalise.scale);
-  group.position.set(rig.normalise.offset[0], rig.normalise.offset[1], rig.normalise.offset[2]);
+  group.add(skeletonHolder, figure);
   group.updateMatrixWorld(true);
 
   // --- sockets, measured from the shell and parented to real bones ---
@@ -219,16 +239,19 @@ export function createTqCharacter(options: TqCharacterOptions = {}): TqCharacter
   };
 
   group.updateMatrixWorld(true);
+  // Measured on the bind geometry and scaled by the normalisation: the meshes themselves now sit at
+  // identity, so their world bounding box would report the figure at bind size rather than 1.9.
   const bounds = new THREE.Box3();
   for (const mesh of meshes.values()) {
     mesh.geometry.computeBoundingBox();
-    bounds.union(mesh.geometry.boundingBox!.clone().applyMatrix4(mesh.matrixWorld));
+    bounds.union(mesh.geometry.boundingBox!);
   }
-  const height = bounds.getSize(new THREE.Vector3()).y;
+  const height = bounds.getSize(new THREE.Vector3()).y * rig.normalise.scale;
 
   return {
     group,
     figure,
+    skeletonHolder,
     meshes,
     skeleton,
     bones,

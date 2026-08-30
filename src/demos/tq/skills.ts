@@ -159,6 +159,9 @@ export class SkillDirector {
     private readonly lights: StageLights,
   ) {
     this.group.name = 'tq:vfx';
+    // Effects are not parts of the model: keep the container out of the parts inspector and the
+    // explode layout, the same way each individual effect marks itself.
+    this.group.userData.explodeWithParent = true;
 
     this.embers = new EmberField({ count: 900, rate: 0, radius: 0.05, life: 1.25, seed: 0x7a11 });
     this.group.add(this.embers.object);
