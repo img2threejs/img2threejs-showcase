@@ -346,6 +346,31 @@ Roots, grove and lance all come from **one** branch recursion at three scales an
 depths — a root, a young tree and a lance are the same structure — and all three run the figure's
 own bark shader, so grown wood is visibly the same material as the character.
 
+### Grown wood is the character's own geometry
+
+The first version of everything the demo grows — roots, groves, the lance — was built from tapered
+cylinders sized to the trunk's measured taper. That got the proportions right and the *shape*
+wrong: smooth, round, and nothing like the gnarled forms the figure is made of.
+
+So the branches are no longer imitated. They are **lifted out of the mesh**: the triangles bound to
+a clavicle that stand more than 0.09 from the shoulder axis — the character's own shoulder spurs.
+Measured, that is **2,526 triangles spanning 0.208 in height**, forked and irregular, and the
+closest thing on the body to a young tree. The crown antlers were the other candidate and lost: at
+0.118 × 0.095 × 0.256 they spread sideways far more than they rise, so they read as a crown rather
+than as a limb.
+
+The stock is normalised to unit height with its base at the origin, so an instance is placed by
+scale and rotation alone, and it is hung at every fork of the generated trunk. The trunk keeps the
+measured flare — base twice its tip — and the stock supplies the shape. Grown wood also carries the
+figure's own **vertex colours**, white-balanced the same way, and runs the same bark shader, so it
+is visibly the same material as the creature that raised it.
+
+One trap worth recording. `mergeGeometries` requires every input to carry an identical attribute
+set, and `CylinderGeometry` ships a `uv` the extracted stock does not have — the mesh codec never
+carried UVs. Every merge returned **null** and the grove came up empty with no error, no warning,
+and no trees. It surfaced only by counting the children of a grove that had definitely been
+spawned. The UVs are now deleted explicitly.
+
 ### Damage that outlives the blow
 
 Every impact leaves cracks and a toxin stain that run for **ten seconds** — roughly six times the

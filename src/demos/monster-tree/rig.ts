@@ -12,6 +12,77 @@ import { ALBEDO_WHITE_BALANCE, COSTUME_PIECES, COSTUME_RLE, COSTUME_RLE_TRIANGLE
 
 export type SocketKind = 'effect' | 'grip' | 'attachment';
 
+/**
+ * Branch stock lifted out of the character's own upper body.
+ *
+ * Everything this demo grows out of the ground — roots, groves, the lance — was generated from
+ * tapered cylinders, which gave the right proportions and the wrong shape: smooth, round, and
+ * nothing like the gnarled forms the figure is actually made of. This takes the geometry instead
+ * of imitating it.
+ *
+ * The source is the shoulder spur cluster: the triangles bound to a clavicle that stand more than
+ * 0.09 from the shoulder axis. Measured, that is 2,526 triangles spanning 0.208 in height — a real
+ * branch off the character's torso, forked and irregular, and the closest thing on the body to
+ * what a young tree looks like. The crown antlers were the other candidate and lost: at
+ * 0.118 x 0.095 x 0.256 they spread sideways far more than they rise, so they read as a crown
+ * rather than as a limb.
+ *
+ * Normalised to unit height with its base at the origin, so an instance is placed by scale and
+ * rotation alone.
+ */
+function extractBranchStock(
+  index: Uint32Array,
+  position: Float32Array,
+  normal: Float32Array,
+  colour: Float32Array,
+  skinIndex: Uint16Array,
+  skinWeight: Float32Array,
+  boneNames: string[],
+): THREE.BufferGeometry | null {
+  const dominant = (v: number): string => {
+    let best = -1;
+    let bone = 0;
+    for (let k = 0; k < 4; k += 1) {
+      const w = skinWeight[v * 4 + k];
+      if (w > best) { best = w; bone = skinIndex[v * 4 + k]; }
+    }
+    return boneNames[bone];
+  };
+  // The shoulder axis, from the measured clavicle rest position.
+  const AXIS_X = 0.036;
+  const AXIS_Y = 0.666;
+  const inStock = (v: number): boolean => {
+    if (dominant(v) !== 'L_Clavicle') return false;
+    const dx = position[v * 3] - AXIS_X;
+    const dy = position[v * 3 + 1] - AXIS_Y;
+    return Math.hypot(dx, dy) > 0.09;
+  };
+
+  const keep = new Set<number>();
+  for (let v = 0; v < position.length / 3; v += 1) if (inStock(v)) keep.add(v);
+  const { geometry, kept } = extractTriangles(
+    (f) => keep.has(index[f * 3]) && keep.has(index[f * 3 + 1]) && keep.has(index[f * 3 + 2]),
+    index, position, normal, colour, null, null, null,
+  );
+  if (!kept.length) return null;
+
+  // Stand it up: base at the origin, unit height, so instancing is scale and rotation only.
+  geometry.computeBoundingBox();
+  const box = geometry.boundingBox!;
+  const height = Math.max(1e-4, box.max.y - box.min.y);
+  geometry.translate(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
+  geometry.scale(1 / height, 1 / height, 1 / height);
+
+  // Grain along the branch, so the bark shader treats it as a limb like every other.
+  const count = geometry.attributes.position.count;
+  const grain = new Float32Array(count * 3);
+  for (let i = 0; i < count; i += 1) grain[i * 3 + 1] = 1;
+  geometry.setAttribute('aGrain', new THREE.BufferAttribute(grain, 3));
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 /** One rigid costume piece: its own mesh, riding a least-squares rigid fit, never skinned. */
 export interface CostumePiece {
   id: string;
@@ -36,6 +107,11 @@ export interface MonsterTreeRig {
   bones: Record<string, THREE.Bone>;
   /** Effect / grip / attachment anchors, parented to the bone each one was measured against. */
   sockets: Record<string, THREE.Object3D>;
+  /**
+   * A branch taken off the character's own shoulder, normalised to unit height with its base at
+   * the origin. Anything the demo grows instances this rather than approximating it.
+   */
+  branchStock: THREE.BufferGeometry | null;
   mixer: THREE.AnimationMixer;
   clips: THREE.AnimationClip[];
   /** Cross-fade to a clip by name or index. Returns false when there is no such clip. */
@@ -618,6 +694,11 @@ export function buildMonsterTreeRig(
     });
   }
 
+  const branchStock = extractBranchStock(
+    part.index, part.position, part.normal, part.colour, skinIndex, skinWeight,
+    rig.bones.map((b) => b.name),
+  );
+
   const sockets: Record<string, THREE.Object3D> = {};
   for (const spec of SOCKETS) {
     const bone = boneByName[spec.bone];
@@ -718,6 +799,7 @@ export function buildMonsterTreeRig(
     skeleton,
     bones: boneByName,
     sockets,
+    branchStock,
     mixer,
     clips,
     play,

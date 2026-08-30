@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { LIFE_HUE, LIFE_SATURATION, PALETTE } from './measured';
+import { ALBEDO_WHITE_BALANCE, LIFE_HUE, LIFE_SATURATION, PALETTE } from './measured';
 import { patchBarkSurface, type BarkSurface } from './bark';
 
 /**
@@ -1148,6 +1148,11 @@ function taperedSegment(a: THREE.Vector3, b: THREE.Vector3, rA: number, rB: numb
   const length = axis.length();
   if (length < 1e-6) return new THREE.BufferGeometry();
   const geometry = new THREE.CylinderGeometry(rB, rA, length, 7, 1, true);
+  // Drop the UVs. mergeGeometries requires every input to carry the SAME attribute set, and the
+  // branch stock lifted off the character has none — the mesh codec never carried UVs. Leaving
+  // them on makes every merge return null and the grove comes up empty, silently: no error, no
+  // warning, just no trees.
+  geometry.deleteAttribute('uv');
   // CylinderGeometry is built along +Y about its centre; stand it between the two points.
   const quaternion = new THREE.Quaternion().setFromUnitVectors(
     new THREE.Vector3(0, 1, 0), axis.clone().normalize(),
@@ -1166,8 +1171,22 @@ function taperedSegment(a: THREE.Vector3, b: THREE.Vector3, rA: number, rB: numb
     grain[i * 3 + 2] = unit.z;
   }
   geometry.setAttribute('aGrain', new THREE.BufferAttribute(grain, 3));
+  // A colour attribute so a trunk can merge with stock lifted off the character, which carries the
+  // figure's own vertex colours. mergeGeometries requires matching attribute sets.
+  const colour = new Float32Array(count * 3);
+  for (let i = 0; i < count; i += 1) {
+    colour[i * 3] = TRUNK_COLOUR.r;
+    colour[i * 3 + 1] = TRUNK_COLOUR.g;
+    colour[i * 3 + 2] = TRUNK_COLOUR.b;
+  }
+  geometry.setAttribute('color', new THREE.BufferAttribute(colour, 3));
   return geometry;
 }
+
+/** Bark mid, white-balanced the same way the shell's albedo is, for generated trunk segments. */
+const TRUNK_COLOUR = new THREE.Color(PALETTE.barkMid).convertSRGBToLinear().multiply(
+  new THREE.Color(ALBEDO_WHITE_BALANCE[0], ALBEDO_WHITE_BALANCE[1], ALBEDO_WHITE_BALANCE[2]),
+);
 
 /** Grow one branch and its forks, returning every segment's geometry. */
 function growBranch(
@@ -1178,6 +1197,7 @@ function growBranch(
   depth: number,
   random: () => number,
   out: THREE.BufferGeometry[],
+  stock: THREE.BufferGeometry | null = null,
 ): void {
   const steps = depth === 2 ? 5 : 3;
   let point = origin.clone();
@@ -1202,6 +1222,22 @@ function growBranch(
 
     const next = point.clone().addScaledVector(heading, length / steps);
     out.push(taperedSegment(point, next, r0, r1));
+
+    // Hang a real branch off the character wherever this one forks. The generated taper carries
+    // the trunk's measured proportions; the stock carries its SHAPE, which no amount of tuning a
+    // cylinder was going to produce.
+    if (stock && i >= forkAt) {
+      const side = new THREE.Vector3(random() - 0.5, random() * 0.5 + 0.25, random() - 0.5).normalize();
+      const lean = heading.clone().multiplyScalar(0.55).addScaledVector(side, 0.8).normalize();
+      const size = length * (0.55 + random() * 0.5);
+      const instance = stock.clone();
+      instance.applyMatrix4(new THREE.Matrix4().compose(
+        next.clone(),
+        new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), lean),
+        new THREE.Vector3(size, size, size),
+      ));
+      out.push(instance);
+    }
 
     if (depth > 0 && i === forkAt) {
       // A fork leaves at a wide angle — the measured spur stands 2.1x its limb's radius off the
@@ -1238,6 +1274,7 @@ class GroveEruption implements Tickable {
     private readonly duration: number,
     seed: number,
     material: THREE.Material,
+    stock: THREE.BufferGeometry | null,
   ) {
     this.object = new THREE.Group();
     this.object.name = 'vfx:grove';
@@ -1250,7 +1287,7 @@ class GroveEruption implements Tickable {
       const lean = new THREE.Vector3((random() - 0.5) * 0.3, 1, (random() - 0.5) * 0.3).normalize();
 
       const parts: THREE.BufferGeometry[] = [];
-      growBranch(new THREE.Vector3(), lean, height, scale * 0.045, 3, random, parts);
+      growBranch(new THREE.Vector3(), lean, height, scale * 0.045, 3, random, parts, stock);
       const geometry = mergeGeometries(parts);
       for (const g of parts) g.dispose();
       if (!geometry) continue;
@@ -1306,6 +1343,7 @@ class BranchLance implements Tickable {
     private readonly duration: number,
     seed: number,
     material: THREE.Material,
+    stock: THREE.BufferGeometry | null,
   ) {
     this.object = new THREE.Group();
     this.object.name = 'vfx:branch-lance';
@@ -1314,7 +1352,7 @@ class BranchLance implements Tickable {
     const parts: THREE.BufferGeometry[] = [];
     // Depth 1, not 3: a lance is a spike with a couple of barbs, not a bush. More forking makes it
     // read as foliage and the thrust stops being legible as a thrust.
-    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), reach, thickness, 1, random, parts);
+    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), reach, thickness, 1, random, parts, stock);
     const geometry = mergeGeometries(parts) ?? new THREE.BufferGeometry();
     for (const g of parts) g.dispose();
 
@@ -1488,6 +1526,8 @@ export class MonsterTreeVfx {
    */
   private readonly rootMaterial: THREE.MeshStandardMaterial;
   private readonly rootBark: BarkSurface;
+  /** A branch taken off the character's shoulder; every grown thing instances it. */
+  private readonly stock: THREE.BufferGeometry | null;
   /**
    * Effects that outlive the move that made them, oldest first.
    *
@@ -1512,7 +1552,9 @@ export class MonsterTreeVfx {
     sockets: Record<string, THREE.Object3D>;
     bones: Record<string, THREE.Bone>;
     shell?: THREE.Mesh;
+    branchStock?: THREE.BufferGeometry | null;
   }, bounds: THREE.Box3) {
+    this.stock = rig.branchStock ?? null;
     this.group.name = 'monster-tree-vfx';
     this.scale = bounds.getSize(new THREE.Vector3()).y;
 
@@ -1523,6 +1565,7 @@ export class MonsterTreeVfx {
     this.veins = shellMaterial instanceof THREE.MeshStandardMaterial ? patchBarkSurface(shellMaterial) : null;
 
     this.rootMaterial = new THREE.MeshStandardMaterial({
+      vertexColors: true,
       color: new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(),
       roughness: 0.9,
       metalness: 0,
@@ -1649,6 +1692,7 @@ export class MonsterTreeVfx {
       options.duration ?? 10,
       (Math.random() * 1e9) | 0,
       this.rootMaterial,
+      this.stock,
     );
     this.addLingering(effect);
   }
@@ -1699,6 +1743,7 @@ export class MonsterTreeVfx {
       options.duration ?? 1.4,
       (Math.random() * 1e9) | 0,
       this.rootMaterial,
+      this.stock,
     );
     effect.object.traverse((o) => { o.userData.isHighlight = true; });
     this.group.add(effect.object);
