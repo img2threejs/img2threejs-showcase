@@ -197,7 +197,7 @@ export const SKILLS: Skill[] = [
           // floor, which is the opposite of what it was for.
           // Aimed along the character's facing rather than the forearm: at the strike frame the
           // forearm is already angling down, and a spear should go where the figure is pointed.
-          vfx.lance(rig.sockets['grip-l'], facing(rig), { reach: 0.8, duration: 0.85 });
+          vfx.lance(rig.sockets['grip-l'], facing(rig), { reach: 0.95, duration: 0.9 });
           vfx.burst(rig.sockets['grip-l'], { count: 70, speed: 1.7, spread: 0.5 });
         },
       },

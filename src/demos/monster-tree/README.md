@@ -375,6 +375,24 @@ depth-4 recursion the growth is exponential, and the grove came up as a thicket 
 character and halved the frame rate to 30. A second twig now appears at one node in three, grove
 trees recurse to depth 3, and the ring frames the figure instead of swallowing it. 84 fps.
 
+### Branches are one surface, not a chain of pieces
+
+Every grown branch was a chain of separate tapered cylinders, one per segment. Each cylinder
+carried its own end rings, so consecutive segments shared **no vertices**: wherever the branch
+changed direction the two rings splayed apart and the joint opened. The crookedness that makes a
+branch look grown made it worse — the sharper the turn, the wider the gap — so the grove read as a
+pile of loose sticks.
+
+A branch is now swept as **one continuous tube**: the whole path and its radii are collected first,
+then a single surface is run along them. Forks start *on* the parent's path, so a child tube begins
+inside the parent's surface and the two read as joined rather than as two sticks meeting.
+
+Rings are carried along the path by **parallel transport** rather than rebuilt from a fixed
+up-vector at each one. A fresh frame per ring spins about the path as the tangent turns and the
+tube visibly corkscrews along its own length; transport carries the previous frame forward and
+rotates it only by the change in tangent, which is the smallest rotation that keeps it square. The
+normal is re-orthogonalised each step, because the error accumulates over a long path.
+
 ### The lance is not a branch
 
 Impaling Bough drove its spike through the same `growBranch` recursion as everything else, and got

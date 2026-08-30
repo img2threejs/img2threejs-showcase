@@ -847,10 +847,10 @@ class RuneCircle implements Tickable {
  * every instanced twig working against the one thing a thrust has to read as.
  *
  * Three differences do the work. It tapers on a POWER curve to exactly zero rather than to the
- * measured 0.27 a branch keeps, so the last segment is a true cone and the tip is a point. It
- * barely wanders, because a spear that meanders is not aimed. And it is thinner than a branch of
- * the same length — a shaft that reads as sharp has to be slender along its whole run, not only
- * at the end.
+ * measured 0.27 a branch keeps, so the shaft closes to a genuine point. It barely wanders, because
+ * a spear that meanders is not aimed. And it is thinner than a branch of the same length.
+ *
+ * Swept as ONE tube, like every other grown thing here, so the shaft has no joints along it.
  */
 function growSpike(
   length: number,
@@ -858,26 +858,27 @@ function growSpike(
   random: () => number,
   out: THREE.BufferGeometry[],
 ): void {
-  const steps = 7;
+  const steps = 12;
+  const path: THREE.Vector3[] = [];
+  const radii: number[] = [];
   let point = new THREE.Vector3();
   let heading = new THREE.Vector3(0, 1, 0);
-  for (let i = 0; i < steps; i += 1) {
-    const t0 = i / steps;
-    const t1 = (i + 1) / steps;
-    // ^1.7 keeps the shaft close to full thickness for most of its run and then collapses to a
-    // point over the last segment. A linear taper reads as a long cone, which is a carrot.
-    const r0 = baseRadius * (1 - t0) ** 1.7;
-    const r1 = baseRadius * (1 - t1) ** 1.7;
+  for (let i = 0; i <= steps; i += 1) {
+    const t = i / steps;
+    path.push(point.clone());
+    // ^1.7 holds the shaft near full thickness for most of its run and then closes over the last
+    // of it. A linear taper reads as a long cone, which is a carrot.
+    radii.push(baseRadius * (1 - t) ** 1.7);
+    if (i === steps) break;
     heading = heading.clone().add(new THREE.Vector3(
-      (random() - 0.5) * 0.06,
-      0,
-      (random() - 0.5) * 0.06,
+      (random() - 0.5) * 0.05, 0, (random() - 0.5) * 0.05,
     )).normalize();
-    const next = point.clone().addScaledVector(heading, length / steps);
-    out.push(taperedSegment(point, next, r0, r1));
-    point = next;
+    point = point.clone().addScaledVector(heading, length / steps);
   }
+  const tube = taperedTube(path, radii, 9, TRUNK_COLOUR);
+  if (tube) out.push(tube);
 }
+
 
 class RootEruption implements Tickable {
   readonly object: THREE.Group;
@@ -1249,53 +1250,108 @@ class ToxinBloom implements Tickable {
 const BRANCH_THICKNESS = 0.045;
 const BRANCH_TIP_RATIO = 0.27;
 
-/** One tapered cylinder, oriented from `a` to `b`, with grain running along its axis. */
-function taperedSegment(a: THREE.Vector3, b: THREE.Vector3, rA: number, rB: number): THREE.BufferGeometry {
-  const axis = new THREE.Vector3().subVectors(b, a);
-  const length = axis.length();
-  if (length < 1e-6) return new THREE.BufferGeometry();
-  const geometry = new THREE.CylinderGeometry(rB, rA, length, 7, 1, true);
-  // Drop the UVs. mergeGeometries requires every input to carry the SAME attribute set, and the
-  // branch stock lifted off the character has none — the mesh codec never carried UVs. Leaving
-  // them on makes every merge return null and the grove comes up empty, silently: no error, no
-  // warning, just no trees.
-  geometry.deleteAttribute('uv');
-  // CylinderGeometry is built along +Y about its centre; stand it between the two points.
-  const quaternion = new THREE.Quaternion().setFromUnitVectors(
-    new THREE.Vector3(0, 1, 0), axis.clone().normalize(),
-  );
-  geometry.applyMatrix4(new THREE.Matrix4().compose(
-    new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5),
-    quaternion,
-    new THREE.Vector3(1, 1, 1),
-  ));
-  const count = geometry.attributes.position.count;
-  const grain = new Float32Array(count * 3);
-  const unit = axis.normalize();
-  for (let i = 0; i < count; i += 1) {
-    grain[i * 3] = unit.x;
-    grain[i * 3 + 1] = unit.y;
-    grain[i * 3 + 2] = unit.z;
+/**
+ * One continuous tapered tube along a polyline.
+ *
+ * This replaces a chain of separate cylinders, and the difference is not cosmetic. Each cylinder
+ * carried its own end rings, so consecutive segments shared no vertices: wherever the branch
+ * changed direction the two rings splayed apart and the joint opened, which is exactly the
+ * "disjointed" look. The wander that makes a branch crooked made it worse, because the sharper the
+ * turn the wider the gap.
+ *
+ * Rings are swept along the path with a PARALLEL TRANSPORT frame rather than a fresh
+ * up-vector per ring. Rebuilding the frame from a fixed reference makes the ring spin about the
+ * path as the tangent turns, and the tube twists visibly along its own length; transport carries
+ * the previous frame forward and only rotates it by the change in tangent, which is the minimum
+ * rotation that keeps it perpendicular.
+ */
+function taperedTube(
+  points: THREE.Vector3[],
+  radii: number[],
+  radialSegments: number,
+  colour: THREE.Color,
+): THREE.BufferGeometry | null {
+  const n = points.length;
+  if (n < 2) return null;
+
+  const tangents: THREE.Vector3[] = [];
+  for (let i = 0; i < n; i += 1) {
+    const a = points[Math.max(0, i - 1)];
+    const b = points[Math.min(n - 1, i + 1)];
+    const tangent = new THREE.Vector3().subVectors(b, a);
+    if (tangent.lengthSq() < 1e-12) tangent.set(0, 1, 0);
+    tangents.push(tangent.normalize());
   }
-  geometry.setAttribute('aGrain', new THREE.BufferAttribute(grain, 3));
-  // A colour attribute so a trunk can merge with stock lifted off the character, which carries the
-  // figure's own vertex colours. mergeGeometries requires matching attribute sets.
-  const colour = new Float32Array(count * 3);
-  for (let i = 0; i < count; i += 1) {
-    colour[i * 3] = TRUNK_COLOUR.r;
-    colour[i * 3 + 1] = TRUNK_COLOUR.g;
-    colour[i * 3 + 2] = TRUNK_COLOUR.b;
+
+  // Seed a normal perpendicular to the first tangent, then transport it.
+  const seed = Math.abs(tangents[0].y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+  let normal = new THREE.Vector3().crossVectors(tangents[0], seed).normalize();
+  if (normal.lengthSq() < 1e-8) normal.set(1, 0, 0);
+
+  const position: number[] = [];
+  const normals: number[] = [];
+  const grain: number[] = [];
+  const colours: number[] = [];
+  const rotate = new THREE.Quaternion();
+
+  for (let i = 0; i < n; i += 1) {
+    if (i > 0) {
+      rotate.setFromUnitVectors(tangents[i - 1], tangents[i]);
+      normal.applyQuaternion(rotate).normalize();
+      // Re-orthogonalise: small errors accumulate over a long path and the ring drifts off square.
+      normal.addScaledVector(tangents[i], -normal.dot(tangents[i])).normalize();
+    }
+    const binormal = new THREE.Vector3().crossVectors(tangents[i], normal).normalize();
+    for (let s = 0; s < radialSegments; s += 1) {
+      const angle = (s / radialSegments) * Math.PI * 2;
+      const out = new THREE.Vector3()
+        .addScaledVector(normal, Math.cos(angle))
+        .addScaledVector(binormal, Math.sin(angle));
+      position.push(
+        points[i].x + out.x * radii[i],
+        points[i].y + out.y * radii[i],
+        points[i].z + out.z * radii[i],
+      );
+      normals.push(out.x, out.y, out.z);
+      grain.push(tangents[i].x, tangents[i].y, tangents[i].z);
+      colours.push(colour.r, colour.g, colour.b);
+    }
   }
-  geometry.setAttribute('color', new THREE.BufferAttribute(colour, 3));
+
+  const index: number[] = [];
+  for (let i = 0; i < n - 1; i += 1) {
+    for (let s = 0; s < radialSegments; s += 1) {
+      const a = i * radialSegments + s;
+      const b = i * radialSegments + ((s + 1) % radialSegments);
+      const c = (i + 1) * radialSegments + s;
+      const d = (i + 1) * radialSegments + ((s + 1) % radialSegments);
+      index.push(a, c, b, b, c, d);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  geometry.setAttribute('aGrain', new THREE.Float32BufferAttribute(grain, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
+  geometry.setIndex(index);
   return geometry;
 }
+
+
 
 /** Bark mid, white-balanced the same way the shell's albedo is, for generated trunk segments. */
 const TRUNK_COLOUR = new THREE.Color(PALETTE.barkMid).convertSRGBToLinear().multiply(
   new THREE.Color(ALBEDO_WHITE_BALANCE[0], ALBEDO_WHITE_BALANCE[1], ALBEDO_WHITE_BALANCE[2]),
 );
-
-/** Grow one branch and its forks, returning every segment's geometry. */
+/**
+ * Grow one branch and its forks.
+ *
+ * Each branch is emitted as a SINGLE continuous tube rather than one geometry per segment. The
+ * per-segment version left a seam at every joint — separate end rings, no shared vertices — and on
+ * a crooked branch those seams opened into visible breaks, which is what made the grove look
+ * disjointed. Building the whole path first and sweeping one surface along it removes the joints.
+ */
 function growBranch(
   origin: THREE.Vector3,
   direction: THREE.Vector3,
@@ -1306,41 +1362,35 @@ function growBranch(
   out: THREE.BufferGeometry[],
   stock: THREE.BufferGeometry | null = null,
 ): void {
-  const steps = depth === 2 ? 5 : 3;
-  let point = origin.clone();
-  let heading = direction.clone().normalize();
+  const steps = depth >= 3 ? 5 : (depth === 2 ? 4 : 3);
   const forkAt = Math.max(1, Math.floor(random() * (steps - 1)));
 
-  for (let i = 0; i < steps; i += 1) {
-    const t0 = i / steps;
-    const t1 = (i + 1) / steps;
-    // Taper from a flared base to a fine tip, on the trunk's own measured ratio.
-    const r0 = baseRadius * (1 - t0 * (1 - BRANCH_TIP_RATIO));
-    const r1 = baseRadius * (1 - t1 * (1 - BRANCH_TIP_RATIO));
+  const path: THREE.Vector3[] = [origin.clone()];
+  const radii: number[] = [baseRadius];
+  let point = origin.clone();
+  let heading = direction.clone().normalize();
 
-    // Gnarl: the heading wanders every step, so no segment continues the last one exactly.
-    // Crooked. Dead wood is not straight, and a thin straight shaft reads as a pole no matter how
-    // it is shaded — which is what the first thin pass produced. The wander is biased sideways
-    // rather than vertically so a branch bends across its own line instead of nodding.
+  for (let i = 0; i < steps; i += 1) {
+    // Crooked. Dead wood is not straight, and a thin straight shaft reads as a pole however it is
+    // shaded. The wander is biased sideways so a branch bends across its own line, not nods.
     heading = heading.clone().add(new THREE.Vector3(
       (random() - 0.5) * 0.52,
       (random() - 0.5) * 0.22,
       (random() - 0.5) * 0.52,
     )).normalize();
+    point = point.clone().addScaledVector(heading, length / steps);
+    const t1 = (i + 1) / steps;
+    path.push(point.clone());
+    radii.push(baseRadius * (1 - t1 * (1 - BRANCH_TIP_RATIO)));
 
-    const next = point.clone().addScaledVector(heading, length / steps);
-    out.push(taperedSegment(point, next, r0, r1));
-
-    // Hang a real branch off the character wherever this one forks. The generated taper carries
-    // the trunk's measured proportions; the stock carries its SHAPE, which no amount of tuning a
-    // cylinder was going to produce.
+    // Real twigs off the character, near the tips.
     if (stock && depth <= 1 && i >= steps - 2) {
       const side = new THREE.Vector3(random() - 0.5, random() * 0.5 + 0.25, random() - 0.5).normalize();
       const lean = heading.clone().multiplyScalar(0.55).addScaledVector(side, 0.8).normalize();
       const size = length * (0.45 + random() * 0.35);
       const instance = stock.clone();
       instance.applyMatrix4(new THREE.Matrix4().compose(
-        next.clone(),
+        point.clone(),
         new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), lean),
         new THREE.Vector3(size, size, size),
       ));
@@ -1348,24 +1398,26 @@ function growBranch(
     }
 
     if (depth > 0 && i === forkAt) {
-      // A fork leaves at a wide angle — the measured spur stands 2.1x its limb's radius off the
-      // axis, which is a branch leaving at roughly 40 degrees, not a twig hugging the trunk.
-      const side = new THREE.Vector3(random() - 0.5, random() * 0.35, random() - 0.5).normalize();
       // A wide fork. At a narrow angle the child hugs its parent and the pair reads as one
-      // slightly thicker shaft; the fork has to be plainly visible to be a fork at all.
+      // slightly thicker shaft; a fork has to be plainly visible to be a fork.
+      const side = new THREE.Vector3(random() - 0.5, random() * 0.35, random() - 0.5).normalize();
       const forkDir = heading.clone().multiplyScalar(0.72).addScaledVector(side, 0.7).normalize();
-      growBranch(next, forkDir, length * (0.52 + random() * 0.2), r1 * 0.7, depth - 1, random, out, stock);
-      // A second, smaller twig on the same node now and then. Kept to a third: two forks at every
-      // node of a depth-4 recursion is exponential, and the grove came up as a thicket that buried
-      // the character and halved the frame rate.
+      const r1 = radii[radii.length - 1];
+      // Forks start ON the parent path, so the child tube begins inside the parent's surface and
+      // the two read as joined rather than as two sticks meeting.
+      growBranch(point, forkDir, length * (0.52 + random() * 0.2), r1 * 0.7, depth - 1, random, out, stock);
+      // A second, smaller twig now and then. Kept to a third: two forks at every node of a deep
+      // recursion is exponential, and the grove came up as a thicket that buried the character.
       if (random() < 0.30) {
         const twigSide = new THREE.Vector3(random() - 0.5, random() * 0.4, random() - 0.5).normalize();
         const twigDir = heading.clone().multiplyScalar(0.5).addScaledVector(twigSide, 0.92).normalize();
-        growBranch(next, twigDir, length * (0.42 + random() * 0.22), r1 * 0.52, depth - 1, random, out, stock);
+        growBranch(point, twigDir, length * (0.42 + random() * 0.22), r1 * 0.52, depth - 1, random, out, stock);
       }
     }
-    point = next;
   }
+
+  const tube = taperedTube(path, radii, 7, TRUNK_COLOUR);
+  if (tube) out.push(tube);
 }
 
 /**
@@ -1466,7 +1518,10 @@ class BranchLance implements Tickable {
     const random = mulberry32(seed);
 
     const parts: THREE.BufferGeometry[] = [];
-    growSpike(reach, reach * 0.013, random, parts);
+    // 0.020 of its length. At 0.013 the shaft was slender enough to read as a drawn line rather
+    // than as wood; the earlier 0.030 was a plank. This is a spear-shaft that still comes to a
+    // point, now that the tube is continuous and the taper is not broken up by joints.
+    growSpike(reach, reach * 0.020, random, parts);
     const geometry = mergeGeometries(parts) ?? new THREE.BufferGeometry();
     for (const g of parts) g.dispose();
 
