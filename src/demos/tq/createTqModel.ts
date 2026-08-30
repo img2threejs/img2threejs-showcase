@@ -9,7 +9,7 @@ import { createStageLights } from './lighting';
 import { setRegionTint } from './regionSplit';
 import { SkillDirector, SKILLS } from './skills';
 import { COSTUME_REGIONS, OUTFIT_SWATCHES, REGIONS, SIGNATURE, type RegionId } from './characterPalette';
-import { TQ_PROFILE, TQ_TAGS } from './characterProfile';
+import { TQ_TAGS } from './characterProfile';
 
 /**
  * Tq — a Three Kingdoms officer, rigged, split and lit from her own measured palette.
@@ -179,9 +179,9 @@ export function createTqModel(options: TqModelOptions = {}): THREE.Group {
 
   const runtime: Record<string, unknown> = {
     animationController,
-    // Described up front and never rebuilt: the profile is a property of the character, not of
+    // Described up front and never rebuilt: the tags are a property of the character, not of
     // whether the geometry has finished arriving.
-    profile: { tags: TQ_TAGS, details: TQ_PROFILE },
+    profile: { tags: TQ_TAGS },
     outfit,
     sockets: {},
     destructionGroups: {},
