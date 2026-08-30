@@ -27,13 +27,15 @@ import { ACCENT, CLIP_PROFILES, FIGURE_HEIGHT, FRAME, PALETTE, SOCKETS } from '.
 import { ParticleField } from './particles';
 import { Ribbon } from './ribbon';
 import { Beam, ChargeOrb, Hearts, HornArc, Shockwaves } from './shapes';
+import { Blink } from './blink';
+import { EyeGlow, installRimLight } from './rimLight';
 
 const H = FIGURE_HEIGHT;
 
 export type CueName = 'cast' | 'blast' | 'slam' | 'hurt' | 'sparkle';
 
 export type EffectName =
-  | 'motes' | 'aura' | 'handTrails' | 'footDust' | 'landingWave'
+  | 'motes' | 'aura' | 'rimLight' | 'blink' | 'eyeGlow' | 'handTrails' | 'footDust' | 'landingWave'
   | 'hornArc' | 'palmCharge' | 'hearts';
 
 export interface ClipBinding {
@@ -60,6 +62,8 @@ export interface MonsterCuteVfx {
   setEffectEnabled(effect: EffectName, on: boolean): void;
   isEffectEnabled(effect: EffectName): boolean;
   setViewport(pixelHeight: number, fovDegrees: number): void;
+  /** Hold the eyes at a closure (0 open, 1 shut), or null to hand them back to the blink rhythm. */
+  forceBlink(amount: number | null): void;
   bindingsFor(clipName: string): ClipBinding[];
   socketWorldPosition(id: string, out: THREE.Vector3): THREE.Vector3 | null;
   readonly socketIds: string[];
@@ -134,7 +138,11 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
   };
   const beam = new Beam(ACCENT.core);
   const hearts = new Hearts(14, 0.075 * H, ACCENT.impact);
-  group.add(shockwaves.group, hornArc.group, orbs.l.group, orbs.r.group, beam.group, hearts.group);
+  const eyeGlow = new EyeGlow(0.026 * H, ACCENT.core);
+  group.add(shockwaves.group, hornArc.group, orbs.l.group, orbs.r.group, beam.group, hearts.group, eyeGlow.group);
+
+  // Drawn into the eye's own vertex colours; there are no eyelid joints to pose.
+  const blink = new Blink(rigged.mesh);
 
   // ---------------------------------------------------------------- emissive channel
 
@@ -145,6 +153,9 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
    */
   const material = rigged.mesh.material as THREE.MeshStandardMaterial;
   const emissiveBase = material.emissive.clone();
+  // A fresnel contour on the fur. The subject is a round matte silhouette in a dark scene, and this
+  // is what lifts its edge off the background without adding a fifth light to flatten it further.
+  const rim = installRimLight(material, ACCENT.energy, 0.5, 2.6);
   let flash = 0;
   let flashColour = ACCENT.impact.clone();
   let auraDrive = 0;
@@ -152,7 +163,8 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
   // ---------------------------------------------------------------- state
 
   const enabled: Record<EffectName, boolean> = {
-    motes: true, aura: true, handTrails: false, footDust: false,
+    motes: true, aura: true, rimLight: true, blink: true, eyeGlow: true,
+    handTrails: false, footDust: false,
     landingWave: false, hornArc: false, palmCharge: false, hearts: false,
   };
 
@@ -290,6 +302,10 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
       }
       case 'hurt': {
         const core = world.get('effect:core');
+        // Eyes screwed shut on the hit, then handed back to the rhythm. Counted down in the frame
+        // loop rather than on a timer, so a backgrounded tab does not come back mid-wince.
+        blink.setForced(1);
+        squeezeHold = 0.22;
         flash = 1;
         flashColour = ACCENT.impact.clone();
         if (core) burst(core, 40, 1.1 * H, ACCENT.impact, 0.03 * H, 0.55);
@@ -318,6 +334,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
 
   let castHold = 0;
   let chargeHold = 0;
+  let squeezeHold = 0;
 
   // ---------------------------------------------------------------- clip bindings
 
@@ -370,6 +387,9 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     trails.l.reset();
     trails.r.reset();
     heartTimer = 0;
+    // A blink on the cut hides the pose discontinuity the cross-fade cannot fully cover, the same
+    // way a cut on a blink works in editing.
+    if (enabled.blink) blink.trigger();
     return activeBindings;
   }
 
@@ -543,6 +563,28 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     }
     if (camera) hearts.update(step, camera.quaternion);
 
+    // ---- blink ----
+    if (squeezeHold > 0) {
+      squeezeHold -= step;
+      if (squeezeHold <= 0) blink.setForced(null);
+    }
+    // Runs on its own rhythm rather than on the clip's, because a blink is not part of any of these
+    // 33 clips; a character that only blinks when it moves looks switched off between actions.
+    if (enabled.blink) blink.update(step);
+    const openness = 1 - blink.closure;
+
+    // ---- eye glow ----
+    const charging = Math.max(orbs.l.level, orbs.r.level);
+    eyeGlow.setLevel(enabled.eyeGlow ? Math.max(charging * 0.9, arcOn ? 0.7 : 0, flash * 0.8) : 0);
+    if (camera) {
+      eyeGlow.update(step, elapsed, world.get('effect:eye.l'), world.get('effect:eye.r'), camera.quaternion, openness);
+    }
+
+    // ---- rim ----
+    rim.uRimStrength.value = enabled.rimLight ? 0.5 : 0;
+    // The contour brightens with a charge and with a hit, so the silhouette carries the beat too.
+    rim.uRimPulse.value = enabled.rimLight ? charging * 0.5 + flash * 0.9 : 0;
+
     // ---- emissive ----
     flash = Math.max(0, flash - step * 2.4);
     if (activeClip.includes('hurt') && Math.random() < step * 0.7) {
@@ -557,9 +599,8 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     } else {
       auraDrive = 0;
     }
-    const charge = Math.max(orbs.l.level, orbs.r.level);
     material.emissive.copy(emissiveBase)
-      .lerp(ACCENT.energy, auraDrive + charge * 0.16)
+      .lerp(ACCENT.energy, auraDrive + charging * 0.16)
       .lerp(flashColour, flash * 0.85);
     material.emissiveIntensity = 1 + flash * 1.3;
 
@@ -581,7 +622,10 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     trails.l.dispose(); trails.r.dispose();
     shockwaves.dispose(); hornArc.dispose();
     orbs.l.dispose(); orbs.r.dispose();
-    beam.dispose(); hearts.dispose();
+    beam.dispose(); hearts.dispose(); eyeGlow.dispose();
+    blink.dispose();
+    rim.uRimStrength.value = 0;
+    rim.uRimPulse.value = 0;
     material.emissive.copy(emissiveBase);
     material.emissiveIntensity = 1;
   }
@@ -594,6 +638,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     setEffectEnabled: (effect, on) => { enabled[effect] = on; if (effect === 'handTrails' && !on) { trails.l.reset(); trails.r.reset(); } },
     isEffectEnabled: (effect) => enabled[effect],
     setViewport,
+    forceBlink: (amount) => blink.setForced(amount),
     bindingsFor,
     socketWorldPosition,
     socketIds: [...sockets.keys()],
@@ -610,6 +655,9 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
       shockwaves: shockwaves.liveCount,
       hearts: hearts.liveCount,
       emissive: `#${material.emissive.getHexString()} x${material.emissiveIntensity.toFixed(2)}`,
+      blinkClosure: Number(blink.closure.toFixed(3)),
+      rim: Number(rim.uRimStrength.value.toFixed(2)) + rim.uRimPulse.value,
+      eyeGlowVisible: eyeGlow.group.visible,
       enabled: { ...enabled },
       clip: activeClip,
     }),
