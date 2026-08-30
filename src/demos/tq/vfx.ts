@@ -397,7 +397,10 @@ export class SpiritDragon implements Effect {
     // The head runs past 1 so the tail has somewhere to finish dissolving into.
     this.material.uniforms.uReveal.value = t * 1.62;
     this.material.uniforms.uOpacity.value = 1 - smootherstep(t, 0.78, 1);
-    this.object.rotation.y += dt * 0.5;
+    // `rotateY` and not `rotation.y +=`: the second rewrites the quaternion from Euler angles and
+    // would throw away an aim set with `setFromUnitVectors`. This turns the dragon about its OWN
+    // axis, which after aiming is the direction it is travelling.
+    this.object.rotateY(dt * 0.5);
     return t < 1;
   }
 

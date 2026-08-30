@@ -193,6 +193,8 @@ export function copySkinAttributes(
 export interface RegionTint {
   uTint: { value: THREE.Color };
   uTintMix: { value: number };
+  /** Lifts this region's measured luminance to a level a colour can actually ride on. */
+  uLumaGain: { value: number };
 }
 
 /**
@@ -228,23 +230,41 @@ export function createRegionMaterial(id: RegionId): THREE.MeshPhysicalMaterial {
   // and only moves the level, which is the part the bake got wrong.
   material.color = new THREE.Color().setScalar(def.material.albedoGain);
 
+  /**
+   * How hard this region's luminance has to be lifted before it can carry a colour.
+   *
+   * Tinting by raw luminance only works where there is luminance to tint. Measured off the bake,
+   * hair sits at 0.045 and indigo cloth at 0.095 — so `uTint * luma` resolved to near-black however
+   * bright a colour was chosen, and hair in particular looked like it simply ignored the swatch.
+   * Normalising each region so its own measured level lands mid-range is what makes every piece
+   * equally recolourable.
+   *
+   * The curve is `1 - exp(-luma * gain)`, which saturates softly instead of clipping: a region
+   * lifted seventeen-fold keeps its strand-to-strand variation rather than flattening to a slab.
+   */
+  const measured = new THREE.Color(def.measuredHex);
+  const measuredLuma = Math.max(0.02, 0.2126 * measured.r + 0.7152 * measured.g + 0.0722 * measured.b);
+
   const tint: RegionTint = {
     uTint: { value: new THREE.Color(0xffffff) },
     uTintMix: { value: 0 },
+    uLumaGain: { value: 0.8 / measuredLuma },
   };
   material.onBeforeCompile = (shader): void => {
     shader.uniforms.uTint = tint.uTint;
     shader.uniforms.uTintMix = tint.uTintMix;
+    shader.uniforms.uLumaGain = tint.uLumaGain;
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 uTint;\nuniform float uTintMix;')
+      .replace('#include <common>', '#include <common>\nuniform vec3 uTint;\nuniform float uTintMix;\nuniform float uLumaGain;')
       .replace(
         '#include <color_fragment>',
         `#ifdef USE_COLOR
           // Luminance carries the ornament; the hue is what we are replacing.
           float bakedLuma = dot(vColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-          // 1.9 restores roughly the level the measured colour had at that luminance, so a tinted
-          // piece sits at the same brightness as the original rather than reading washed out.
-          vec3 tinted = uTint * bakedLuma * 1.9;
+          // Normalised per region, then softly saturated, so a near-black region can still take a
+          // colour without its internal detail collapsing into a flat slab.
+          float lifted = 1.0 - exp(-bakedLuma * uLumaGain);
+          vec3 tinted = uTint * (0.18 + 1.42 * lifted);
           diffuseColor.rgb *= mix(vColor.rgb, tinted, uTintMix);
         #endif`,
       );

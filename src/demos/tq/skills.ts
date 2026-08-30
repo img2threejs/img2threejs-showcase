@@ -60,10 +60,16 @@ export interface SkillDefinition {
   emit?: { socket: string; from: number; to: number; rate: number; sparkRatio?: number }[];
   /** 水墨 — one-off ink and spark bursts. */
   bursts?: { socket: string; at: number; count: number; speed?: number; radius?: number; sparkRatio?: number }[];
-  /** 法陣 — the ground array, or a standing seal when `upright`. */
-  array?: { socket: string; at: number; duration: number; radius: number; upright?: boolean };
-  /** 神龍 — the coiling dragon. */
-  dragon?: { socket: string; at: number; duration: number; height: number; radius: number };
+  /**
+   * 法陣 — the array.
+   *
+   * `ground` lays it on the floor, `facing` stands it up facing the viewer, and `arm` casts it off
+   * the pointing hand with its normal down the arm, so the seal reads as being projected rather
+   * than as scenery standing behind the caster.
+   */
+  array?: { socket: string; at: number; duration: number; radius: number; orient?: 'ground' | 'facing' | 'arm' };
+  /** 神龍 — the coiling dragon. `arm` sends it out along the pointing arm instead of straight up. */
+  dragon?: { socket: string; at: number; duration: number; height: number; radius: number; orient?: 'up' | 'arm' };
   /** 符籙 — a fan of talismans. */
   talismans?: { socket: string; at: number; count: number; duration: number };
   /** 蓮華 — a lotus opening on the ground. */
@@ -104,13 +110,13 @@ export const SKILLS: readonly SkillDefinition[] = [
     title: '龍印 · Long Ấn',
     clip: 'preset:biped:cast_a_spell',
     rate: 1.6,
-    description: 'The array is inscribed, talismans scatter, and a dragon of light coils up the caster.',
+    description: 'The seal is inscribed off her palm and the dragon runs out along the arm she points with.',
     // Measured: both hands sweep from t=0.158 to 0.458, peaking at 0.217. The array is drawn on
     // that first sweep, the talismans leave the hands just after, and the dragon — the largest
     // thing on screen — arrives last, once the body has committed to the cast.
-    array: { socket: 'effect.chest', at: 0.16, duration: 3.0, radius: 1.2, upright: true },
+    array: { socket: 'grip.right', at: 0.28, duration: 2.6, radius: 0.8, orient: 'arm' },
     talismans: { socket: 'effect.chest', at: 0.24, count: 20, duration: 2.4 },
-    dragon: { socket: 'effect.pelvis', at: 0.32, duration: 2.6, height: 2.5, radius: 0.72 },
+    dragon: { socket: 'grip.right', at: 0.32, duration: 2.6, height: 2.6, radius: 0.5, orient: 'arm' },
     emit: [
       { socket: 'grip.left', from: 0.16, to: 0.6, rate: 55, sparkRatio: 0.7 },
       { socket: 'grip.right', from: 0.16, to: 0.6, rate: 55, sparkRatio: 0.7 },
@@ -195,6 +201,17 @@ export class SkillDirector {
   private readonly goldMaterial: THREE.MeshPhysicalMaterial | null;
   private readonly world = new THREE.Vector3();
   private readonly standOff = new THREE.Vector3();
+  private readonly armOrigin = new THREE.Vector3();
+  private readonly armDirection = new THREE.Vector3();
+  private readonly scratch = new THREE.Vector3();
+  /**
+   * The pointing arm, fixed for the duration of one cast.
+   *
+   * Each cue used to measure the arm afresh, and the cast sweeps BOTH arms — so the seal, fired
+   * early, chose the left hand while the dragon, fired later, chose the right, and the two effects
+   * pointed opposite ways. Latching on first use keeps one cast pointing one way.
+   */
+  private armLatched = false;
   /** Called when a skill finishes on its own, so a caller's UI can stop showing it as active. */
   onRelease: (() => void) | null = null;
 
@@ -256,6 +273,7 @@ export class SkillDirector {
     this.clipDuration = clip.duration / (skill.rate ?? 1);
     this.elapsed = 0;
     this.fired.clear();
+    this.armLatched = false;
     this.slash.clear();
     this.slash.opacity = 0;
     for (const ribbon of this.ribbons.values()) {
@@ -290,6 +308,43 @@ export class SkillDirector {
   /** Ground level under the figure, for anything that belongs on the floor. */
   private groundY(): number {
     return this.character.group.position.y;
+  }
+
+  /**
+   * The arm that is currently pointing, and the direction it points in.
+   *
+   * Which arm leads is MEASURED rather than assumed: the clip sweeps both, so the pointing arm is
+   * whichever hand has travelled furthest from the chest at the moment the cue fires. The direction
+   * runs shoulder-to-hand, which is the line the audience reads as "she is aiming there" — a hand
+   * position alone would not give an aim, only a point in space.
+   *
+   * Writes into `armOrigin` / `armDirection` and returns whether it found a usable pair.
+   */
+  private pointingArm(): boolean {
+    if (this.armLatched) return true;
+    const chest = this.character.sockets.get('effect.chest');
+    if (!chest) return false;
+    chest.getWorldPosition(this.scratch);
+
+    let bestReach = -1;
+    let found = false;
+    for (const side of ['right', 'left'] as const) {
+      const hand = this.character.sockets.get(`grip.${side}`);
+      const shoulder = this.character.sockets.get(`effect.shoulder.${side}`);
+      if (!hand || !shoulder) continue;
+      const handAt = hand.getWorldPosition(new THREE.Vector3());
+      const reach = handAt.distanceTo(this.scratch);
+      if (reach <= bestReach) continue;
+      const shoulderAt = shoulder.getWorldPosition(new THREE.Vector3());
+      const direction = handAt.clone().sub(shoulderAt);
+      if (direction.lengthSq() < 1e-8) continue;
+      bestReach = reach;
+      this.armOrigin.copy(handAt);
+      this.armDirection.copy(direction).normalize();
+      found = true;
+    }
+    this.armLatched = found;
+    return found;
   }
 
   update(dt: number, camera: THREE.Camera): void {
@@ -368,10 +423,16 @@ export class SkillDirector {
         const at = this.socketWorld(skill.array.socket);
         if (at) {
           const array = new FormationArray(skill.array.duration, skill.array.radius);
-          if (skill.array.upright) {
-            // A standing seal goes BEHIND the caster, facing the viewer: on the floor it is nearly
-            // edge-on to this camera and barely reads, and placed at the socket it would sit across
-            // her chest. Pushed back along the view direction she stands in front of it.
+          const orient = skill.array.orient ?? 'ground';
+          if (orient === 'arm' && this.pointingArm()) {
+            // Cast off the palm: the disc sits just beyond the hand with its NORMAL down the arm,
+            // so it faces wherever she is pointing instead of always facing the camera.
+            array.object.rotation.set(0, 0, 0);
+            // Clear of the hand by slightly more than its own radius, so the disc sits in front of
+            // the palm instead of engulfing the caster it was cast from.
+            array.object.position.copy(this.armOrigin).addScaledVector(this.armDirection, skill.array.radius * 0.9);
+            array.object.lookAt(this.scratch.copy(array.object.position).add(this.armDirection));
+          } else if (orient === 'facing') {
             this.standOff.subVectors(at, camera.position);
             this.standOff.y = 0;
             const away = this.standOff.length();
@@ -395,8 +456,15 @@ export class SkillDirector {
         const at = this.socketWorld(skill.dragon.socket);
         if (at) {
           const dragon = new SpiritDragon(skill.dragon.duration, skill.dragon.height, skill.dragon.radius);
-          // Coils from the floor up around the figure, not outward from the hip.
-          dragon.object.position.set(at.x, this.groundY(), at.z);
+          if (skill.dragon.orient === 'arm' && this.pointingArm()) {
+            // The helix is authored rising along +Y, so aiming it is one rotation: take +Y onto the
+            // arm direction and the whole coil travels out of the palm along the line she points.
+            dragon.object.position.copy(this.armOrigin);
+            dragon.object.quaternion.setFromUnitVectors(this.scratch.set(0, 1, 0), this.armDirection);
+          } else {
+            // Coils from the floor up around the figure, not outward from the hip.
+            dragon.object.position.set(at.x, this.groundY(), at.z);
+          }
           this.group.add(dragon.object);
           this.transients.push(dragon);
         }
