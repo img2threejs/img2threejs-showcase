@@ -15,8 +15,12 @@ import { lifeColour } from './vfx';
  *   key      warm and high, tinted toward `barkLight`. Carries the bark relief — the deep vertical
  *            grain is the character's whole silhouette read close up, and it only shows under a
  *            light with a strong angle to it.
- *   fill     cool, from the opposite side, tinted `mossDark`. Keeps the shadow side legible
- *            without flattening it, and pushes the green that is already in the moss patches.
+ *   fill     the reference's own NEUTRAL studio grey, `studioAmbient` #6b6f69, from the opposite
+ *            side. This one is load-bearing. Every other measured colour in the palette is warm or
+ *            green, and lighting the figure only from those drove the render's blue channel to
+ *            about 4/255 — measured off the torso — which reads as lime however the greens are
+ *            balanced. The reference's bark is grey-brown and only its moss and eyes are green;
+ *            recovering that needed a light with blue in it, and the photograph had one.
  *   rim      the life hue at full saturation, low and behind. This is the one that sells the
  *            character: it separates the branch crown from the background and puts the same green
  *            as the eyes along every edge.
@@ -24,7 +28,13 @@ import { lifeColour } from './vfx';
  *            the root-feet do not go to black.
  *
  * Intensities are in three's physical units and assume `useLegacyLights = false`, which is the
- * default from r155 on. They are high — the key sits at 7.0 — because the measured bark albedo is
+ * default from r155 on.
+ *
+ * The rig is deliberately UNBALANCED toward the key and the rim, with the ambient terms — fill,
+ * bounce, hemisphere, environment — held low. Raising the ambient lifts the backdrop and the floor
+ * at the same rate as the figure, so the whole frame gets brighter and nothing gains attention.
+ * Keeping them down lets the character and the light streams be the only things above the floor
+ * of the image. They are high — the key sits at 7.0 — because the measured bark albedo is
  * only #4b3e2b, about 0.06 in linear. Lighting this figure at the intensities a mid-grey subject
  * wants leaves it a silhouette.
  */
@@ -33,7 +43,7 @@ export function createMonsterTreeLights(figureHeight = 1.9): THREE.Group {
   group.name = 'monster-tree-lights';
   const h = figureHeight;
 
-  const key = new THREE.DirectionalLight(new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(), 7.0);
+  const key = new THREE.DirectionalLight(new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(), 9.0);
   key.name = 'key';
   key.position.set(h * 1.15, h * 1.30, h * 0.85);
   key.castShadow = true;
@@ -49,25 +59,25 @@ export function createMonsterTreeLights(figureHeight = 1.9): THREE.Group {
   key.shadow.camera.far = h * 6;
   group.add(key, key.target);
 
-  const fill = new THREE.DirectionalLight(new THREE.Color(PALETTE.mossLight).convertSRGBToLinear(), 2.2);
+  const fill = new THREE.DirectionalLight(new THREE.Color(PALETTE.studioAmbient).convertSRGBToLinear(), 2.1);
   fill.name = 'fill';
   fill.position.set(-h * 1.0, h * 0.75, -h * 0.55);
   group.add(fill, fill.target);
 
   // Behind and low, so it catches the branch crown and the outer edge of every limb.
-  const rim = new THREE.DirectionalLight(lifeColour(0.5, 0.95), 2.0);
+  const rim = new THREE.DirectionalLight(lifeColour(0.5, 0.95), 2.3);
   rim.name = 'rim';
   rim.position.set(-h * 0.55, h * 0.42, -h * 1.25);
   group.add(rim, rim.target);
 
-  const bounce = new THREE.DirectionalLight(new THREE.Color(PALETTE.barkMid).convertSRGBToLinear(), 1.6);
+  const bounce = new THREE.DirectionalLight(new THREE.Color(PALETTE.barkMid).convertSRGBToLinear(), 1.0);
   bounce.name = 'bounce';
   bounce.position.set(0, -h * 0.6, h * 0.5);
   group.add(bounce, bounce.target);
 
   // A hemisphere pair rather than an ambient: sky takes the rim's green, ground takes the bark's
   // dark, so ambient fill still has a direction to it.
-  const sky = new THREE.HemisphereLight(lifeColour(0.34, 0.8), new THREE.Color(PALETTE.barkMid).convertSRGBToLinear(), 1.0);
+  const sky = new THREE.HemisphereLight(new THREE.Color(PALETTE.studioAmbient).convertSRGBToLinear(), new THREE.Color(PALETTE.barkMid).convertSRGBToLinear(), 1.0);
   sky.name = 'hemi';
   group.add(sky);
 
@@ -85,9 +95,12 @@ export function createBackdrop(): THREE.Texture {
   canvas.height = size;
   const ctx = canvas.getContext('2d')!;
   const g = ctx.createRadialGradient(size / 2, size * 0.42, 0, size / 2, size * 0.42, size * 0.72);
-  g.addColorStop(0, '#2a2f24');
-  g.addColorStop(0.55, PALETTE.barkDark);
-  g.addColorStop(1, '#0a0b08');
+  // Neutral-brown, not olive. This texture is also the scene ENVIRONMENT, so whatever colour it
+  // is gets multiplied into every lit surface as ambient — an olive backdrop tints the whole
+  // figure green before a single light is added.
+  g.addColorStop(0, '#20211d');
+  g.addColorStop(0.55, '#121110');
+  g.addColorStop(1, '#050505');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   const texture = new THREE.CanvasTexture(canvas);
@@ -112,8 +125,8 @@ export function createGround(figureHeight = 1.9): THREE.Mesh {
   const ctx = canvas.getContext('2d')!;
   const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
   g.addColorStop(0, '#ffffff');
-  g.addColorStop(0.30, '#b4b4b4');
-  g.addColorStop(0.62, '#1c1c1c');
+  g.addColorStop(0.26, '#9a9a9a');
+  g.addColorStop(0.54, '#101010');
   g.addColorStop(1, '#000000');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
@@ -125,7 +138,7 @@ export function createGround(figureHeight = 1.9): THREE.Mesh {
       // Far darker than the bark it is tinted from. A horizontal plane faces straight up into the
       // green hemisphere and takes the green rim at a grazing angle, so anything near the bark's
       // own #231f12 pools into a lit lawn under the figure.
-      color: new THREE.Color(PALETTE.barkDark).convertSRGBToLinear().multiplyScalar(0.22),
+      color: new THREE.Color(PALETTE.barkDark).convertSRGBToLinear().multiplyScalar(0.10),
       roughness: 1,
       metalness: 0,
       alphaMap,

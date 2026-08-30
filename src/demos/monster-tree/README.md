@@ -200,6 +200,81 @@ visually.
 
 ---
 
+## The wood
+
+The export ships the figure as 115,350 triangles of smooth shading with the bark painted on in
+vertex colour. `object-sculpt-spec.json` records why: *"source had a normal map; NOT carried
+(vertex normals only)"*. So the silhouette is a tree and every surface between the silhouettes is
+soft. Two things had to be rebuilt, and both were found by measurement rather than by taste.
+
+### 1. The grain runs along the limb, taken from the rig
+
+Real wood grain runs the length of whatever grew it. A single vertical noise field gives a figure
+carved out of one plank — horizontal banding across the forearms, grain running sideways over the
+shoulders. So grain direction is a per-vertex attribute read off the skeleton: each vertex takes
+the bind-space axis of the bone it is most strongly weighted to, measured bone-to-child.
+
+| bone | measured axis | reads as |
+|---|---|---|
+| `L_Forearm` | `[ 0.00, 0.00, -1.00]` | along the arm |
+| `R_Forearm` | `[ 0.30, 0.00, 0.95]` | along the arm |
+| `L_Thigh` | `[-0.09, -0.99, -0.11]` | down the leg |
+| `Spine02` | `[-0.02, 0.96, -0.29]` | up the torso |
+
+40 of 41 bones resolve a real axis; 13 leaves inherit from their parent, and `Hip` is genuinely
+degenerate (`Pelvis` sits on top of it) so it falls back to +Y — the right answer for a hip anyway.
+Twist helpers are skipped when picking a bone's child: they sit at the *same position* as their
+parent, so aiming at one gives a zero-length axis for exactly the bones whose direction matters
+most.
+
+The value written is the **weighted blend of all four influences**, sign-aligned into the dominant
+bone's hemisphere, not the dominant bone's axis alone. Grain is an axis rather than an arrow — a
+limb pointing −Z and its neighbour pointing +Z describe the same fibre — so unflipped averaging
+cancels to zero. Taking the dominant axis outright makes the field jump wherever influence hands
+over between bones, and the relief built on it then seams along every one of those boundaries: the
+figure came back with a stippled chain drawn around each muscle group. That was diagnosed by
+ablation, not by inspection — switching the bump term off removed the chains while the veins and
+cavity stayed, which pointed at the field the bump reads.
+
+### 2. The albedo had no blue in it
+
+The figure rendered lime, and every plausible lighting fix failed. Measured on the lit chest at
+rgb(72, 78, **7**), then re-measured with the sap, the environment, every point light, the
+atmospherics, the rim and the hemisphere switched off one at a time: **the blue channel moved by at
+most 7/255**. Nothing in the lighting was responsible. The cavity and moss tints were the next
+suspects, and were cleared the same way.
+
+The albedo itself had no blue to light:
+
+| | median bark albedo | blue as a fraction of red |
+|---|---|---|
+| the generated mesh | `#3d2d0e` | **0.094** |
+| the reference photograph | `#4b3e2b` | **0.343** |
+
+**97% of the 56,588 bark vertices carry a blue channel under 55% of their red.** Tripo's bake took
+the blue out of the wood. The fix is a per-channel gain applied in linear space — the ratio of the
+two medians, `[1.508, 1.836, 5.501]` — which is a white balance to the reference, not a stylistic
+grade. It is the step that makes the wood grey-brown wood instead of olive.
+
+Cavity shading **darkens** rather than tints for the same reason: mixing toward `#231f12`, whose
+blue is a tenth of its red, crushed the channel again wherever the grain was deep.
+
+### What relief costs
+
+The bump is derivative-based (three's own `perturbNormalArb` construction), which needs neither UVs
+nor tangents — this mesh has neither. Two things were learned the expensive way:
+
+- **One height field cannot drive both colour and normals.** Albedo is sampled once per pixel with
+  no filtering, so a sharp field breaks into hard blotches; a normal can carry far more detail
+  because lighting integrates it. They are now two fields: coarse for colour, coarse+fibre for the
+  normal.
+- **An analytic object-space gradient was tried and reverted.** Four height evaluations per pixel
+  instead of one, on the theory that quantised 2×2 screen derivatives were stippling the surface.
+  They were not — the grain field was — and it cost half the frame rate to find out.
+
+Anisotropy is 4:1, not 10:1. Ten to one is corduroy: the fibres align so exactly that any real bump
+turns the chest into zebra stripes.
+
 ## VFX — all hand-written
 
 The img2threejs skill has **no particle subsystem, no trail subsystem and no shader library**.

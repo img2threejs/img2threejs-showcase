@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { LIFE_HUE, LIFE_SATURATION, PALETTE } from './measured';
-import { patchBarkVeins, type BarkVeins } from './veins';
+import { patchBarkSurface, type BarkSurface } from './bark';
 
 /**
  * Effects for the monster-tree showcase.
@@ -301,7 +301,7 @@ class EyeGlow implements Tickable {
       anchor.add(sprite);
       return sprite;
     });
-    this.base = 0.55;
+    this.base = 0.38;
     // Short range: the glow should pick out the brow ridge and the bridge of the nose, not light
     // the whole head from the front like a lamp.
     this.light = new THREE.PointLight(lifeColour(0.5, 1), this.base, 0.32 * scale, 2);
@@ -680,7 +680,7 @@ class Wisps implements Tickable {
       this.trails.push(trail);
 
       this.phase.push(random() * Math.PI * 2);
-      this.rate.push(0.5 + random() * 0.55);
+      this.rate.push(0.62 + random() * 0.62);
     }
 
     // One shared light for the whole swarm. Seven point lights would each cost a forward-render
@@ -879,7 +879,7 @@ class GroundMist implements Tickable {
           float n = mNoise(p + vec2(uTime * 0.045, uTime * 0.02));
           n = mix(n, mNoise(p * 2.3 - vec2(uTime * 0.03, uTime * 0.05)), 0.5);
           float edge = 1.0 - smoothstep(0.18, 0.5, distance(vUv, vec2(0.5)));
-          float a = smoothstep(0.42, 0.86, n) * edge * 0.5;
+          float a = smoothstep(0.50, 0.90, n) * edge * 0.30;
           if (a < 0.004) discard;
           gl_FragColor = vec4(uColour, a);
         }`,
@@ -928,7 +928,9 @@ class LightShafts implements Tickable {
           float across = 1.0 - abs(vUv.x - 0.5) * 2.0;
           across = pow(clamp(across, 0.0, 1.0), 1.8);
           float down = smoothstep(0.0, 0.45, vUv.y) * (1.0 - smoothstep(0.55, 1.0, vUv.y) * 0.55);
-          float a = across * down * 0.16 * uOpacity;
+          // Faint. A shaft is a hint of a canopy overhead; at any real opacity a handful of them
+          // lift the whole background and the figure stops being the brightest thing in frame.
+          float a = across * down * 0.085 * uOpacity;
           if (a < 0.003) discard;
           gl_FragColor = vec4(uColour, a);
         }`,
@@ -969,8 +971,8 @@ export class MonsterTreeVfx {
   readonly eyes: EyeGlow;
   readonly core: CoreGlow;
   readonly trails: Record<'grip-l' | 'grip-r', Trail>;
-  /** The bark's own inner glow. Null if the material could not be patched. */
-  readonly veins: BarkVeins | null;
+  /** The bark surface treatment — grain relief, cavity, moss and sap. Null if unpatched. */
+  readonly veins: BarkSurface | null;
   readonly wisps: Wisps;
   private readonly spores: SporeField;
   private readonly mist: GroundMist;
@@ -993,21 +995,22 @@ export class MonsterTreeVfx {
     this.group.name = 'monster-tree-vfx';
     this.scale = bounds.getSize(new THREE.Vector3()).y;
 
-    // The bark lights from the inside. Patched rather than replaced so the shell keeps three's
-    // skinning and PBR lighting; `veins.patched` reports whether the injection actually landed.
+    // Grain, relief, cavity, moss and sap, all on the shell's own material. Patched rather than
+    // replaced so it keeps three's skinning and PBR lighting; `veins.injected` reports whether the
+    // injection actually landed rather than leaving it to be assumed.
     const shellMaterial = rig.shell?.material;
-    this.veins = shellMaterial instanceof THREE.MeshStandardMaterial ? patchBarkVeins(shellMaterial) : null;
+    this.veins = shellMaterial instanceof THREE.MeshStandardMaterial ? patchBarkSurface(shellMaterial) : null;
 
-    this.spores = new SporeField(bounds, 340, this.dot);
+    this.spores = new SporeField(bounds, 460, this.dot);
     this.group.add(this.spores.object);
 
-    this.wisps = new Wisps(bounds, 6, this.dot);
+    this.wisps = new Wisps(bounds, 9, this.dot);
     this.group.add(this.wisps.object);
 
-    this.mist = new GroundMist(this.scale * 1.7, lifeColour(0.22, 0.7));
+    this.mist = new GroundMist(this.scale * 1.7, lifeColour(0.15, 0.55));
     this.group.add(this.mist.object);
 
-    this.shafts = new LightShafts(5, this.scale, lifeColour(0.55, 0.55), 0x5a71);
+    this.shafts = new LightShafts(5, this.scale, lifeColour(0.52, 0.34), 0x5a71);
     this.group.add(this.shafts.object);
 
     this.eyes = new EyeGlow([rig.sockets['eye-l'], rig.sockets['eye-r']], this.dot, this.scale);
