@@ -1093,6 +1093,9 @@ export class MonsterTreeVfx {
   private readonly scale: number;
   /** 0 = dormant, 1 = a power fully gathered. Drives veins, wisps and the chest core together. */
   private chargeLevel = 0;
+  /** Where the drifting bloom is being asked to sit, and where it actually is. */
+  private auraTarget = 1;
+  private auraLevel = 1;
 
   constructor(rig: {
     group: THREE.Object3D;
@@ -1166,6 +1169,21 @@ export class MonsterTreeVfx {
 
   get charge(): number {
     return this.chargeLevel;
+  }
+
+  /**
+   * The drifting colour bloom around the body.
+   *
+   * Eased rather than set, and that is the point of it: the layer is meant to be something the
+   * character is doing while it stands, so it has to recede and return over a second or so. Snapped
+   * to a new value on every skill change it reads as a light switch and stops looking like drift.
+   */
+  set aura(value: number) {
+    this.auraTarget = value;
+  }
+
+  get aura(): number {
+    return this.auraTarget;
   }
 
   /** A rune circle inscribed on the ground under a socket — for anything deliberate. */
@@ -1259,6 +1277,9 @@ export class MonsterTreeVfx {
     this.elapsed += dt;
     this.veins?.setTime(this.elapsed);
     this.rootBark.setTime(this.elapsed);
+    this.auraLevel += (this.auraTarget - this.auraLevel) * Math.min(1, dt * 1.6);
+    this.veins?.setAura(this.auraLevel);
+    this.rootBark.setAura(this.auraLevel);
     this.spores.tick(dt, this.elapsed);
     this.wisps.tick(dt, this.elapsed);
     this.mist.tick(dt, this.elapsed);

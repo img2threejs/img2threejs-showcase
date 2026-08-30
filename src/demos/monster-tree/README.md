@@ -307,6 +307,29 @@ are painted into a `<canvas>` at build time; nothing is fetched.
   rose — a tube at zero height is a bright plate lying on the floor — so each one is now hidden
   until its own delay elapses.
 
+### The drifting colour layer
+
+A soft bloom of colour that bleeds across the body and migrates over several seconds, strongest
+while the figure is standing still. It is a **separate layer from the sap fibres**, and that
+separation is the whole design: the two want opposite things. Widening the sap ridge until it
+blooms floods the figure with flat emissive and takes the bark relief with it — which is precisely
+what an early pass did, and what the grain work exists to escape.
+
+So the bloom gets its own field: low frequency, no ridge, two octaves drifting up the body in world
+Y at different rates. It never reaches full coverage (`0.12 + 0.78 * smoothstep(0.44, 0.92, …)`) —
+the floor keeps a trace of colour everywhere so the movement reads as something travelling across
+the body rather than switching on and off, and the ceiling keeps the wood visible underneath.
+
+The colour moves as well as the light. It walks the measured eye ramp — `eyeDeep` #36581c through
+`eyeIris` #799d3d to the near-white `eyeCore` #d6faca — so the layer shifts hue as it drifts instead
+of brightening one flat tint. That is what makes it read as a layer of *colour* rather than a glow.
+
+Each skill declares how much of it to leave on. Full at idle and guard, pulled to 0.3–0.4 during a
+strike so the swing trail and the impact have the frame to themselves, 0.15 on Deadfall as the
+light goes out of the wood, and **1.35 on Wildfire Sap** — there the bloom is the power gathering
+before it is thrown. The value is eased rather than set: snapped on every skill change it reads as
+a light switch and stops looking like drift.
+
 ### Roots are branches, built to the figure's own proportions
 
 The first version of the eruption was a ring of plain tapered tubes with a green emissive, and it

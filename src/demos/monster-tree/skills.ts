@@ -50,6 +50,14 @@ export interface Skill {
   cues: SkillCue[];
   /** Sockets whose trail runs for the duration of the swing. */
   trails?: Array<'grip-l' | 'grip-r'>;
+  /**
+   * How much of the drifting colour bloom this skill leaves on, 0..1. Default 1.
+   *
+   * Full while the figure is standing — the layer is what it does at rest. Pulled down during a
+   * strike so the swing trail and the impact have the frame to themselves; a bloom at full
+   * strength competes with them and the hit stops reading.
+   */
+  aura?: number;
 }
 
 /**
@@ -115,6 +123,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'strike',
+    aura: 0.35,
     label: 'Bark Strike',
     clip: 'preset:biped:box_01',
     fade: 0.14,
@@ -125,6 +134,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'combo',
+    aura: 0.3,
     label: 'Splinter Combo',
     clip: 'preset:biped:box_02',
     fade: 0.14,
@@ -138,6 +148,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'uppercut',
+    aura: 0.35,
     label: 'Heartwood Uppercut',
     clip: 'preset:biped:box_03',
     fade: 0.14,
@@ -161,6 +172,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'kick',
+    aura: 0.4,
     label: 'Rootfall Kick',
     clip: 'preset:biped:front_kick_01',
     fade: 0.16,
@@ -182,6 +194,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'stomp',
+    aura: 0.4,
     label: 'Grovebreaker Stomp',
     clip: 'preset:biped:front_kick_02',
     fade: 0.14,
@@ -203,6 +216,8 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'ignite',
+    // The cast RAISES it — the bloom is the power gathering before it is thrown.
+    aura: 1.35,
     label: 'Wildfire Sap',
     clip: 'preset:biped:fire',
     fade: 0.2,
@@ -233,6 +248,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'fall',
+    aura: 0.15,
     label: 'Deadfall',
     clip: 'preset:biped:defeat_03',
     fade: 0.25,
@@ -297,6 +313,7 @@ export class SkillRunner {
     for (const key of ['grip-l', 'grip-r'] as const) {
       this.vfx.trails[key].strength = skill.trails?.includes(key) ? 1 : 0;
     }
+    this.vfx.aura = skill.aura ?? 1;
     return true;
   }
 
