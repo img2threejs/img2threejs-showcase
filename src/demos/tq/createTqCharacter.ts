@@ -60,12 +60,31 @@ export interface TqCharacter {
   rootMotion: RootMotion[];
   /** Height of the figure in world units, measured after assembly. */
   height: number;
-  play(clip: string | number, fadeSeconds?: number, timeScale?: number): boolean;
+  play(clip: string | number, options?: PlayOptions): boolean;
   /** Current clip name, or null before the first play. */
   current(): string | null;
   update(deltaSeconds: number): void;
   /** Show or hide the costume without touching the body underneath. */
   setCostumeVisible(visible: boolean): void;
+}
+
+/** How a clip should be started. */
+export interface PlayOptions {
+  /** Cross-fade seconds. 0 cuts. */
+  fade?: number;
+  /** Playback rate; the retargeted presets run long, so a skill asks for its own. */
+  timeScale?: number;
+  /**
+   * Rewind even when this clip is already the one playing.
+   *
+   * Without it, re-firing the SAME skill was a no-op on the animation: the action stayed where it
+   * was and kept looping, so the second cast played its effects against a body at some arbitrary
+   * phase of the clip. Measured across three casts of `chop`, the playhead ran 2.16s, 4.08s, 5.99s
+   * and never returned to zero.
+   */
+  restart?: boolean;
+  /** `once` holds the final pose instead of looping — what an attack wants. */
+  loop?: 'repeat' | 'once';
 }
 
 export interface TqCharacterOptions {
@@ -218,22 +237,33 @@ export function createTqCharacter(options: TqCharacterOptions = {}): TqCharacter
   let currentAction: THREE.AnimationAction | null = null;
   let currentName: string | null = null;
 
-  const play = (which: string | number, fadeSeconds = 0.3, timeScale = 1): boolean => {
+  const play = (which: string | number, options: PlayOptions = {}): boolean => {
     const clip = typeof which === 'number' ? clips[which] : clips.find((c) => c.name === which);
     if (!clip) return false;
+    const { fade = 0.3, timeScale = 1, restart = false, loop = 'repeat' } = options;
     const next = mixer.clipAction(clip);
     // Set every time, even when the same action is replayed: the retargeted presets are authored
     // at a documentary pace, and a skill needs its clip at combat speed rather than at that pace.
     next.timeScale = timeScale;
-    if (next === currentAction) return true;
+    if (next === currentAction && !restart) return true;
+
     next.enabled = true;
-    next.setLoop(THREE.LoopRepeat, Infinity);
-    next.reset();
-    if (currentAction && fadeSeconds > 0) {
-      // Cross-fade, never cut: two looping clips at different phases pop hard on the first frame.
-      next.crossFadeFrom(currentAction, fadeSeconds, false).play();
+    if (loop === 'once') {
+      next.setLoop(THREE.LoopOnce, 1);
+      next.clampWhenFinished = true;
     } else {
-      currentAction?.stop();
+      next.setLoop(THREE.LoopRepeat, Infinity);
+      next.clampWhenFinished = false;
+    }
+    next.reset();
+
+    if (currentAction && currentAction !== next && fade > 0) {
+      // Cross-fade, never cut: two clips at different phases pop hard on the first frame.
+      next.crossFadeFrom(currentAction, fade, false).play();
+    } else {
+      // Re-firing the clip that is already current: stop it and start it again from zero, which is
+      // the whole point of `restart`. Cross-fading an action with itself does nothing.
+      if (currentAction !== next) currentAction?.stop();
       next.play();
     }
     currentAction = next;

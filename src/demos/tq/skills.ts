@@ -308,7 +308,14 @@ export class SkillDirector {
     const clip = this.character.clips.find((c) => c.name === skill.clip);
     if (!clip) return false;
 
-    this.character.play(skill.clip, fadeSeconds, skill.rate ?? 1);
+    // `restart` and `once`: an attack has to rewind when it is fired again, and hold its last pose
+    // rather than looping back into its own wind-up.
+    this.character.play(skill.clip, {
+      fade: fadeSeconds,
+      timeScale: skill.rate ?? 1,
+      restart: true,
+      loop: 'once',
+    });
     this.active = skill;
     // The cue times are fractions of the clip, so the clock has to run on the clip's PLAYED
     // length; using its authored length would fire every cue late by the rate.

@@ -9,6 +9,7 @@ import { createStageLights } from './lighting';
 import { setRegionTint } from './regionSplit';
 import { SkillDirector, SKILLS } from './skills';
 import { COSTUME_REGIONS, OUTFIT_SWATCHES, REGIONS, SIGNATURE, type RegionId } from './characterPalette';
+import { TQ_PROFILE, TQ_TAGS } from './characterProfile';
 
 /**
  * Tq — a Three Kingdoms officer, rigged, split and lit from her own measured palette.
@@ -127,13 +128,13 @@ export function createTqModel(options: TqModelOptions = {}): THREE.Group {
       const clip = CLIP_ACTIONS.find((c) => c.id === id);
       if (clip) {
         director?.release();
-        character?.play(clip.clip, 0.3);
+        character?.play(clip.clip, { fade: 0.3 });
         announce(id);
       }
     },
     stop: (): void => {
       director?.release();
-      character?.play(IDLE_CLIP, 0.3);
+      character?.play(IDLE_CLIP, { fade: 0.3 });
       announce('idle');
     },
     subscribe: (listener: (id: string) => void): (() => void) => {
@@ -178,6 +179,9 @@ export function createTqModel(options: TqModelOptions = {}): THREE.Group {
 
   const runtime: Record<string, unknown> = {
     animationController,
+    // Described up front and never rebuilt: the profile is a property of the character, not of
+    // whether the geometry has finished arriving.
+    profile: { tags: TQ_TAGS, details: TQ_PROFILE },
     outfit,
     sockets: {},
     destructionGroups: {},
@@ -200,7 +204,11 @@ export function createTqModel(options: TqModelOptions = {}): THREE.Group {
 
     // A skill plays once and then releases itself; reflect that so the button does not stay lit.
     director.onRelease = () => {
-      if (SKILLS.some((s) => s.id === active)) announce('idle');
+      if (!SKILLS.some((s) => s.id === active)) return;
+      // Skills play once and clamp, so without this the figure would stand frozen in the last frame
+      // of the attack until something else was clicked.
+      character?.play(IDLE_CLIP, { fade: 0.35 });
+      announce('idle');
     };
 
     // Replay whatever the panel was set to while the geometry was still in flight.
@@ -212,7 +220,7 @@ export function createTqModel(options: TqModelOptions = {}): THREE.Group {
       const mesh = character.meshes.get(id);
       if (mesh) setRegionTint(mesh.material as THREE.Material, hex);
     }
-    character.play(IDLE_CLIP, 0);
+    character.play(IDLE_CLIP, { fade: 0 });
     if (active !== 'idle') animationController.play(active);
 
     root.userData.height = character.height;

@@ -1987,6 +1987,69 @@ body.intro-active { overflow: hidden; }
   gap: 0.45rem;
 }
 
+/* Character tags and the subject sheet, from `sculptRuntime.profile`. The tag colour encodes what
+   KIND of claim it is, and the source badge on each detail encodes how far it can be trusted. */
+
+.demo-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.15rem;
+}
+
+.demo-tag {
+  padding: 0.13rem 0.42rem;
+  border-radius: 0.9rem;
+  font-size: 0.66rem;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  cursor: default;
+}
+
+.demo-tag-subject { color: #f0d3a8; background: rgba(255, 194, 71, 0.10); border-color: rgba(255, 194, 71, 0.30); }
+.demo-tag-palette { color: #f3b2ab; background: rgba(255, 42, 51, 0.10);  border-color: rgba(255, 42, 51, 0.30); }
+.demo-tag-craft   { color: #b9c2e6; background: rgba(68, 104, 255, 0.10); border-color: rgba(68, 104, 255, 0.30); }
+.demo-tag-vfx     { color: #c8b6e8; background: rgba(150, 110, 255, 0.10); border-color: rgba(150, 110, 255, 0.32); }
+
+.demo-profile-list {
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.demo-profile-list dt {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--accent-strong);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.demo-profile-list dd {
+  margin: 0.12rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: #c9c8d2;
+}
+
+.demo-source {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Measured is asserted, observed is seen, generated is invented — and the last one is the warning. */
+.demo-source-measured  { color: #8fd6a8; background: rgba(80, 200, 130, 0.12); }
+.demo-source-observed  { color: #9fc0f0; background: rgba(90, 150, 240, 0.12); }
+.demo-source-generated { color: #e8b07a; background: rgba(230, 150, 70, 0.14); }
+
 /* Outfit controls — the block a demo opts into by publishing `sculptRuntime.outfit`. Reuses the
    `.demo-animations` shell so a panel carrying all of them reads as one stack, not three cards. */
 
