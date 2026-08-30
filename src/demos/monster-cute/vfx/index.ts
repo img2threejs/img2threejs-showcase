@@ -26,8 +26,7 @@ import type { RiggedModel } from '../meshCodec';
 import { ACCENT, CLIP_PROFILES, FIGURE_HEIGHT, FRAME, PALETTE, SOCKETS } from '../characterProfile';
 import { ParticleField } from './particles';
 import { Ribbon } from './ribbon';
-import { Beam, ChargeOrb, Hearts, HornArc, Shockwaves } from './shapes';
-import { Blink } from './blink';
+import { Beam, ChargeOrb, Hearts, HornArc, MagicCircle, Shockwaves } from './shapes';
 import { EyeGlow, installRimLight } from './rimLight';
 
 const H = FIGURE_HEIGHT;
@@ -35,8 +34,8 @@ const H = FIGURE_HEIGHT;
 export type CueName = 'cast' | 'blast' | 'slam' | 'hurt' | 'sparkle';
 
 export type EffectName =
-  | 'motes' | 'aura' | 'rimLight' | 'blink' | 'eyeGlow' | 'handTrails' | 'footDust' | 'landingWave'
-  | 'hornArc' | 'palmCharge' | 'hearts';
+  | 'motes' | 'aura' | 'rimLight' | 'eyeGlow' | 'handTrails' | 'footDust' | 'landingWave'
+  | 'hornArc' | 'palmCharge' | 'hearts' | 'magicCircle';
 
 export interface ClipBinding {
   effect: EffectName;
@@ -62,8 +61,6 @@ export interface MonsterCuteVfx {
   setEffectEnabled(effect: EffectName, on: boolean): void;
   isEffectEnabled(effect: EffectName): boolean;
   setViewport(pixelHeight: number, fovDegrees: number): void;
-  /** Hold the eyes at a closure (0 open, 1 shut), or null to hand them back to the blink rhythm. */
-  forceBlink(amount: number | null): void;
   bindingsFor(clipName: string): ClipBinding[];
   socketWorldPosition(id: string, out: THREE.Vector3): THREE.Vector3 | null;
   readonly socketIds: string[];
@@ -139,10 +136,21 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
   const beam = new Beam(ACCENT.core);
   const hearts = new Hearts(14, 0.075 * H, ACCENT.impact);
   const eyeGlow = new EyeGlow(0.026 * H, ACCENT.core);
-  group.add(shockwaves.group, hornArc.group, orbs.l.group, orbs.r.group, beam.group, hearts.group, eyeGlow.group);
+  // Two-tone on purpose: the violet lifted from the wristbands outside, the fur cyan inside. Both
+  // are the character's own colours, and the pair reads far warmer than one ring of pale blue.
+  const magicCircle = new MagicCircle(0.56 * H, ACCENT.impact, ACCENT.energy);
 
-  // Drawn into the eye's own vertex colours; there are no eyelid joints to pose.
-  const blink = new Blink(rigged.mesh);
+  /**
+   * The colours a mote can be.
+   *
+   * All five are the character's own — the pale belly, the lit fur, the shaded fur, the horn grey
+   * warmed, and the wristband violet lifted. A field in one flat colour reads as fog; a field that
+   * varies across the subject's own palette reads as air with something in it, without introducing
+   * a hue the monster does not wear.
+   */
+  const MOTE_COLOURS = [ACCENT.mote, PALETTE.belly, ACCENT.energy, ACCENT.dust, ACCENT.impact];
+  group.add(shockwaves.group, hornArc.group, orbs.l.group, orbs.r.group, beam.group, hearts.group, eyeGlow.group, magicCircle.group);
+
 
   // ---------------------------------------------------------------- emissive channel
 
@@ -163,9 +171,9 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
   // ---------------------------------------------------------------- state
 
   const enabled: Record<EffectName, boolean> = {
-    motes: true, aura: true, rimLight: true, blink: true, eyeGlow: true,
+    motes: true, aura: true, rimLight: true, eyeGlow: true,
     handTrails: false, footDust: false,
-    landingWave: false, hornArc: false, palmCharge: false, hearts: false,
+    landingWave: false, hornArc: false, palmCharge: false, hearts: false, magicCircle: false,
   };
 
   const world = new Map<string, THREE.Vector3>();
@@ -223,10 +231,14 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
   const scratch = new THREE.Vector3();
   const scratchB = new THREE.Vector3();
   const scratchC = new THREE.Vector3();
+  // Its own vector on purpose: scratchC is still holding the camera position that the trails read
+  // earlier in the same frame, and quietly borrowing it would break them the next time these
+  // blocks are reordered.
+  const scratchCircle = new THREE.Vector3();
 
   // ---------------------------------------------------------------- one-shots
 
-  function burst(at: THREE.Vector3, count: number, speed: number, colour: THREE.Color, size: number, life: number, field = sparks): void {
+  function burst(at: THREE.Vector3, count: number, speed: number, colour: THREE.Color, size: number, life: number, field = sparks, shape = 0.85): void {
     for (let i = 0; i < count; i += 1) {
       // Direction on a sphere by the standard rejection-free polar method, so the burst is even
       // rather than clustered at the poles.
@@ -242,6 +254,10 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
         life: life * (0.6 + Math.random() * 0.7),
         drag: 0.12,
         gravity: -0.55 * H,
+        // Twinkles rather than dots. On a round pastel character the four-point sparkle is what
+        // reads as charm; a cloud of circles reads as smoke.
+        shape,
+        spinRate: (Math.random() - 0.5) * 6,
       });
     }
   }
@@ -260,6 +276,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
         gravity: 0.08 * H,      // dust drifts up as it thins out
         growth: 2.6,
         alpha: 0.8,
+        shape: 0,   // grit, not glitter
       });
     }
   }
@@ -279,7 +296,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     switch (name) {
       case 'cast': {
         hornArc.setStrength(1);
-        castHold = 1.1;
+        castHold = 1.6;
         const l = world.get('effect:horn.l');
         const r = world.get('effect:horn.r');
         if (l) burst(l, 16, 0.5 * H, ACCENT.core, 0.022 * H, 0.5);
@@ -302,10 +319,6 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
       }
       case 'hurt': {
         const core = world.get('effect:core');
-        // Eyes screwed shut on the hit, then handed back to the rhythm. Counted down in the frame
-        // loop rather than on a timer, so a backgrounded tab does not come back mid-wince.
-        blink.setForced(1);
-        squeezeHold = 0.22;
         flash = 1;
         flashColour = ACCENT.impact.clone();
         if (core) burst(core, 40, 1.1 * H, ACCENT.impact, 0.03 * H, 0.55);
@@ -320,11 +333,13 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
           motes.spawn({
             position: scratch.copy(core).add(scratchB.set(Math.cos(a) * 0.22 * H, (Math.random() - 0.4) * 0.3 * H, Math.sin(a) * 0.22 * H)),
             velocity: scratchC.set(Math.cos(a) * 0.06 * H, rise * 0.22 * H, Math.sin(a) * 0.06 * H),
-            colour: ACCENT.mote,
-            size: 0.016 * H * (0.6 + Math.random()),
-            life: 1.4 + Math.random(),
+            colour: MOTE_COLOURS[(Math.random() * MOTE_COLOURS.length) | 0],
+            size: 0.03 * H * (0.6 + Math.random()),
+            life: 1.5 + Math.random(),
             drag: 0.5,
-            alpha: 0.9,
+            alpha: 1,
+            shape: 1,
+            spinRate: (Math.random() - 0.5) * 4,
           });
         }
         break;
@@ -334,7 +349,6 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
 
   let castHold = 0;
   let chargeHold = 0;
-  let squeezeHold = 0;
 
   // ---------------------------------------------------------------- clip bindings
 
@@ -387,9 +401,10 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     trails.l.reset();
     trails.r.reset();
     heartTimer = 0;
-    // A blink on the cut hides the pose discontinuity the cross-fade cannot fully cover, the same
-    // way a cut on a blink works in editing.
-    if (enabled.blink) blink.trigger();
+    // A little pop of twinkles on the cut. Punctuation: it marks the change without the figure
+    // having to do anything, and it covers the instant where the cross-fade is weakest.
+    const core = world.get('effect:core');
+    if (core) burst(core, 16, 0.75 * H, ACCENT.core, 0.028 * H, 0.55, motes, 1);
     return activeBindings;
   }
 
@@ -418,7 +433,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     if (enabled.motes) {
       moteTimer -= step;
       if (moteTimer <= 0) {
-        moteTimer = 0.055;
+        moteTimer = 0.05;
         const core = world.get('effect:core');
         if (core) {
           const a = Math.random() * Math.PI * 2;
@@ -426,11 +441,14 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
           motes.spawn({
             position: scratch.set(core.x + Math.cos(a) * radius, 0.05 * H + Math.random() * 1.15 * H, core.z + Math.sin(a) * radius),
             velocity: scratchB.set(Math.cos(a + 1.4) * 0.02 * H, 0.035 * H * (0.5 + Math.random()), Math.sin(a + 1.4) * 0.02 * H),
-            colour: ACCENT.mote,
-            size: 0.019 * H * (0.5 + Math.random()),
+            colour: MOTE_COLOURS[(Math.random() * MOTE_COLOURS.length) | 0],
+            size: 0.024 * H * (0.45 + Math.random()),
             life: 2.6 + Math.random() * 2,
             drag: 0.85,
-            alpha: 0.85,
+            alpha: 0.9,
+            // Most are twinkles; a few stay round so the field is not uniformly spiky.
+            shape: Math.random() < 0.72 ? 1 : 0,
+            spinRate: (Math.random() - 0.5) * 1.6,
           });
         }
       }
@@ -563,21 +581,42 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     }
     if (camera) hearts.update(step, camera.quaternion);
 
-    // ---- blink ----
-    if (squeezeHold > 0) {
-      squeezeHold -= step;
-      if (squeezeHold <= 0) blink.setForced(null);
+    const charging = Math.max(orbs.l.level, orbs.r.level);
+
+    // ---- magic circle ----
+    // Under the feet, so it is grounded on the same spot the landing waves use.
+    const circleOn = enabled.magicCircle || castHold > 0 || charging > 0.5;
+    magicCircle.setLevel(circleOn ? 1 : 0);
+    // Between the feet, not under one of them: anchored to a single foot the ring sits visibly
+    // off to one side of the figure it is supposed to be centred on.
+    const footL = world.get('effect:foot.l');
+    const footR = world.get('effect:foot.r');
+    const circleAt = footL && footR
+      ? scratchCircle.copy(footL).add(footR).multiplyScalar(0.5)
+      : (footL ?? footR ?? world.get('effect:core'));
+    magicCircle.update(step, elapsed, circleAt);
+    if (circleOn && Math.random() < step * 12) {
+      if (circleAt) {
+        const a = Math.random() * Math.PI * 2;
+        const r = 0.5 * H;
+        motes.spawn({
+          position: scratch.set(circleAt.x + Math.cos(a) * r, 0.02 * H, circleAt.z + Math.sin(a) * r),
+          velocity: scratchB.set(0, (0.18 + Math.random() * 0.16) * H, 0),
+          colour: MOTE_COLOURS[(Math.random() * MOTE_COLOURS.length) | 0],
+          size: 0.028 * H,
+          life: 1.5,
+          drag: 0.7,
+          alpha: 1,
+          shape: 1,
+          spinRate: (Math.random() - 0.5) * 5,
+        });
+      }
     }
-    // Runs on its own rhythm rather than on the clip's, because a blink is not part of any of these
-    // 33 clips; a character that only blinks when it moves looks switched off between actions.
-    if (enabled.blink) blink.update(step);
-    const openness = 1 - blink.closure;
 
     // ---- eye glow ----
-    const charging = Math.max(orbs.l.level, orbs.r.level);
     eyeGlow.setLevel(enabled.eyeGlow ? Math.max(charging * 0.9, arcOn ? 0.7 : 0, flash * 0.8) : 0);
     if (camera) {
-      eyeGlow.update(step, elapsed, world.get('effect:eye.l'), world.get('effect:eye.r'), camera.quaternion, openness);
+      eyeGlow.update(step, elapsed, world.get('effect:eye.l'), world.get('effect:eye.r'), camera.quaternion);
     }
 
     // ---- rim ----
@@ -622,8 +661,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     trails.l.dispose(); trails.r.dispose();
     shockwaves.dispose(); hornArc.dispose();
     orbs.l.dispose(); orbs.r.dispose();
-    beam.dispose(); hearts.dispose(); eyeGlow.dispose();
-    blink.dispose();
+    beam.dispose(); hearts.dispose(); eyeGlow.dispose(); magicCircle.dispose();
     rim.uRimStrength.value = 0;
     rim.uRimPulse.value = 0;
     material.emissive.copy(emissiveBase);
@@ -638,7 +676,6 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     setEffectEnabled: (effect, on) => { enabled[effect] = on; if (effect === 'handTrails' && !on) { trails.l.reset(); trails.r.reset(); } },
     isEffectEnabled: (effect) => enabled[effect],
     setViewport,
-    forceBlink: (amount) => blink.setForced(amount),
     bindingsFor,
     socketWorldPosition,
     socketIds: [...sockets.keys()],
@@ -655,7 +692,6 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
       shockwaves: shockwaves.liveCount,
       hearts: hearts.liveCount,
       emissive: `#${material.emissive.getHexString()} x${material.emissiveIntensity.toFixed(2)}`,
-      blinkClosure: Number(blink.closure.toFixed(3)),
       rim: Number(rim.uRimStrength.value.toFixed(2)) + rim.uRimPulse.value,
       eyeGlowVisible: eyeGlow.group.visible,
       enabled: { ...enabled },

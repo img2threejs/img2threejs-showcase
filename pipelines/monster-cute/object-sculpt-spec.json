@@ -758,12 +758,6 @@
         "basis": "INFERRED \u2014 on the clip named hurt, and on the manual 'hurt' cue"
       },
       {
-        "id": "blink",
-        "anchor": "the measured eye discs, in vertex colour",
-        "colour": "#508ea8, the fur measured immediately around the eyes",
-        "basis": "independent of the clips. This rig has NO eyelid joints and no morph targets \u2014 Head is the only joint above the neck \u2014 so the lid is drawn into the eye's own vertex colours rather than posed. Static per-vertex lid parameter, so it rides the head for free."
-      },
-      {
         "id": "rimLight",
         "anchor": "the skinned shell's own material, via onBeforeCompile",
         "colour": "ACCENT.energy",
@@ -773,7 +767,13 @@
         "id": "eyeGlow",
         "anchor": "effect:eye.l / effect:eye.r",
         "colour": "ACCENT.core",
-        "basis": "follows the palm charge, the horn arc and the impact flash; multiplied by eye openness"
+        "basis": "follows the palm charge, the horn arc and the impact flash"
+      },
+      {
+        "id": "magicCircle",
+        "anchor": "midpoint of effect:foot.l and effect:foot.r",
+        "colour": "ACCENT.impact outer, ACCENT.energy inner",
+        "basis": "raised by the cast cue and by a palm charge above 0.5; two counter-rotating rings plus a ring of twinkles"
       }
     ],
     "cues": [
@@ -784,21 +784,11 @@
       "sparkle"
     ],
     "destructionGroups": "NOT AVAILABLE. The spec carries no destructionGroups and cannot: rigging merged the surface, so this model is a single skinned shell of 192,082 triangles with one part hypothesis (\"body-shell\", confidence 0.20). There is no part decomposition to break apart, and no destruction anchor was invented to stand in for one.",
-    "blink": {
-      "why": "the rig has 41 joints, none facial, and no morph targets, so a blink cannot be posed",
-      "method": "each eye's measured vertex disc sweeps to the surrounding fur colour, top to bottom, with a darker crease band leading the edge",
-      "timing": {
-        "close": 0.07,
-        "hold": 0.035,
-        "open": 0.16,
-        "gapSeconds": [
-          2.2,
-          6.5
-        ],
-        "doubleChance": 0.22
-      },
-      "measured": "3 blinks over 12 s at irregular spacing, peak closure 0.994",
-      "evidence": "evidence/eyes.json, produced by tools/measure.ts"
+    "spriteShape": {
+      "twinkle": "four-point star cut in the fragment shader, per-particle rotation; no texture files ship with this package",
+      "shared": "exported as TWINKLE_GLSL so the magic circle's notches draw the same star \u2014 an untextured PointsMaterial draws a hard square",
+      "roundStaysRound": "foot dust keeps the soft circular sprite: grit is not glitter",
+      "moteColours": "cycled across five measured colours (belly, lit fur, shaded fur, warmed horn, lifted wristband)"
     }
   },
   "rig": {

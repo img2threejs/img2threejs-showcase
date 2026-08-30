@@ -99,8 +99,7 @@ export function installRimLight(
  * A pair of glowing discs sitting on the measured eye sockets.
  *
  * Billboarded and additive, so they read as light coming out of the eye rather than as a decal on
- * it. Scaled by the blink, because an eye that keeps glowing through a closed lid is the sort of
- * detail that quietly ruins the effect.
+ * it.
  */
 export class EyeGlow {
   readonly group = new THREE.Group();
@@ -127,9 +126,9 @@ export class EyeGlow {
 
   setLevel(value: number): void { this.target = value; }
 
-  update(dt: number, elapsed: number, left: THREE.Vector3 | undefined, right: THREE.Vector3 | undefined, cameraQuaternion: THREE.Quaternion, openness: number): void {
+  update(dt: number, elapsed: number, left: THREE.Vector3 | undefined, right: THREE.Vector3 | undefined, cameraQuaternion: THREE.Quaternion): void {
     this.level += (this.target - this.level) * Math.min(1, dt * 7);
-    const shown = this.level * openness;
+    const shown = this.level;
     this.group.visible = shown > 0.01;
     if (!this.group.visible) return;
     const flicker = 0.85 + 0.15 * Math.sin(elapsed * 17.3);

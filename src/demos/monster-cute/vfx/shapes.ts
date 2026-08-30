@@ -8,6 +8,7 @@
  * during animation and a `new Mesh` mid-clip is a frame hitch.
  */
 import * as THREE from 'three';
+import { TWINKLE_GLSL } from './particles';
 
 // ---------------------------------------------------------------- shockwave
 
@@ -58,8 +59,12 @@ export class Shockwaves {
       slot.age += dt;
       const t = slot.age / slot.life;
       if (t >= 1) { slot.mesh.visible = false; slot.material.opacity = 0; continue; }
-      // Decelerating expansion: a wave is fastest the instant it is made.
-      slot.mesh.scale.setScalar(slot.radius * (1 - (1 - t) ** 2.2));
+      // Overshoots its radius by a few percent and settles back. A purely decelerating wave is
+      // what a shockwave does; the small rebound is what makes it read as cartoon rather than
+      // physical, which is the register the rest of this character lives in.
+      const grow = 1 - (1 - t) ** 2.2;
+      const rebound = 1 + 0.06 * Math.sin(Math.PI * Math.min(1, t * 1.9)) * (1 - t);
+      slot.mesh.scale.setScalar(slot.radius * grow * rebound);
       slot.material.opacity = (1 - t) ** 1.4;
     }
   }
@@ -369,5 +374,122 @@ export class Hearts {
   dispose(): void {
     this.pool[0]?.mesh.geometry.dispose();
     for (const s of this.pool) s.material.dispose();
+  }
+}
+
+// ---------------------------------------------------------------- magic circle
+
+/**
+ * A summoning circle under the feet.
+ *
+ * Two counter-rotating rings and a ring of twinkles, flat on the ground. The counter-rotation is
+ * the whole trick: one ring alone reads as a decal that happens to spin, two turning against each
+ * other read as a mechanism. Drawn in the pale belly blue outside and the energy cyan inside, so
+ * the brightest part is nearest the character.
+ */
+export class MagicCircle {
+  readonly group = new THREE.Group();
+  private readonly outer: THREE.Mesh;
+  private readonly inner: THREE.Mesh;
+  private readonly notches: THREE.Points;
+  private readonly outerMaterial: THREE.MeshBasicMaterial;
+  private readonly innerMaterial: THREE.MeshBasicMaterial;
+  private readonly notchMaterial: THREE.ShaderMaterial;
+  private level = 0;
+  private target = 0;
+
+  constructor(radius: number, outerColour: THREE.Color, innerColour: THREE.Color) {
+    const flatRing = (a: number, b: number, colour: THREE.Color) => {
+      const geometry = new THREE.RingGeometry(a, b, 96);
+      geometry.rotateX(-Math.PI / 2);
+      const material = new THREE.MeshBasicMaterial({
+        color: colour.clone(), transparent: true, opacity: 0,
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.renderOrder = 8;
+      return { mesh, material };
+    };
+
+    const o = flatRing(radius * 0.92, radius, outerColour);
+    const i = flatRing(radius * 0.52, radius * 0.60, innerColour);
+    this.outer = o.mesh; this.outerMaterial = o.material;
+    this.inner = i.mesh; this.innerMaterial = i.material;
+
+    // Twinkles pinned around the rim, carried by the outer ring's rotation.
+    const count = 12;
+    const positions = new Float32Array(count * 3);
+    for (let n = 0; n < count; n += 1) {
+      const a = (n / count) * Math.PI * 2;
+      positions[n * 3] = Math.cos(a) * radius * 0.76;
+      positions[n * 3 + 1] = 0;
+      positions[n * 3 + 2] = Math.sin(a) * radius * 0.76;
+    }
+    const notchGeometry = new THREE.BufferGeometry();
+    notchGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    // A ShaderMaterial, not PointsMaterial: an untextured PointsMaterial draws a hard SQUARE, and
+    // a ring of squares among a field of twinkles is the first thing the eye lands on.
+    this.notchMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uColour: { value: innerColour.clone() },
+        uOpacity: { value: 0 },
+        uSize: { value: radius * 0.42 },
+        uPixelScale: { value: 620 },
+      },
+      vertexShader: /* glsl */`
+        uniform float uSize;
+        uniform float uPixelScale;
+        void main() {
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = uSize * uPixelScale / max(-mv.z, 0.0001);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: /* glsl */`
+        uniform vec3 uColour;
+        uniform float uOpacity;
+        ${TWINKLE_GLSL}
+        void main() {
+          float a = twinkleShape(gl_PointCoord, 0.0, 1.0);
+          if (a <= 0.002) discard;
+          gl_FragColor = vec4(uColour * (0.7 + 0.8 * a), a * uOpacity);
+        }
+      `,
+      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    this.notches = new THREE.Points(notchGeometry, this.notchMaterial);
+    this.notches.renderOrder = 9;
+
+    this.group.add(this.outer, this.inner, this.notches);
+    this.group.visible = false;
+  }
+
+  setLevel(value: number): void { this.target = value; }
+
+  update(dt: number, elapsed: number, at: THREE.Vector3 | undefined): void {
+    this.level += (this.target - this.level) * Math.min(1, dt * 5);
+    this.group.visible = this.level > 0.01;
+    if (!this.group.visible) return;
+    if (at) this.group.position.set(at.x, 0.006, at.z);
+
+    this.outer.rotation.y = elapsed * 0.5;
+    this.notches.rotation.y = elapsed * 0.5;
+    this.inner.rotation.y = -elapsed * 0.85;
+
+    // Eases up from nothing rather than popping in at full size.
+    const scale = 0.6 + 0.4 * this.level;
+    this.outer.scale.setScalar(scale);
+    this.inner.scale.setScalar(scale);
+    this.notches.scale.setScalar(scale);
+
+    const breathe = 0.85 + 0.15 * Math.sin(elapsed * 3.1);
+    this.outerMaterial.opacity = 0.75 * this.level * breathe;
+    this.innerMaterial.opacity = 0.95 * this.level;
+    this.notchMaterial.uniforms.uOpacity.value = this.level * breathe;
+  }
+
+  dispose(): void {
+    this.outer.geometry.dispose(); this.inner.geometry.dispose(); this.notches.geometry.dispose();
+    this.outerMaterial.dispose(); this.innerMaterial.dispose(); this.notchMaterial.dispose();
   }
 }

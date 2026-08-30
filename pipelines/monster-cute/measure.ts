@@ -344,7 +344,6 @@ for (let i = 1; i < scleraMembers.length; i += 1) {
 const fangMembers = scleraMembers.filter((v) => yOf(v) < splitY);
 const eyeMembers = scleraMembers.filter((v) => yOf(v) >= splitY);
 
-const regionHexFallback = '#4487a4';
 const eyeSides = splitSides(eyeMembers);
 for (const side of ['L', 'R'] as const) {
   const members = eyeSides[side];
@@ -395,75 +394,6 @@ for (const side of ['L', 'R'] as const) {
 }
 
 
-// ---------------------------------------------------------------- eye regions, for the blink
-
-/**
- * This rig has no eyelids.
- *
- * 41 bones, none of them facial: `Head` is the only joint above the neck, and the export carries no
- * morph targets. So a blink cannot be posed — there is nothing to pose. What the model does have is
- * per-vertex colour and a measurable eye, so the blink is drawn instead: the eye's own vertices are
- * swept to the colour of the fur immediately around them, top to bottom, and swept back.
- *
- * Each eye is collected as a disc around its measured socket rather than as "the white pixels", so
- * the lid also covers the rim of fur the eye sits in and closes over a clean circle. The lid
- * parameter is the vertex's height within that disc, normalised, and it is STATIC — being fixed to
- * the vertex, it rides the head through every clip with no per-frame work.
- */
-interface EyeRegion {
-  id: 'l' | 'r';
-  bone: string;
-  centre: [number, number, number];
-  radius: number;
-  vertices: number[];
-  /** 0 at the bottom of the eye, 1 at the top. The lid closes from 1 down. */
-  lid: number[];
-}
-
-const eyeRegions: EyeRegion[] = [];
-const eyeSurroundSamples: number[] = [];
-for (const side of ['L', 'R'] as const) {
-  const members = eyeSides[side];
-  if (!members.length) continue;
-  const centre = centroidOf(members);
-  let radius = 0;
-  for (const v of members) {
-    radius = Math.max(radius, centre.distanceTo(new THREE.Vector3(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2])));
-  }
-  // A little wider than the white, so the lid closes over the fur rim rather than stopping at it.
-  const reach = radius * 1.35;
-  const inside: number[] = [];
-  for (const v of all) {
-    if (!HEAD_SET.has(boneOfVertex(v))) continue;
-    const d = centre.distanceTo(new THREE.Vector3(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]));
-    if (d <= reach) inside.push(v);
-    else if (d <= reach * 1.6) eyeSurroundSamples.push(v);
-  }
-  const ys = inside.map(yOf);
-  const lo = Math.min(...ys); const hi = Math.max(...ys);
-  eyeRegions.push({
-    id: side.toLowerCase() as 'l' | 'r',
-    bone: 'Head',
-    centre: [centre.x, centre.y, centre.z],
-    radius: reach,
-    vertices: inside,
-    lid: inside.map((v) => (hi - lo < 1e-9 ? 0 : (yOf(v) - lo) / (hi - lo))),
-  });
-}
-
-/** The colour the lid is drawn in: the fur that actually rings the eyes, averaged. */
-const lidColour = (() => {
-  if (!eyeSurroundSamples.length) return regionHexFallback;
-  let r = 0; let g = 0; let b = 0;
-  let used = 0;
-  for (const v of eyeSurroundSamples) {
-    // Skip anything still eye-coloured, so the lid is fur and not a smeared white.
-    if (L(v) > 0.7) continue;
-    r += srgb[v * 3]; g += srgb[v * 3 + 1]; b += srgb[v * 3 + 2]; used += 1;
-  }
-  return used ? hex(r / used, g / used, b / used) : regionHexFallback;
-})();
-
 // ---------------------------------------------------------------- write
 
 mkdirSync(new URL('../../src/demos/monster-cute/evidence/', import.meta.url), { recursive: true });
@@ -496,14 +426,6 @@ const socketDoc = {
 };
 
 writeFileSync(new URL('../../src/demos/monster-cute/evidence/palette.json', import.meta.url), JSON.stringify(palette, null, 2));
-// Written compact, and the lid parameter rounded to three places: it drives a colour blend, so
-// more precision than that is 200 KB of digits nothing can see.
-writeFileSync(new URL('../../src/demos/monster-cute/evidence/eyes.json', import.meta.url), JSON.stringify({
-  measuredFrom: 'eye-white clusters in src/surfaceData.high.ts, grown to a disc around each measured eye socket',
-  note: 'this rig has no eyelid joints and no morph targets; the blink is drawn in vertex colour',
-  lidColour,
-  eyes: eyeRegions.map((e) => ({ ...e, lid: e.lid.map((v) => Number(v.toFixed(3))) })),
-}));
 writeFileSync(new URL('../../src/demos/monster-cute/evidence/sockets.json', import.meta.url), JSON.stringify(socketDoc, null, 2));
 
 // ---------------------------------------------------------------- report
@@ -516,7 +438,5 @@ console.log('\npalette clusters:');
 for (const c of palette.dominantClusters) console.log(`  ${c.hex}  ${(c.share * 100).toFixed(1).padStart(5)}%  h${c.hsl.h.toFixed(0)} s${c.hsl.s.toFixed(2)} l${c.hsl.l.toFixed(2)}`);
 console.log('\nregions:');
 for (const r of regions) console.log(`  ${r.id.padEnd(10)} ${r.hex}  ${String(r.count).padStart(6)} verts (${(r.share * 100).toFixed(2)}%)  bones: ${r.bones.join(', ')}`);
-console.log('\neyes (for the blink):');
-for (const e of eyeRegions) console.log(`  ${e.id}  ${String(e.vertices.length).padStart(5)} vertices  radius ${e.radius.toFixed(4)}  lid colour ${lidColour}`);
 console.log('\nsockets:');
 for (const s of sockets) console.log(`  ${s.id.padEnd(22)} -> ${s.bone.padEnd(18)} local [${s.offset.map((x) => x.toFixed(4)).join(', ')}]  (${s.sampleCount} samples)`);

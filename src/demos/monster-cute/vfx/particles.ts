@@ -19,12 +19,18 @@ const VERTEX = /* glsl */ `
   attribute float aSize;
   attribute float aAlpha;
   attribute vec3 aColor;
+  attribute float aShape;
+  attribute float aSpin;
   uniform float uPixelScale;
   varying vec3 vColor;
   varying float vAlpha;
+  varying float vShape;
+  varying float vSpin;
   void main() {
     vColor = aColor;
     vAlpha = aAlpha;
+    vShape = aShape;
+    vSpin = aSpin;
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     // Perspective size: worldSize * (viewportHeight / 2 tan(fov/2)) / distance.
     gl_PointSize = aSize * uPixelScale / max(-mv.z, 0.0001);
@@ -32,17 +38,49 @@ const VERTEX = /* glsl */ `
   }
 `;
 
+/**
+ * The twinkle itself, shared so that anything drawing a sprite draws the SAME star.
+ *
+ * Worth exporting rather than copying: a `THREE.PointsMaterial` with no texture draws a hard
+ * square, and a single square among a field of twinkles is instantly the thing your eye goes to.
+ */
+export const TWINKLE_GLSL = /* glsl */ `
+  float twinkleShape(vec2 uv, float spin, float shape) {
+    vec2 d = uv - 0.5;
+
+    // ---- soft round mote ----
+    float r2 = dot(d, d) * 4.0;
+    float roundish = max(1.0 - r2, 0.0);
+    roundish *= roundish;
+
+    // ---- four-point twinkle ----
+    float c = cos(spin);
+    float s = sin(spin);
+    vec2 q = mat2(c, -s, s, c) * d;
+    float ax = abs(q.x);
+    float ay = abs(q.y);
+    float spikeX = max(0.0, 1.0 - (ax * 11.0 + ay * 1.6));
+    float spikeY = max(0.0, 1.0 - (ay * 11.0 + ax * 1.6));
+    float core = max(0.0, 1.0 - length(d) * 3.4);
+    float star = clamp(max(spikeX, spikeY) * 0.85 + core * core * 1.5, 0.0, 1.0);
+
+    return mix(roundish, star, shape);
+  }
+`;
+
 const FRAGMENT = /* glsl */ `
   varying vec3 vColor;
   varying float vAlpha;
+  varying float vShape;
+  varying float vSpin;
+
+  ${TWINKLE_GLSL}
+
   void main() {
-    vec2 d = gl_PointCoord - 0.5;
-    float r = dot(d, d) * 4.0;            // squared radius, 0 at centre, 1 at the edge
-    if (r > 1.0) discard;
-    float falloff = 1.0 - r;
-    // Squared falloff with a hot centre: a linear ramp reads as a flat disc at this size.
-    float a = falloff * falloff;
-    gl_FragColor = vec4(vColor * (0.6 + 0.8 * a), a * vAlpha);
+    // Spun per particle so a field of them shimmers instead of all pointing the same way.
+    float a = twinkleShape(gl_PointCoord, vSpin, vShape);
+    if (a <= 0.002) discard;
+    gl_FragColor = vec4(vColor * (0.6 + 0.9 * a), a * vAlpha);
   }
 `;
 
@@ -60,6 +98,12 @@ export interface ParticleSpawn {
   /** Size multiplier at death — above 1 the particle swells as it fades. */
   growth?: number;
   alpha?: number;
+  /** 0 draws a soft round mote, 1 draws a four-point twinkle. Values between blend. */
+  shape?: number;
+  /** Starting rotation of the twinkle, radians. */
+  spin?: number;
+  /** Rotation speed, radians per second. */
+  spinRate?: number;
 }
 
 export class ParticleField {
@@ -80,6 +124,9 @@ export class ParticleField {
   private readonly birthSize: Float32Array;
   private readonly growth: Float32Array;
   private readonly birthAlpha: Float32Array;
+  private readonly shape: Float32Array;
+  private readonly spin: Float32Array;
+  private readonly spinRate: Float32Array;
 
   private readonly material: THREE.ShaderMaterial;
 
@@ -97,12 +144,17 @@ export class ParticleField {
     this.birthSize = new Float32Array(capacity);
     this.growth = new Float32Array(capacity);
     this.birthAlpha = new Float32Array(capacity);
+    this.shape = new Float32Array(capacity);
+    this.spin = new Float32Array(capacity);
+    this.spinRate = new Float32Array(capacity);
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(this.position, 3));
     geometry.setAttribute('aColor', new THREE.BufferAttribute(this.colour, 3));
     geometry.setAttribute('aSize', new THREE.BufferAttribute(this.size, 1));
     geometry.setAttribute('aAlpha', new THREE.BufferAttribute(this.alpha, 1));
+    geometry.setAttribute('aShape', new THREE.BufferAttribute(this.shape, 1));
+    geometry.setAttribute('aSpin', new THREE.BufferAttribute(this.spin, 1));
     geometry.setDrawRange(0, 0);
     // The pool's bounds change every frame and a Points bounding sphere is recomputed from the
     // whole buffer, so give it one big enough to never cull and skip the recompute entirely.
@@ -156,6 +208,9 @@ export class ParticleField {
     this.life[i] = p.life;
     this.drag[i] = p.drag ?? 1;
     this.gravity[i] = p.gravity ?? 0;
+    this.shape[i] = p.shape ?? 0;
+    this.spin[i] = p.spin ?? Math.random() * Math.PI;
+    this.spinRate[i] = p.spinRate ?? 0;
   }
 
   private swapToEnd(i: number): void {
@@ -175,6 +230,9 @@ export class ParticleField {
       this.birthSize[i] = this.birthSize[last];
       this.growth[i] = this.growth[last];
       this.birthAlpha[i] = this.birthAlpha[last];
+      this.shape[i] = this.shape[last];
+      this.spin[i] = this.spin[last];
+      this.spinRate[i] = this.spinRate[last];
     }
     this.alive -= 1;
   }
@@ -193,6 +251,8 @@ export class ParticleField {
       this.position[i * 3 + 1] += this.velocity[i * 3 + 1] * dt;
       this.position[i * 3 + 2] += this.velocity[i * 3 + 2] * dt;
 
+      this.spin[i] += this.spinRate[i] * dt;
+
       const t = this.age[i] / this.life[i];
       this.size[i] = this.birthSize[i] * (1 + (this.growth[i] - 1) * t);
       // Fade in over the first tenth of life so a spawn does not pop, then out over the rest.
@@ -203,7 +263,7 @@ export class ParticleField {
     const geometry = this.points.geometry;
     geometry.setDrawRange(0, this.alive);
     if (this.alive > 0) {
-      for (const name of ['position', 'aColor', 'aSize', 'aAlpha']) {
+      for (const name of ['position', 'aColor', 'aSize', 'aAlpha', 'aShape', 'aSpin']) {
         const attribute = geometry.getAttribute(name) as THREE.BufferAttribute;
         attribute.clearUpdateRanges();
         attribute.addUpdateRange(0, this.alive * attribute.itemSize);
