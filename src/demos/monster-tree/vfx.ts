@@ -858,27 +858,60 @@ function growSpike(
   random: () => number,
   out: THREE.BufferGeometry[],
 ): void {
-  const steps = 12;
+  const steps = 16;
   const path: THREE.Vector3[] = [];
   const radii: number[] = [];
   let point = new THREE.Vector3();
   let heading = new THREE.Vector3(0, 1, 0);
+  // A couple of seeded phases so the shaft's swelling is different every time it is thrown.
+  const knotPhase = random() * 6.28;
+  const knotPhase2 = random() * 6.28;
+
   for (let i = 0; i <= steps; i += 1) {
     const t = i / steps;
     path.push(point.clone());
     // ^1.7 holds the shaft near full thickness for most of its run and then closes over the last
     // of it. A linear taper reads as a long cone, which is a carrot.
-    radii.push(baseRadius * (1 - t) ** 1.7);
+    let r = baseRadius * (1 - t) ** 1.7;
+    // Swell and pinch along the run. A mathematically perfect taper is a machined spike; wood
+    // thickens at its knots and narrows between them, and this small variation is most of what
+    // separates a branch from a cone.
+    r *= 1 + 0.22 * Math.sin(t * 9.0 + knotPhase) + 0.12 * Math.sin(t * 21.0 + knotPhase2);
+    radii.push(Math.max(baseRadius * 0.012, r));
     if (i === steps) break;
     heading = heading.clone().add(new THREE.Vector3(
       (random() - 0.5) * 0.05, 0, (random() - 0.5) * 0.05,
     )).normalize();
     point = point.clone().addScaledVector(heading, length / steps);
   }
-  const tube = taperedTube(path, radii, 9, TRUNK_COLOUR);
-  if (tube) out.push(tube);
-}
 
+  const tube = taperedTube(path, radii, 12, TRUNK_COLOUR);
+  if (tube) out.push(tube);
+
+  // Two or three snapped-off nubs along the shaft, where side branches used to be. They are stubs,
+  // not forks: a few centimetres each, at a hard angle. This is what stops the shaft reading as a
+  // turned spear and makes it a branch that has been stripped — and it is cheap, because a nub is
+  // three rings, not a recursion.
+  const nubs = 2 + Math.floor(random() * 2);
+  for (let n = 0; n < nubs; n += 1) {
+    const at = 0.18 + random() * 0.5;
+    const index = Math.min(path.length - 2, Math.floor(at * steps));
+    const shaftRadius = radii[index];
+    const side = new THREE.Vector3(random() - 0.5, 0, random() - 0.5).normalize();
+    const dir = new THREE.Vector3(0, 1, 0).multiplyScalar(0.35).addScaledVector(side, 0.94).normalize();
+    const len = length * (0.045 + random() * 0.05);
+    const base = path[index].clone();
+    const nubPath = [
+      // Start INSIDE the shaft so the stub grows out of it rather than being stuck on the surface.
+      base.clone().addScaledVector(dir, -shaftRadius * 0.6),
+      base.clone().addScaledVector(dir, len * 0.55),
+      base.clone().addScaledVector(dir, len),
+    ];
+    const nubRadii = [shaftRadius * 0.62, shaftRadius * 0.4, shaftRadius * 0.1];
+    const nub = taperedTube(nubPath, nubRadii, 7, TRUNK_COLOUR);
+    if (nub) out.push(nub);
+  }
+}
 
 class RootEruption implements Tickable {
   readonly object: THREE.Group;
@@ -1518,10 +1551,10 @@ class BranchLance implements Tickable {
     const random = mulberry32(seed);
 
     const parts: THREE.BufferGeometry[] = [];
-    // 0.020 of its length. At 0.013 the shaft was slender enough to read as a drawn line rather
-    // than as wood; the earlier 0.030 was a plank. This is a spear-shaft that still comes to a
-    // point, now that the tube is continuous and the taper is not broken up by joints.
-    growSpike(reach, reach * 0.020, random, parts);
+    // 0.035 of its length — a shaft with real body to it. 0.013 read as a drawn line and 0.020
+    // was still slight enough to lose against a bright trail; the thing has to look like it has
+    // mass before it can look like wood.
+    growSpike(reach, reach * 0.035, random, parts);
     const geometry = mergeGeometries(parts) ?? new THREE.BufferGeometry();
     for (const g of parts) g.dispose();
 
@@ -1777,15 +1810,18 @@ export class MonsterTreeVfx {
 
     this.lanceMaterial = new THREE.MeshStandardMaterial({
       vertexColors: true,
-      color: new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(),
-      roughness: 0.75,
+      // WHITE, so the vertex colour IS the albedo. Tinting it with barkLight multiplied one dark
+      // brown by another and the shaft came out almost black, which is what drove the emissive up
+      // in the first place.
+      color: 0xffffff,
+      roughness: 0.85,
       metalness: 0,
-      // Lit, but nowhere near clipping. At 1.9 the shaft blew out to flat pale yellow and lost
-      // every bit of the taper that makes it read as sharp; even at 0.6 the emissive swamped the
-      // shading and the spike came back as a uniform green bar. Low enough that the bark shader's
-      // own grain and sap still describe the surface.
-      emissive: lifeColour(0.20, 0.95),
-      emissiveIntensity: 0.30,
+      // Wood, not light. A life-hue emissive at any strength turns the shaft into a glowing green
+      // line — indistinguishable from the swing trail beside it, and the reason this move read as
+      // "just a streak" with no shaft in it at all. The moss tone lifts it off a black stage
+      // without pretending to be a lamp.
+      emissive: new THREE.Color(PALETTE.mossDark).convertSRGBToLinear(),
+      emissiveIntensity: 0.22,
     });
     this.lanceBark = patchBarkSurface(this.lanceMaterial);
 

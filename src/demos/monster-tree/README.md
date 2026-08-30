@@ -393,31 +393,36 @@ tube visibly corkscrews along its own length; transport carries the previous fra
 rotates it only by the change in tangent, which is the smallest rotation that keeps it square. The
 normal is re-orthogonalised each step, because the error accumulates over a long path.
 
-### The lance is not a branch
+### The lance is a branch, not a light
 
-Impaling Bough drove its spike through the same `growBranch` recursion as everything else, and got
-a thicket on the end of the character's arm — every fork and every instanced twig working against
-the one thing a thrust has to read as. A lance shares nothing with a branch except being wood.
-
-`growSpike` is separate and does three things differently. It tapers on a **power curve to exactly
-zero** rather than to the 0.27 a branch keeps, so the last segment is a true cone and the tip is a
-point. It barely wanders, because a spear that meanders is not aimed. And it is far thinner —
-radius 0.013 of its length against a branch's 0.045.
-
-Getting it on screen took four corrections, each of which produced a different wrong object:
+Impaling Bough throws a wooden shaft, and getting it to read as *wood* took longer than getting it
+to exist. The failures, in order, each producing a different wrong object:
 
 | symptom | cause |
 |---|---|
-| invisible | dark wood on a dark stage next to an additive trail; it needed its own lit material |
-| blown-out pale plank | emissive at 1.9 clipped and erased the taper — now 0.30 |
-| a bar lying across the frame | reach 1.35 made it longer than the character is tall — now 0.8 |
-| floating, detached from the hand | placed once at the cue while the arm kept moving, and this move *doubles* the arm's length |
+| a thicket on the arm | it was built by the branch recursion, so it forked and carried twigs |
+| invisible | dark wood on a dark stage; it needed its own material |
+| **"just a light streak"** | that material was given a life-hue emissive to make it visible, which turned it into a glowing green line indistinguishable from the swing trail |
+| a bar across the frame | reach 1.35 made it longer than the character is tall |
+| a drawn line | radius 0.013 of its length — too slight to have mass |
+| a machined spike | a mathematically perfect taper is a turned spear, not a branch |
 
-The last one has a matching failure on the other side: made to track the forearm's heading as well
-as its position, the lance then followed the arm down through the follow-through and finished
-pointing at the floor. A thrust goes where it was **aimed** — so the direction is captured once, at
-the strike, from the character's facing, while the position keeps up with the fist. Its life is
-0.85 s, short enough to be gone before the arm retracts.
+The emissive one is worth naming plainly: it was a **self-inflicted regression**. An earlier version
+used the plain wood material and read correctly; brightening it to solve visibility destroyed the
+thing it was meant to show. It is now lit as wood — white material colour so the vertex colour *is*
+the albedo (tinting it with barkLight multiplied one dark brown by another and drove it almost
+black, which is what invited the emissive in the first place), with a low moss-toned emissive that
+lifts it off a black stage without pretending to be a lamp.
+
+The shaft **swells and pinches** along its run on two detuned sines, because wood thickens at its
+knots and narrows between them, and it carries two or three **snapped-off nubs** where side
+branches used to be — stubs at a hard angle, starting *inside* the shaft so they grow out of it
+rather than sit on it. Those are what say "stripped branch" rather than "spear". A nub is three
+rings, not a recursion, so it costs nothing.
+
+The swing trail is **switched off** for this move. The trail is additive and blazing, the shaft is
+lit wood; side by side the eye finds the trail and never finds the lance — which is how a move
+whose entire subject is a thrown branch came back looking like a streak of light.
 
 ### The swing trail
 

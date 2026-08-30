@@ -176,7 +176,9 @@ export const SKILLS: Skill[] = [
     fade: 0.12,
     loop: false,
     measured: 'box_01 is the straightest lead punch — L_Hand 1.321, forward reach 0.804 at 0.49s',
-    trails: ['grip-l'],
+    // No swing trail on this one. The trail is additive and blazing, the shaft is lit wood, and
+    // side by side the eye reads the trail and never finds the lance — which is how a move whose
+    // whole subject is a thrown branch came back looking like "just a light streak".
     // The signature of the whole set: the arm roughly doubles in length through the thrust and
     // comes back. Along local +Y, which is measured — every arm bone's child sits on its parent's
     // +Y at 100% of the segment length, so scale.y IS length for this skeleton.
