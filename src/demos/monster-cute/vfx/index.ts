@@ -17,9 +17,9 @@
  *              on for a clip whose hands measured a large hip-relative range; a landing wave arms
  *              for a clip whose hip rise cleared 0.15H. These are provable.
  *   INFERRED — the effect is on because of what the clip is *called*. No kinematic feature
- *              distinguishes a strike from a stumble, so "fire the beam on preset:shoot" rests on
- *              the name and nothing else. Marked `inferred` everywhere it appears, including in
- *              the UI.
+ *              distinguishes a strike from a stumble, so "run the horn arc on the clips NAMED
+ *              angry" rests on the name and nothing else. Marked `inferred` everywhere it appears,
+ *              including in the UI.
  */
 import * as THREE from 'three';
 import type { RiggedModel } from '../meshCodec';
@@ -431,9 +431,6 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     if (/heart_pose/.test(clipName)) {
       out.push({ effect: 'hearts', basis: 'inferred', reason: 'the clip is NAMED heart_pose; the pose itself is not measurable as affection' });
     }
-    if (/shoot/.test(clipName)) {
-      out.push({ effect: 'palmCharge', basis: 'inferred', reason: 'the clip is NAMED shoot; nothing kinematic distinguishes a shot from a reach' });
-    }
     return out;
   }
 
@@ -460,7 +457,6 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
 
   let heartTimer = 0;
   let moteTimer = 0;
-  let shootTimer = 0;
 
   // ---------------------------------------------------------------- frame
 
@@ -592,15 +588,6 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
           drag: 1,
         });
       }
-    }
-
-    // The named shoot clip fires the bolt on a cadence rather than continuously; this is an
-    // inferred binding and it is timed, not triggered by anything the clip measurably does.
-    if (activeClip.includes('shoot')) {
-      shootTimer -= step;
-      if (shootTimer <= 0) { shootTimer = 1.6; fireBeam(); }
-    } else {
-      shootTimer = 0.5;
     }
 
     // ---- beam ----

@@ -842,14 +842,14 @@
     }
   },
   "animation": {
-    "clips": 33,
+    "clips": 26,
     "gateR1": {
       "criterion": "maxSampledBindingDelta <= 2^-23 over >= 5 sampled times x every clip",
       "verdict": "pass",
       "maxSampledBindingDelta": 5.960464477539063e-08,
       "epsilon": 1.1920928955078125e-07,
       "seeksPerClip": 9,
-      "clipsMeasured": 33,
+      "clipsMeasured": 26,
       "unevaluated": [],
       "evidence": "evidence/gate-r1.json, produced by tools/gate_r1.ts"
     },
@@ -862,15 +862,36 @@
     "loopRule": "poseReturn <= 0.5 deg per rotation joint AND hipReturn <= 0.01H, measured per clip",
     "loopable": [
       "preset:biped:agree",
-      "preset:biped:cry",
-      "preset:biped:frustrated_01",
-      "preset:biped:frustrated_02"
+      "preset:biped:frustrated_01"
     ],
     "runtime": {
       "mixer": "THREE.AnimationMixer, advanced with the frame DELTA (never elapsed time)",
       "crossFade": "0.28 s by default on every clip change; a hard cut pops on the first frame",
       "api": "createAnimator(rigged) -> play(name|index, fade), seek(name, t), stop(), update(dt)",
       "autoRepeat": "29 of 33 clips do not return to their first pose, so by the measured loop rule they are one-shots. The viewer restarts them by cross-fading the clip into a clone of itself. This hides a discontinuity that is really there; it does not make the clip loop, and loops() keeps reporting the measurement."
+    },
+    "curation": {
+      "droppedFromExport": [
+        "preset:shoot",
+        "preset:biped:look_around",
+        "preset:biped:cry",
+        "preset:biped:frustrated_02",
+        "preset:biped:dance_04",
+        "preset:biped:dance_05",
+        "preset:biped:dance_06"
+      ],
+      "removedFrom": "the payload, not the UI",
+      "why": "rigData.ts is the largest thing this package ships; a clip nobody can select is still bytes every visitor downloads",
+      "payload": {
+        "before": "14.92 MB",
+        "after": "11.15 MB",
+        "builtChunk": "15.6 MB -> 11.7 MB"
+      },
+      "tool": "tools/prune_clips.ts; repeatable, and refuses to run if a name in its drop list matches nothing",
+      "consequences": [
+        "cry and frustrated_02 were two of the four loopable clips; the loopable set is now agree and frustrated_01",
+        "the beam auto-fire was bound to the clip named shoot and became unreachable, so it was removed; the blast cue still fires it"
+      ]
     }
   },
   "lighting": {

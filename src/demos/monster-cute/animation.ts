@@ -5,10 +5,10 @@
  * hard cut between two looping clips pops on the first frame because the new clip's pose is
  * nowhere near the pose the old one ended on. Two things it does not do, both of which this adds:
  *
- * 1. **Loop mode from the measurement.** It sets `LoopRepeat, Infinity` on everything. Only four
- *    of this rig's 33 clips actually return to their own first pose (`preset:biped:agree`, `cry`,
- *    `frustrated_01`, `frustrated_02`); the other 29 end somewhere else, and repeating them snaps
- *    the figure back to the start every cycle. The loop flag comes from the pose-return rule —
+ * 1. **Loop mode from the measurement.** It sets `LoopRepeat, Infinity` on everything. Only two
+ *    of this rig's 26 clips actually return to their own first pose (`preset:biped:agree` and
+ *    `preset:biped:frustrated_01`); the other 24 end somewhere else, and repeating them snaps the
+ *    figure back to the start every cycle. The loop flag comes from the pose-return rule —
  *    `poseReturn <= 0.5 deg` and `hipReturn <= 0.01H` — measured per clip in `gate_r1.ts`, not
  *    from the clip's name and not from whether its root happened to stay put.
  *
@@ -100,7 +100,7 @@ export function createAnimator(rigged: RiggedModel): Animator {
   /**
    * Two actions per clip, so a clip can cross-fade into itself.
    *
-   * 29 of this rig's 33 clips do not return to their first pose, so by the measured loop rule they
+   * 24 of this rig's 26 clips do not return to their first pose, so by the measured loop rule they
    * are one-shots — and a viewer that honours that strictly shows a monster that moves for two
    * seconds and then stands frozen, which is most of the clip library dead on arrival. Repeating
    * them with `LoopRepeat` instead is worse: the snap from the last pose back to the first is

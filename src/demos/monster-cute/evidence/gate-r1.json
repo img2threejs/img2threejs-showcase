@@ -3,16 +3,16 @@
   "criterion": "maxSampledBindingDelta <= 2^-23 over >= 5 sampled times x every clip",
   "epsilon": 1.1920928955078125e-7,
   "samplesPerClip": 9,
-  "clipsTotal": 33,
-  "clipsMeasured": 33,
+  "clipsTotal": 26,
+  "clipsMeasured": 26,
   "clipsUnevaluated": [],
   "maxSampledBindingDelta": 5.960464477539063e-8,
   "verdict": "pass",
   "failedClips": [],
   "scaleDeltaTripwire": {
     "fired": false,
-    "note": "no clip moves a joint's scale away from its rest value (max 6.00e-7, limit 1e-6). Every one of the 1,353 tracks does carry a scale channel, but each holds the rest value; the rest pose itself is 1 +/- 1.07e-5, which is exporter quantisation, not animation.",
-    "maxScaleFromRest": 6e-7,
+    "note": "no clip moves a joint's scale away from its rest value (max 5.10e-7, limit 1e-6). Every one of the 1,353 tracks does carry a scale channel, but each holds the rest value; the rest pose itself is 1 +/- 1.07e-5, which is exporter quantisation, not animation.",
+    "maxScaleFromRest": 5.1e-7,
     "maxScaleFromUnity": 0.00001067
   },
   "bones": 41,
@@ -189,45 +189,6 @@
       "loopReason": "poseReturn 6.882 deg / hipReturn 0.02076H — plays once"
     },
     {
-      "name": "preset:shoot",
-      "duration": 9.083333015441895,
-      "tracks": 123,
-      "status": "measured",
-      "sampledTimes": [
-        0,
-        1.1354,
-        2.2708,
-        3.4062,
-        4.5417,
-        5.6771,
-        6.8125,
-        7.9479,
-        9.0833
-      ],
-      "maxSampledBindingDelta": 5.960447424513404e-8,
-      "bindingComparisons": 3690,
-      "gateR1": "pass",
-      "features": {
-        "duration": 9.0833,
-        "travel": 2.2587,
-        "rise": 0.2382,
-        "speed": 0.2487,
-        "handRange": 0.4038,
-        "footRange": 0.2841,
-        "headRise": 0.2009,
-        "scaleDelta": 0.00001059,
-        "scaleDeltaFromRest": 4.6e-7,
-        "poseReturnDegrees": 102.9244,
-        "poseReturnPosition": 0.880938,
-        "hipReturn": 2.268498
-      },
-      "classes": [
-        "leap"
-      ],
-      "loop": false,
-      "loopReason": "poseReturn 102.924 deg / hipReturn 2.26850H — plays once"
-    },
-    {
       "name": "preset:turn",
       "duration": 3.875,
       "tracks": 123,
@@ -344,46 +305,6 @@
       ],
       "loop": false,
       "loopReason": "poseReturn 64.764 deg / hipReturn 1.02552H — plays once"
-    },
-    {
-      "name": "preset:biped:look_around",
-      "duration": 15.625,
-      "tracks": 123,
-      "status": "measured",
-      "sampledTimes": [
-        0,
-        1.9531,
-        3.9063,
-        5.8594,
-        7.8125,
-        9.7656,
-        11.7188,
-        13.6719,
-        15.625
-      ],
-      "maxSampledBindingDelta": 5.960464477539063e-8,
-      "bindingComparisons": 3690,
-      "gateR1": "pass",
-      "features": {
-        "duration": 15.625,
-        "travel": 0.0958,
-        "rise": 0.0056,
-        "speed": 0.0061,
-        "handRange": 0.3341,
-        "footRange": 0.0795,
-        "headRise": 0.0087,
-        "scaleDelta": 0.00001055,
-        "scaleDeltaFromRest": 3e-7,
-        "poseReturnDegrees": 6.0412,
-        "poseReturnPosition": 0.00058,
-        "hipReturn": 0.001494
-      },
-      "classes": [
-        "in-place",
-        "planted"
-      ],
-      "loop": false,
-      "loopReason": "poseReturn 6.041 deg / hipReturn 0.00149H — plays once"
     },
     {
       "name": "preset:biped:run",
@@ -665,46 +586,6 @@
       "loopReason": "poseReturn 5.223 deg / hipReturn 0.00158H — plays once"
     },
     {
-      "name": "preset:biped:cry",
-      "duration": 6.333333492279053,
-      "tracks": 123,
-      "status": "measured",
-      "sampledTimes": [
-        0,
-        0.7917,
-        1.5833,
-        2.375,
-        3.1667,
-        3.9583,
-        4.75,
-        5.5417,
-        6.3333
-      ],
-      "maxSampledBindingDelta": 5.960464477539063e-8,
-      "bindingComparisons": 3690,
-      "gateR1": "pass",
-      "features": {
-        "duration": 6.3333,
-        "travel": 0.0394,
-        "rise": 0.0024,
-        "speed": 0.0062,
-        "handRange": 0.2985,
-        "footRange": 0.0473,
-        "headRise": 0.0185,
-        "scaleDelta": 0.00001059,
-        "scaleDeltaFromRest": 6e-7,
-        "poseReturnDegrees": 0.0549,
-        "poseReturnPosition": 0,
-        "hipReturn": 0
-      },
-      "classes": [
-        "in-place",
-        "planted"
-      ],
-      "loop": true,
-      "loopReason": "poseReturn 0.055 deg <= 0.5 and hipReturn 0.00000H <= 0.01H"
-    },
-    {
       "name": "preset:biped:depressed",
       "duration": 3.700000047683716,
       "tracks": 123,
@@ -819,46 +700,6 @@
       ],
       "loop": true,
       "loopReason": "poseReturn 0.054 deg <= 0.5 and hipReturn 0.00000H <= 0.01H"
-    },
-    {
-      "name": "preset:biped:frustrated_02",
-      "duration": 10.833333015441895,
-      "tracks": 123,
-      "status": "measured",
-      "sampledTimes": [
-        0,
-        1.3542,
-        2.7083,
-        4.0625,
-        5.4167,
-        6.7708,
-        8.125,
-        9.4792,
-        10.8333
-      ],
-      "maxSampledBindingDelta": 5.960447424513404e-8,
-      "bindingComparisons": 3690,
-      "gateR1": "pass",
-      "features": {
-        "duration": 10.8333,
-        "travel": 0.036,
-        "rise": 0.0396,
-        "speed": 0.0033,
-        "handRange": 0.3723,
-        "footRange": 0.0484,
-        "headRise": 0.0753,
-        "scaleDelta": 0.00001059,
-        "scaleDeltaFromRest": 6e-7,
-        "poseReturnDegrees": 0.463,
-        "poseReturnPosition": 0.000008,
-        "hipReturn": 0.00002
-      },
-      "classes": [
-        "in-place",
-        "planted"
-      ],
-      "loop": true,
-      "loopReason": "poseReturn 0.463 deg <= 0.5 and hipReturn 0.00002H <= 0.01H"
     },
     {
       "name": "preset:biped:greet_01",
@@ -1212,126 +1053,6 @@
       "classes": [],
       "loop": false,
       "loopReason": "poseReturn 2.902 deg / hipReturn 0.03581H — plays once"
-    },
-    {
-      "name": "preset:biped:dance_04",
-      "duration": 10.833333015441895,
-      "tracks": 123,
-      "status": "measured",
-      "sampledTimes": [
-        0,
-        1.3542,
-        2.7083,
-        4.0625,
-        5.4167,
-        6.7708,
-        8.125,
-        9.4792,
-        10.8333
-      ],
-      "maxSampledBindingDelta": 5.960447424513404e-8,
-      "bindingComparisons": 3690,
-      "gateR1": "pass",
-      "features": {
-        "duration": 10.8333,
-        "travel": 0.0507,
-        "rise": 0.0397,
-        "speed": 0.0047,
-        "handRange": 0.4702,
-        "footRange": 0.1702,
-        "headRise": 0.0414,
-        "scaleDelta": 0.00001061,
-        "scaleDeltaFromRest": 3e-7,
-        "poseReturnDegrees": 1.7982,
-        "poseReturnPosition": 0.000184,
-        "hipReturn": 0.000473
-      },
-      "classes": [
-        "in-place",
-        "gesture"
-      ],
-      "loop": false,
-      "loopReason": "poseReturn 1.798 deg / hipReturn 0.00047H — plays once"
-    },
-    {
-      "name": "preset:biped:dance_05",
-      "duration": 2.9166667461395264,
-      "tracks": 123,
-      "status": "measured",
-      "sampledTimes": [
-        0,
-        0.3646,
-        0.7292,
-        1.0938,
-        1.4583,
-        1.8229,
-        2.1875,
-        2.5521,
-        2.9167
-      ],
-      "maxSampledBindingDelta": 5.960460214282648e-8,
-      "bindingComparisons": 3690,
-      "gateR1": "pass",
-      "features": {
-        "duration": 2.9167,
-        "travel": 0.078,
-        "rise": 0.0068,
-        "speed": 0.0268,
-        "handRange": 0.6892,
-        "footRange": 0.1272,
-        "headRise": 0.0224,
-        "scaleDelta": 0.00001055,
-        "scaleDeltaFromRest": 3.6e-7,
-        "poseReturnDegrees": 22.8358,
-        "poseReturnPosition": 0.005075,
-        "hipReturn": 0.013068
-      },
-      "classes": [
-        "in-place",
-        "gesture"
-      ],
-      "loop": false,
-      "loopReason": "poseReturn 22.836 deg / hipReturn 0.01307H — plays once"
-    },
-    {
-      "name": "preset:biped:dance_06",
-      "duration": 10.916666984558105,
-      "tracks": 123,
-      "status": "measured",
-      "sampledTimes": [
-        0,
-        1.3646,
-        2.7292,
-        4.0938,
-        5.4583,
-        6.8229,
-        8.1875,
-        9.5521,
-        10.9167
-      ],
-      "maxSampledBindingDelta": 5.960464477539063e-8,
-      "bindingComparisons": 3690,
-      "gateR1": "pass",
-      "features": {
-        "duration": 10.9167,
-        "travel": 0.1227,
-        "rise": 0.0107,
-        "speed": 0.0112,
-        "handRange": 0.5789,
-        "footRange": 0.1974,
-        "headRise": 0.0219,
-        "scaleDelta": 0.00001055,
-        "scaleDeltaFromRest": 4.8e-7,
-        "poseReturnDegrees": 3.2787,
-        "poseReturnPosition": 0.00289,
-        "hipReturn": 0.007442
-      },
-      "classes": [
-        "in-place",
-        "gesture"
-      ],
-      "loop": false,
-      "loopReason": "poseReturn 3.279 deg / hipReturn 0.00744H — plays once"
     }
   ]
 }

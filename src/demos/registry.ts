@@ -216,6 +216,25 @@ const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 /** Framing solved from the measured facing rather than typed in. */
 const MONSTER_CUTE_FRAMING = frontCamera();
 
+/**
+ * The promise `build()` populates the scene on, handed straight back by `prewarm()`.
+ *
+ * `build()` is synchronous by contract and runs BEFORE prewarm resolves, so this demo returns an
+ * empty group and fills it in later — which the page supports: it re-runs the parts list and mounts
+ * the animation panel in prewarm's `finally`.
+ *
+ * The catch is ordering. Attaching the population to its own `Promise.all` left two independent
+ * chains racing off the same cached loads, and whichever settled first decided whether the panel
+ * found a runtime to mount. It worked until pruning seven clips made the rig chunk a quarter
+ * smaller and flipped the order — after which the model still animated but every control was gone,
+ * with nothing logged, because the panel had mounted against an empty `sculptRuntime` and by
+ * contract never mounts twice.
+ *
+ * Handing `prewarm()` the very promise that does the population removes the race instead of
+ * re-tuning it: the page's `finally` cannot run before the work it is waiting on.
+ */
+let monsterCuteReady: Promise<void> | null = null;
+
 const authored: DemoEntry[] = [
   {
     id: 'monster-cute',
@@ -224,7 +243,7 @@ const authored: DemoEntry[] = [
     blurb:
       'A cute blue horned monster measured from one reference image by the img2threejs playground, '
       + 'then taken through Stage R of the 1.5.2 rigging pipeline. One skinned shell on 41 real bones '
-      + 'with 33 embedded clips \u2014 each seeked to nine times, worst sampled binding delta 5.96e-8 '
+      + 'with 26 embedded clips \u2014 each seeked to nine times, worst sampled binding delta 5.96e-8 '
       + 'against a 2\u207b\u00b2\u00b3 limit, so every clip is proven to reach the skeleton rather than '
       + 'assumed to. The effect layer is hand-written plain Three.js anchored to sockets measured out of '
       + 'the character\u2019s own vertices \u2014 horn tips, palms, fangs, soles, wristbands \u2014 and '
@@ -255,7 +274,9 @@ const authored: DemoEntry[] = [
     toneMapping: 'aces',
     // Two chunks: the surface level and the 15 MB rig payload. Both are dynamic imports, so a
     // visitor looking at any other demo in this gallery never downloads either.
-    prewarm: () => Promise.all([prewarmMonsterCute('high'), prewarmMonsterCuteRig()]).then(() => undefined),
+    // If `build` has run, this IS the promise that populates the scene — see the note above.
+    prewarm: () => monsterCuteReady
+      ?? Promise.all([prewarmMonsterCute('high'), prewarmMonsterCuteRig()]).then(() => undefined),
     // Own rig via installLights so the Viewer skips its default studio rig: five character-coloured
     // lights on top of a full white studio wash the fur out to near-white.
     installLights: (scene) => {
@@ -290,7 +311,7 @@ const authored: DemoEntry[] = [
       // first frame and does nothing until there is something to advance cannot lose it.
       host.userData.tick = (dt: number, elapsed: number) => { advance?.(dt, elapsed); };
 
-      void Promise.all([prewarmMonsterCute('high'), prewarmMonsterCuteRig()]).then(() => {
+      monsterCuteReady = Promise.all([prewarmMonsterCute('high'), prewarmMonsterCuteRig()]).then(() => {
         const rigged = createMonsterCuteRigged();
         const animator = createAnimator(rigged);
         const vfx = createMonsterCuteVfx(rigged);
