@@ -277,10 +277,14 @@ export function patchBarkSurface(material: THREE.MeshStandardMaterial): BarkSurf
           float height = clamp(vBindPosition.y / 0.95, 0.0, 1.0);
           float rise = mix(1.0, 0.22, smoothstep(0.35, 1.0, height));
           float breath = 0.72 + 0.28 * sin(uBarkTime * 1.35);
-          float strength = vein * rise * breath * (0.15 + uBarkCharge * 2.1);
+          // Back up to the level the figure had before the white balance went in. The two are
+          // independent: the balance fixes the ALBEDO, which is what made the wood lime, while
+          // this is additive emissive on top of it — so the halo can be bright without the bark
+          // going back to olive.
+          float strength = vein * rise * breath * (0.30 + uBarkCharge * 2.0);
 
           vec3 sap = mix(uVeinColour, uCoreColour, clamp(strength * 0.9, 0.0, 1.0));
-          totalEmissiveRadiance += sap * strength * 0.55 * uVeinStrength;
+          totalEmissiveRadiance += sap * strength * 0.88 * uVeinStrength;
           totalEmissiveRadiance += uVeinColour * uBarkCharge * 0.055 * rise;
         }`);
 

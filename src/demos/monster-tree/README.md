@@ -307,6 +307,46 @@ are painted into a `<canvas>` at build time; nothing is fetched.
   rose — a tube at zero height is a bright plate lying on the floor — so each one is now hidden
   until its own delay elapses.
 
+### Roots are branches, built to the figure's own proportions
+
+The first version of the eruption was a ring of plain tapered tubes with a green emissive, and it
+read as lime drinking straws standing in the dirt. What makes a shape a ROOT is not that it is thin
+and pointed: it FLARES where it meets the ground, tapers as it rises, bends more than once, and
+FORKS. All four now come from measurements of the character:
+
+| measured | value | what it sets |
+|---|---|---|
+| trunk radius, foot flare → top of leg | 0.078 → 0.037 | the taper, a base twice its tip |
+| shin spurs, stand-off vs limb radius | 2.1× | how wide a fork diverges |
+
+Each root is a chain of tapered cylinders on a gnarled curve, forking twice, all merged into **one**
+buffer — an eruption of eight roots is one draw call, not sixty. They carry the same `aGrain`
+attribute the shell does, each vertex holding its own segment's axis, so the **same bark shader**
+runs on them and the grain flows along every branch exactly as it flows along an arm. They are the
+character's wood coming up through the floor, not props standing near it.
+
+They scale up **uniformly**. Scaling only in Y — which the first version did — flattens the forks
+against the ground and undoes the branching that makes the shape a root at all.
+
+### Directed effects aim down the limb
+
+A cast thrown from an open hand that sprays evenly in every direction reads as an explosion at the
+wrist. It goes backwards through the forearm as readily as forwards, and it never agrees with the
+pose. So every directed effect takes a **cone** about an axis read off the bones at the instant the
+cue fires.
+
+The axis is `L_Forearm → grip-l`, not `L_Forearm → L_Hand`. This rig has no finger bones, so the
+bone pair alone stops at the wrist and only describes the forearm; `grip-l` is the measured centroid
+of the 150 most distal vertices of the hand, so elbow-to-socket runs out through the fingertips —
+which is where the arm is actually pointing.
+
+Verified rather than eyeballed: at the release frame of Wildfire Sap, the mean travel direction of
+the cast's 170 particles sits **0.1°** off the measured arm axis.
+
+That check found its own bug first. Sampling "the last burst alive" picked up the 60-particle chest
+bloom, which is deliberately isotropic and centred elsewhere, and reported 160.9° — a convincing
+number for a correct effect. The probe now selects the aimed burst by particle count.
+
 ### Where things go
 
 Everything anchors to `actionProfile.sockets`, and every socket is a measured vertex centroid on a

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { LIFE_HUE, LIFE_SATURATION, PALETTE } from './measured';
 import { patchBarkSurface, type BarkSurface } from './bark';
 
@@ -500,6 +501,10 @@ class GroundRing implements Tickable {
 }
 
 /** A one-shot puff of motes, thrown outward from a point and pulled back down by gravity. */
+const CONE_LOCAL = new THREE.Vector3();
+const CONE_ROT = new THREE.Quaternion();
+const CONE_AXIS = new THREE.Vector3(0, 0, 1);
+
 class Burst implements Tickable {
   readonly object: THREE.Points;
   private readonly velocity: Float32Array;
@@ -515,6 +520,8 @@ class Burst implements Tickable {
     private readonly gravity = -1.6,
     spread = 1,
     seed = 1,
+    direction: THREE.Vector3 | null = null,
+    cone = 0.5,
   ) {
     const random = mulberry32(seed);
     const positions = new Float32Array(count * 3);
@@ -524,14 +531,29 @@ class Burst implements Tickable {
       positions[i * 3] = origin.x;
       positions[i * 3 + 1] = origin.y;
       positions[i * 3 + 2] = origin.z;
-      // Uniform on a sphere, then squashed toward the horizontal by `spread`.
-      const theta = random() * Math.PI * 2;
-      const z = random() * 2 - 1;
-      const r = Math.sqrt(1 - z * z);
       const v = speed * (0.35 + random() * 0.65);
-      this.velocity[i * 3] = Math.cos(theta) * r * v;
-      this.velocity[i * 3 + 1] = z * v * spread;
-      this.velocity[i * 3 + 2] = Math.sin(theta) * r * v;
+      if (direction) {
+        // A CONE about the given axis. Sampling cos(theta) uniformly between cos(cone) and 1 —
+        // rather than sampling the angle — keeps the density even across the cap instead of
+        // bunching it at the centre.
+        const cosTheta = 1 - random() * (1 - Math.cos(cone));
+        const sinTheta = Math.sqrt(Math.max(0, 1 - cosTheta * cosTheta));
+        const phi = random() * Math.PI * 2;
+        CONE_LOCAL.set(Math.cos(phi) * sinTheta, Math.sin(phi) * sinTheta, cosTheta);
+        CONE_ROT.setFromUnitVectors(CONE_AXIS, direction);
+        CONE_LOCAL.applyQuaternion(CONE_ROT).multiplyScalar(v);
+        this.velocity[i * 3] = CONE_LOCAL.x;
+        this.velocity[i * 3 + 1] = CONE_LOCAL.y;
+        this.velocity[i * 3 + 2] = CONE_LOCAL.z;
+      } else {
+        // Uniform on a sphere, then squashed toward the horizontal by `spread`.
+        const theta = random() * Math.PI * 2;
+        const z = random() * 2 - 1;
+        const r = Math.sqrt(1 - z * z);
+        this.velocity[i * 3] = Math.cos(theta) * r * v;
+        this.velocity[i * 3 + 1] = z * v * spread;
+        this.velocity[i * 3 + 2] = Math.sin(theta) * r * v;
+      }
       sizes[i] = 0.02 + random() * 0.05;
     }
     const geometry = new THREE.BufferGeometry();
@@ -774,58 +796,136 @@ class RuneCircle implements Tickable {
 }
 
 /**
- * Roots that tear up out of the ground and sink back.
+ * Roots that tear up out of the ground: forking branches built to the character's own proportions.
  *
- * The one effect here that is real geometry rather than a billboard, because a shockwave you can
- * see the far side of is what makes a stomp feel like it moved earth. Each root is a tapered,
- * slightly bent tube on its own delay, so they erupt as a ragged burst rather than a fence.
+ * The first version of this was a ring of plain tapered tubes with a green emissive, and it read
+ * as lime drinking straws standing in the dirt — nothing to do with the figure they came from.
+ * What makes a shape read as a ROOT is not that it is thin and pointed: it is that it FLARES where
+ * it meets the ground, tapers as it rises, bends more than once, and FORKS.
+ *
+ * All four come from the mesh. The character's own trunk was measured for its taper — median
+ * radius 0.078 at the foot flare falling to 0.037 at the top of the leg, so a root's base is
+ * roughly twice its tip — and its shins for how far branch spurs stand off a limb, which is 2.1x
+ * the limb radius. Those two numbers set `FLARE_RATIO` and how far a fork diverges.
+ *
+ * The geometry is a chain of tapered cylinders following a gnarled curve, forking twice, merged
+ * into ONE buffer so an eruption of eight roots is one draw call rather than sixty. They carry an
+ * `aGrain` attribute like the shell does — each vertex holds its own segment's axis — so the same
+ * bark shader runs on them and the grain flows along each branch exactly as it flows along an arm.
  */
+const FLARE_RATIO = 0.078 / 0.037;   // measured: trunk base radius over trunk top radius
+
+/** One tapered cylinder, oriented from `a` to `b`, with grain running along its axis. */
+function taperedSegment(a: THREE.Vector3, b: THREE.Vector3, rA: number, rB: number): THREE.BufferGeometry {
+  const axis = new THREE.Vector3().subVectors(b, a);
+  const length = axis.length();
+  if (length < 1e-6) return new THREE.BufferGeometry();
+  const geometry = new THREE.CylinderGeometry(rB, rA, length, 7, 1, true);
+  // CylinderGeometry is built along +Y about its centre; stand it between the two points.
+  const quaternion = new THREE.Quaternion().setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0), axis.clone().normalize(),
+  );
+  geometry.applyMatrix4(new THREE.Matrix4().compose(
+    new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5),
+    quaternion,
+    new THREE.Vector3(1, 1, 1),
+  ));
+  const count = geometry.attributes.position.count;
+  const grain = new Float32Array(count * 3);
+  const unit = axis.normalize();
+  for (let i = 0; i < count; i += 1) {
+    grain[i * 3] = unit.x;
+    grain[i * 3 + 1] = unit.y;
+    grain[i * 3 + 2] = unit.z;
+  }
+  geometry.setAttribute('aGrain', new THREE.BufferAttribute(grain, 3));
+  return geometry;
+}
+
+/** Grow one branch and its forks, returning every segment's geometry. */
+function growBranch(
+  origin: THREE.Vector3,
+  direction: THREE.Vector3,
+  length: number,
+  baseRadius: number,
+  depth: number,
+  random: () => number,
+  out: THREE.BufferGeometry[],
+): void {
+  const steps = depth === 2 ? 5 : 3;
+  let point = origin.clone();
+  let heading = direction.clone().normalize();
+  const forkAt = 1 + Math.floor(random() * (steps - 1));
+
+  for (let i = 0; i < steps; i += 1) {
+    const t0 = i / steps;
+    const t1 = (i + 1) / steps;
+    // Taper from a flared base to a fine tip, on the trunk's own measured ratio.
+    const r0 = baseRadius * (1 - t0 * (1 - 1 / FLARE_RATIO));
+    const r1 = baseRadius * (1 - t1 * (1 - 1 / FLARE_RATIO));
+
+    // Gnarl: the heading wanders every step, so no segment continues the last one exactly.
+    // Gentle wander. At twice this the segments zigzag and the branch reads as bent wire rather
+    // than as something that grew.
+    heading = heading.clone().add(new THREE.Vector3(
+      (random() - 0.5) * 0.28,
+      (random() - 0.5) * 0.16,
+      (random() - 0.5) * 0.28,
+    )).normalize();
+
+    const next = point.clone().addScaledVector(heading, length / steps);
+    out.push(taperedSegment(point, next, r0, r1));
+
+    if (depth > 0 && i === forkAt) {
+      // A fork leaves at a wide angle — the measured spur stands 2.1x its limb's radius off the
+      // axis, which is a branch leaving at roughly 40 degrees, not a twig hugging the trunk.
+      const side = new THREE.Vector3(random() - 0.5, random() * 0.35, random() - 0.5).normalize();
+      const forkDir = heading.clone().multiplyScalar(0.80).addScaledVector(side, 0.52).normalize();
+      growBranch(next, forkDir, length * (0.42 + random() * 0.2), r1 * 0.72, depth - 1, random, out);
+    }
+    point = next;
+  }
+}
+
 class RootEruption implements Tickable {
   readonly object: THREE.Group;
-  private readonly roots: Array<{ mesh: THREE.Mesh; delay: number; full: number }> = [];
+  private readonly roots: Array<{ mesh: THREE.Mesh; delay: number }> = [];
   private age = 0;
 
-  constructor(origin: THREE.Vector3, count: number, spread: number, scale: number, private readonly duration: number, seed: number) {
+  constructor(
+    origin: THREE.Vector3,
+    count: number,
+    spread: number,
+    scale: number,
+    private readonly duration: number,
+    seed: number,
+    material: THREE.Material,
+  ) {
     this.object = new THREE.Group();
     this.object.name = 'vfx:root-eruption';
     const random = mulberry32(seed);
-    // Bark-dark and unlit-ish: the roots read as silhouette against the glow, which is what keeps
-    // the effect from turning into another green blob.
-    const material = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(PALETTE.barkDark).convertSRGBToLinear(),
-      roughness: 0.95,
-      metalness: 0,
-      // Barely lit. A root is wet earth and dark wood catching the glow around it, not a neon
-      // tube — at any real emissive the burst reads as lime plastic rather than torn ground.
-      // Almost unlit. The stage key is 7.0 and both the fill and the rim are green, so a root with
-      // any emissive at all comes back lime and matte — plastic straws standing round the figure
-      // instead of earth torn open. It should read as silhouette with the glow behind it.
-      emissive: lifeColour(0.03, 0.8),
-      emissiveIntensity: 0.5,
-    });
 
     for (let i = 0; i < count; i += 1) {
       const angle = (i / count) * Math.PI * 2 + random() * 0.7;
       const dist = spread * (0.35 + random() * 0.6);
-      const full = scale * (0.09 + random() * 0.13);
-      // A three-point curve gives the root a natural lean instead of a spike.
-      const curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3((random() - 0.5) * full * 0.4, full * 0.55, (random() - 0.5) * full * 0.4),
-        new THREE.Vector3((random() - 0.5) * full * 0.9, full, (random() - 0.5) * full * 0.9),
-      ]);
-      const geometry = new THREE.TubeGeometry(curve, 6, full * 0.06, 5, false);
+      const length = scale * (0.10 + random() * 0.11);
+      // Lean outward, away from the impact — the ground is being pushed up and apart.
+      const lean = new THREE.Vector3(Math.cos(angle) * 0.42, 1, Math.sin(angle) * 0.42).normalize();
+
+      const parts: THREE.BufferGeometry[] = [];
+      growBranch(new THREE.Vector3(), lean, length, scale * 0.019, 2, random, parts);
+      const geometry = mergeGeometries(parts);
+      for (const g of parts) g.dispose();
+      if (!geometry) continue;
+
       const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(origin.x + Math.cos(angle) * dist, 0, origin.z + Math.sin(angle) * dist);
+      mesh.position.set(origin.x + Math.cos(angle) * dist, -length * 0.15, origin.z + Math.sin(angle) * dist);
       mesh.rotation.y = random() * Math.PI * 2;
-      mesh.scale.y = 0.001;
-      // Hidden until its own delay elapses. A root squashed flat against the floor still
-      // rasterises, and a tube at zero height reads as a bright plate lying on the ground —
-      // which is the entire effect, ruined, for the first fifth of a second.
+      mesh.scale.setScalar(0.001);
       mesh.visible = false;
       mesh.castShadow = true;
       this.object.add(mesh);
-      this.roots.push({ mesh, delay: random() * 0.22, full });
+      this.roots.push({ mesh, delay: random() * 0.22 });
     }
   }
 
@@ -836,9 +936,11 @@ class RootEruption implements Tickable {
       const local = (this.age - root.delay) / (this.duration - root.delay);
       if (local <= 0) continue;
       root.mesh.visible = true;
-      // Out fast, back slowly: the ground breaks in an instant and settles over half a second.
-      const rise = local < 0.28 ? 1 - (1 - local / 0.28) ** 3 : 1 - ((local - 0.28) / 0.72) ** 2;
-      root.mesh.scale.y = Math.max(0.001, rise);
+      // Out fast, back slowly — the ground breaks in an instant and settles over half a second.
+      // Scaled UNIFORMLY: squashing y alone would flatten the forks against the ground and undo
+      // the branching that makes the shape a root at all.
+      const rise = local < 0.26 ? 1 - (1 - local / 0.26) ** 3 : 1 - ((local - 0.26) / 0.74) ** 2;
+      root.mesh.scale.setScalar(Math.max(0.001, rise));
     }
     return true;
   }
@@ -979,6 +1081,14 @@ export class MonsterTreeVfx {
   private readonly dot = dotTexture();
   private readonly ring = ringTexture();
   private readonly runes = runeTexture();
+  /**
+   * The roots' own bark. A separate material from the shell's — it needs no skinning and no vertex
+   * colours — but patched by the SAME `patchBarkSurface`, so the grain, the cavity shading and the
+   * sap all run on the erupting branches exactly as they do on the figure. That is what makes them
+   * read as the character's wood coming up through the floor rather than as props placed near it.
+   */
+  private readonly rootMaterial: THREE.MeshStandardMaterial;
+  private readonly rootBark: BarkSurface;
   private elapsed = 0;
   private readonly scale: number;
   /** 0 = dormant, 1 = a power fully gathered. Drives veins, wisps and the chest core together. */
@@ -999,16 +1109,26 @@ export class MonsterTreeVfx {
     const shellMaterial = rig.shell?.material;
     this.veins = shellMaterial instanceof THREE.MeshStandardMaterial ? patchBarkSurface(shellMaterial) : null;
 
+    this.rootMaterial = new THREE.MeshStandardMaterial({
+      // barkLIGHT, not barkMid. These are lit only by the rim and whatever the ground bounces, so
+      // at the trunk's own mid tone they come up as black cut-outs against a dark floor. The
+      // brighter tone is what lets the shape read at all.
+      color: new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(),
+      roughness: 0.9,
+      metalness: 0,
+    });
+    this.rootBark = patchBarkSurface(this.rootMaterial);
+
     this.spores = new SporeField(bounds, 340, this.dot);
     this.group.add(this.spores.object);
 
     this.wisps = new Wisps(bounds, 6, this.dot);
     this.group.add(this.wisps.object);
 
-    this.mist = new GroundMist(this.scale * 1.7, lifeColour(0.15, 0.55));
+    this.mist = new GroundMist(this.scale * 1.7, lifeColour(0.20, 0.62));
     this.group.add(this.mist.object);
 
-    this.shafts = new LightShafts(5, this.scale, lifeColour(0.52, 0.34), 0x5a71);
+    this.shafts = new LightShafts(5, this.scale, lifeColour(0.54, 0.44), 0x5a71);
     this.group.add(this.shafts.object);
 
     this.eyes = new EyeGlow([rig.sockets['eye-l'], rig.sockets['eye-r']], this.dot, this.scale);
@@ -1041,6 +1161,7 @@ export class MonsterTreeVfx {
     this.core.charge = value;
     this.wisps.gather = value;
     this.veins?.setCharge(value);
+    this.rootBark.setCharge(value);
   }
 
   get charge(): number {
@@ -1067,6 +1188,7 @@ export class MonsterTreeVfx {
       this.scale,
       options.duration ?? 1.1,
       (Math.random() * 1e9) | 0,
+      this.rootMaterial,
     );
     eruption.object.traverse((o) => { o.userData.isHighlight = true; });
     this.group.add(eruption.object);
@@ -1083,8 +1205,18 @@ export class MonsterTreeVfx {
     this.transient.push(ring);
   }
 
-  /** A puff of motes at a socket. `spread` < 1 flattens it toward the ground. */
-  burst(at: THREE.Object3D, options: { count?: number; speed?: number; duration?: number; spread?: number; gravity?: number; lightness?: number } = {}): void {
+  /**
+   * A puff of motes at a socket.
+   *
+   * Pass `direction` to fire it as a CONE instead of a ball. A cast thrown out of an open hand
+   * that sprays evenly in every direction reads as an explosion at the wrist, not as something the
+   * character aimed — the motes go backwards through the forearm as readily as forwards. The
+   * direction to use is never a constant: see `aim`, which reads it off the arm's own bones.
+   */
+  burst(at: THREE.Object3D, options: {
+    count?: number; speed?: number; duration?: number; spread?: number;
+    gravity?: number; lightness?: number; direction?: THREE.Vector3 | null; cone?: number;
+  } = {}): void {
     const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
     const burst = new Burst(
       world,
@@ -1096,6 +1228,8 @@ export class MonsterTreeVfx {
       (options.gravity ?? -1.6) * this.scale * 0.5,
       options.spread ?? 1,
       (Math.random() * 1e9) | 0,
+      options.direction ?? null,
+      options.cone ?? 0.5,
     );
     this.group.add(burst.object);
     burst.object.userData.isHighlight = true;
@@ -1124,6 +1258,7 @@ export class MonsterTreeVfx {
   update(dt: number): void {
     this.elapsed += dt;
     this.veins?.setTime(this.elapsed);
+    this.rootBark.setTime(this.elapsed);
     this.spores.tick(dt, this.elapsed);
     this.wisps.tick(dt, this.elapsed);
     this.mist.tick(dt, this.elapsed);
@@ -1134,8 +1269,11 @@ export class MonsterTreeVfx {
     this.trails['grip-r'].tick(dt, this.elapsed);
     for (let i = this.transient.length - 1; i >= 0; i -= 1) {
       if (!this.transient[i].tick(dt, this.elapsed)) {
-        this.group.remove(this.transient[i].object);
-        (this.transient[i].object as THREE.Mesh).geometry?.dispose();
+        const dead = this.transient[i].object;
+        this.group.remove(dead);
+        // Each eruption merges its own buffer, so the geometry has to go with it; a group only
+        // carries geometry on its children.
+        dead.traverse((o) => { (o as THREE.Mesh).geometry?.dispose(); });
         this.transient.splice(i, 1);
       }
     }
