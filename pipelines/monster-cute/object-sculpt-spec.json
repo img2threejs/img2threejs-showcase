@@ -718,14 +718,14 @@
       {
         "id": "footDust",
         "anchor": "effect:foot.l / effect:foot.r",
-        "colour": "ACCENT.dust (from horn #728592)",
-        "basis": "measured \u2014 bound when the clip is not 'planted'; each puff is triggered by the sole socket crossing the ground band while descending"
+        "colour": "GROUND_DUST \u2014 the measured key-light colour at a dust albedo, NOT a character colour",
+        "basis": "measured \u2014 bound when the clip is not \"planted\"; each puff is triggered by the sole socket crossing the ground band while descending. Alpha-blended, not additive: dust occludes, it does not emit."
       },
       {
         "id": "landingWave",
         "anchor": "effect:foot.l / effect:foot.r",
-        "colour": "ACCENT.energy",
-        "basis": "measured \u2014 bound when rise >= 0.15H; magnitude read from the hip's fall speed at contact"
+        "colour": "GROUND_DUST",
+        "basis": "measured \u2014 bound when rise >= 0.15H; magnitude from the hip fall speed at contact. Two overlapping dust clouds at different speeds. No glowing ring: an earlier version fired bright expanding rings here and they read as ripples on water."
       },
       {
         "id": "hornArc",
@@ -789,6 +789,16 @@
       "shared": "exported as TWINKLE_GLSL so the magic circle's notches draw the same star \u2014 an untextured PointsMaterial draws a hard square",
       "roundStaysRound": "foot dust keeps the soft circular sprite: grit is not glitter",
       "moteColours": "cycled across five measured colours (belly, lit fur, shaded fur, warmed horn, lifted wristband)"
+    },
+    "groundDust": {
+      "colour": "measured key-light colour (sclera #d7d3ce) x 0.66",
+      "why": "dust is kicked off the floor, so deriving it from the fur was wrong; what you see off dust is the light reflecting from it, so it takes the key's colour at a dust albedo. There is nothing to measure a floor material from - the stage is a shadow disc - so the albedo factor is authored.",
+      "blending": "alpha, not additive; the particle field's glow flag is off for dust",
+      "physics": {
+        "drag": 0.88,
+        "growth": 2.7,
+        "radialDistribution": "squared, so density falls off toward the rim"
+      }
     }
   },
   "rig": {

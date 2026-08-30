@@ -69,6 +69,7 @@ export const TWINKLE_GLSL = /* glsl */ `
 `;
 
 const FRAGMENT = /* glsl */ `
+  uniform float uGlow;
   varying vec3 vColor;
   varying float vAlpha;
   varying float vShape;
@@ -80,7 +81,11 @@ const FRAGMENT = /* glsl */ `
     // Spun per particle so a field of them shimmers instead of all pointing the same way.
     float a = twinkleShape(gl_PointCoord, vSpin, vShape);
     if (a <= 0.002) discard;
-    gl_FragColor = vec4(vColor * (0.6 + 0.9 * a), a * vAlpha);
+    // Glowing fields brighten toward their centre, which is how light behaves. Dust does not: it
+    // OCCLUDES. Boosting a dust particle's colour the same way is what made kicked-up dirt read as
+    // a ring of light on the floor.
+    vec3 rgb = mix(vColor, vColor * (0.6 + 0.9 * a), uGlow);
+    gl_FragColor = vec4(rgb, a * vAlpha);
   }
 `;
 
@@ -130,7 +135,14 @@ export class ParticleField {
 
   private readonly material: THREE.ShaderMaterial;
 
-  constructor(capacity: number, blending: THREE.Blending = THREE.AdditiveBlending) {
+  /**
+   * `glow` picks the whole character of the field.
+   *
+   * `true` is light — additive, brightening toward the centre, for sparks and motes. `false` is
+   * matter — alpha-blended and flat, for dust. Dust is the one thing here that is not made of
+   * light, and drawing it additively is what made a footfall look like a ripple on water.
+   */
+  constructor(capacity: number, glow = true) {
     this.capacity = capacity;
     this.position = new Float32Array(capacity * 3);
     this.colour = new Float32Array(capacity * 3);
@@ -163,9 +175,9 @@ export class ParticleField {
     this.material = new THREE.ShaderMaterial({
       vertexShader: VERTEX,
       fragmentShader: FRAGMENT,
-      uniforms: { uPixelScale: { value: 600 } },
+      uniforms: { uPixelScale: { value: 600 }, uGlow: { value: glow ? 1 : 0 } },
       transparent: true,
-      blending,
+      blending: glow ? THREE.AdditiveBlending : THREE.NormalBlending,
       depthWrite: false,
       depthTest: true,
     });

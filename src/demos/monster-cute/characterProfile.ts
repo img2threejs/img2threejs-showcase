@@ -80,7 +80,7 @@ export const ACCENT = {
   core: shift(regionHex('fur', '#4487a4'), 0, -0.15, +0.42),
   /** Belly pale blue, lifted — soft, cold, low-energy motes. */
   mote: shift(regionHex('belly', '#80a8ba'), 0, +0.15, +0.20),
-  /** Horn grey, warmed slightly — dust and grit come off the ground, not off the fur. */
+  /** Horn grey, warmed — used for glinting grit in the air, not for the dust cloud itself. */
   dust: shift(regionHex('horn', '#728592'), -12, -0.04, +0.16),
   /** Wristband violet, lifted into a readable impact colour. */
   impact: shift(regionHex('wristband', '#32314d'), +8, +0.45, +0.42),
@@ -96,6 +96,20 @@ export const ACCENT = {
    */
   blush: shift(regionHex('wristband', '#32314d'), +72, +0.46, +0.44),
 } as const;
+
+/**
+ * The dust kicked up off the floor.
+ *
+ * Not taken from the fur, and not picked at random either. Dust is not a light source and it has no
+ * colour of its own that matters — what you see is the KEY LIGHT reflected off it. So this is the
+ * measured key colour (the eye-white off-white the key is tinted with) knocked down to a plausible
+ * dust albedo. That is why it reads as neutral rather than as either blue fur or brown mud: it is
+ * the colour of this scene's light, dimmed.
+ *
+ * The first attempt used a warm grey chosen by hand, and against a cool-lit stage it read as an
+ * orange smear on the floor. Deriving it from the key instead fixes that by construction.
+ */
+export const GROUND_DUST = new THREE.Color(regionHex('sclera', '#d7d3ce')).multiplyScalar(0.66);
 
 export const PALETTE_PROVENANCE = paletteEvidence.regions.map((r) => ({
   id: r.id, hex: r.hex, share: r.share, rule: r.rule,

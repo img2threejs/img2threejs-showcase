@@ -23,7 +23,7 @@
  */
 import * as THREE from 'three';
 import type { RiggedModel } from '../meshCodec';
-import { ACCENT, CLIP_PROFILES, FIGURE_HEIGHT, FRAME, PALETTE, SOCKETS } from '../characterProfile';
+import { ACCENT, CLIP_PROFILES, FIGURE_HEIGHT, FRAME, GROUND_DUST, PALETTE, SOCKETS } from '../characterProfile';
 import { ParticleField } from './particles';
 import { Ribbon } from './ribbon';
 import { Beam, ChargeOrb, Hearts, HornArc, Shockwaves } from './shapes';
@@ -117,7 +117,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
   // ---------------------------------------------------------------- emitters
 
   const sparks = new ParticleField(1400);
-  const dust = new ParticleField(900);
+  const dust = new ParticleField(1600, false);   // false = alpha-blended matter, not additive light
   const motes = new ParticleField(320);
   group.add(sparks.points, dust.points, motes.points);
   // `onBeforeRender` only fires on something that is actually drawn, so it hangs off the mote
@@ -164,7 +164,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
    * varies across the subject's own palette reads as air with something in it, without introducing
    * a hue the monster does not wear.
    */
-  const MOTE_COLOURS = [ACCENT.mote, PALETTE.belly, ACCENT.energy, ACCENT.dust, ACCENT.impact];
+  const MOTE_COLOURS = [ACCENT.mote, PALETTE.belly, ACCENT.energy, PALETTE.furLight, ACCENT.impact];
   group.add(shockwaves.group, hornArc.group, orbs.l.group, orbs.r.group, beam.group, hearts.group, eyeGlow.group);
 
 
@@ -274,21 +274,53 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     }
   }
 
-  function ringPuff(at: THREE.Vector3, count: number, speed: number, colour: THREE.Color, size: number, life: number): void {
+  /**
+   * A cloud of dust thrown off the floor.
+   *
+   * Rebuilt to behave like dirt rather than like an expanding ring of light. Four things do that,
+   * and all four matter:
+   *
+   *   - it goes out LOW and fast, then stops hard. Real dust loses its speed almost immediately —
+   *     a drag of 0.88/s against the old 0.06 is the difference between a puff and a shockwave;
+   *   - it SWELLS as it slows, though only to about 2.7x. Pushed further it stops being a puff and
+   *     becomes fog, which is what the first attempt did;
+   *   - it is DENSER at the impact than at the rim, because it was thrown from a point;
+   *   - it is thrown at a shallow angle with a spread, not on a flat circle. A perfect ring is the
+   *     tell that says "effect";
+   *   - it drifts up only slightly and lingers, because settling dust is the part the eye reads as
+   *     weight.
+   */
+  function dustPuff(at: THREE.Vector3, count: number, speed: number, size: number, life: number): void {
     for (let i = 0; i < count; i += 1) {
-      const a = (i / count) * Math.PI * 2 + Math.random() * 0.4;
-      const s = speed * (0.5 + Math.random() * 0.7);
+      // Jittered around the circle rather than evenly spaced, so no ring artefact forms.
+      const a = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 1.4;
+      /**
+       * Biased toward the impact.
+       *
+       * `random()` squared puts most particles near the foot and only a few out at the rim, which
+       * is how a real puff is distributed. Spreading them evenly over the radius — the first
+       * version — produces a uniform disc of haze: a smear on the floor rather than something
+       * that was thrown from a point.
+       */
+      const reach = Math.random() ** 2;
+      const s = speed * (0.25 + reach * 0.95);
+      // Mostly outward, curling up. The few that go up hardest are what give the cloud a top.
+      const rise = 0.15 + Math.random() * Math.random() * 0.9;
       dust.spawn({
-        position: scratch.set(at.x, Math.max(at.y, 0.01), at.z),
-        velocity: scratchB.set(Math.cos(a) * s, Math.random() * s * 0.5, Math.sin(a) * s),
-        colour,
-        size: size * (0.7 + Math.random() * 0.9),
-        life: life * (0.7 + Math.random() * 0.6),
-        drag: 0.06,
-        gravity: 0.08 * H,      // dust drifts up as it thins out
-        growth: 2.6,
-        alpha: 0.8,
-        shape: 0,   // grit, not glitter
+        position: scratch.set(
+          at.x + Math.cos(a) * 0.025 * H * Math.random(),
+          Math.max(at.y, 0.004) + Math.random() * 0.02 * H,
+          at.z + Math.sin(a) * 0.025 * H * Math.random(),
+        ),
+        velocity: scratchB.set(Math.cos(a) * s, s * rise, Math.sin(a) * s),
+        colour: GROUND_DUST,
+        size: size * (0.55 + Math.random() * 1.0),
+        life: life * (0.65 + Math.random() * 0.75),
+        drag: 0.88,             // stops fast, the way air stops dust
+        gravity: 0.01 * H,      // barely buoyant; it hangs rather than climbs
+        growth: 2.7,            // diffuses, but still reads as a puff rather than fog
+        alpha: 0.2 + Math.random() * 0.22,
+        shape: 0,               // grit, never glitter
       });
     }
   }
@@ -325,9 +357,10 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
         sfx.play('slam');
         const foot = world.get('effect:foot.l') ?? world.get('effect:foot.r');
         if (!foot) break;
+        // The one place a glowing ring is still right: `slam` is a cast skill, not a footstep, so
+        // it is allowed to be energy. It gets a real dust cloud underneath it as well.
         shockwaves.fire(foot, 0.75 * H, 0.75, ACCENT.energy);
-        shockwaves.fire(foot, 0.42 * H, 0.55, ACCENT.core);
-        ringPuff(foot, 26, 0.9 * H, ACCENT.dust, 0.05 * H, 0.85);
+        dustPuff(foot, 42, 0.9 * H, 0.1 * H, 1.1);
         burst(foot, 22, 0.8 * H, ACCENT.energy, 0.025 * H, 0.5);
         break;
       }
@@ -499,14 +532,20 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
         // How hard the landing was, read from the hip's fall speed at the moment of contact.
         const force = THREE.MathUtils.clamp(-hipVy / (0.8 * H), 0, 1);
         if (enabled.footDust) {
-          ringPuff(p, 9 + Math.round(force * 16), (0.28 + force * 0.7) * H, ACCENT.dust, 0.055 * H, 0.6);
-          // A few twinkles with the dust: grit alone is drab on a character like this.
-          burst(p, 3 + Math.round(force * 5), 0.35 * H, ACCENT.mote, 0.02 * H, 0.45, motes, 1);
+          dustPuff(p, 12 + Math.round(force * 16), (0.20 + force * 0.45) * H, 0.07 * H, 0.6);
+          // A couple of glinting motes catch the light above the cloud. Kept sparse: the dust is
+          // the effect, and burying it in sparkles is what made it read as magic before.
+          burst(p, 1 + Math.round(force * 3), 0.3 * H, ACCENT.mote, 0.016 * H, 0.4, motes, 1);
         }
         sfx.play(force > 0.4 ? 'land' : 'step', force > 0.4 ? force : 1 - force * 0.6);
         if (enabled.landingWave && force > 0.28) {
-          shockwaves.fire(p, (0.35 + force * 0.55) * H, 0.6, ACCENT.energy);
-          burst(p, Math.round(8 + force * 20), (0.4 + force * 0.6) * H, ACCENT.energy, 0.02 * H, 0.4);
+          // A harder, wider, longer-lived cloud — no glowing ring. The bright expanding rings that
+          // used to fire here are what read as ripples on water: a landing displaces dirt, it does
+          // not emit light.
+          dustPuff(p, 24 + Math.round(force * 30), (0.45 + force * 0.75) * H, 0.09 * H, 0.9);
+          // A second, slower wave just behind the first, so the cloud has depth rather than being
+          // one shell expanding at a single speed.
+          dustPuff(p, 12, (0.16 + force * 0.3) * H, 0.13 * H, 1.3);
         }
       } else if (!nearGround) {
         state.down = false;
