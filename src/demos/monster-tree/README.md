@@ -307,6 +307,43 @@ are painted into a `<canvas>` at build time; nothing is fetched.
   rose — a tube at zero height is a bright plate lying on the floor — so each one is now hidden
   until its own delay elapses.
 
+### Damage that outlives the blow
+
+Every impact leaves cracks and a toxin stain that run for **ten seconds** — roughly six times the
+life of anything else in the set. That difference is the point: the burst and the shockwave are the
+moment of contact and are gone inside a second, so without a long tail each attack resets the stage
+to clean ground and nothing the character does appears to cost anything. With it, by the third blow
+of a combo the floor is fractured and contaminated, and it is still that way when the next move
+starts.
+
+**Cracks** run on three separate timescales, and collapsing them onto one curve is what makes this
+kind of effect read as a light being dimmed rather than as damage:
+
+| | over | because |
+|---|---|---|
+| open | 0.35 s | a fracture propagates faster than the eye follows |
+| cool | 3.2 s | the sap in the fissure goes from hot to dark |
+| fade | last 28% | the crack is still *there* long after it stops glowing |
+
+The pattern is drawn once into a canvas — seven trunks radiating from the centre, each forking
+recursively down to hairlines, jinking as it goes the way a real crack finds the weakest path. A
+crack has no thickness worth giving geometry to.
+
+**Toxin** spreads from the impact with an edge displaced by a scrolling noise field, so it creeps
+outward unevenly and keeps moving after it has stopped growing. A clean expanding circle reads as a
+shockwave — the demo already has one — and never as contamination. Its rising spores live inside
+the same class rather than in a separate emitter, because they have to die *with* it: motes still
+climbing out of a stain that has already faded is the giveaway that two effects were bolted
+together. Replenishment stops at 70% of the life so the stragglers can rise and go out on their own.
+
+Both are centred on the ground **under** the socket, not at it. A fist connects in mid-air, but
+what a treant that size breaks is the floor beneath it.
+
+**They are capped at five.** Ten-second effects accumulate — a viewer holding down the attack
+buttons stacks decals until the ground is a solid sheet of glow and the frame rate goes with it.
+The oldest is retired early to make room. Measured at sixteen attacks in a row: five lingering
+effects, 120 fps, 50 draw calls, flat.
+
 ### Where things go
 
 Everything anchors to `actionProfile.sockets`, and every socket is a measured vertex centroid on a

@@ -52,10 +52,24 @@ export interface Skill {
   trails?: Array<'grip-l' | 'grip-r'>;
 }
 
-const impact = (socket: string, options?: { radius?: number; count?: number; speed?: number }) =>
+/**
+ * A hit: the instant effects, plus the damage it leaves behind.
+ *
+ * The burst and the shockwave are gone inside a second — they are the moment of contact. The
+ * cracks and the toxin run for ten, which is what makes an exchange accumulate: by the third blow
+ * of a combo the ground under the figure is fractured and contaminated, and it stays that way long
+ * enough to still be there when the next move starts. Without the long tail every attack resets
+ * the stage to clean ground and nothing the character does appears to cost anything.
+ *
+ * The lingering pair is centred on the ground UNDER the socket, not at the socket itself. A fist
+ * connects in mid-air, but what a treant that size breaks is the floor beneath it.
+ */
+const impact = (socket: string, options?: { radius?: number; count?: number; speed?: number; toxin?: number }) =>
   (rig: MonsterTreeRig, vfx: MonsterTreeVfx) => {
     vfx.burst(rig.sockets[socket], { count: options?.count ?? 70, speed: options?.speed ?? 1.3, spread: 0.9 });
     vfx.shockwave(rig.sockets[socket], options?.radius ?? 0.9, 0.7);
+    vfx.cracks(rig.sockets[socket], { radius: (options?.radius ?? 0.9) * 0.85 });
+    vfx.toxin(rig.sockets[socket], { radius: options?.toxin ?? 0.8 });
   };
 
 export const SKILLS: Skill[] = [
@@ -135,6 +149,9 @@ export const SKILLS: Skill[] = [
           // under a foot that is not touching anything.
           vfx.burst(rig.sockets['foot-r'], { count: 110, speed: 1.7, spread: 0.35, gravity: -2.4 });
           vfx.shockwave(rig.sockets['foot-l'], 1.5, 0.95);
+          // A kick lands with the whole body behind it: the widest fracture in the set.
+          vfx.cracks(rig.sockets['foot-l'], { radius: 1.45 });
+          vfx.toxin(rig.sockets['foot-l'], { radius: 1.25 });
           vfx.roots(rig.sockets['foot-l'], { count: 10, spread: 0.34, duration: 1.15 });
         },
       },
@@ -157,6 +174,8 @@ export const SKILLS: Skill[] = [
           vfx.shockwave(rig.sockets['foot-r'], 1.2, 0.8);
           vfx.runeCircle(rig.sockets['foot-r'], 1.0, 1.3);
           vfx.roots(rig.sockets['foot-r'], { count: 8, spread: 0.26, duration: 0.95 });
+          vfx.cracks(rig.sockets['foot-r'], { radius: 1.15 });
+          vfx.toxin(rig.sockets['foot-r'], { radius: 1.0 });
         },
       },
     ],
@@ -179,6 +198,9 @@ export const SKILLS: Skill[] = [
         run: (rig, vfx) => {
           vfx.burst(rig.sockets['grip-l'], { count: 160, speed: 2.2, spread: 0.8, gravity: -0.5, lightness: 0.7 });
           vfx.burst(rig.sockets['chest-core'], { count: 60, speed: 1.0, spread: 1, lightness: 0.75 });
+          // No cracks here — nothing struck the ground. What a cast leaves is contamination, and
+          // the widest patch of it, since spreading the toxin IS the move.
+          vfx.toxin(rig.sockets['grip-l'], { radius: 1.5, duration: 12 });
           vfx.charge = 0;
           vfx.eyes.intensity = 1;
         },
@@ -200,6 +222,7 @@ export const SKILLS: Skill[] = [
         run: (rig, vfx) => {
           vfx.eyes.intensity = 0.15;
           vfx.burst(rig.sockets['chest-core'], { count: 60, speed: 0.5, spread: 1, gravity: -0.2, lightness: 0.45 });
+          vfx.toxin(rig.sockets['foot-l'], { radius: 1.3, duration: 12 });
         },
       },
     ],

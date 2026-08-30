@@ -155,6 +155,9 @@ function runeTexture(seed = 0x0d1e): THREE.Texture {
   return texture;
 }
 
+/** How many ten-second effects may be alive at once before the oldest is retired. */
+const MAX_LINGERING = 5;
+
 interface Tickable {
   object: THREE.Object3D;
   tick(dt: number, elapsed: number): boolean;
@@ -845,6 +848,286 @@ class RootEruption implements Tickable {
 }
 
 /**
+ * A fissure pattern, painted once: a few trunks radiating from the centre, each forking down to
+ * hairlines. The same recursive shape a real crack makes as it relieves stress, and it is drawn
+ * rather than modelled because a crack has no thickness worth giving geometry to.
+ */
+function crackTexture(seed = 0xcac): THREE.Texture {
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const random = mulberry32(seed);
+  const c = size / 2;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineCap = 'round';
+
+  const walk = (x: number, y: number, angle: number, length: number, width: number, depth: number): void => {
+    if (depth <= 0 || length < 4) return;
+    const steps = 4;
+    let px = x;
+    let py = y;
+    let heading = angle;
+    ctx.lineWidth = width;
+    ctx.globalAlpha = Math.min(1, 0.35 + width * 0.32);
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    for (let i = 0; i < steps; i += 1) {
+      // A crack never runs straight; it jinks as it finds the weakest path.
+      heading += (random() - 0.5) * 0.55;
+      px += Math.cos(heading) * (length / steps);
+      py += Math.sin(heading) * (length / steps);
+      ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    // Fork, and keep forking: one branch carries on, a second leaves at a wide angle.
+    walk(px, py, heading + (random() - 0.5) * 0.4, length * 0.62, width * 0.62, depth - 1);
+    if (random() < 0.75) {
+      walk(px, py, heading + (random() < 0.5 ? -1 : 1) * (0.5 + random() * 0.6),
+        length * 0.5, width * 0.5, depth - 1);
+    }
+  };
+
+  const trunks = 7;
+  for (let i = 0; i < trunks; i += 1) {
+    walk(c, c, (i / trunks) * Math.PI * 2 + random() * 0.6, size * 0.15, 5.5, 4);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+/**
+ * Cracks torn open by an impact, glowing with sap and cooling over ten seconds.
+ *
+ * Two separate timescales, and that is what makes it read as damage rather than as a flash. The
+ * crack OPENS almost instantly — a radial reveal that races outward in about a third of a second,
+ * because a fracture propagates faster than the eye follows. It then COOLS slowly: the sap in the
+ * fissure decays from hot to dark over about three seconds, and the decal itself only fades at the
+ * very end of its life. Running all three on one curve reads as a light being turned down; split
+ * apart it reads as something that happened and is still there.
+ */
+class GroundCracks implements Tickable {
+  readonly object: THREE.Mesh;
+  private readonly material: THREE.ShaderMaterial;
+  private age = 0;
+
+  constructor(private readonly duration: number, radius: number, hot: THREE.Color, cold: THREE.Color, map: THREE.Texture) {
+    this.material = new THREE.ShaderMaterial({
+      uniforms: {
+        uMap: { value: map },
+        uGrow: { value: 0 },
+        uHeat: { value: 1 },
+        uFade: { value: 1 },
+        uHot: { value: hot },
+        uCold: { value: cold },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `
+        uniform sampler2D uMap;
+        uniform float uGrow; uniform float uHeat; uniform float uFade;
+        uniform vec3 uHot; uniform vec3 uCold;
+        varying vec2 vUv;
+        void main() {
+          float crack = texture2D(uMap, vUv).a;
+          if (crack < 0.02) discard;
+          float d = distance(vUv, vec2(0.5)) * 2.0;
+          float reveal = smoothstep(uGrow, uGrow - 0.12, d);
+          // The leading edge is brightest — that is where the ground is giving way right now.
+          float front = smoothstep(uGrow - 0.16, uGrow, d) * reveal;
+          vec3 colour = mix(uCold, uHot, clamp(uHeat + front * 0.8, 0.0, 1.0));
+          float a = crack * reveal * uFade * (0.45 + 0.55 * uHeat + front);
+          if (a < 0.004) discard;
+          gl_FragColor = vec4(colour, a);
+        }`,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+    });
+    this.object = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), this.material);
+    this.object.name = 'vfx:ground-cracks';
+    this.object.rotation.x = -Math.PI / 2;
+    this.object.renderOrder = 2;
+  }
+
+  tick(dt: number): boolean {
+    this.age += dt;
+    const t = this.age / this.duration;
+    if (t >= 1) return false;
+    const u = this.material.uniforms;
+    u.uGrow.value = 1 - (1 - Math.min(1, this.age / 0.35)) ** 3;
+    u.uHeat.value = Math.max(0, 1 - this.age / 3.2);
+    u.uFade.value = t < 0.72 ? 1 : 1 - (t - 0.72) / 0.28;
+    return true;
+  }
+}
+
+/**
+ * Toxin: a stain that spreads from the impact, seethes, and drifts off as spores.
+ *
+ * The edge is displaced by a noise field that itself scrolls, so the stain creeps outward unevenly
+ * and keeps moving after it has stopped growing. A clean expanding circle reads as a shockwave —
+ * the demo already has one of those — and never as something contaminating the ground.
+ *
+ * The rising spores belong to this class rather than to a separate emitter because they have to
+ * die WITH it. Motes still climbing out of a stain that has already faded is the giveaway that two
+ * effects were bolted together, so replenishment stops at 70% of the life and the stragglers are
+ * given time to rise and go out on their own.
+ */
+class ToxinBloom implements Tickable {
+  readonly object: THREE.Group;
+  private readonly material: THREE.ShaderMaterial;
+  private readonly motes: THREE.Points;
+  private readonly velocity: Float32Array;
+  private readonly life: Float32Array;
+  private readonly span: Float32Array;
+  private readonly origin: THREE.Vector3;
+  private readonly reach: number;
+  private readonly random: () => number;
+  private age = 0;
+
+  constructor(origin: THREE.Vector3, private readonly duration: number, radius: number, colour: THREE.Color, dot: THREE.Texture, seed: number) {
+    this.object = new THREE.Group();
+    this.object.name = 'vfx:toxin';
+    this.origin = origin.clone();
+    this.reach = radius;
+    this.random = mulberry32(seed);
+
+    this.material = new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 }, uSpread: { value: 0 }, uFade: { value: 1 }, uColour: { value: colour } },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `
+        uniform float uTime; uniform float uSpread; uniform float uFade; uniform vec3 uColour;
+        varying vec2 vUv;
+        float tHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float tNoise(vec2 p) {
+          vec2 i = floor(p), f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(tHash(i), tHash(i + vec2(1,0)), f.x),
+                     mix(tHash(i + vec2(0,1)), tHash(i + vec2(1,1)), f.x), f.y);
+        }
+        float tFbm(vec2 p) {
+          float s = 0.0, a = 0.5;
+          for (int i = 0; i < 3; i++) { s += a * tNoise(p); p *= 2.05; a *= 0.5; }
+          return s;
+        }
+        void main() {
+          vec2 d = vUv - vec2(0.5);
+          float r = length(d) * 2.0;
+          float angle = atan(d.y, d.x);
+          // Ragged, creeping edge: the radius itself is modulated by a scrolling field.
+          float n = tFbm(vec2(cos(angle), sin(angle)) * 2.4 + vec2(uTime * 0.16, uTime * 0.1));
+          float edge = r * (1.0 + (n - 0.5) * 0.85);
+          float body = smoothstep(uSpread, uSpread - 0.34, edge);
+          // A seething interior, so the stain never looks like a flat sticker.
+          float boil = tFbm(vUv * 5.5 + vec2(-uTime * 0.22, uTime * 0.17));
+          float a = body * uFade * (0.18 + 0.42 * boil);
+          float rim = smoothstep(uSpread - 0.30, uSpread - 0.06, edge) * body;
+          if (a < 0.004) discard;
+          gl_FragColor = vec4(uColour * (0.7 + rim * 1.9), a);
+        }`,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+    });
+    const stain = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), this.material);
+    stain.rotation.x = -Math.PI / 2;
+    stain.position.set(origin.x, 0.02, origin.z);
+    stain.renderOrder = 2;
+    this.object.add(stain);
+
+    const count = 90;
+    const positions = new Float32Array(count * 3);
+    const sizes = new Float32Array(count);
+    this.velocity = new Float32Array(count * 3);
+    this.life = new Float32Array(count);
+    this.span = new Float32Array(count);
+    for (let i = 0; i < count; i += 1) {
+      this.spawn(i, positions, true);
+      sizes[i] = 0.014 + this.random() * 0.03;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    this.motes = new THREE.Points(geometry, new THREE.ShaderMaterial({
+      uniforms: { map: { value: dot }, uColour: { value: colour }, uOpacity: { value: 1 } },
+      vertexShader: `
+        attribute float size;
+        void main() {
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = size * 420.0 / max(-mv.z, 0.001);
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: `
+        uniform sampler2D map; uniform vec3 uColour; uniform float uOpacity;
+        void main() {
+          float a = texture2D(map, gl_PointCoord).a;
+          if (a < 0.01) discard;
+          gl_FragColor = vec4(uColour, a * uOpacity);
+        }`,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    }));
+    this.motes.name = 'vfx:toxin-motes';
+    this.motes.frustumCulled = false;
+    this.object.add(this.motes);
+  }
+
+  private spawn(i: number, positions: Float32Array, initial: boolean): void {
+    const r = this.random;
+    const angle = r() * Math.PI * 2;
+    // sqrt keeps the spawn density even over the disc instead of clustering at the centre.
+    const dist = this.reach * 0.9 * Math.sqrt(r());
+    positions[i * 3] = this.origin.x + Math.cos(angle) * dist;
+    positions[i * 3 + 1] = 0.02 + (initial ? r() * 0.2 : 0);
+    positions[i * 3 + 2] = this.origin.z + Math.sin(angle) * dist;
+    this.velocity[i * 3] = (r() - 0.5) * 0.05;
+    this.velocity[i * 3 + 1] = 0.03 + r() * 0.09;
+    this.velocity[i * 3 + 2] = (r() - 0.5) * 0.05;
+    this.span[i] = 2.2 + r() * 3.4;
+    this.life[i] = initial ? r() * this.span[i] : 0;
+  }
+
+  tick(dt: number, elapsed: number): boolean {
+    this.age += dt;
+    const t = this.age / this.duration;
+    if (t >= 1) return false;
+    const u = this.material.uniforms;
+    u.uTime.value = elapsed;
+    u.uSpread.value = 1 - (1 - Math.min(1, this.age / 2.0)) ** 2.2;
+    u.uFade.value = t < 0.66 ? 1 : 1 - (t - 0.66) / 0.34;
+
+    const attr = this.motes.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const positions = attr.array as Float32Array;
+    const replenish = t < 0.7;
+    for (let i = 0; i < this.life.length; i += 1) {
+      this.life[i] += dt;
+      if (this.life[i] > this.span[i]) {
+        if (replenish) this.spawn(i, positions, false);
+        else positions[i * 3 + 1] = -999;
+        continue;
+      }
+      positions[i * 3] += this.velocity[i * 3] * dt;
+      positions[i * 3 + 1] += this.velocity[i * 3 + 1] * dt;
+      positions[i * 3 + 2] += this.velocity[i * 3 + 2] * dt;
+    }
+    attr.needsUpdate = true;
+    (this.motes.material as THREE.ShaderMaterial).uniforms.uOpacity.value = u.uFade.value;
+    return true;
+  }
+}
+
+/**
  * Ground mist. A single large plane just above the floor, its alpha driven by two scrolling noise
  * fields so the fog curls instead of sliding. Cheap, and it does most of the work of putting the
  * figure in a place rather than on a backdrop.
@@ -981,6 +1264,16 @@ export class MonsterTreeVfx {
   private readonly dot = dotTexture();
   private readonly ring = ringTexture();
   private readonly runes = runeTexture();
+  private readonly cracksMap = crackTexture();
+  /**
+   * Effects that outlive the move that made them, oldest first.
+   *
+   * Cracks and toxin last ten seconds, which is roughly six times any other effect here, so they
+   * accumulate: a viewer pressing attack buttons stacks decals on top of each other until the
+   * ground is a solid sheet of glow and the frame rate goes with it. This list is capped and the
+   * oldest is retired early to make room.
+   */
+  private readonly lingering: Tickable[] = [];
   private elapsed = 0;
   private readonly scale: number;
   /** 0 = dormant, 1 = a power fully gathered. Drives veins, wisps and the chest core together. */
@@ -1047,6 +1340,56 @@ export class MonsterTreeVfx {
 
   get charge(): number {
     return this.chargeLevel;
+  }
+
+  /** Register a long-lived effect, retiring the oldest if too many are alive at once. */
+  private addLingering(effect: Tickable): void {
+    while (this.lingering.length >= MAX_LINGERING) {
+      const oldest = this.lingering.shift();
+      if (!oldest) break;
+      const index = this.transient.indexOf(oldest);
+      if (index >= 0) this.transient.splice(index, 1);
+      this.group.remove(oldest.object);
+      oldest.object.traverse((o) => { (o as THREE.Mesh).geometry?.dispose(); });
+    }
+    this.lingering.push(effect);
+    this.transient.push(effect);
+    effect.object.traverse((o) => { o.userData.isHighlight = true; });
+    this.group.add(effect.object);
+  }
+
+  /**
+   * Cracks torn open under a socket. Ten seconds by default: they open instantly, cool over a few
+   * seconds, and only fade at the very end.
+   */
+  cracks(at: THREE.Object3D, options: { radius?: number; duration?: number } = {}): void {
+    const effect = new GroundCracks(
+      options.duration ?? 10,
+      (options.radius ?? 0.9) * this.scale * 0.6,
+      lifeColour(0.66, 1),
+      lifeColour(0.14, 0.9),
+      this.cracksMap,
+    );
+    const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
+    effect.object.position.set(world.x, 0.014, world.z);
+    effect.object.rotation.z = Math.random() * Math.PI * 2;
+    this.addLingering(effect);
+  }
+
+  /** A toxin stain that creeps outward from a socket and gives off spores as it seethes. */
+  toxin(at: THREE.Object3D, options: { radius?: number; duration?: number } = {}): void {
+    const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
+    const effect = new ToxinBloom(
+      world,
+      options.duration ?? 10,
+      (options.radius ?? 1.0) * this.scale * 0.55,
+      // Sicklier than the sap: the hue is the character's own, held at a low, acid lightness so
+      // it reads as contamination rather than as more of the life running through the figure.
+      lifeColour(0.30, 1),
+      this.dot,
+      (Math.random() * 1e9) | 0,
+    );
+    this.addLingering(effect);
   }
 
   /** A rune circle inscribed on the ground under a socket — for anything deliberate. */
