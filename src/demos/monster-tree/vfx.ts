@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { LIFE_HUE, LIFE_SATURATION, PALETTE } from './measured';
 import { patchBarkSurface, type BarkSurface } from './bark';
 
@@ -1128,6 +1129,215 @@ class ToxinBloom implements Tickable {
 }
 
 /**
+ * The branch generator, shared by the erupting roots, the grove and the lance.
+ *
+ * A root, a young tree and a thrusting lance are the same structure at three scales and three
+ * forking depths, so they come from one recursion. Keeping them separate let the three drift into
+ * looking unrelated the first time round.
+ *
+ * Its proportions are the character's own: the trunk was measured at 0.078 radius where it meets
+ * the ground falling to 0.037 at the top of the leg, so anything grown here is twice as thick at
+ * its base as at its tip; and the shin spurs stand off 2.1x the limb radius, which is what sets
+ * how wide a fork leaves its parent.
+ */
+const FLARE_RATIO = 0.078 / 0.037;   // measured: trunk base radius over trunk top radius
+
+/** One tapered cylinder, oriented from `a` to `b`, with grain running along its axis. */
+function taperedSegment(a: THREE.Vector3, b: THREE.Vector3, rA: number, rB: number): THREE.BufferGeometry {
+  const axis = new THREE.Vector3().subVectors(b, a);
+  const length = axis.length();
+  if (length < 1e-6) return new THREE.BufferGeometry();
+  const geometry = new THREE.CylinderGeometry(rB, rA, length, 7, 1, true);
+  // CylinderGeometry is built along +Y about its centre; stand it between the two points.
+  const quaternion = new THREE.Quaternion().setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0), axis.clone().normalize(),
+  );
+  geometry.applyMatrix4(new THREE.Matrix4().compose(
+    new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5),
+    quaternion,
+    new THREE.Vector3(1, 1, 1),
+  ));
+  const count = geometry.attributes.position.count;
+  const grain = new Float32Array(count * 3);
+  const unit = axis.normalize();
+  for (let i = 0; i < count; i += 1) {
+    grain[i * 3] = unit.x;
+    grain[i * 3 + 1] = unit.y;
+    grain[i * 3 + 2] = unit.z;
+  }
+  geometry.setAttribute('aGrain', new THREE.BufferAttribute(grain, 3));
+  return geometry;
+}
+
+/** Grow one branch and its forks, returning every segment's geometry. */
+function growBranch(
+  origin: THREE.Vector3,
+  direction: THREE.Vector3,
+  length: number,
+  baseRadius: number,
+  depth: number,
+  random: () => number,
+  out: THREE.BufferGeometry[],
+): void {
+  const steps = depth === 2 ? 5 : 3;
+  let point = origin.clone();
+  let heading = direction.clone().normalize();
+  const forkAt = 1 + Math.floor(random() * (steps - 1));
+
+  for (let i = 0; i < steps; i += 1) {
+    const t0 = i / steps;
+    const t1 = (i + 1) / steps;
+    // Taper from a flared base to a fine tip, on the trunk's own measured ratio.
+    const r0 = baseRadius * (1 - t0 * (1 - 1 / FLARE_RATIO));
+    const r1 = baseRadius * (1 - t1 * (1 - 1 / FLARE_RATIO));
+
+    // Gnarl: the heading wanders every step, so no segment continues the last one exactly.
+    // Gentle wander. At twice this the segments zigzag and the branch reads as bent wire rather
+    // than as something that grew.
+    heading = heading.clone().add(new THREE.Vector3(
+      (random() - 0.5) * 0.28,
+      (random() - 0.5) * 0.16,
+      (random() - 0.5) * 0.28,
+    )).normalize();
+
+    const next = point.clone().addScaledVector(heading, length / steps);
+    out.push(taperedSegment(point, next, r0, r1));
+
+    if (depth > 0 && i === forkAt) {
+      // A fork leaves at a wide angle — the measured spur stands 2.1x its limb's radius off the
+      // axis, which is a branch leaving at roughly 40 degrees, not a twig hugging the trunk.
+      const side = new THREE.Vector3(random() - 0.5, random() * 0.35, random() - 0.5).normalize();
+      const forkDir = heading.clone().multiplyScalar(0.80).addScaledVector(side, 0.52).normalize();
+      growBranch(next, forkDir, length * (0.42 + random() * 0.2), r1 * 0.72, depth - 1, random, out);
+    }
+    point = next;
+  }
+}
+
+/**
+ * A grove erupting out of the ground: several trees growing at once, holding, then sinking back.
+ *
+ * The same `growBranch` recursion the root eruption uses, at four times the length and one more
+ * level of forking, which is the whole difference between a root and a tree. Reusing it is not
+ * laziness — a root and a young tree ARE the same structure at different scales, and building a
+ * second generator would have let the two drift into looking unrelated.
+ *
+ * Growth is staggered per trunk and eased, so the grove comes up as a thicket rather than a row of
+ * pistons. They stand for most of the ten seconds and only sink at the end.
+ */
+class GroveEruption implements Tickable {
+  readonly object: THREE.Group;
+  private readonly trees: Array<{ mesh: THREE.Mesh; delay: number; lean: number }> = [];
+  private age = 0;
+
+  constructor(
+    origin: THREE.Vector3,
+    count: number,
+    spread: number,
+    scale: number,
+    private readonly duration: number,
+    seed: number,
+    material: THREE.Material,
+  ) {
+    this.object = new THREE.Group();
+    this.object.name = 'vfx:grove';
+    const random = mulberry32(seed);
+
+    for (let i = 0; i < count; i += 1) {
+      const angle = (i / count) * Math.PI * 2 + random() * 0.9;
+      const dist = spread * Math.sqrt(random());
+      const height = scale * (0.34 + random() * 0.38);
+      const lean = new THREE.Vector3((random() - 0.5) * 0.3, 1, (random() - 0.5) * 0.3).normalize();
+
+      const parts: THREE.BufferGeometry[] = [];
+      growBranch(new THREE.Vector3(), lean, height, scale * 0.045, 3, random, parts);
+      const geometry = mergeGeometries(parts);
+      for (const g of parts) g.dispose();
+      if (!geometry) continue;
+
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(origin.x + Math.cos(angle) * dist, 0, origin.z + Math.sin(angle) * dist);
+      mesh.rotation.y = random() * Math.PI * 2;
+      mesh.scale.setScalar(0.001);
+      mesh.visible = false;
+      mesh.castShadow = true;
+      this.object.add(mesh);
+      this.trees.push({ mesh, delay: random() * 0.55, lean: (random() - 0.5) * 0.06 });
+    }
+  }
+
+  tick(dt: number, elapsed: number): boolean {
+    this.age += dt;
+    const t = this.age / this.duration;
+    if (t >= 1) return false;
+    for (const tree of this.trees) {
+      const local = this.age - tree.delay;
+      if (local <= 0) continue;
+      tree.mesh.visible = true;
+      // Grow fast, overshoot slightly, settle — then sink only in the last fifth of the life.
+      const grow = local < 1.1 ? 1 - (1 - local / 1.1) ** 3 : 1;
+      const overshoot = local < 1.1 ? 1 + Math.sin(Math.min(1, local / 1.1) * Math.PI) * 0.07 : 1;
+      const sink = t > 0.8 ? 1 - (t - 0.8) / 0.2 : 1;
+      tree.mesh.scale.setScalar(Math.max(0.001, grow * overshoot * sink));
+      // A slow sway once standing, so the grove is alive rather than planted scenery.
+      tree.mesh.rotation.z = Math.sin(elapsed * 0.9 + tree.delay * 6) * tree.lean * grow;
+    }
+    return true;
+  }
+}
+
+/**
+ * A branch lance driven out of the hand along the arm, then withdrawn.
+ *
+ * Built along +Y in local space and rotated onto the aim direction, so it can be pointed anywhere
+ * without rebuilding the geometry. It extends by scaling along its own axis only — a uniform scale
+ * would fatten the spike as it lengthened, which reads as a balloon rather than a thrust.
+ */
+class BranchLance implements Tickable {
+  readonly object: THREE.Group;
+  private readonly shaft: THREE.Mesh;
+  private age = 0;
+
+  constructor(
+    origin: THREE.Vector3,
+    direction: THREE.Vector3,
+    reach: number,
+    thickness: number,
+    private readonly duration: number,
+    seed: number,
+    material: THREE.Material,
+  ) {
+    this.object = new THREE.Group();
+    this.object.name = 'vfx:branch-lance';
+    const random = mulberry32(seed);
+
+    const parts: THREE.BufferGeometry[] = [];
+    // Depth 1, not 3: a lance is a spike with a couple of barbs, not a bush. More forking makes it
+    // read as foliage and the thrust stops being legible as a thrust.
+    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), reach, thickness, 1, random, parts);
+    const geometry = mergeGeometries(parts) ?? new THREE.BufferGeometry();
+    for (const g of parts) g.dispose();
+
+    this.shaft = new THREE.Mesh(geometry, material);
+    this.shaft.castShadow = true;
+    this.shaft.scale.set(1, 0.001, 1);
+    this.object.add(this.shaft);
+    this.object.position.copy(origin);
+    this.object.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+  }
+
+  tick(dt: number): boolean {
+    this.age += dt;
+    const t = this.age / this.duration;
+    if (t >= 1) return false;
+    // Out hard, hold briefly, snap back — the withdrawal is faster than the strike.
+    const out = t < 0.22 ? 1 - (1 - t / 0.22) ** 4 : (t < 0.62 ? 1 : 1 - (t - 0.62) / 0.38);
+    this.shaft.scale.y = Math.max(0.001, out);
+    return true;
+  }
+}
+
+/**
  * Ground mist. A single large plane just above the floor, its alpha driven by two scrolling noise
  * fields so the fog curls instead of sliding. Cheap, and it does most of the work of putting the
  * figure in a place rather than on a backdrop.
@@ -1266,6 +1476,19 @@ export class MonsterTreeVfx {
   private readonly runes = runeTexture();
   private readonly cracksMap = crackTexture();
   /**
+   * The bark the grown wood is made of — roots, grove and lance all share it.
+   *
+   * Patched by the SAME `patchBarkSurface` the figure's own shell uses, so the grain, the cavity
+   * shading and the sap run on everything that grows out of the ground exactly as they do on the
+   * character. That is what makes a grove read as this creature's doing rather than as scenery
+   * that happened to appear.
+   *
+   * barkLIGHT rather than barkMid: grown wood is lit only by the rim and what the ground bounces,
+   * and at the trunk's own mid tone it comes back as a black cut-out against a dark floor.
+   */
+  private readonly rootMaterial: THREE.MeshStandardMaterial;
+  private readonly rootBark: BarkSurface;
+  /**
    * Effects that outlive the move that made them, oldest first.
    *
    * Cracks and toxin last ten seconds, which is roughly six times any other effect here, so they
@@ -1274,6 +1497,11 @@ export class MonsterTreeVfx {
    * oldest is retired early to make room.
    */
   private readonly lingering: Tickable[] = [];
+  /**
+   * Cues queued on the EFFECT clock, not on setTimeout. A timer keeps running when the tab is
+   * backgrounded and fires everything at once on return; this advances only while the demo does.
+   */
+  private readonly pending: Array<{ at: number; run: () => void }> = [];
   private elapsed = 0;
   private readonly scale: number;
   /** 0 = dormant, 1 = a power fully gathered. Drives veins, wisps and the chest core together. */
@@ -1293,6 +1521,19 @@ export class MonsterTreeVfx {
     // injection actually landed rather than leaving it to be assumed.
     const shellMaterial = rig.shell?.material;
     this.veins = shellMaterial instanceof THREE.MeshStandardMaterial ? patchBarkSurface(shellMaterial) : null;
+
+    this.rootMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(),
+      roughness: 0.9,
+      metalness: 0,
+      // A little light of its own. Grown wood stands away from the figure, out where the key
+      // barely reaches and the ground bounces almost nothing, so on albedo alone a grove comes up
+      // as black cut-outs — the shape is there and none of it reads. This is the same sap that is
+      // already running through the character, just enough of it to describe the trunks.
+      emissive: new THREE.Color(PALETTE.mossDark).convertSRGBToLinear(),
+      emissiveIntensity: 0.55,
+    });
+    this.rootBark = patchBarkSurface(this.rootMaterial);
 
     this.spores = new SporeField(bounds, 460, this.dot);
     this.group.add(this.spores.object);
@@ -1336,6 +1577,7 @@ export class MonsterTreeVfx {
     this.core.charge = value;
     this.wisps.gather = value;
     this.veins?.setCharge(value);
+    this.rootBark.setCharge(value);
   }
 
   get charge(): number {
@@ -1390,6 +1632,121 @@ export class MonsterTreeVfx {
       (Math.random() * 1e9) | 0,
     );
     this.addLingering(effect);
+  }
+
+  /**
+   * A grove torn up out of the ground at a point, standing for ten seconds before it sinks.
+   *
+   * Takes a WORLD position rather than a socket, because the whole point of this one is that it
+   * happens somewhere the character is not.
+   */
+  grove(at: THREE.Vector3, options: { count?: number; spread?: number; duration?: number } = {}): void {
+    const effect = new GroveEruption(
+      at,
+      options.count ?? 7,
+      (options.spread ?? 0.5) * this.scale,
+      this.scale,
+      options.duration ?? 10,
+      (Math.random() * 1e9) | 0,
+      this.rootMaterial,
+    );
+    this.addLingering(effect);
+  }
+
+  /**
+   * A shockwave running away underground: cracks opening in sequence along a line, then the
+   * ground failing at the far end.
+   *
+   * The delay between links is what sells it. Spawned all at once they read as one big decal;
+   * staggered, the eye follows the fracture outward and the distant eruption becomes something the
+   * punch CAUSED rather than something that happened at the same time.
+   */
+  surge(from: THREE.Object3D, direction: THREE.Vector3, options: { distance?: number; links?: number; onArrive?: (at: THREE.Vector3) => void } = {}): void {
+    const start = new THREE.Vector3().setFromMatrixPosition(from.matrixWorld);
+    const flat = new THREE.Vector3(direction.x, 0, direction.z);
+    if (flat.lengthSq() < 1e-8) flat.set(1, 0, 0);
+    flat.normalize();
+    const distance = (options.distance ?? 3.2) * this.scale * 0.5;
+    const links = options.links ?? 5;
+
+    for (let i = 1; i <= links; i += 1) {
+      const at = start.clone().addScaledVector(flat, (distance * i) / links);
+      at.y = 0;
+      const delay = (i - 1) * 0.075;
+      // Widening as it travels, so the surge reads as gathering force rather than dissipating.
+      const radius = 0.5 + (i / links) * 0.7;
+      this.delay(delay, () => {
+        const crack = new GroundCracks(6, radius * this.scale * 0.6, lifeColour(0.66, 1), lifeColour(0.14, 0.9), this.cracksMap);
+        crack.object.position.set(at.x, 0.014, at.z);
+        crack.object.rotation.z = Math.random() * Math.PI * 2;
+        this.addLingering(crack);
+      });
+    }
+
+    const target = start.clone().addScaledVector(flat, distance);
+    target.y = 0;
+    this.delay(links * 0.075, () => options.onArrive?.(target));
+  }
+
+  /** A branch lance driven out of a socket along a direction, then withdrawn. */
+  lance(at: THREE.Object3D, direction: THREE.Vector3, options: { reach?: number; duration?: number } = {}): void {
+    const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
+    const effect = new BranchLance(
+      world,
+      direction,
+      (options.reach ?? 1.1) * this.scale,
+      this.scale * 0.022,
+      options.duration ?? 1.4,
+      (Math.random() * 1e9) | 0,
+      this.rootMaterial,
+    );
+    effect.object.traverse((o) => { o.userData.isHighlight = true; });
+    this.group.add(effect.object);
+    this.transient.push(effect);
+  }
+
+  /** A burst at a WORLD point rather than a socket — for things that happen away from the figure. */
+  burstAt(at: THREE.Vector3, options: { count?: number; speed?: number; duration?: number; spread?: number; gravity?: number; lightness?: number } = {}): void {
+    const burst = new Burst(
+      at,
+      options.count ?? 60,
+      (options.speed ?? 1.1) * this.scale * 0.5,
+      options.duration ?? 0.9,
+      lifeColour(options.lightness ?? 0.6, 1),
+      this.dot,
+      (options.gravity ?? -1.6) * this.scale * 0.5,
+      options.spread ?? 1,
+      (Math.random() * 1e9) | 0,
+    );
+    burst.object.userData.isHighlight = true;
+    this.group.add(burst.object);
+    this.transient.push(burst);
+  }
+
+  /**
+   * Toxin left at a distance along a heading, rather than under the socket.
+   *
+   * A limb that has just doubled in length does its damage where the tip ended up, not where the
+   * shoulder is; centring the stain on the socket puts the contamination behind the character.
+   */
+  toxinAt(from: THREE.Object3D, direction: THREE.Vector3, distance: number, options: { radius?: number; duration?: number } = {}): void {
+    const world = new THREE.Vector3().setFromMatrixPosition(from.matrixWorld);
+    const flat = new THREE.Vector3(direction.x, 0, direction.z);
+    if (flat.lengthSq() > 1e-8) world.addScaledVector(flat.normalize(), distance * this.scale * 0.5);
+    const effect = new ToxinBloom(
+      world,
+      options.duration ?? 10,
+      (options.radius ?? 1.0) * this.scale * 0.55,
+      lifeColour(0.30, 1),
+      this.dot,
+      (Math.random() * 1e9) | 0,
+    );
+    this.addLingering(effect);
+  }
+
+  /** Run something later, on the effect clock, so cues can be sequenced without setTimeout. */
+  delay(seconds: number, run: () => void): void {
+    this.pending.push({ at: this.elapsed + seconds, run });
   }
 
   /** A rune circle inscribed on the ground under a socket — for anything deliberate. */
@@ -1468,7 +1825,13 @@ export class MonsterTreeVfx {
 
   update(dt: number): void {
     this.elapsed += dt;
+    for (let i = this.pending.length - 1; i >= 0; i -= 1) {
+      if (this.pending[i].at > this.elapsed) continue;
+      const cue = this.pending.splice(i, 1)[0];
+      cue.run();
+    }
     this.veins?.setTime(this.elapsed);
+    this.rootBark.setTime(this.elapsed);
     this.spores.tick(dt, this.elapsed);
     this.wisps.tick(dt, this.elapsed);
     this.mist.tick(dt, this.elapsed);

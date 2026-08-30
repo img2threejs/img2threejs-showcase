@@ -214,15 +214,14 @@ const authored: DemoEntry[] = [
     title: 'Monster Tree \u2014 Rigged Treant, Separated Costume',
     subjectClass: 'character',
     blurb:
-      'A treant rebuilt from one photograph as code-only geometry, with wood that behaves like wood. '
-      + 'The export drops the source normal map, so the relief is rebuilt procedurally \u2014 and the grain '
-      + 'direction comes from the RIG: every vertex takes its dominant bone\u2019s bind-space axis, so fibres '
-      + 'run the length of each limb the way they would in a real branch. The baked albedo needed a measured '
-      + 'white balance too: 97% of its bark vertices carried a blue channel under 55% of their red, which is '
-      + 'why the figure rendered lime until it was corrected against the photograph. Sap veins flow along the '
-      + 'grain, spirit wisps hold station, rune circles are inscribed underfoot and roots tear up on impact. '
-      + 'The leather costume is four rigid meshes: left skinned, the bracers shear by up to 29% of a vertex '
-      + 'pair\u2019s rest length during a punch; as rigid pieces the shear is exactly 0.',
+      'A treant rebuilt from one photograph as code-only geometry, doing three things its rig does not '
+      + 'contain. The 16 shipped clips are a generic biped library, so the skeleton is driven procedurally '
+      + 'on top of them: the arm lengthens until the fist reaches the floor, a fracture runs away '
+      + 'underground and a grove tears up where it arrives, and a branch lance is driven out of a limb that '
+      + 'has doubled in length \u2014 measured at 2.047x shoulder-to-wrist, along the local +Y every arm bone\u2019s '
+      + 'child was measured to sit on. Impacts leave cracks and spreading toxin for ten seconds. The wood '
+      + 'grain follows the bone axes, and the albedo needed a measured white balance: 97% of its bark '
+      + 'vertices carried a blue channel under 55% of their red.',
     referenceImage: `${BASE}references/monster-tree/front.jpg`,
     sourcePath: 'src/demos/monster-tree/createMonsterTreeModel.ts',
     sourceUrl: `${REPO}/src/demos/monster-tree/createMonsterTreeModel.ts`,

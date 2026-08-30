@@ -44,6 +44,23 @@ export interface MonsterTreeRig {
   current(): string | null;
   /** Advance the animation. Takes the frame DELTA in seconds, never elapsed time. */
   update(deltaSeconds: number): void;
+  /**
+   * Re-apply the current stretches to the skeleton.
+   *
+   * Call this exactly ONCE per frame, after whatever sets the stretches. The mixer rewrites every
+   * bone's scale on each `update`, so this must come after it; and because it MULTIPLIES the
+   * clip's value rather than replacing it, calling it twice in a frame squares the factor.
+   */
+  applyStretch(): void;
+
+  /**
+   * Lengthen a bone along its own axis, on top of whatever the clip is doing.
+   *
+   * `amount` is extra length as a fraction: 1 doubles the segment. Set it every frame; it is not
+   * a tween and it does not persist, because the clip overwrites the bone's scale on every
+   * `mixer.update` and this has to be reapplied after.
+   */
+  stretch(bone: string, amount: number): void;
   dispose(): void;
 }
 
@@ -627,6 +644,45 @@ export function buildMonsterTreeRig(
    * figure. `nlerp` needs its inputs in the same hemisphere, so each quaternion is sign-aligned to
    * the heaviest one before it is accumulated.
    */
+  /**
+   * Procedural bone lengthening, applied AFTER the mixer.
+   *
+   * This is what lets the character do something no shipped clip contains: grow an arm. The rig's
+   * 16 clips are a generic biped library — boxing, kicks, dances — and none of them has a branch
+   * reaching further than a branch should. Rather than fake it with an effect flying out of the
+   * hand, the limb itself extends.
+   *
+   * Along local +Y, and that is measured, not assumed: every arm bone's child sits on its parent's
+   * local +Y at 100% of the segment length (`L_Forearm -> L_Hand` is [0.0000, 0.1245, -0.0000]),
+   * so `scale.y` IS length along the limb for this skeleton.
+   *
+   * Order matters. Every clip here carries scale tracks, so the mixer rewrites `bone.scale` on
+   * each update; applying the stretch before it is silently discarded. It multiplies the clip's
+   * value rather than replacing it, so whatever the animation was doing survives underneath.
+   *
+   * The child bone is counter-scaled. Scale propagates down the hierarchy, so lengthening a
+   * forearm also stretches the hand hanging off it into a smear; dividing the child by the same
+   * factor keeps the fist its own size while the limb behind it grows.
+   */
+  const stretches = new Map<string, number>();
+  const childOf = new Map<string, string>();
+  rig.bones.forEach((b) => {
+    if (b.parent < 0) return;
+    const parent = rig.bones[b.parent].name;
+    if (!/Twist/.test(b.name) && !childOf.has(parent)) childOf.set(parent, b.name);
+  });
+
+  const applyStretches = (): void => {
+    for (const [name, amount] of stretches) {
+      const bone = boneByName[name];
+      if (!bone || amount === 0) continue;
+      const factor = 1 + amount;
+      bone.scale.y *= factor;
+      const child = childOf.get(name);
+      if (child && boneByName[child]) boneByName[child].scale.y /= factor;
+    }
+  };
+
   const mixer = new THREE.AnimationMixer(shell);
   const clips = buildClips(rig);
   if (options.inPlace !== false) holdRootMotion(clips, 'Hip');
@@ -666,7 +722,15 @@ export function buildMonsterTreeRig(
     clips,
     play,
     current: () => currentName,
+    // NOTE: this does NOT apply the stretches. `applyStretch` does, and it has to be called
+    // separately, after whatever decides them for this frame. Doing both here and there multiplies
+    // the factor twice — the limb reached nearly five times its length instead of twice.
     update: (deltaSeconds: number) => mixer.update(deltaSeconds),
+    applyStretch: () => applyStretches(),
+    stretch: (bone: string, amount: number) => {
+      if (amount === 0) stretches.delete(bone);
+      else stretches.set(bone, amount);
+    },
     dispose: () => {
       mixer.stopAllAction();
       shell.geometry.dispose();

@@ -50,6 +50,13 @@ export interface Skill {
   cues: SkillCue[];
   /** Sockets whose trail runs for the duration of the swing. */
   trails?: Array<'grip-l' | 'grip-r'>;
+  /**
+   * Driven every frame while this skill plays, with the clip's own playhead.
+   *
+   * Cues fire once at an instant; this runs continuously, which is what a limb growing needs — the
+   * stretch has to be re-applied on every frame because the mixer rewrites bone scale each update.
+   */
+  drive?: (rig: MonsterTreeRig, vfx: MonsterTreeVfx, time: number, duration: number) => void;
 }
 
 /**
@@ -72,7 +79,159 @@ const impact = (socket: string, options?: { radius?: number; count?: number; spe
     vfx.toxin(rig.sockets[socket], { radius: options?.toxin ?? 0.8 });
   };
 
+/**
+ * The direction a limb is POINTING, in world space, read off its own bones at the instant it is
+ * called.
+ *
+ * `to` resolves to a SOCKET first, then a bone. That matters for the arms: this rig has no finger
+ * bones, so `L_Forearm -> L_Hand` stops at the wrist and only describes the forearm, while
+ * `L_Forearm -> grip-l` runs from the elbow out through the fingertips — grip-l being the measured
+ * centroid of the 150 most distal vertices of the hand. That is the line these moves are aimed
+ * along, and it stays correct as the arm swings because it is re-read per cue rather than fixed.
+ */
+function aim(rig: MonsterTreeRig, from: string, to: string): THREE.Vector3 {
+  const target = rig.sockets[to] ?? rig.bones[to];
+  const a = new THREE.Vector3().setFromMatrixPosition(rig.bones[from].matrixWorld);
+  const b = new THREE.Vector3().setFromMatrixPosition(target.matrixWorld);
+  const d = b.sub(a);
+  return d.lengthSq() > 1e-10 ? d.normalize() : new THREE.Vector3(0, 1, 0);
+}
+
+/**
+ * The direction the character is FACING, flattened to the ground, in world space.
+ *
+ * Measured, and rotation-safe: it is the midpoint of the two eye sockets minus the head bone. The
+ * eyes were found as the green-dominant vertex clusters on the head and sit forward of the head
+ * centroid, so that vector is the face's normal however the figure is turned — including under the
+ * viewer's turntable, which a hard-coded +X would not survive.
+ *
+ * Effects that travel need this rather than the arm's heading. A downward punch has the forearm
+ * pointing at the floor, so its horizontal component is near zero and essentially arbitrary; a
+ * shockwave sent along it goes nowhere, or somewhere random.
+ */
+function facing(rig: MonsterTreeRig): THREE.Vector3 {
+  const head = new THREE.Vector3().setFromMatrixPosition(rig.bones.Head.matrixWorld);
+  const left = new THREE.Vector3().setFromMatrixPosition(rig.sockets['eye-l'].matrixWorld);
+  const right = new THREE.Vector3().setFromMatrixPosition(rig.sockets['eye-r'].matrixWorld);
+  const forward = left.add(right).multiplyScalar(0.5).sub(head);
+  forward.y = 0;
+  return forward.lengthSq() > 1e-10 ? forward.normalize() : new THREE.Vector3(1, 0, 0);
+}
+
+/** Every bone any skill lengthens, so a change of move can reset all of them. */
+const STRETCHED = ['L_Forearm', 'L_Upperarm', 'R_Forearm', 'R_Upperarm'] as const;
+
+/** 0 at the edges of a window, 1 in the middle — for a limb that grows and then comes back. */
+function swell(time: number, start: number, end: number): number {
+  if (time <= start || time >= end) return 0;
+  const t = (time - start) / (end - start);
+  return Math.sin(t * Math.PI) ** 0.7;
+}
+
 export const SKILLS: Skill[] = [
+  {
+    id: 'surge',
+    label: 'Deep Root Surge',
+    clip: 'preset:biped:box_02',
+    fade: 0.16,
+    loop: false,
+    measured: 'box_02 brings a hand to y 0.446 at 0.40s — the lowest beat of any punch in the set',
+    trails: ['grip-l'],
+    // The arm LENGTHENS on the way down, which is what puts the fist on the floor. The clip only
+    // ever gets the hand to 0.446 on a 1.9 m figure; no shipped animation in this library has a
+    // treant punching the ground, so the limb makes up the difference itself.
+    drive: (rig, _vfx, time) => {
+      const reach = swell(time, 0.16, 0.62) * 0.85;
+      rig.stretch('L_Forearm', reach);
+      rig.stretch('L_Upperarm', reach * 0.45);
+    },
+    cues: [
+      {
+        at: 0.40,
+        run: (rig, vfx) => {
+          vfx.burst(rig.sockets['grip-l'], { count: 90, speed: 1.5, spread: 0.4, gravity: -2.2 });
+          vfx.shockwave(rig.sockets['grip-l'], 1.0, 0.8);
+          vfx.cracks(rig.sockets['grip-l'], { radius: 1.0 });
+          // The fracture runs away from the figure along the arm's own heading and the ground
+          // fails where it arrives — a grove tearing up out of the far end of the punch.
+          vfx.surge(rig.sockets['grip-l'], facing(rig), {
+            distance: 3.4,
+            links: 6,
+            onArrive: (at) => {
+              vfx.grove(at, { count: 9, spread: 0.8 });
+              vfx.burstAt(at, { count: 130, speed: 1.9, spread: 0.6 });
+            },
+          });
+        },
+      },
+    ],
+  },
+  {
+    id: 'impale',
+    label: 'Impaling Bough',
+    clip: 'preset:biped:box_01',
+    fade: 0.12,
+    loop: false,
+    measured: 'box_01 is the straightest lead punch — L_Hand 1.321, forward reach 0.804 at 0.49s',
+    trails: ['grip-l'],
+    // The signature of the whole set: the arm roughly doubles in length through the thrust and
+    // comes back. Along local +Y, which is measured — every arm bone's child sits on its parent's
+    // +Y at 100% of the segment length, so scale.y IS length for this skeleton.
+    drive: (rig, _vfx, time) => {
+      const reach = swell(time, 0.22, 0.95) * 1.0;
+      rig.stretch('L_Forearm', reach);
+      rig.stretch('L_Upperarm', reach * 0.6);
+    },
+    cues: [
+      {
+        at: 0.46,
+        run: (rig, vfx) => {
+          const heading = aim(rig, 'L_Forearm', 'grip-l');
+          vfx.lance(rig.sockets['grip-l'], heading, { reach: 1.35, duration: 1.5 });
+          vfx.burst(rig.sockets['grip-l'], { count: 70, speed: 1.7, spread: 0.5 });
+        },
+      },
+      {
+        at: 0.72,
+        run: (rig, vfx) => {
+          // Contamination is left at the far end of the reach, not at the shoulder.
+          const heading = aim(rig, 'L_Forearm', 'grip-l');
+          vfx.toxinAt(rig.sockets['grip-l'], heading, 1.25, { radius: 0.85 });
+        },
+      },
+    ],
+  },
+  {
+    id: 'grove',
+    label: 'Grove Awakening',
+    clip: 'preset:biped:fire',
+    fade: 0.22,
+    loop: false,
+    measured: 'fire holds the torso still (Head 0.035) while an arm extends — a planted cast',
+    // Both arms lift and lengthen as the ring comes up: the character is pulling the grove out of
+    // the ground rather than pointing at it.
+    drive: (rig, _vfx, time) => {
+      const reach = swell(time, 0.10, 1.15) * 0.55;
+      rig.stretch('L_Forearm', reach);
+      rig.stretch('R_Forearm', reach * 0.8);
+    },
+    cues: [
+      { at: 0.0, run: (_rig, vfx) => { vfx.charge = 0.35; } },
+      { at: 0.35, run: (rig, vfx) => { vfx.charge = 1; vfx.runeCircle(rig.sockets['foot-l'], 1.6, 2.2); } },
+      {
+        at: 0.95,
+        run: (rig, vfx) => {
+          vfx.charge = 0;
+          // A ring of trees around the figure, at a radius that clears its own footprint.
+          const centre = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+          centre.y = 0;
+          vfx.grove(centre, { count: 11, spread: 1.15, duration: 11 });
+          vfx.shockwave(rig.sockets['foot-l'], 1.7, 1.1);
+          vfx.toxin(rig.sockets['foot-l'], { radius: 1.4, duration: 11 });
+        },
+      },
+    ],
+  },
   {
     id: 'idle',
     label: 'Idle',
@@ -274,6 +433,9 @@ export class SkillRunner {
     for (const key of ['grip-l', 'grip-r'] as const) {
       this.vfx.trails[key].strength = skill.trails?.includes(key) ? 1 : 0;
     }
+    // A skill that lengthened a limb must not hand it over stretched. Cleared on every change
+    // rather than by the skill that set it, so a move interrupted halfway still tidies up.
+    for (const bone of STRETCHED) this.rig.stretch(bone, 0);
     return true;
   }
 
@@ -293,6 +455,8 @@ export class SkillRunner {
         cue.run(this.rig, this.vfx);
       }
     });
+
+    this.active.drive?.(this.rig, this.vfx, time, clip.duration);
 
     // Taper the swing trails off through the back half of a strike.
     if (this.active.trails?.length) {

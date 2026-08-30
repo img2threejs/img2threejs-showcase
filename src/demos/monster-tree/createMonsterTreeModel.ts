@@ -133,7 +133,9 @@ function populate(group: THREE.Group, options: RigOptions): void {
   group.userData.tick = (dt: number): void => {
     const step = Math.min(dt, 0.1);
     rig.update(step);
-    runner.update(step);
+    runner.update(step);   // fires cues and drives any procedural bone stretch
+    rig.applyStretch();    // ...which must be re-applied after, exactly once, or it lands a frame
+                           // late — and twice would square the factor
     vfx.update(step);
     // A one-shot skill hands itself back to idle when its clip ends; the panel has to hear that.
     if (runner.current.id !== announced) {

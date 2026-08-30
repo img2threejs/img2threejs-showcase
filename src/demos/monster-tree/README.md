@@ -307,6 +307,45 @@ are painted into a `<canvas>` at build time; nothing is fetched.
   rose — a tube at zero height is a bright plate lying on the floor — so each one is now hidden
   until its own delay elapses.
 
+### Three moves the rig does not contain
+
+The 16 shipped clips are a generic biped library — boxing, kicks, dances, a death. None of them is
+a *tree* doing anything. Rather than settle for renaming them, three moves drive the skeleton
+procedurally on top of a clip:
+
+| move | clip under it | what is added |
+|---|---|---|
+| **Deep Root Surge** | `box_02` | the arm lengthens on the way down so the fist reaches the floor; the fracture then runs away underground and a grove tears up where it arrives |
+| **Impaling Bough** | `box_01` | the arm roughly **doubles** through the thrust and a branch lance is driven out of the fist, then withdrawn |
+| **Grove Awakening** | `fire` | both arms lift and lengthen while a ring of trees comes up around the figure |
+
+**The stretch is measured, not guessed.** Every arm bone's child sits on its parent's local **+Y at
+100% of the segment length** (`L_Forearm → L_Hand` is `[0.0000, 0.1245, -0.0000]`), so `scale.y`
+*is* length along the limb for this skeleton. Shoulder-to-wrist distance measured at **2.047×** at
+the peak of Impaling Bough, back to **1.000** the moment another move takes over.
+
+Three things this got wrong first, each caught by measurement rather than by eye:
+
+- **Order.** Every clip carries scale tracks, so the mixer rewrites `bone.scale` on each update. A
+  stretch decided after `update` ran was applied a frame late and the peak of the curve was never
+  the value used — the arm reached 1.27× instead of 2×. `applyStretch()` is now called explicitly
+  after the skill drives it.
+- **Applied twice.** Leaving the call inside `update` *as well* squared the factor: reach hit
+  **4.88×** and the arm read as a tentacle. It now runs exactly once per frame, and the doc comment
+  says so, because nothing about the code makes it obvious.
+- **Direction.** The surge first fired along the arm's heading — but a *downward* punch has the
+  forearm pointing at the floor, so the horizontal component is near zero and essentially
+  arbitrary. It now uses the character's facing, derived from the **midpoint of the two measured
+  eye sockets minus the head bone**, which stays correct under the viewer's turntable where a
+  hard-coded +X would not.
+
+The child bone is counter-scaled, so the fist keeps its own size while the limb behind it grows;
+without that, scale propagates down the hierarchy and the hand stretches into a smear.
+
+Roots, grove and lance all come from **one** branch recursion at three scales and three forking
+depths — a root, a young tree and a lance are the same structure — and all three run the figure's
+own bark shader, so grown wood is visibly the same material as the character.
+
 ### Damage that outlives the blow
 
 Every impact leaves cracks and a toxin stain that run for **ten seconds** — roughly six times the
