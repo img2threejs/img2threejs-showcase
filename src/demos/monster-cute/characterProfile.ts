@@ -84,6 +84,17 @@ export const ACCENT = {
   dust: shift(regionHex('horn', '#728592'), -12, -0.04, +0.16),
   /** Wristband violet, lifted into a readable impact colour. */
   impact: shift(regionHex('wristband', '#32314d'), +8, +0.45, +0.42),
+  /**
+   * A warm cheek pink — and the largest hue move in this set, so it is worth being explicit about.
+   *
+   * Nothing on this character is warm. The measured palette is cyan fur, paler cyan belly, grey
+   * horn, off-white eye, near-black iris and a violet-navy wristband. A blush drawn in any of them
+   * does not read as a blush; it reads as a bruise or as more fur. So this walks the wristband
+   * violet round to pink and lifts it hard. It is still derived from a measured colour by a stated
+   * move, but it is the one accent that lands outside the hues the monster actually wears, and
+   * that is a deliberate stylisation rather than a measurement.
+   */
+  blush: shift(regionHex('wristband', '#32314d'), +72, +0.46, +0.44),
 } as const;
 
 export const PALETTE_PROVENANCE = paletteEvidence.regions.map((r) => ({

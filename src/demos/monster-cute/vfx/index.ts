@@ -26,8 +26,9 @@ import type { RiggedModel } from '../meshCodec';
 import { ACCENT, CLIP_PROFILES, FIGURE_HEIGHT, FRAME, PALETTE, SOCKETS } from '../characterProfile';
 import { ParticleField } from './particles';
 import { Ribbon } from './ribbon';
-import { Beam, ChargeOrb, Hearts, HornArc, MagicCircle, Shockwaves } from './shapes';
-import { EyeGlow, installRimLight } from './rimLight';
+import { Beam, ChargeOrb, Hearts, HornArc, Shockwaves } from './shapes';
+import { Blush, EyeGlow, installRimLight } from './rimLight';
+import { Sfx } from './sfx';
 
 const H = FIGURE_HEIGHT;
 
@@ -35,7 +36,7 @@ export type CueName = 'cast' | 'blast' | 'slam' | 'hurt' | 'sparkle';
 
 export type EffectName =
   | 'motes' | 'aura' | 'rimLight' | 'eyeGlow' | 'handTrails' | 'footDust' | 'landingWave'
-  | 'hornArc' | 'palmCharge' | 'hearts' | 'magicCircle';
+  | 'hornArc' | 'palmCharge' | 'hearts' | 'blush';
 
 export interface ClipBinding {
   effect: EffectName;
@@ -45,6 +46,8 @@ export interface ClipBinding {
 
 export interface MonsterCuteVfx {
   group: THREE.Group;
+  /** Synthesised sound. Nothing is fetched; every effect is built from oscillators when it fires. */
+  readonly sfx: Sfx;
   /**
    * Advance the effects. DELTA seconds, then elapsed seconds.
    *
@@ -136,10 +139,23 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
   const beam = new Beam(ACCENT.core);
   const hearts = new Hearts(14, 0.075 * H, ACCENT.impact);
   const eyeGlow = new EyeGlow(0.026 * H, ACCENT.core);
-  // Two-tone on purpose: the violet lifted from the wristbands outside, the fur cyan inside. Both
-  // are the character's own colours, and the pair reads far warmer than one ring of pale blue.
-  const magicCircle = new MagicCircle(0.56 * H, ACCENT.impact, ACCENT.energy);
 
+  /**
+   * Sound, tied to the SAME measured events the visuals are.
+   *
+   * A footstep fires when the sole socket crosses the ground band while descending, not on a timer
+   * keyed to the clip — so the sound lands with the foot in every one of the 33 clips, including
+   * the ones nobody authored a footfall for.
+   */
+  const sfx = new Sfx();
+
+  // Blush on the cheeks, placed from the two measured eye sockets and parented to the Head joint.
+  const headBone = rigged.mesh.skeleton.bones.find((b) => b.name === 'Head');
+  const eyeSpecL = SOCKETS.find((s) => s.id === 'effect:eye.l');
+  const eyeSpecR = SOCKETS.find((s) => s.id === 'effect:eye.r');
+  const blush = headBone && eyeSpecL && eyeSpecR
+    ? new Blush(headBone, eyeSpecL.offset, eyeSpecR.offset, ACCENT.blush)
+    : null;
   /**
    * The colours a mote can be.
    *
@@ -149,7 +165,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
    * a hue the monster does not wear.
    */
   const MOTE_COLOURS = [ACCENT.mote, PALETTE.belly, ACCENT.energy, ACCENT.dust, ACCENT.impact];
-  group.add(shockwaves.group, hornArc.group, orbs.l.group, orbs.r.group, beam.group, hearts.group, eyeGlow.group, magicCircle.group);
+  group.add(shockwaves.group, hornArc.group, orbs.l.group, orbs.r.group, beam.group, hearts.group, eyeGlow.group);
 
 
   // ---------------------------------------------------------------- emissive channel
@@ -173,7 +189,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
   const enabled: Record<EffectName, boolean> = {
     motes: true, aura: true, rimLight: true, eyeGlow: true,
     handTrails: false, footDust: false,
-    landingWave: false, hornArc: false, palmCharge: false, hearts: false, magicCircle: false,
+    landingWave: false, hornArc: false, palmCharge: false, hearts: false, blush: true,
   };
 
   const world = new Map<string, THREE.Vector3>();
@@ -231,10 +247,6 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
   const scratch = new THREE.Vector3();
   const scratchB = new THREE.Vector3();
   const scratchC = new THREE.Vector3();
-  // Its own vector on purpose: scratchC is still holding the camera position that the trails read
-  // earlier in the same frame, and quietly borrowing it would break them the next time these
-  // blocks are reordered.
-  const scratchCircle = new THREE.Vector3();
 
   // ---------------------------------------------------------------- one-shots
 
@@ -295,8 +307,9 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
   function cue(name: CueName): void {
     switch (name) {
       case 'cast': {
+        sfx.play('cast');
         hornArc.setStrength(1);
-        castHold = 1.6;
+        castHold = 1.1;
         const l = world.get('effect:horn.l');
         const r = world.get('effect:horn.r');
         if (l) burst(l, 16, 0.5 * H, ACCENT.core, 0.022 * H, 0.5);
@@ -309,6 +322,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
         fireBeam();
         break;
       case 'slam': {
+        sfx.play('slam');
         const foot = world.get('effect:foot.l') ?? world.get('effect:foot.r');
         if (!foot) break;
         shockwaves.fire(foot, 0.75 * H, 0.75, ACCENT.energy);
@@ -318,6 +332,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
         break;
       }
       case 'hurt': {
+        sfx.play('hurt');
         const core = world.get('effect:core');
         flash = 1;
         flashColour = ACCENT.impact.clone();
@@ -325,6 +340,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
         break;
       }
       case 'sparkle': {
+        sfx.play('sparkle');
         const core = world.get('effect:core');
         if (!core) break;
         for (let i = 0; i < 28; i += 1) {
@@ -405,6 +421,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     // having to do anything, and it covers the instant where the cross-fade is weakest.
     const core = world.get('effect:core');
     if (core) burst(core, 16, 0.75 * H, ACCENT.core, 0.028 * H, 0.55, motes, 1);
+    sfx.play('switch');
     return activeBindings;
   }
 
@@ -483,7 +500,10 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
         const force = THREE.MathUtils.clamp(-hipVy / (0.8 * H), 0, 1);
         if (enabled.footDust) {
           ringPuff(p, 9 + Math.round(force * 16), (0.28 + force * 0.7) * H, ACCENT.dust, 0.055 * H, 0.6);
+          // A few twinkles with the dust: grit alone is drab on a character like this.
+          burst(p, 3 + Math.round(force * 5), 0.35 * H, ACCENT.mote, 0.02 * H, 0.45, motes, 1);
         }
+        sfx.play(force > 0.4 ? 'land' : 'step', force > 0.4 ? force : 1 - force * 0.6);
         if (enabled.landingWave && force > 0.28) {
           shockwaves.fire(p, (0.35 + force * 0.55) * H, 0.6, ACCENT.energy);
           burst(p, Math.round(8 + force * 20), (0.4 + force * 0.6) * H, ACCENT.energy, 0.02 * H, 0.4);
@@ -501,6 +521,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     const hornR = world.get('effect:horn.r');
     if (hornL && hornR) {
       hornArc.update(step, hornL, hornR, 0.05 * H);
+      if (arcOn) sfx.play('arc');
       if (arcOn && Math.random() < step * 40) {
         // Sparks shed off the bolt, spawned along it rather than at the tips.
         const t = Math.random();
@@ -562,6 +583,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
       heartTimer -= step;
       if (heartTimer <= 0) {
         heartTimer = 0.42;
+        sfx.play('heart');
         const core = world.get('effect:core');
         if (core) {
           // In FRONT of the chest, along the measured facing. The core socket is the centroid of
@@ -583,35 +605,9 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
 
     const charging = Math.max(orbs.l.level, orbs.r.level);
 
-    // ---- magic circle ----
-    // Under the feet, so it is grounded on the same spot the landing waves use.
-    const circleOn = enabled.magicCircle || castHold > 0 || charging > 0.5;
-    magicCircle.setLevel(circleOn ? 1 : 0);
-    // Between the feet, not under one of them: anchored to a single foot the ring sits visibly
-    // off to one side of the figure it is supposed to be centred on.
-    const footL = world.get('effect:foot.l');
-    const footR = world.get('effect:foot.r');
-    const circleAt = footL && footR
-      ? scratchCircle.copy(footL).add(footR).multiplyScalar(0.5)
-      : (footL ?? footR ?? world.get('effect:core'));
-    magicCircle.update(step, elapsed, circleAt);
-    if (circleOn && Math.random() < step * 12) {
-      if (circleAt) {
-        const a = Math.random() * Math.PI * 2;
-        const r = 0.5 * H;
-        motes.spawn({
-          position: scratch.set(circleAt.x + Math.cos(a) * r, 0.02 * H, circleAt.z + Math.sin(a) * r),
-          velocity: scratchB.set(0, (0.18 + Math.random() * 0.16) * H, 0),
-          colour: MOTE_COLOURS[(Math.random() * MOTE_COLOURS.length) | 0],
-          size: 0.028 * H,
-          life: 1.5,
-          drag: 0.7,
-          alpha: 1,
-          shape: 1,
-          spinRate: (Math.random() - 0.5) * 5,
-        });
-      }
-    }
+    // ---- blush ----
+    blush?.setLevel(enabled.blush ? 1 : 0);
+    blush?.update(step, elapsed);
 
     // ---- eye glow ----
     eyeGlow.setLevel(enabled.eyeGlow ? Math.max(charging * 0.9, arcOn ? 0.7 : 0, flash * 0.8) : 0);
@@ -661,7 +657,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
     trails.l.dispose(); trails.r.dispose();
     shockwaves.dispose(); hornArc.dispose();
     orbs.l.dispose(); orbs.r.dispose();
-    beam.dispose(); hearts.dispose(); eyeGlow.dispose(); magicCircle.dispose();
+    beam.dispose(); hearts.dispose(); eyeGlow.dispose(); blush?.dispose(); sfx.dispose();
     rim.uRimStrength.value = 0;
     rim.uRimPulse.value = 0;
     material.emissive.copy(emissiveBase);
@@ -670,6 +666,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
 
   return {
     group,
+    sfx,
     update,
     cue,
     setClip,
@@ -694,6 +691,7 @@ export function createMonsterCuteVfx(rigged: RiggedModel): MonsterCuteVfx {
       emissive: `#${material.emissive.getHexString()} x${material.emissiveIntensity.toFixed(2)}`,
       rim: Number(rim.uRimStrength.value.toFixed(2)) + rim.uRimPulse.value,
       eyeGlowVisible: eyeGlow.group.visible,
+      sound: { enabled: sfx.isEnabled, unlocked: sfx.isUnlocked, state: sfx.state, voices: sfx.voicesStarted },
       enabled: { ...enabled },
       clip: activeClip,
     }),

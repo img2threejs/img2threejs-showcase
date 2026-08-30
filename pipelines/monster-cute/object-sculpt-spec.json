@@ -770,10 +770,10 @@
         "basis": "follows the palm charge, the horn arc and the impact flash"
       },
       {
-        "id": "magicCircle",
-        "anchor": "midpoint of effect:foot.l and effect:foot.r",
-        "colour": "ACCENT.impact outer, ACCENT.energy inner",
-        "basis": "raised by the cast cue and by a palm charge above 0.5; two counter-rotating rings plus a ring of twinkles"
+        "id": "blush",
+        "anchor": "placed from effect:eye.l / effect:eye.r, parented to the Head joint",
+        "colour": "ACCENT.blush \u2014 the wristband violet walked round to pink and lifted",
+        "basis": "always on. NOTE: the largest hue move in the palette. Nothing measured on this character is warm, and a blush in any measured hue reads as a bruise; this is a stated stylisation, not a measurement."
       }
     ],
     "cues": [
@@ -881,5 +881,32 @@
       "radius": 2,
       "why": "normalBias rather than depth bias: the belly is a large gently curved surface whose normal runs nearly perpendicular to the key across a wide band, which is the worst case for a shadow map. A depth bias large enough to clear it detaches the contact shadow under the feet."
     }
+  },
+  "sfx": {
+    "status": "authored-for-this-showcase",
+    "files": null,
+    "provenance": "Synthesised in the browser from oscillators and envelopes at the moment each sound fires. No audio files ship with this model, for the same reason no textures do: nothing is fetched at runtime.",
+    "design": {
+      "register": "roughly 400 Hz - 2 kHz, every sound under 300 ms",
+      "waveforms": "sine and triangle only; saw and square read as harsh",
+      "pitch": "bends upward except 'hurt', which falls",
+      "scale": "major pentatonic, so simultaneous effects cannot be dissonant",
+      "attack": "~8 ms ramp on every note; an instant start is a click"
+    },
+    "sounds": [
+      "step",
+      "land",
+      "cast",
+      "blast",
+      "slam",
+      "hurt",
+      "sparkle",
+      "heart",
+      "switch",
+      "arc"
+    ],
+    "drivenBy": "footsteps fire on the same measured sole-socket ground crossing the dust uses, not on a clip-keyed timer, so they land with the foot in all 33 clips",
+    "autoplay": "AudioContext is created on the first user gesture; nothing plays before that",
+    "verified": "headless: context reaches 'running' after a gesture, 51 voices started across the cues and a run clip, muting stops new voices. Audible output NOT verified - a headless browser has no speaker."
   }
 }

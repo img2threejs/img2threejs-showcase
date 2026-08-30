@@ -150,3 +150,106 @@ export class EyeGlow {
     for (const m of this.materials) m.dispose();
   }
 }
+
+/**
+ * Cheek blush.
+ *
+ * Two soft discs on the cheeks, parented to the `Head` joint so they ride the head through every
+ * clip. Not billboarded, unlike the eye glow: a blush lies ON the cheek, and a disc that turns to
+ * face the camera detaches from the face the moment the head turns.
+ *
+ * Placement is derived from the two measured eye sockets rather than typed in — outward along the
+ * line between them and down by a fraction of their separation — so it follows the face this rig
+ * actually has instead of a guess at where cheeks usually are.
+ *
+ * This is the one effect here with no job other than charm.
+ */
+export class Blush {
+  readonly group = new THREE.Group();
+  private readonly materials: THREE.ShaderMaterial[] = [];
+  private level = 0;
+  private target = 1;
+
+  constructor(head: THREE.Object3D, eyeL: [number, number, number], eyeR: [number, number, number], colour: THREE.Color) {
+    const mid: [number, number, number] = [(eyeL[0] + eyeR[0]) / 2, (eyeL[1] + eyeR[1]) / 2, (eyeL[2] + eyeR[2]) / 2];
+    const span = Math.hypot(eyeL[0] - eyeR[0], eyeL[1] - eyeR[1], eyeL[2] - eyeR[2]);
+    const radius = span * 0.40;
+
+    for (const eye of [eyeL, eyeR]) {
+      /**
+       * Placed ON the head's surface, not offset in free space.
+       *
+       * The eye sockets were measured on the skin, so their distance from the Head joint IS the
+       * surface radius there. Sliding down and outward from an eye without also pushing back out
+       * along that radius buries the disc inside the head, where the depth test hides it
+       * completely — which is exactly what the first version did.
+       *
+       * Head-local axes, read off the two measured eye offsets: x is lateral (the eyes differ
+       * almost entirely in x), y is up, z is depth.
+       */
+      const eyeVec = new THREE.Vector3(eye[0], eye[1], eye[2]);
+      const surfaceRadius = eyeVec.length();
+      const outwardX = eye[0] - mid[0];
+
+      // Down, a little outward, and forward. The eyes on this face are already wide-set, so a
+      // large outward push walks the blush round onto the silhouette edge where it reads as a
+      // stray light rather than as a cheek — the forward term is what keeps it on the front of
+      // the face.
+      const direction = eyeVec.clone()
+        .add(new THREE.Vector3(outwardX * 0.18, -span * 0.50, -span * 0.28))
+        .normalize();
+      // A whisker proud of the surface, so it is never z-fought by the skin it sits on.
+      const position = direction.multiplyScalar(surfaceRadius * 1.015);
+
+      const material = new THREE.ShaderMaterial({
+        uniforms: { uColour: { value: colour.clone() }, uOpacity: { value: 0 } },
+        vertexShader: /* glsl */`
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: /* glsl */`
+          uniform vec3 uColour;
+          uniform float uOpacity;
+          varying vec2 vUv;
+          void main() {
+            // Soft radial falloff, raised to a high power so the edge is genuinely gone rather
+            // than merely faint — a blush with a visible rim reads as a sticker.
+            float r = length(vUv - 0.5) * 2.0;
+            float a = max(0.0, 1.0 - r);
+            a *= a; a *= a;
+            gl_FragColor = vec4(uColour, a * uOpacity);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+
+      const disc = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2.2, radius * 1.7), material);
+      disc.position.copy(position);
+      // Face directly away from the head's centre, so the disc lies flat across the cheek.
+      disc.lookAt(position.clone().multiplyScalar(2));
+      disc.renderOrder = 11;
+      this.group.add(disc);
+      this.materials.push(material);
+    }
+    head.add(this.group);
+  }
+
+  setLevel(value: number): void { this.target = value; }
+
+  update(dt: number, elapsed: number): void {
+    this.level += (this.target - this.level) * Math.min(1, dt * 4);
+    // Breathes very slightly, so it is never a completely static patch of colour.
+    const breathe = 0.9 + 0.1 * Math.sin(elapsed * 1.7);
+    for (const m of this.materials) m.uniforms.uOpacity.value = 0.85 * this.level * breathe;
+  }
+
+  dispose(): void {
+    for (const m of this.materials) m.dispose();
+    this.group.parent?.remove(this.group);
+  }
+}

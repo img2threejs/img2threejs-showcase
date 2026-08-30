@@ -315,6 +315,16 @@ const authored: DemoEntry[] = [
         };
         select(OPENING);
 
+        // Sound is synthesised, never fetched, but a browser will not open an audio output until a
+        // real user gesture — so the first click or key anywhere on the page is what starts it.
+        const unlockAudio = (): void => {
+          vfx.sfx.unlock();
+          window.removeEventListener('pointerdown', unlockAudio);
+          window.removeEventListener('keydown', unlockAudio);
+        };
+        window.addEventListener('pointerdown', unlockAudio);
+        window.addEventListener('keydown', unlockAudio);
+
         // The mixer wants a DELTA. Handing it elapsed time makes the first frame jump to wherever
         // the clip is by then and every frame after it race away.
         advance = (dt, elapsed) => {
