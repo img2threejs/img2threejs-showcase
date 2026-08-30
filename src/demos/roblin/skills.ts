@@ -79,7 +79,6 @@ const TOXIC = new THREE.Color(VFX.toxic.value);
 const VENOM = new THREE.Color(VFX.venom.value);
 const SPORE = new THREE.Color(VFX.spore.value);
 const EMBER = new THREE.Color(VFX.ember.value);
-const EMBER_DEEP = new THREE.Color(VFX.emberDeep.value);
 const STEEL = new THREE.Color(VFX.steel.value);
 // Dust and ash, the cooled end of the leather hue. Used by the scrap volley and the footfalls,
 // which are the two things in this showcase that are literally dirt.
@@ -124,108 +123,139 @@ export function createSkills(ctx: SkillContext): Skill[] {
   };
 
   /**
-   * The volley's wind-up: grit collecting in the fist.
+   * The wind-up: a fist tightening, seen as the air being dragged with it.
    *
-   * Dirt and metal filings, not a glowing charge. They fall toward the hand under gravity and are
-   * caught there by heavy drag, so the fist looks like it is closing around a handful of something
-   * rather than powering up. A couple of steel filings catch the light on the way in — that is the
-   * only bright part, and it comes off the bracer.
+   * No gathering charge — a boxer does not power up, he loads. What is drawn is the disturbance the
+   * knuckles pull along: a few fine streaks trailing the fist, carrying most of its own velocity so
+   * they sit in its wake rather than flying off it.
    */
-  const scrapGather = (socketId: string, count: number): void => {
+  const knuckleDrag = (socketId: string, count: number): void => {
     const at = sockets.get(socketId).worldPosition();
-    const carried = motion.velocity(socketId).multiplyScalar(0.6);
+    const velocity = motion.velocity(socketId);
+    if (velocity.lengthSq() < 1e-4) return;
     vfx.burst(at, {
       count,
-      colour: EMBER.clone().multiplyScalar(0.7),
-      colourEnd: EMBER_ASH,
-      spread: Math.PI,
-      speed: [0.25, 0.9],
-      life: [0.18, 0.42],
-      size: [h * 0.006, h * 0.02],
-      gravity: 2.2,
-      drag: 7.5,
-      jitter: h * 0.05,
-      inherit: carried,
-    });
-    vfx.burst(at, {
-      count: Math.max(2, Math.round(count * 0.18)),
-      colour: STEEL,
-      colourEnd: EMBER,
-      spread: Math.PI,
-      speed: [0.4, 1.6],
-      life: [0.12, 0.3],
-      size: [h * 0.003, h * 0.008],
-      gravity: 3.0,
-      drag: 5.0,
-      flicker: 0.6,
-      inherit: carried,
+      colour: STEEL.clone().multiplyScalar(0.5),
+      colourEnd: EMBER_ASH.clone().multiplyScalar(0.5),
+      direction: velocity.clone().normalize().negate(),
+      spread: 0.7,
+      speed: [0.3, 1.4],
+      life: [0.1, 0.28],
+      size: [h * 0.004, h * 0.011],
+      gravity: 1.4,
+      drag: 4.5,
+      jitter: h * 0.03,
+      inherit: velocity.clone().multiplyScalar(0.75),
+      shape: 'streak',
+      stretch: 0.2,
     });
   };
 
   /**
-   * A scrap hit: sparks and dust, no fire.
+   * A landed punch.
    *
-   * Steel striking anything hard throws a fan of white-hot sparks that arc, bounce and die fast,
-   * and knocks a slower puff of dirt off whatever it hit. That is the entire event. The fireball
-   * this replaced was borrowing a language — expanding flame shells, rising embers, a burn mark —
-   * that belongs to a different character; Roblin's metal is scavenged, cold and crude.
+   * `box_02` is a boxing combination and this is the only skill on it, so the effect belongs AT the
+   * fist, at the moment it connects — not flying away from it. The previous versions threw things:
+   * first fire, then scavenged metal, and both fought the animation, because a clip that punches
+   * and an effect that departs are telling two different stories.
+   *
+   * What a connecting punch reads as, in order of how fast each part happens:
+   *
+   *   1. a hard white flash on the frame of contact, and a point light so the figure is lit by it
+   *   2. a FRACTURE racing outward from the point struck — the signature that says something took
+   *      the force rather than absorbed it quietly
+   *   3. a flat ring of air punched outward in the plane of the blow
+   *   4. debris thrown back along the punch, as streaks
+   *   5. dust, arriving last and lingering after everything bright has gone
+   *
+   * Nothing here glows warm. Fire was never Roblin's, and a punch is not hot — it is force, so the
+   * palette is the steel of his own bracers with the leather hue only in the dust.
    */
-  const scrapImpact = (at: THREE.Vector3, direction: THREE.Vector3, scale: number): void => {
-    const height = Math.max(0, at.y - groundY);
-    const grounded = THREE.MathUtils.clamp(1 - height / (h * 0.45), 0, 1);
-    const onGround = at.clone();
-    onGround.y = groundY + 0.004;
+  const punchImpact = (at: THREE.Vector3, direction: THREE.Vector3, scale: number): void => {
+    const hot = new THREE.Color(0xffffff).lerp(STEEL, 0.35);
 
-    // Short and hard. A strike is a crack of light, not a bloom.
-    vfx.flare(at, direction, STEEL, h * 0.3 * scale, h * 0.07 * scale, 0.08);
-    vfx.flash(at, STEEL, 60 * scale * scale, 0.16, h * (2.5 + 1.5 * scale));
+    // 1. Contact.
+    // Sized to the EVENT, not to the figure. A punch connects over roughly a fist, so these radii
+    // are fractions of a forearm — the first pass used figure-height fractions and produced a ring
+    // wider than the character with a two-unit fracture behind it.
+    vfx.flash(at, STEEL, 34 * scale * scale, 0.12, h * (1.4 + 0.9 * scale));
+    vfx.flare(at, direction, hot, h * 0.16 * scale, h * 0.1 * scale, 0.07);
 
-    // The spark fan: STREAKS, not dots. A spark leaving at ten units a second is a line pointing
-    // where it is going, and drawing it as a circle is what made every impact read as confetti.
+    // 2. The fracture. Bigger and longer-lived as the combination escalates, so the cross visibly
+    // breaks more than the jab did.
+    vfx.crack(at, h * (0.09 + 0.14 * scale), STEEL, hot, 0.3 + 0.25 * scale);
+
+    // 3. The ring of displaced air, in the plane the punch travelled through.
+    vfx.shockwave(at, h * 0.11 * scale, hot, 0.16, 0.34, direction);
+    vfx.shockwave(at, h * 0.2 * scale, STEEL.clone().multiplyScalar(0.55), 0.3, 0.2, direction);
+
+    // 4. Debris, thrown back the way the fist came. Streaks, because at this speed they are lines.
     vfx.burst(at, {
-      count: Math.round(80 * scale),
-      colour: STEEL,
-      colourEnd: EMBER,
+      count: Math.round(70 * scale),
+      colour: hot,
+      colourEnd: EMBER_ASH,
       direction: direction.clone().negate(),
-      spread: 0.85,
-      speed: [5, 13],
-      life: [0.14, 0.4],
-      size: [h * 0.005, h * 0.013],
-      gravity: 11,
-      drag: 0.7,
-      flicker: 0.4,
+      spread: 1.0,
+      speed: [3, 8],
+      life: [0.1, 0.28],
+      size: [h * 0.004, h * 0.01],
+      gravity: 10,
+      drag: 0.9,
       shape: 'streak',
       stretch: 0.28,
     });
-    // The dust it knocks loose: alpha-blended MATTER, so it has weight and hides what is behind it.
-    // As additive glow this was a luminous cloud, which is the one thing dust is not.
+    // A tight forward spray as well: some of what is struck goes on through.
     vfx.burst(at, {
-      count: Math.round(30 * scale),
-      // Alpha-blended smoke can only be seen against what is behind it, and behind it is BLACK.
-      // Darkened dust is therefore invisible by construction — the first version of this layer
-      // could not be seen at all. Real dust is visible because it CATCHES light, so it is mixed up
-      // toward a warm grey rather than down toward the shadow colour.
-      colour: EMBER.clone().lerp(new THREE.Color(0xffffff), 0.35).multiplyScalar(0.85),
-      colourEnd: EMBER_ASH.clone().lerp(new THREE.Color(0xffffff), 0.2).multiplyScalar(0.5),
-      direction: direction.clone().negate(),
-      spread: Math.PI * 0.6,
-      speed: [0.4 * scale, 2.0 * scale],
-      life: [0.6, 1.6],
-      size: [h * 0.09, h * 0.4],
-      gravity: 0.5,
-      drag: 2.4,
-      swirl: 0.8,
-      jitter: h * 0.05,
-      shape: 'smoke',
-      spin: 1.4,
-      layer: 'matter',
-      opacity: 0.19,
+      count: Math.round(22 * scale),
+      colour: STEEL,
+      colourEnd: EMBER_ASH,
+      direction,
+      spread: 0.4,
+      speed: [3, 8],
+      life: [0.1, 0.26],
+      size: [h * 0.004, h * 0.01],
+      gravity: 9,
+      drag: 1.2,
+      shape: 'streak',
+      stretch: 0.24,
     });
 
-    if (grounded > 0.05) {
-      vfx.shockwave(onGround, h * 0.42 * scale * grounded, EMBER, 0.34, 0.3);
-    }
-    lights.surge(EMBER, 0.4 * scale);
+    // 5. Dust, alpha-blended so it has weight, and slow enough to outlive the flash.
+    vfx.burst(at, {
+      // Sparse: this connects in the AIR, not on the floor, so there is little to raise. At a
+      // dozen puffs it veiled the character it was supposed to be hitting in front of.
+      count: Math.round(6 * scale),
+      colour: EMBER.clone().lerp(new THREE.Color(0xffffff), 0.16).multiplyScalar(0.6),
+      colourEnd: EMBER_ASH.clone().multiplyScalar(0.45),
+      direction: direction.clone().negate(),
+      spread: Math.PI * 0.55,
+      speed: [0.5 * scale, 2.4 * scale],
+      life: [0.5, 1.4],
+      size: [h * 0.06, h * 0.24],
+      gravity: 0.6,
+      drag: 2.6,
+      swirl: 0.9,
+      jitter: h * 0.05,
+      shape: 'smoke',
+      spin: 1.2,
+      layer: 'matter',
+      opacity: 0.12,
+    });
+
+    lights.surge(STEEL, 0.5 * scale);
+  };
+
+  /**
+   * Land one punch: find where the fist connects and put the impact there.
+   *
+   * The contact point is the knuckles plus a short reach down the hand's own aim — a punch connects
+   * essentially AT the fist, so this is a fraction of the forearm, not a projectile range.
+   */
+  const punch = (socketId: string, scale: number): void => {
+    const from = sockets.get(socketId).worldPosition();
+    const direction = motion.aim(socketId, undefined, 0.3);
+    const at = from.clone().addScaledVector(direction, frame.forearmLength * 0.45);
+    punchImpact(at, direction, scale);
   };
 
   /**
@@ -345,73 +375,6 @@ export function createSkills(ctx: SkillContext): Skill[] {
     lights.surge(TOXIC, 0.5);
   };
 
-  /** Fling one piece of scavenged scrap from a socket, down that hand's own aim. */
-  const scrapThrow = (socketId: string, radius: number, scale: number): void => {
-    const from = sockets.get(socketId).worldPosition();
-    const direction = motion.aim(socketId, undefined, 0.3);
-    const maxReach = h * 1.15;
-    let range = maxReach;
-    if (direction.y < -0.08) {
-      const toFloor = (groundY - from.y) / direction.y;
-      if (toFloor > 0) range = Math.min(range, toFloor);
-    }
-    range = Math.max(h * 0.45, range);
-
-    vfx.bolt({
-      from,
-      direction,
-      // Fast and flat — this is thrown metal, and it should cross the gap before the eye settles.
-      speed: h * 6.2,
-      range,
-      style: 'shard',
-      core: STEEL,
-      deep: EMBER_DEEP,
-      halo: EMBER,
-      radius: h * radius,
-      sparkRate: 130,
-      // A short, dull wake: scrap does not burn, it just drags grit behind it.
-      trailHead: EMBER,
-      trailTail: EMBER_ASH,
-      sparkEnd: EMBER_ASH,
-      sparkGravity: 6.0,
-      sparkSize: 0.7,
-      lightScale: 0.55,
-      onImpact: (at, dir) => scrapImpact(at, dir, scale),
-    });
-
-    // The release: grit off the fist and a hard scrape of sparks where it leaves the bracer.
-    vfx.burst(from, {
-      count: Math.round(34 * scale),
-      colour: EMBER,
-      colourEnd: EMBER_ASH,
-      direction,
-      spread: 0.7,
-      speed: [1.2, 4.5],
-      life: [0.16, 0.42],
-      size: [h * 0.006, h * 0.022],
-      gravity: 4.5,
-      drag: 2.8,
-      inherit: motion.velocity(socketId).multiplyScalar(0.5),
-    });
-    vfx.burst(from, {
-      count: Math.round(16 * scale),
-      colour: STEEL,
-      colourEnd: EMBER,
-      direction,
-      spread: 0.35,
-      speed: [4, 9],
-      life: [0.1, 0.26],
-      size: [h * 0.005, h * 0.012],
-      gravity: 9,
-      drag: 1.0,
-      flicker: 0.5,
-      shape: 'streak',
-      stretch: 0.25,
-    });
-    vfx.flash(from, EMBER, 16, 0.14, h * 1.8);
-    lights.surge(EMBER, 0.45);
-  };
-
   /**
    * What every bolt does when it arrives. Shared so all three impacts read as the same world.
    *
@@ -496,10 +459,10 @@ export function createSkills(ctx: SkillContext): Skill[] {
     },
     {
       id: 'ember-volley',
-      label: 'Scrap Volley',
+      label: 'Shatter Combo',
       clip: 'preset:biped:box_02',
-      colour: VFX.ember.hex,
-      description: 'a one-two-cross on the three scanned strikes of box_02 — right 27.7%, left 28.9%, right 68.6%',
+      colour: VFX.steel.hex,
+      description: 'a one-two-cross on the three scanned strikes of box_02 — each punch cracks where it lands',
       cast: () => animator.once('preset:biped:box_02', {
         fade: 0.12,
         cues: [
@@ -513,15 +476,16 @@ export function createSkills(ctx: SkillContext): Skill[] {
           // firing the same pellet three times. The cross is the payoff and is scaled to look it.
           // Recolour the hand wakes for the length of the combination, so the streaks the punches
           // throw belong to this skill rather than to the character's resting palette.
-          { at: 0.0, fire: () => tintTrails?.(EMBER, EMBER_ASH, 2.6) },
-          { at: 0.16, fire: () => scrapGather('effect:cast-primary', 26) },
-          { at: 0.21, fire: () => scrapGather('effect:cast-secondary', 22) },
-          { at: 0.277, fire: () => scrapThrow('effect:cast-primary', 0.03, 0.6) },
-          { at: 0.289, fire: () => scrapThrow('effect:cast-secondary', 0.033, 0.72) },
-          // A visible wind-up on the cross: grit collects in the fist for a quarter of the clip.
-          { at: 0.50, fire: () => scrapGather('effect:cast-primary', 30) },
-          { at: 0.60, fire: () => scrapGather('effect:cast-primary', 44) },
-          { at: 0.686, fire: () => scrapThrow('effect:cast-primary', 0.046, 1.05) },
+          // Steel, not ember: this skill is force, and the fire palette never belonged to it.
+          { at: 0.0, fire: () => tintTrails?.(STEEL, EMBER_ASH, 2.6) },
+          { at: 0.20, fire: () => knuckleDrag('effect:cast-primary', 10) },
+          { at: 0.24, fire: () => knuckleDrag('effect:cast-secondary', 10) },
+          { at: 0.277, fire: () => punch('effect:cast-primary', 0.62) },
+          { at: 0.289, fire: () => punch('effect:cast-secondary', 0.74) },
+          // The cross is loaded for longer and lands hardest — a bigger fracture, held longer.
+          { at: 0.56, fire: () => knuckleDrag('effect:cast-primary', 12) },
+          { at: 0.63, fire: () => knuckleDrag('effect:cast-primary', 16) },
+          { at: 0.686, fire: () => punch('effect:cast-primary', 1.15) },
         ],
       }),
     },

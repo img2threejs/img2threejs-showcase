@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 
+/** A RingGeometry is authored in the xy plane, so this is the direction it faces unrotated. */
+const RING_NORMAL = new THREE.Vector3(0, 0, 1);
+
 /**
  * An expanding ground ring — the readable half of an impact.
  *
@@ -63,8 +66,26 @@ export class Shockwave {
 
   get busy(): boolean { return this.active; }
 
-  fire(at: THREE.Vector3, radius: number, colour: THREE.Color, duration = 0.6, thickness = 0.16): void {
+  /**
+   * `normal` orients the ring's plane. Omitted, it lies flat on the ground, which is right for
+   * something that struck the floor. A punch does not strike the floor — its ring belongs in the
+   * plane the blow travelled through, facing the way the fist went.
+   */
+  fire(
+    at: THREE.Vector3,
+    radius: number,
+    colour: THREE.Color,
+    duration = 0.6,
+    thickness = 0.16,
+    normal?: THREE.Vector3,
+  ): void {
     this.mesh.position.copy(at);
+    if (normal) {
+      // The ring is authored in the xy plane, so its own +z is the normal to align.
+      this.mesh.quaternion.setFromUnitVectors(RING_NORMAL, normal.clone().normalize());
+    } else {
+      this.mesh.rotation.set(-Math.PI / 2, 0, 0);
+    }
     this.mesh.scale.setScalar(radius);
     this.maxRadius = radius;
     this.duration = duration;

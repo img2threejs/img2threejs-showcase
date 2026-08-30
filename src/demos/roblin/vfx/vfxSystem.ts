@@ -6,6 +6,7 @@ import { GroundGlow } from './groundGlow';
 import { Flare } from './flare';
 import { Scorch } from './scorch';
 import { Pool } from './pool';
+import { Crack } from './crack';
 
 /**
  * The whole effect layer, in one object.
@@ -62,6 +63,7 @@ export class VfxSystem {
   private readonly flares: Flare[];
   private readonly scorches: Scorch[];
   private readonly pools: Pool[];
+  private readonly cracks: Crack[];
   private readonly flashes: Flash[];
   private elapsed = 0;
 
@@ -74,6 +76,7 @@ export class VfxSystem {
     this.flares = Array.from({ length: 6 }, () => new Flare());
     this.scorches = Array.from({ length: 6 }, () => new Scorch());
     this.pools = Array.from({ length: 6 }, () => new Pool());
+    this.cracks = Array.from({ length: 6 }, () => new Crack());
     // Impact lights are pooled for the same reason bolts are: `new PointLight` mid-cast forces the
     // renderer to recompile every material that can receive light, which drops a frame every time.
     // Five, not eight: a radial skill lands its impacts together, and the sixth simultaneous
@@ -90,6 +93,7 @@ export class VfxSystem {
     for (const flare of this.flares) this.root.add(flare.mesh);
     for (const scorch of this.scorches) this.root.add(scorch.mesh);
     for (const pool of this.pools) this.root.add(pool.mesh);
+    for (const crack of this.cracks) this.root.add(crack.mesh);
     for (const flash of this.flashes) this.root.add(flash.light);
   }
 
@@ -122,9 +126,17 @@ export class VfxSystem {
     });
   }
 
-  shockwave(at: THREE.Vector3, radius: number, colour: THREE.Color, duration = 0.6, thickness = 0.16): void {
+  /** `normal` tilts the ring out of the ground plane — see shockwave.ts. */
+  shockwave(
+    at: THREE.Vector3,
+    radius: number,
+    colour: THREE.Color,
+    duration = 0.6,
+    thickness = 0.16,
+    normal?: THREE.Vector3,
+  ): void {
     const free = this.waves.find((w) => !w.busy);
-    free?.fire(at, radius, colour, duration, thickness);
+    free?.fire(at, radius, colour, duration, thickness, normal);
   }
 
   /**
@@ -141,6 +153,12 @@ export class VfxSystem {
   ): void {
     const free = this.flares.find((f) => !f.busy);
     free?.fire(at, aim, colour, length, girth, duration);
+  }
+
+  /** A fracture where a punch landed. See crack.ts. */
+  crack(at: THREE.Vector3, radius: number, colour: THREE.Color, core: THREE.Color, duration = 0.55): void {
+    const free = this.cracks.find((c) => !c.busy);
+    free?.fire(at, radius, colour, core, duration);
   }
 
   /** A caustic puddle that spreads, bubbles and sinks. See pool.ts. */
@@ -176,6 +194,7 @@ export class VfxSystem {
     for (const flare of this.flares) flare.update(delta, cameraPosition);
     for (const scorch of this.scorches) scorch.update(delta);
     for (const pool of this.pools) pool.update(delta);
+    for (const crack of this.cracks) crack.update(delta, cameraPosition);
     for (const flash of this.flashes) {
       if (flash.t >= flash.duration) continue;
       flash.t += delta;
@@ -206,5 +225,6 @@ export class VfxSystem {
     for (const flare of this.flares) flare.dispose();
     for (const scorch of this.scorches) scorch.dispose();
     for (const pool of this.pools) pool.dispose();
+    for (const crack of this.cracks) crack.dispose();
   }
 }

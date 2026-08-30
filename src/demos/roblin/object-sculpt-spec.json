@@ -605,13 +605,13 @@
         "note": "a thrown glob of bile \u2014 lumpy, squashed along its own travel, splatters forward and leaves a bubbling caustic pool"
       },
       {
-        "id": "scrap-volley",
+        "id": "shatter-combo",
         "clip": "preset:biped:box_02",
-        "socket": "effect:cast-primary + effect:cast-secondary",
-        "colour": "#f68e23",
+        "socket": "effect:cast-primary + effect:cast-secondary (impact at the fist, no projectile)",
+        "colour": "#cfe4ee",
         "release": "scanned cues at 0.277 (R), 0.289 (L) and 0.686 (R) \u2014 a real one-two-cross",
         "aim": "each bolt follows the hand that threw it",
-        "note": "flung scavenged metal \u2014 sparks and dust on impact, no fire. The earlier fire pass borrowed a language this character does not have."
+        "note": "box_02 is a BOXING combination, so the effect lands AT the fist rather than flying away from it: a fracture racing outward from the struck point, a ring of air in the plane of the blow, debris as streaks, and dust. Earlier passes threw fire and then scrap, and both fought the animation \u2014 a clip that punches and an effect that departs tell two different stories."
       },
       {
         "id": "spore-nova",

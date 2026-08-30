@@ -386,6 +386,43 @@ Thresholds are in figure heights per second, and they were set against measured 
 | box_02 | 6.09 | 4.42 | 1.00 |
 | front_kick_01 | 6.76 | 7.48 | 0.99 |
 
+### Shatter Combo — a punch has to land, not leave
+
+`box_02` is a BOXING combination: three punches that connect at arm's length. It spent two passes
+throwing things — first fire, then scavenged scrap — and it never read right for a reason no amount
+of tuning could reach. **A clip that punches and an effect that departs are telling two different
+stories.** The animation strikes something; the effect flew away from it.
+
+The effect now lands AT the fist, at the frame it connects, in the order the parts actually happen:
+
+1. a hard flash and a point light, so the figure is lit by its own blow
+2. a **fracture** racing outward from the struck point — the signature that says something took the
+   force rather than absorbing it quietly
+3. a ring of displaced air, laid **in the plane the punch travelled through** rather than flat on the
+   ground; `Shockwave` grew an optional normal for this
+4. debris thrown back along the punch, as velocity-stretched streaks
+5. a little dust, arriving last and outliving everything bright
+
+Nothing glows warm. Fire was never Roblin's, and a punch is not hot — it is force, so the palette is
+the steel of his own bracers with the leather hue only in the dust.
+
+**`vfx/crack.ts`** generates the fracture in the fragment shader rather than drawing it: spokes
+radiate at hashed angles, each with its own length and its own wander, narrowing to a point as they
+go out, with three sets at different spoke counts overlaid for primaries and finer branches. It
+races outward over the first fifth of its life and then holds and fades — a fracture propagates far
+faster than it disappears. It billboards, because this character punches across the frame and a
+crack lying in the plane perpendicular to the blow would be seen edge-on from the one angle the demo
+is framed at.
+
+Two corrections came from looking at it rather than from the code:
+
+* **Everything was sized to the figure instead of to the event.** A punch connects over roughly a
+  fist, but the first radii were fractions of figure HEIGHT — a ring wider than the character with a
+  two-unit fracture behind it. They are fractions of a forearm now.
+* **The spokes were wide enough to merge.** At an angular half-width factor of 0.55 the fracture
+  filled in and read as a soft ball with a few filaments. At 0.28, with a tighter smoothstep and the
+  hot core cut to a third of its weight, the lines read as lines.
+
 ### The particle system, rewritten
 
 Three rounds of colour and parameter work did not fix how the effects read, because the problem was
