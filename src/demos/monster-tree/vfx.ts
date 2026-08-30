@@ -349,18 +349,37 @@ class Trail implements Tickable {
   private head = 0;
   private filled = 0;
   private fade = 0;
+  private sampleClock = 0;
   private readonly view = new THREE.Vector3(0, 0, 1);
   /** Raised to 1 while the swing is live, then eased back so the ribbon dissolves behind the hand. */
   strength = 0;
 
-  constructor(source: THREE.Object3D, segments: number, width: number, colour: THREE.Color) {
+  /**
+   * How much the ribbon narrows along its length. 1 = a wedge that comes to a point, 0 = a band of
+   * constant width that fades out on alpha alone.
+   *
+   * A swing trail wants a wedge — the fist is the wide end and the tail is where it came from. A
+   * wisp wants the opposite: a LINE of light drawn through the air behind it. Tapered to a point
+   * over a fast orbit it stops reading as a line at all and becomes a paper dart, which is exactly
+   * what happened when the wisps were given the swing trail's profile.
+   */
+  private readonly taper: number;
+
+  constructor(source: THREE.Object3D, segments: number, width: number, colour: THREE.Color, taper = 1) {
     this.source = source;
     this.width = width;
+    this.taper = taper;
     this.history = Array.from({ length: segments }, () => new THREE.Vector3());
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(segments * 6), 3));
     geometry.setAttribute('aAlpha', new THREE.BufferAttribute(new Float32Array(segments * 2), 1));
+    // -1 and +1 on the two edges of every rib, so the fragment shader knows how far across the
+    // ribbon it is. With only two vertices spanning the width this interpolates to a clean
+    // gradient, which is all a soft edge needs.
+    const side = new Float32Array(segments * 2);
+    for (let i = 0; i < segments; i += 1) { side[i * 2] = -1; side[i * 2 + 1] = 1; }
+    geometry.setAttribute('aSide', new THREE.BufferAttribute(side, 1));
     const index: number[] = [];
     for (let i = 0; i < segments - 1; i += 1) {
       const a = i * 2;
@@ -377,17 +396,28 @@ class Trail implements Tickable {
       uniforms: { uColour: { value: colour } },
       vertexShader: `
         attribute float aAlpha;
+        attribute float aSide;
         varying float vAlpha;
+        varying float vSide;
         void main() {
           vAlpha = aAlpha;
+          vSide = aSide;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }`,
       fragmentShader: `
         uniform vec3 uColour;
         varying float vAlpha;
+        varying float vSide;
         void main() {
-          if (vAlpha < 0.004) discard;
-          gl_FragColor = vec4(uColour, vAlpha);
+          // Soft across the width with a hot core. A ribbon of flat colour with hard edges reads
+          // as tape laid through the air; the falloff is what turns the same geometry into a line
+          // of light.
+          float across = 1.0 - abs(vSide);
+          float body = pow(clamp(across, 0.0, 1.0), 0.85);
+          float core = pow(clamp(across, 0.0, 1.0), 6.0);
+          float a = vAlpha * body;
+          if (a < 0.004) discard;
+          gl_FragColor = vec4(uColour + core * 0.85, a);
         }`,
       transparent: true,
       depthWrite: false,
@@ -424,9 +454,21 @@ class Trail implements Tickable {
     if (wasIdle || this.filled === 0) this.restart(world);
     this.object.visible = true;
 
-    this.history[this.head].copy(world);
-    this.head = (this.head + 1) % this.history.length;
-    this.filled = Math.min(this.filled + 1, this.history.length);
+    // Sampled on a FIXED timestep, not once per frame. Per-frame sampling makes the ribbon's
+    // length depend on frame rate — the same trail spans a second at 45 fps and a third of one at
+    // 135 — so the effect quietly changes shape on a faster machine.
+    this.sampleClock += dt;
+    let pushed = false;
+    while (this.sampleClock >= TRAIL_STEP) {
+      this.sampleClock -= TRAIL_STEP;
+      this.head = (this.head + 1) % this.history.length;
+      this.filled = Math.min(this.filled + 1, this.history.length);
+      pushed = true;
+    }
+    void pushed;
+    // The newest sample tracks the source every frame, so the ribbon's head never lags the sprite
+    // it is trailing even between samples.
+    this.history[(this.head - 1 + this.history.length) % this.history.length].copy(world);
 
     const position = this.object.geometry.getAttribute('position') as THREE.BufferAttribute;
     const alpha = this.object.geometry.getAttribute('aAlpha') as THREE.BufferAttribute;
@@ -447,10 +489,11 @@ class Trail implements Tickable {
       if (dir.lengthSq() < 1e-12) dir.set(0, 1, 0);
       side.crossVectors(dir.normalize(), this.view);
       if (side.lengthSq() < 1e-12) side.set(1, 0, 0);
-      offset.copy(side.normalize()).multiplyScalar(this.width * (1 - i / n) ** 1.4 * (i < this.filled ? 1 : 0));
+      const narrow = 1 - this.taper * (1 - (1 - i / n) ** 1.4);
+      offset.copy(side.normalize()).multiplyScalar(this.width * narrow * (i < this.filled ? 1 : 0));
       position.setXYZ(i * 2, p.x + offset.x, p.y + offset.y, p.z + offset.z);
       position.setXYZ(i * 2 + 1, p.x - offset.x, p.y - offset.y, p.z - offset.z);
-      const a = i < this.filled ? (1 - i / n) ** 2.4 * this.fade * 0.85 : 0;
+      const a = i < this.filled ? (1 - i / n) ** (0.9 + this.taper * 1.5) * this.fade * 0.62 : 0;
       alpha.setX(i * 2, a);
       alpha.setX(i * 2 + 1, a);
     }
@@ -501,6 +544,9 @@ class GroundRing implements Tickable {
 }
 
 /** A one-shot puff of motes, thrown outward from a point and pulled back down by gravity. */
+/** One trail sample every 1/45 s: 45 samples is a second of history, whatever the frame rate. */
+const TRAIL_STEP = 1 / 45;
+
 const CONE_LOCAL = new THREE.Vector3();
 const CONE_ROT = new THREE.Quaternion();
 const CONE_AXIS = new THREE.Vector3(0, 0, 1);
@@ -667,7 +713,10 @@ class Wisps implements Tickable {
     this.object.name = 'vfx:wisps';
     const size = bounds.getSize(new THREE.Vector3());
     this.centre = bounds.getCenter(new THREE.Vector3());
-    this.radius = Math.max(size.x, size.z) * 0.78;
+    // Half the arm span, not most of it. The ribbons are meant to travel AROUND the body; at the
+    // wider radius the long tail swings clear of the figure entirely and the line stops being
+    // attached to anything.
+    this.radius = Math.max(size.x, size.z) * 0.42;
     this.height = size.y;
 
     const random = mulberry32(0x5115);
@@ -692,17 +741,20 @@ class Wisps implements Tickable {
       node.add(sprite);
       this.sprites.push(sprite);
 
-      // Hair-thin and SHORT. A wisp tail tapers from full width at the head to nothing at the
-      // tail, so any real width turns a fast-moving orbit into a paper dart. Length matters just
-      // as much: at 14 segments the orbit outruns the taper and the tail draws as a straight
-      // bright scratch across the frame rather than a comet falling off behind the head.
-      const trail = new Trail(node, 8, this.height * 0.0032, lifeColour(0.40, 1));
+      // LONG and THIN — this is the effect, not a garnish on the sprite. 80 samples at 45 Hz is
+      // roughly 1.8 seconds of orbit, which is a long enough arc that the ribbon reads as a curved
+      // line of light travelling around the body. Too short and it does not matter how wide or
+      // bright it is: the tail spans only a few degrees of the orbit, comes out straight, and
+      // draws as a bar floating beside the character.
+      const trail = new Trail(node, 64, this.height * 0.0060, lifeColour(0.42, 1), 0.35);
       trail.strength = 1;
       this.object.add(trail.object);
       this.trails.push(trail);
 
       this.phase.push(random() * Math.PI * 2);
-      this.rate.push(0.5 + random() * 0.55);
+      // Slower orbits. The ribbon has to be legible as a CURVE as it goes round; at the old rate
+      // a half-second tail was flung out into something closer to a straight streak.
+      this.rate.push(0.46 + random() * 0.34);
     }
 
     // One shared light for the whole swarm. Seven point lights would each cost a forward-render
@@ -721,6 +773,13 @@ class Wisps implements Tickable {
         this.centre.y + Math.sin(t * 1.31 + this.phase[i]) * this.height * 0.34 + this.height * 0.06,
         this.centre.z + Math.sin(t * 0.91) * r,
       );
+      // A small fast wobble across the orbit. Without it the path is a clean Lissajous ellipse and
+      // the ribbon is a smooth arc; with it the line undulates as it travels, which is what makes
+      // it read as alive rather than as a wire hoop around the figure.
+      const ripple = Math.sin(t * 6.3 + this.phase[i]) * this.height * 0.035;
+      this.nodes[i].position.y += ripple;
+      this.nodes[i].position.x += Math.cos(t * 5.1 + this.phase[i]) * this.height * 0.022;
+
       const flicker = 0.75 + 0.25 * Math.sin(elapsed * 3.1 + this.phase[i] * 2.0);
       this.sprites[i].material.opacity = flicker * (0.7 + this.gather * 0.5);
     }
@@ -1093,9 +1152,6 @@ export class MonsterTreeVfx {
   private readonly scale: number;
   /** 0 = dormant, 1 = a power fully gathered. Drives veins, wisps and the chest core together. */
   private chargeLevel = 0;
-  /** Where the drifting bloom is being asked to sit, and where it actually is. */
-  private auraTarget = 1;
-  private auraLevel = 1;
 
   constructor(rig: {
     group: THREE.Object3D;
@@ -1169,21 +1225,6 @@ export class MonsterTreeVfx {
 
   get charge(): number {
     return this.chargeLevel;
-  }
-
-  /**
-   * The drifting colour bloom around the body.
-   *
-   * Eased rather than set, and that is the point of it: the layer is meant to be something the
-   * character is doing while it stands, so it has to recede and return over a second or so. Snapped
-   * to a new value on every skill change it reads as a light switch and stops looking like drift.
-   */
-  set aura(value: number) {
-    this.auraTarget = value;
-  }
-
-  get aura(): number {
-    return this.auraTarget;
   }
 
   /** A rune circle inscribed on the ground under a socket — for anything deliberate. */
@@ -1277,9 +1318,6 @@ export class MonsterTreeVfx {
     this.elapsed += dt;
     this.veins?.setTime(this.elapsed);
     this.rootBark.setTime(this.elapsed);
-    this.auraLevel += (this.auraTarget - this.auraLevel) * Math.min(1, dt * 1.6);
-    this.veins?.setAura(this.auraLevel);
-    this.rootBark.setAura(this.auraLevel);
     this.spores.tick(dt, this.elapsed);
     this.wisps.tick(dt, this.elapsed);
     this.mist.tick(dt, this.elapsed);

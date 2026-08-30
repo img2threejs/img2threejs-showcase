@@ -44,8 +44,6 @@ export interface BarkSurface {
   setTime(elapsed: number): void;
   /** 0 = dormant wood, 1 = fully lit. Raised while a power is gathering. */
   setCharge(charge: number): void;
-  /** The drifting colour bloom, 0..1. Held up while the figure is idle. */
-  setAura(value: number): void;
   /** Debug/tuning knobs, so a suspect term can be switched off in the live page and looked at. */
   setVeinStrength(value: number): void;
   setBumpScale(value: number): void;
@@ -73,10 +71,6 @@ const BARK_NOISE = /* glsl */ `
   uniform float uBumpScale;
   uniform float uVeinStrength;
   uniform float uCavityStrength;
-  uniform float uAura;
-  uniform vec3 uAuraDeep;
-  uniform vec3 uAuraMid;
-  uniform vec3 uAuraHot;
   uniform vec3 uVeinColour;
   uniform vec3 uCoreColour;
   uniform vec3 uMossColour;
@@ -148,10 +142,6 @@ export function patchBarkSurface(material: THREE.MeshStandardMaterial): BarkSurf
     uBumpScale: { value: 0.040 },
     uVeinStrength: { value: 1 },
     uCavityStrength: { value: 1 },
-    uAura: { value: 1 },
-    uAuraDeep: { value: new THREE.Color(PALETTE.eyeDeep).convertSRGBToLinear() },
-    uAuraMid: { value: new THREE.Color(PALETTE.eyeIris).convertSRGBToLinear() },
-    uAuraHot: { value: new THREE.Color(PALETTE.eyeCore).convertSRGBToLinear() },
     uVeinColour: { value: hue(0.5, 0.95) },
     uCoreColour: { value: hue(0.72, 0.75) },
     uMossColour: { value: new THREE.Color(PALETTE.mossDark).convertSRGBToLinear() },
@@ -295,37 +285,6 @@ export function patchBarkSurface(material: THREE.MeshStandardMaterial): BarkSurf
 
           vec3 sap = mix(uVeinColour, uCoreColour, clamp(strength * 0.9, 0.0, 1.0));
           totalEmissiveRadiance += sap * strength * 0.88 * uVeinStrength;
-
-          // ---- the drifting bloom ----------------------------------------------------------
-          //
-          // A separate, much softer layer than the sap above, and the reason it is separate is
-          // worth stating: the bloom and the fibres want opposite things. Widening the sap ridge
-          // until it blooms floods the whole figure with flat emissive and takes the bark relief
-          // with it — that is exactly what an earlier pass did. So the bloom gets its own field.
-          //
-          // LOW frequency and NO ridge: broad soft patches, not seams. Two fields at different
-          // rates drifting up the body in world Y, which is what makes the colour bleed and
-          // migrate across the torso over several seconds rather than sitting still or pulsing
-          // everywhere at once.
-          //
-          // The COLOUR moves too. It is not one green: it walks the measured eye ramp — eyeDeep
-          // #36581c through eyeIris #799d3d to the near-white eyeCore #d6faca — so the layer
-          // shifts hue as it drifts instead of brightening a single tint. That is what reads as a
-          // layer of colour rather than a glow.
-          float drift = bFbm(vBindPosition * 2.6 + vec3(0.0, -uBarkTime * 0.085, 0.0));
-          drift = mix(drift, bFbm(vBindPosition * 4.3 + vec3(uBarkTime * 0.05, -uBarkTime * 0.13, 0.0)), 0.45);
-          // Deliberately narrow, and it never reaches 1. The bloom has to stay a LAYER over the
-          // wood: at full coverage it hides the grain and cavity work underneath and the figure
-          // goes back to being a flat green silhouette, which is the failure this whole surface
-          // was rebuilt to escape. The floor keeps a trace of colour everywhere so the drift reads
-          // as something moving across the body rather than switching on and off.
-          float bloom = 0.12 + 0.78 * smoothstep(0.44, 0.92, drift);
-          // Softest on the surfaces facing the viewer's light and strongest around the edges of
-          // each mass, so it reads as sitting just off the body rather than painted onto it.
-          float sheen = pow(1.0 - abs(dot(normalize(vBindNormal), normalize(vBindPosition))), 1.6);
-          vec3 auraColour = mix(uAuraDeep, uAuraMid, smoothstep(0.0, 0.6, bloom));
-          auraColour = mix(auraColour, uAuraHot, smoothstep(0.62, 1.0, bloom));
-          totalEmissiveRadiance += auraColour * bloom * (0.30 + 0.46 * sheen) * uAura * 0.30;
           totalEmissiveRadiance += uVeinColour * uBarkCharge * 0.055 * rise;
         }`);
 
@@ -339,7 +298,6 @@ export function patchBarkSurface(material: THREE.MeshStandardMaterial): BarkSurf
 
   return {
     setTime: (elapsed: number) => { uniforms.uBarkTime.value = elapsed; },
-    setAura: (v: number) => { uniforms.uAura.value = v; },
     setVeinStrength: (v: number) => { uniforms.uVeinStrength.value = v; },
     setBumpScale: (v: number) => { uniforms.uBumpScale.value = v; },
     setCavityStrength: (v: number) => { uniforms.uCavityStrength.value = v; },

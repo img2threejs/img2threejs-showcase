@@ -307,28 +307,31 @@ are painted into a `<canvas>` at build time; nothing is fetched.
   rose — a tube at zero height is a bright plate lying on the floor — so each one is now hidden
   until its own delay elapses.
 
-### The drifting colour layer
+### The ribbons: lines of light drifting around the body
 
-A soft bloom of colour that bleeds across the body and migrates over several seconds, strongest
-while the figure is standing still. It is a **separate layer from the sap fibres**, and that
-separation is the whole design: the two want opposite things. Widening the sap ridge until it
-blooms floods the figure with flat emissive and takes the bark relief with it — which is precisely
-what an early pass did, and what the grain work exists to escape.
+Six wisps ride Lissajous orbits around the figure, each trailing a long, thin, soft-edged ribbon.
+Together they draw curved lines of light that travel around the body and undulate as they go. This
+is the effect, not a garnish on the sprites — and it is easy to destroy by tuning any one of four
+things wrongly, each of which was done at least once:
 
-So the bloom gets its own field: low frequency, no ridge, two octaves drifting up the body in world
-Y at different rates. It never reaches full coverage (`0.12 + 0.78 * smoothstep(0.44, 0.92, …)`) —
-the floor keeps a trace of colour everywhere so the movement reads as something travelling across
-the body rather than switching on and off, and the ceiling keeps the wood visible underneath.
+- **Length.** A tail spanning a few tenths of a second covers only a few degrees of the orbit, so it
+  comes out *straight* and draws as a bright bar floating beside the character. It needs to span a
+  long enough arc to read as a curve: 64 samples at 45 Hz, about 1.4 s.
+- **Taper.** A swing trail wants a wedge — the fist is the wide end. A ribbon wants the opposite. At
+  full taper over a fast orbit it stops being a line at all and becomes a paper dart.
+- **Edges.** Flat colour with hard edges is tape laid through the air. The fragment shader fades
+  across the ribbon's width from an attribute that runs −1 to +1 between its two edges, with a hot
+  core on top; that falloff is what turns the same geometry into light.
+- **Radius.** At most of the arm span the long tail swings clear of the figure entirely and stops
+  looking attached to it. Half the span keeps the lines travelling *around* the body.
 
-The colour moves as well as the light. It walks the measured eye ramp — `eyeDeep` #36581c through
-`eyeIris` #799d3d to the near-white `eyeCore` #d6faca — so the layer shifts hue as it drifts instead
-of brightening one flat tint. That is what makes it read as a layer of *colour* rather than a glow.
+Samples are taken on a **fixed timestep**, not once per frame. Per-frame sampling ties the ribbon's
+length to frame rate — the same trail spans a second at 45 fps and a third of one at 135 — so the
+effect quietly changes shape on a faster machine.
 
-Each skill declares how much of it to leave on. Full at idle and guard, pulled to 0.3–0.4 during a
-strike so the swing trail and the impact have the frame to themselves, 0.15 on Deadfall as the
-light goes out of the wood, and **1.35 on Wildfire Sap** — there the bloom is the power gathering
-before it is thrown. The value is eased rather than set: snapped on every skill change it reads as
-a light switch and stops looking like drift.
+A small fast wobble is added across each orbit. Without it the path is a clean ellipse and the
+ribbon is a smooth arc; with it the line undulates as it travels, which is the difference between
+something alive and a wire hoop around the figure.
 
 ### Roots are branches, built to the figure's own proportions
 
