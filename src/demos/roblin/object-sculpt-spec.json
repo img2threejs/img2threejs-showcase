@@ -608,10 +608,10 @@
         "id": "shatter-combo",
         "clip": "preset:biped:box_02",
         "socket": "effect:cast-primary + effect:cast-secondary (impact at the fist, no projectile)",
-        "colour": "#cfe4ee",
+        "colour": "#d3f52c",
         "release": "scanned cues at 0.277 (R), 0.289 (L) and 0.686 (R) \u2014 a real one-two-cross",
         "aim": "each bolt follows the hand that threw it",
-        "note": "box_02 is a BOXING combination, so the effect lands AT the fist rather than flying away from it: a fracture racing outward from the struck point, a ring of air in the plane of the blow, debris as streaks, and dust. Earlier passes threw fire and then scrap, and both fought the animation \u2014 a clip that punches and an effect that departs tell two different stories."
+        "note": "box_02 is a BOXING combination, so the effect lands AT the fist rather than flying away from it: a fracture in his own SKIN hue racing outward from the struck point, a ring of air in the plane of the blow, debris as streaks, and dust. Earlier passes threw fire and then scrap, and both fought the animation \u2014 a clip that punches and an effect that departs tell two different stories."
       },
       {
         "id": "spore-nova",

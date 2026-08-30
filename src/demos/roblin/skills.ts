@@ -168,32 +168,40 @@ export function createSkills(ctx: SkillContext): Skill[] {
    *   4. debris thrown back along the punch, as streaks
    *   5. dust, arriving last and lingering after everything bright has gone
    *
-   * Nothing here glows warm. Fire was never Roblin's, and a punch is not hot — it is force, so the
-   * palette is the steel of his own bracers with the leather hue only in the dust.
+   * Nothing here glows warm — fire was never Roblin's. The fracture and the light at its centre are
+   * his own SKIN hue: `toxic` for the lines, `spore` for the struck point. The steel of his bracers
+   * is left to the debris streaks alone, where it reads as knuckles scraping rather than as a
+   * second colour competing with the break.
    */
   const punchImpact = (at: THREE.Vector3, direction: THREE.Vector3, scale: number): void => {
-    const hot = new THREE.Color(0xffffff).lerp(STEEL, 0.35);
+    // Pale green rather than white: the hot centre of a green fracture is a brighter green, and a
+    // white core would drain the hue out of the middle of the very thing being coloured.
+    //
+    // Everything below is also dimmer than the steel version it replaced, and that is not taste:
+    // green sits near the peak of the luminance curve, so the same additive weights that read as
+    // crisp in a cool blue clip to a flat wash in green.
+    const hot = new THREE.Color(0xffffff).lerp(SPORE, 0.85);
 
     // 1. Contact.
     // Sized to the EVENT, not to the figure. A punch connects over roughly a fist, so these radii
     // are fractions of a forearm — the first pass used figure-height fractions and produced a ring
     // wider than the character with a two-unit fracture behind it.
-    vfx.flash(at, STEEL, 34 * scale * scale, 0.12, h * (1.4 + 0.9 * scale));
+    vfx.flash(at, TOXIC, 20 * scale * scale, 0.12, h * (1.3 + 0.8 * scale));
     vfx.flare(at, direction, hot, h * 0.16 * scale, h * 0.1 * scale, 0.07);
 
     // 2. The fracture. Bigger and longer-lived as the combination escalates, so the cross visibly
     // breaks more than the jab did.
-    vfx.crack(at, h * (0.09 + 0.14 * scale), STEEL, hot, 0.3 + 0.25 * scale);
+    vfx.crack(at, h * (0.09 + 0.14 * scale), TOXIC, hot, 0.3 + 0.25 * scale);
 
     // 3. The ring of displaced air, in the plane the punch travelled through.
-    vfx.shockwave(at, h * 0.11 * scale, hot, 0.16, 0.34, direction);
-    vfx.shockwave(at, h * 0.2 * scale, STEEL.clone().multiplyScalar(0.55), 0.3, 0.2, direction);
+    vfx.shockwave(at, h * 0.11 * scale, hot.clone().multiplyScalar(0.6), 0.16, 0.3, direction);
+    vfx.shockwave(at, h * 0.2 * scale, TOXIC.clone().multiplyScalar(0.4), 0.3, 0.2, direction);
 
     // 4. Debris, thrown back the way the fist came. Streaks, because at this speed they are lines.
     vfx.burst(at, {
       count: Math.round(70 * scale),
-      colour: hot,
-      colourEnd: EMBER_ASH,
+      colour: hot.clone().multiplyScalar(0.8),
+      colourEnd: VENOM,
       direction: direction.clone().negate(),
       spread: 1.0,
       speed: [3, 8],
@@ -242,7 +250,7 @@ export function createSkills(ctx: SkillContext): Skill[] {
       opacity: 0.12,
     });
 
-    lights.surge(STEEL, 0.5 * scale);
+    lights.surge(TOXIC, 0.32 * scale);
   };
 
   /**
@@ -320,7 +328,7 @@ export function createSkills(ctx: SkillContext): Skill[] {
     if (grounded > 0.05) {
       vfx.shockwave(onGround, h * 0.5 * scale * grounded, SPORE, 0.45, 0.3);
     }
-    lights.surge(TOXIC, 0.5 * scale);
+    lights.surge(TOXIC, 0.32 * scale);
   };
 
   /** Lob one glob of bile from a socket, down that hand's own aim. */
@@ -461,7 +469,7 @@ export function createSkills(ctx: SkillContext): Skill[] {
       id: 'ember-volley',
       label: 'Shatter Combo',
       clip: 'preset:biped:box_02',
-      colour: VFX.steel.hex,
+      colour: VFX.toxic.hex,
       description: 'a one-two-cross on the three scanned strikes of box_02 — each punch cracks where it lands',
       cast: () => animator.once('preset:biped:box_02', {
         fade: 0.12,
@@ -476,8 +484,9 @@ export function createSkills(ctx: SkillContext): Skill[] {
           // firing the same pellet three times. The cross is the payoff and is scaled to look it.
           // Recolour the hand wakes for the length of the combination, so the streaks the punches
           // throw belong to this skill rather than to the character's resting palette.
-          // Steel, not ember: this skill is force, and the fire palette never belonged to it.
-          { at: 0.0, fire: () => tintTrails?.(STEEL, EMBER_ASH, 2.6) },
+          // The wakes take the same skin hue the fracture does, so the fist and the break it makes
+          // read as one event rather than two colours meeting.
+          { at: 0.0, fire: () => tintTrails?.(TOXIC, VENOM, 2.6) },
           { at: 0.20, fire: () => knuckleDrag('effect:cast-primary', 10) },
           { at: 0.24, fire: () => knuckleDrag('effect:cast-secondary', 10) },
           { at: 0.277, fire: () => punch('effect:cast-primary', 0.62) },

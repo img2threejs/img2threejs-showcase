@@ -93,7 +93,7 @@ export class Crack {
 
           // The struck point itself: a hard hot centre that dies faster than the cracks.
           // The struck point, kept well under the lines: the fracture is the read, not the flash.
-          float core = pow(max(1.0 - r / 0.26, 0.0), 3.0) * pow(1.0 - uProgress, 3.5) * 0.38;
+          float core = pow(max(1.0 - r / 0.26, 0.0), 3.0) * pow(1.0 - uProgress, 3.5) * 0.24;
 
           float alpha = f * fade + core;
           if (alpha <= 0.004) discard;

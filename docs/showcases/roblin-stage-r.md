@@ -403,8 +403,14 @@ The effect now lands AT the fist, at the frame it connects, in the order the par
 4. debris thrown back along the punch, as velocity-stretched streaks
 5. a little dust, arriving last and outliving everything bright
 
-Nothing glows warm. Fire was never Roblin's, and a punch is not hot — it is force, so the palette is
-the steel of his own bracers with the leather hue only in the dust.
+Nothing glows warm — fire was never Roblin's. The fracture and the light at its centre are his own
+SKIN hue, `toxic` for the lines and a pale `spore` for the struck point, so the break belongs to him
+rather than to his equipment. Steel is left to the debris streaks alone, where it reads as knuckles
+scraping instead of as a second colour competing with the fracture.
+
+Recolouring it needed everything around it dimmed, and that is not taste: green sits near the peak
+of the luminance curve, so the additive weights that read as crisp in a cool blue clip to a flat
+wash in green. The flash came down by a third, the rings and the hot core with it.
 
 **`vfx/crack.ts`** generates the fracture in the fragment shader rather than drawing it: spokes
 radiate at hashed angles, each with its own length and its own wander, narrowing to a point as they
