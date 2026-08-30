@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { TqCharacter } from './createTqCharacter';
 import { SIGNATURE, REGIONS } from './characterPalette';
 import {
+  AirFracture,
   AuraShell,
   BrushSlash,
   FormationArray,
@@ -9,6 +10,7 @@ import {
   LotusBloom,
   SilkRibbon,
   SpiritDragon,
+  SpiritFlame,
   TalismanSwarm,
   type Effect,
 } from './vfx';
@@ -74,6 +76,10 @@ export interface SkillDefinition {
   talismans?: { socket: string; at: number; count: number; duration: number };
   /** 蓮華 — a lotus opening on the ground. */
   lotus?: { socket: string; at: number; scale: number; duration: number };
+  /** 空間裂痕 — tears in the air. Several can be thrown from one cue, scattered around the socket. */
+  fractures?: { socket: string; at: number; count: number; radius: number; duration: number; spread?: number }[];
+  /** 焚身火焰 — the standing fire, as an envelope rather than a one-shot. */
+  flame?: { from: number; mid: number; to: number; peak: number };
 
   /** Aura strength envelope, and the colour the rim takes for this skill. */
   aura?: { from: number; mid: number; to: number; peak: number; colour?: THREE.Color };
@@ -100,6 +106,9 @@ export const SKILLS: readonly SkillDefinition[] = [
       { socket: 'attachment.foot.right', at: 0.34, count: 70, speed: 1.5, radius: 0.12, sparkRatio: 0.25 },
     ],
     array: { socket: 'attachment.foot.right', at: 0.33, duration: 1.15, radius: 1.35 },
+    // The cut does not just land — it splits the air it passed through.
+    fractures: [{ socket: 'grip.right', at: 0.33, count: 2, radius: 0.8, duration: 0.85, spread: 0.5 }],
+    flame: { from: 0.2, mid: 0.36, to: 0.7, peak: 0.75 },
     aura: { from: 0.18, mid: 0.32, to: 0.55, peak: 0.55 },
     emissive: { from: 0.18, mid: 0.32, to: 0.6, peak: 1.5 },
     accent: { from: 0.2, mid: 0.33, to: 0.6, peak: 6 },
@@ -122,6 +131,7 @@ export const SKILLS: readonly SkillDefinition[] = [
       { socket: 'grip.right', from: 0.16, to: 0.6, rate: 55, sparkRatio: 0.7 },
     ],
     bursts: [{ socket: 'effect.chest', at: 0.24, count: 60, speed: 1.2, radius: 0.1, sparkRatio: 0.6 }],
+    flame: { from: 0.2, mid: 0.5, to: 0.9, peak: 0.6 },
     aura: { from: 0.14, mid: 0.36, to: 0.8, peak: 0.5, colour: SIGNATURE.gold },
     emissive: { from: 0.14, mid: 0.36, to: 0.8, peak: 1.9 },
     accent: { from: 0.15, mid: 0.36, to: 0.8, peak: 7 },
@@ -165,10 +175,38 @@ export const SKILLS: readonly SkillDefinition[] = [
     emit: [{ socket: 'effect.pelvis', from: 0.3, to: 0.62, rate: 45, sparkRatio: 0.35 }],
     bursts: [{ socket: 'attachment.foot.left', at: 0.6, count: 110, speed: 1.9, radius: 0.13, sparkRatio: 0.4 }],
     lotus: { socket: 'attachment.foot.left', at: 0.6, scale: 1.7, duration: 2.2 },
+    fractures: [{ socket: 'attachment.foot.left', at: 0.6, count: 2, radius: 0.9, duration: 0.8, spread: 0.7 }],
+    flame: { from: 0.3, mid: 0.6, to: 0.95, peak: 0.7 },
     array: { socket: 'attachment.foot.left', at: 0.6, duration: 1.5, radius: 1.9 },
     aura: { from: 0.25, mid: 0.5, to: 0.85, peak: 0.45, colour: SIGNATURE.gold },
     emissive: { from: 0.25, mid: 0.5, to: 0.85, peak: 1.3 },
     accent: { from: 0.28, mid: 0.52, to: 0.85, peak: 5 },
+  },
+  {
+    id: 'heaven-burn',
+    name: 'Heaven Burn',
+    title: '焚天裂空 · Phần Thiên Liệt Không',
+    clip: 'preset:biped:jump_down',
+    rate: 1.5,
+    description: 'She comes down, the ground answers, the air splits open and the fire stands up around her.',
+    // A drop and a landing, so the beats are simple: everything waits for the feet, then arrives at
+    // once. The fractures are thrown in a scatter around the impact rather than from a single point,
+    // because one crack reads as a decal and several read as an event.
+    array: { socket: 'attachment.foot.left', at: 0.5, duration: 2.0, radius: 2.2 },
+    fractures: [
+      { socket: 'effect.pelvis', at: 0.5, count: 3, radius: 1.1, duration: 1.0, spread: 1.0 },
+      { socket: 'effect.chest', at: 0.64, count: 2, radius: 0.75, duration: 0.9, spread: 1.3 },
+    ],
+    bursts: [
+      { socket: 'attachment.foot.left', at: 0.5, count: 150, speed: 2.6, radius: 0.16, sparkRatio: 0.45 },
+      { socket: 'effect.pelvis', at: 0.56, count: 80, speed: 1.8, radius: 0.2, sparkRatio: 0.3 },
+    ],
+    emit: [{ socket: 'effect.pelvis', from: 0.52, to: 0.95, rate: 70, sparkRatio: 0.5 }],
+    flame: { from: 0.46, mid: 0.66, to: 1.0, peak: 1.0 },
+    lotus: { socket: 'attachment.foot.left', at: 0.54, scale: 1.5, duration: 2.2 },
+    aura: { from: 0.46, mid: 0.66, to: 0.95, peak: 0.7 },
+    emissive: { from: 0.46, mid: 0.66, to: 0.95, peak: 2.0 },
+    accent: { from: 0.46, mid: 0.66, to: 0.95, peak: 8 },
   },
 ];
 
@@ -193,6 +231,7 @@ export class SkillDirector {
   private readonly slash: BrushSlash;
   private readonly ribbons = new Map<string, SilkRibbon>();
   private readonly aura: AuraShell;
+  private readonly flame: SpiritFlame;
   private readonly transients: Effect[] = [];
   private active: SkillDefinition | null = null;
   private clipDuration = 0;
@@ -229,6 +268,9 @@ export class SkillDirector {
 
     this.slash = new BrushSlash({ samples: 44, width: 0.5 });
     this.group.add(this.slash.object);
+
+    this.flame = new SpiritFlame({ count: 34, radius: 0.52, height: 1.35 });
+    this.group.add(this.flame.object);
 
     // One ribbon per socket any skill trails from, built up front rather than per cast.
     const socketIds = new Set<string>();
@@ -292,6 +334,7 @@ export class SkillDirector {
     this.slash.opacity = 0;
     for (const ribbon of this.ribbons.values()) ribbon.opacity = 0;
     this.aura.strength = 0;
+    this.flame.intensity = 0;
     this.lights.accent.intensity = 0;
     if (this.goldMaterial) this.goldMaterial.emissiveIntensity = 0;
     if (wasActive) this.onRelease?.();
@@ -482,6 +525,40 @@ export class SkillDirector {
         this.fired.add('talismans');
       }
 
+      // --- 空間裂痕 the tears in the air ---------------------------------------------------------
+      const fractures = skill.fractures ?? [];
+      for (let i = 0; i < fractures.length; i += 1) {
+        const spec = fractures[i];
+        const key = `fracture:${String(i)}`;
+        if (t >= spec.at && !this.fired.has(key)) {
+          const at = this.socketWorld(spec.socket);
+          if (at) {
+            const spread = spec.spread ?? 0.6;
+            for (let n = 0; n < spec.count; n += 1) {
+              // Scattered around the socket on a deterministic spiral, so a burst of tears reads as
+              // one event rather than as a stack of identical decals.
+              const angle = (n / spec.count) * Math.PI * 2 + i * 1.7;
+              const reach = spread * (0.35 + 0.65 * ((n * 7) % 5) / 5);
+              const centre = new THREE.Vector3(
+                at.x + Math.cos(angle) * reach,
+                at.y + Math.sin(angle * 1.7) * spread * 0.5,
+                at.z + Math.sin(angle) * reach * 0.6,
+              );
+              const tear = new AirFracture(
+                centre,
+                spec.radius * (0.65 + 0.35 * ((n * 3) % 4) / 3),
+                spec.duration,
+                i * 31 + n * 7.3,
+              );
+              tear.face(camera.position);
+              this.group.add(tear.object);
+              this.transients.push(tear);
+            }
+          }
+          this.fired.add(key);
+        }
+      }
+
       // --- 蓮華 the lotus ------------------------------------------------------------------------
       if (skill.lotus && t >= skill.lotus.at && !this.fired.has('lotus')) {
         const at = this.socketWorld(skill.lotus.socket);
@@ -499,6 +576,12 @@ export class SkillDirector {
 
       // --- envelopes -----------------------------------------------------------------------------
       this.aura.strength = skill.aura ? envelope(t, skill.aura.from, skill.aura.mid, skill.aura.to, skill.aura.peak) : 0;
+      this.flame.intensity = skill.flame ? envelope(t, skill.flame.from, skill.flame.mid, skill.flame.to, skill.flame.peak) : 0;
+      if (this.flame.intensity > 0.001) {
+        // Stands on the floor beneath the figure, following her about the stage.
+        const pelvis = this.socketWorld('effect.pelvis');
+        if (pelvis) this.flame.setAnchor(this.scratch.set(pelvis.x, this.groundY(), pelvis.z));
+      }
       this.lights.accent.intensity = skill.accent
         ? envelope(t, skill.accent.from, skill.accent.mid, skill.accent.to, skill.accent.peak)
         : 0;
@@ -524,6 +607,7 @@ export class SkillDirector {
     this.ink.update(dt);
     this.slash.update();
     for (const ribbon of this.ribbons.values()) ribbon.update(dt);
+    this.flame.update(dt);
     this.aura.update(dt);
 
     // Retire finished transients; iterate backwards so removal does not skip the next one.
@@ -540,6 +624,7 @@ export class SkillDirector {
     this.ink.dispose();
     this.slash.dispose();
     for (const ribbon of this.ribbons.values()) ribbon.dispose();
+    this.flame.dispose();
     this.aura.dispose();
     for (const transient of this.transients) transient.dispose();
     this.transients.length = 0;

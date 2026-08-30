@@ -1056,8 +1056,10 @@ export class LotusBloom implements Effect {
   constructor(centre: THREE.Vector3, scale: number, private readonly duration: number) {
     const PETALS = 12;
     const ROWS = 3;
-    const SEG_U = 4;
-    const SEG_V = 6;
+    const SEG_U = 6;
+    // The petal is BENT in the vertex stage, so its curve is only as smooth as its segment count.
+    // At six it terraced into visible chevrons once the flower was scaled up for the ultimate.
+    const SEG_V = 16;
     const position: number[] = [];
     const uv: number[] = [];
     const petal: number[] = [];
@@ -1418,5 +1420,304 @@ export class AuraShell implements Effect {
 
   dispose(): void {
     for (const material of this.materials) material.dispose();
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// 空間裂痕 — the air, cracked
+// ---------------------------------------------------------------------------------------------
+
+const FRACTURE_FRAG = /* glsl */ `
+  uniform vec3 uCore;
+  uniform vec3 uRim;
+  uniform float uProgress;
+  uniform float uSeed;
+  varying vec2 vUv;
+
+  ${GLSL_COMMON}
+
+  /**
+   * Distance to the nearest crack.
+   *
+   * The branch is WALKED as a polyline — each step turns a little off the last and the distance is
+   * taken to the segment, so the fissure is one connected zigzag. Perturbing a bearing per radial
+   * ring instead, which is the obvious shortcut, leaves each ring's fragment unaware of the ring
+   * before it: the result is a set of dashes strung along straight rays, and on screen that reads as
+   * a firework rather than as broken glass.
+   */
+  float crackDistance(vec2 p, float branches) {
+    float best = 10.0;
+    for (int i = 0; i < 9; i++) {
+      if (float(i) >= branches) break;
+      float id = float(i) * 13.7 + uSeed;
+      vec2 cur = vec2(0.0);
+      float bearing = hash11(id) * 6.28318;
+      for (int s = 0; s < 6; s++) {
+        // Turn, then step. The turn shrinks as the branch runs out so tips stay straighter.
+        bearing += (hash11(id + float(s) * 3.1) - 0.5) * (0.95 - float(s) * 0.1);
+        vec2 next = cur + vec2(cos(bearing), sin(bearing)) * 0.2;
+        vec2 e = next - cur;
+        vec2 w = p - cur;
+        float h = clamp(dot(w, e) / max(dot(e, e), 1e-6), 0.0, 1.0);
+        best = min(best, length(w - e * h));
+        cur = next;
+      }
+    }
+    return best;
+  }
+
+  void main() {
+    vec2 p = (vUv - 0.5) * 2.0;
+    float r = length(p);
+    if (r > 1.0) discard;
+    // The fracture runs outward, then knits shut from the rim back in.
+    float open = smoothstep(0.0, 0.34, uProgress);
+    float heal = smoothstep(0.62, 1.0, uProgress);
+    float reach = open * 1.05 - heal * 0.85;
+    if (r > reach) discard;
+
+    float d = crackDistance(p, 5.0);
+    // Widest at the origin, closing to a hairline at the tip.
+    float width = mix(0.05, 0.008, r / max(reach, 1e-3));
+    float line = smoothstep(width, 0.0, d);
+    if (line <= 0.001) discard;
+
+    // Light leaks through the split: a hot seam with a coloured bleed either side.
+    float seam = smoothstep(width * 0.3, 0.0, d);
+    vec3 colour = uRim * (line - seam) + uCore * seam;
+
+    float front = smoothstep(0.16, 0.0, abs(r - reach));
+    float alpha = (line * 0.5 + seam * 0.6) * (1.0 - heal) * (0.5 + front * 0.8);
+    gl_FragColor = vec4(colour * (0.9 + front), alpha);
+  }
+`;
+
+/**
+ * A tear in the air.
+ *
+ * Drawn on a camera-facing quad rather than as geometry: a crack in space has no thickness to model,
+ * and what sells it is the seam of light and the hard angular branching, both of which live in the
+ * fragment stage. It opens outward, holds, then knits shut from the rim inward.
+ */
+export class AirFracture implements Effect {
+  readonly object: THREE.Mesh;
+  private readonly material: THREE.ShaderMaterial;
+  private readonly geometry: THREE.PlaneGeometry;
+  private age = 0;
+
+  constructor(
+    centre: THREE.Vector3,
+    radius: number,
+    private readonly duration: number,
+    seed = Math.random() * 100,
+    core: THREE.Color = new THREE.Color(0xfff2d0),
+    rim: THREE.Color = SIGNATURE.crimson,
+  ) {
+    this.geometry = new THREE.PlaneGeometry(radius * 2, radius * 2);
+    this.material = new THREE.ShaderMaterial({
+      uniforms: {
+        uCore: { value: core.clone() },
+        uRim: { value: rim.clone() },
+        uProgress: { value: 0 },
+        uSeed: { value: seed },
+      },
+      vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: FRACTURE_FRAG,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+    });
+    this.object = new THREE.Mesh(this.geometry, this.material);
+    this.object.position.copy(centre);
+    this.object.renderOrder = 14;
+    this.object.name = 'vfx:fracture';
+    markAsEffect(this.object);
+  }
+
+  /** Turn the tear to face the viewer; a crack seen edge-on is not a crack. */
+  face(cameraPosition: THREE.Vector3): void {
+    this.object.lookAt(cameraPosition);
+  }
+
+  update(dt: number): boolean {
+    this.age += dt;
+    const t = Math.min(1, this.age / this.duration);
+    this.material.uniforms.uProgress.value = t;
+    return t < 1;
+  }
+
+  dispose(): void {
+    this.geometry.dispose();
+    this.material.dispose();
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// 焚身火焰 — stylised flame
+// ---------------------------------------------------------------------------------------------
+
+const FLAME_VERT = /* glsl */ `
+  attribute vec3 aSeat;       // where on the ring this tongue stands
+  attribute float aPhase;     // its offset within the rise cycle
+  attribute float aScale;
+  attribute float aSeed;
+  uniform float uTime;
+  uniform float uIntensity;
+  uniform float uHeight;
+  varying vec2 vUv;
+  varying float vLife;
+  varying float vSeed;
+
+  void main() {
+    vUv = uv;
+    vSeed = aSeed;
+
+    // Each tongue runs its own rise cycle, staggered by its phase.
+    float life = fract(uTime * 0.85 + aPhase);
+    vLife = life;
+
+    vec3 seat = aSeat;
+    seat.y += life * uHeight;
+    // Tongues lean inward as they climb, the way a fire draws toward its own column.
+    seat.xz *= 1.0 - life * 0.45;
+
+    // Billboard in view space so every tongue faces the camera without a lookAt per instance.
+    vec4 mv = modelViewMatrix * vec4(seat, 1.0);
+    float grow = sin(life * 3.14159) * aScale * uIntensity;
+    // Curl: the tip drifts sideways as it rises, which is what makes the hooked ru-yi shape.
+    float curl = sin(life * 4.2 + aSeed * 6.28) * 0.35 * uv.y;
+    // TALLER THAN WIDE. On a square quad each tongue came out as broad as it was high, and forty of
+    // them stacked read as a terrace of horizontal bars rather than as fire. A flame is a slender
+    // thing; the aspect is what carries that.
+    mv.xy += vec2((position.x + curl) * 0.52, position.y * 1.85) * grow;
+    gl_Position = projectionMatrix * mv;
+  }
+`;
+
+const FLAME_FRAG = /* glsl */ `
+  uniform vec3 uHot;
+  uniform vec3 uCool;
+  uniform float uIntensity;
+  varying vec2 vUv;
+  varying float vLife;
+  varying float vSeed;
+
+  ${GLSL_COMMON}
+
+  void main() {
+    // A stylised tongue, not a soft plume: wide at the foot, drawn to a point, with the whole
+    // silhouette leaning into a hook. This is the flame of a painted 火焰紋 rather than a photograph.
+    float y = vUv.y;
+    float lean = pow(y, 1.6) * 0.30;
+    float dx = (vUv.x - 0.5) - lean * sin(vSeed * 6.28);
+    // A gentle waist rather than a nine-cycle ripple: at that frequency the discard edge
+    // serrated the tongue into visible stair steps instead of reading as a drawn flame.
+    float halfWidth = pow(1.0 - y, 0.62) * 0.40 * (0.92 + 0.08 * sin(y * 3.0 + vSeed * 20.0));
+    if (abs(dx) > halfWidth) discard;
+
+    float edge = 1.0 - abs(dx) / max(halfWidth, 1e-4);
+    // Hot at the heart and the base, cooling toward the tip.
+    vec3 colour = mix(uCool, uHot, clamp(pow(edge, 1.7) * 0.95, 0.0, 1.0));
+    // Fade in off the ground, out at the top of the rise.
+    float fade = smoothstep(0.0, 0.12, vLife) * (1.0 - smoothstep(0.55, 1.0, vLife));
+    float alpha = edge * fade * 0.34 * uIntensity;
+    gl_FragColor = vec4(colour * (0.7 + edge * 1.0), alpha);
+  }
+`;
+
+/**
+ * A ring of stylised flame standing around the figure.
+ *
+ * Persistent and pooled: the tongues cycle continuously and `intensity` decides how much of that is
+ * visible, so a skill can bring the fire up and down without spawning anything. Each tongue is an
+ * instanced quad billboarded in VIEW space — cheaper and steadier than orienting every instance on
+ * the CPU, and it keeps the painted silhouette square to the viewer where it reads best.
+ */
+export class SpiritFlame implements Effect {
+  readonly object: THREE.Mesh;
+  private readonly geometry: THREE.InstancedBufferGeometry;
+  private readonly material: THREE.ShaderMaterial;
+  private time = 0;
+  /** 0..1; the skills drive this. */
+  intensity = 0;
+  private readonly anchor = new THREE.Vector3();
+
+  constructor(options: { count?: number; radius?: number; height?: number; seed?: number } = {}) {
+    const count = options.count ?? 44;
+    const radius = options.radius ?? 0.46;
+    const random = makeRandom(options.seed ?? 0xf1a3);
+
+    const base = new THREE.PlaneGeometry(1, 1);
+    // The quad grows from its foot, so the origin sits at the bottom edge rather than the centre.
+    base.translate(0, 0.5, 0);
+    this.geometry = new THREE.InstancedBufferGeometry();
+    this.geometry.index = base.index;
+    this.geometry.attributes.position = base.attributes.position;
+    this.geometry.attributes.uv = base.attributes.uv;
+    this.geometry.instanceCount = count;
+
+    const seat = new Float32Array(count * 3);
+    const phase = new Float32Array(count);
+    const scale = new Float32Array(count);
+    const seed = new Float32Array(count);
+    for (let i = 0; i < count; i += 1) {
+      const theta = random() * Math.PI * 2;
+      // Scattered through a shell rather than on a circle, so the ring has depth to it.
+      const r = radius * (0.55 + random() * 0.65);
+      seat[i * 3] = Math.cos(theta) * r;
+      seat[i * 3 + 1] = random() * 0.12;
+      seat[i * 3 + 2] = Math.sin(theta) * r;
+      phase[i] = random();
+      scale[i] = 0.26 + random() * 0.34;
+      seed[i] = random();
+    }
+    this.geometry.setAttribute('aSeat', new THREE.InstancedBufferAttribute(seat, 3));
+    this.geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phase, 1));
+    this.geometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(scale, 1));
+    this.geometry.setAttribute('aSeed', new THREE.InstancedBufferAttribute(seed, 1));
+    this.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 6);
+    base.dispose();
+
+    this.material = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uIntensity: { value: 0 },
+        uHeight: { value: options.height ?? 1.5 },
+        uHot: { value: SIGNATURE.gold.clone() },
+        uCool: { value: SIGNATURE.crimson.clone() },
+      },
+      vertexShader: FLAME_VERT,
+      fragmentShader: FLAME_FRAG,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+    });
+
+    this.object = new THREE.Mesh(this.geometry, this.material);
+    this.object.frustumCulled = false;
+    this.object.renderOrder = 9;
+    this.object.name = 'vfx:flame';
+    markAsEffect(this.object);
+  }
+
+  /** Stand the fire around a world position — the figure's feet. */
+  setAnchor(worldPosition: THREE.Vector3): void {
+    this.anchor.copy(worldPosition);
+    this.object.position.copy(worldPosition);
+  }
+
+  update(dt: number): boolean {
+    this.time += dt;
+    this.material.uniforms.uTime.value = this.time;
+    this.material.uniforms.uIntensity.value = this.intensity;
+    this.object.visible = this.intensity > 0.001;
+    return true;
+  }
+
+  dispose(): void {
+    this.geometry.dispose();
+    this.material.dispose();
   }
 }
