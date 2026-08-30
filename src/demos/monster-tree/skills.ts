@@ -52,45 +52,9 @@ export interface Skill {
   trails?: Array<'grip-l' | 'grip-r'>;
 }
 
-/**
- * The direction a limb is POINTING, in world space, read off its own two bones.
- *
- * Every directed effect takes its axis from here rather than from a constant. The arm swings
- * through a huge arc during a punch and a cast holds a specific line; an effect fired along a
- * fixed vector detaches from the pose within a few frames, and one fired isotropically never
- * agreed with it in the first place. `L_Forearm -> L_Hand` is the forearm's own axis, so it
- * tracks whatever the clip is doing at the instant the cue fires.
- */
-function aim(rig: MonsterTreeRig, from: string, to: string): THREE.Vector3 {
-  // `to` resolves to a SOCKET first, then a bone. That matters for the arms: this rig has no
-  // finger bones, so `L_Forearm -> L_Hand` only gives the forearm's axis and stops at the wrist,
-  // while `L_Forearm -> grip-l` runs from the elbow out through the fingertips — grip-l being the
-  // measured centroid of the 150 most distal vertices of the hand. That line is where the arm is
-  // actually pointing, which is what a cast has to follow.
-  const target = rig.sockets[to] ?? rig.bones[to];
-  const a = new THREE.Vector3().setFromMatrixPosition(rig.bones[from].matrixWorld);
-  const b = new THREE.Vector3().setFromMatrixPosition(target.matrixWorld);
-  const d = b.sub(a);
-  return d.lengthSq() > 1e-10 ? d.normalize() : new THREE.Vector3(0, 1, 0);
-}
-
-/** Which forearm/hand pair feeds each grip socket. */
-const ARM: Record<string, [string, string]> = {
-  'grip-l': ['L_Forearm', 'grip-l'],
-  'grip-r': ['R_Forearm', 'grip-r'],
-};
-
 const impact = (socket: string, options?: { radius?: number; count?: number; speed?: number }) =>
   (rig: MonsterTreeRig, vfx: MonsterTreeVfx) => {
-    const [from, to] = ARM[socket] ?? [];
-    // A strike throws splinters the way the fist is travelling. Wide cone: this is an impact
-    // scattering, not a projected beam.
-    vfx.burst(rig.sockets[socket], {
-      count: options?.count ?? 70,
-      speed: options?.speed ?? 1.3,
-      direction: from ? aim(rig, from, to) : null,
-      cone: 1.05,
-    });
+    vfx.burst(rig.sockets[socket], { count: options?.count ?? 70, speed: options?.speed ?? 1.3, spread: 0.9 });
     vfx.shockwave(rig.sockets[socket], options?.radius ?? 0.9, 0.7);
   };
 
@@ -148,14 +112,7 @@ export const SKILLS: Skill[] = [
       { at: 0.62, run: impact('grip-l', { radius: 0.8, count: 85, speed: 1.6 }) },
       {
         at: 0.66,
-        run: (rig, vfx) => {
-          // Up through the antlers, along the head's own axis.
-          vfx.burst(rig.sockets['crown'], {
-            count: 55, speed: 1.2, lightness: 0.7,
-            direction: aim(rig, 'NeckTwist02', 'Head'), cone: 0.7,
-          });
-          vfx.runeCircle(rig.sockets['foot-l'], 0.85, 1.1);
-        },
+        run: (rig, vfx) => vfx.burst(rig.sockets['crown'], { count: 40, speed: 0.9, spread: 0.5, lightness: 0.7 }),
       },
     ],
   },
@@ -173,9 +130,8 @@ export const SKILLS: Skill[] = [
           // Burst off the kicking foot, shockwave under the PLANTED one. At the peak of this clip
           // the right foot is high in the air, so centring the ground ring on it puts a shockwave
           // under a foot that is not touching anything.
-          vfx.burst(rig.sockets['foot-r'], { count: 110, speed: 1.7, gravity: -2.4, direction: aim(rig, 'R_Calf', 'foot-r'), cone: 1.15 });
+          vfx.burst(rig.sockets['foot-r'], { count: 110, speed: 1.7, spread: 0.35, gravity: -2.4 });
           vfx.shockwave(rig.sockets['foot-l'], 1.5, 0.95);
-          vfx.roots(rig.sockets['foot-l'], { count: 10, spread: 0.34, duration: 1.15 });
         },
       },
     ],
@@ -193,10 +149,9 @@ export const SKILLS: Skill[] = [
         run: (rig, vfx) => {
           // A stomp lands, so the big ring goes under the stomping foot; the smaller, slower one
           // under the planted foot is the ground answering a beat later.
-          vfx.burst(rig.sockets['foot-r'], { count: 90, speed: 1.4, gravity: -2.6, direction: aim(rig, 'R_Calf', 'foot-r'), cone: 1.0 });
+          vfx.burst(rig.sockets['foot-r'], { count: 90, speed: 1.4, spread: 0.25, gravity: -2.6 });
           vfx.shockwave(rig.sockets['foot-r'], 1.2, 0.8);
-          vfx.runeCircle(rig.sockets['foot-r'], 1.0, 1.3);
-          vfx.roots(rig.sockets['foot-r'], { count: 8, spread: 0.26, duration: 0.95 });
+          vfx.shockwave(rig.sockets['foot-l'], 0.8, 1.05);
         },
       },
     ],
@@ -210,22 +165,16 @@ export const SKILLS: Skill[] = [
     measured: 'L_Hand 0.771 while Head moves 0.035 and Spine02 0.040 — a planted cast, not a swing',
     trails: ['grip-l'],
     cues: [
-      { at: 0.0, run: (rig, vfx) => { vfx.charge = 0; vfx.eyes.intensity = 1; vfx.runeCircle(rig.sockets['foot-l'], 1.35, 1.9); } },
+      { at: 0.0, run: (_rig, vfx) => { vfx.core.charge = 0; vfx.eyes.intensity = 1; } },
       // Charge visibly gathers in the chest before the arm finishes, so the release reads as caused.
-      { at: 0.12, run: (_rig, vfx) => { vfx.charge = 0.45; vfx.eyes.intensity = 1.6; } },
-      { at: 0.55, run: (_rig, vfx) => { vfx.charge = 1; vfx.eyes.intensity = 2.4; } },
+      { at: 0.12, run: (_rig, vfx) => { vfx.core.charge = 0.45; vfx.eyes.intensity = 1.5; } },
+      { at: 0.55, run: (_rig, vfx) => { vfx.core.charge = 1; vfx.eyes.intensity = 2.3; } },
       {
         at: 1.18,
         run: (rig, vfx) => {
-          // The release goes where the arm points, in a tight cone, and barely falls — a cast
-          // thrown out of the hand rather than a puff that blooms around it.
-          vfx.burst(rig.sockets['grip-l'], {
-            count: 170, speed: 2.6, gravity: -0.22, lightness: 0.7,
-            direction: aim(rig, 'L_Forearm', 'grip-l'), cone: 0.30,
-          });
-          // The chest, by contrast, stays a bloom: nothing is being aimed out of the torso.
-          vfx.burst(rig.sockets['chest-core'], { count: 60, speed: 1.0, spread: 1, lightness: 0.75 });
-          vfx.charge = 0;
+          vfx.burst(rig.sockets['grip-l'], { count: 140, speed: 2.0, spread: 0.8, gravity: -0.5, lightness: 0.7 });
+          vfx.burst(rig.sockets['chest-core'], { count: 50, speed: 0.9, spread: 1, lightness: 0.75 });
+          vfx.core.charge = 0;
           vfx.eyes.intensity = 1;
         },
       },
@@ -239,8 +188,8 @@ export const SKILLS: Skill[] = [
     loop: false,
     measured: 'L_Hand 1.838 at 2.68s, Head 1.408 — the figure goes down',
     cues: [
-      { at: 0.0, run: (_rig, vfx) => { vfx.eyes.intensity = 1; vfx.charge = 0; } },
-      { at: 2.68, run: (rig, vfx) => { vfx.shockwave(rig.sockets['foot-l'], 1.3, 1.1); vfx.roots(rig.sockets['foot-l'], { count: 6, spread: 0.30, duration: 1.4 }); vfx.eyes.intensity = 0.45; } },
+      { at: 0.0, run: (_rig, vfx) => { vfx.eyes.intensity = 1; } },
+      { at: 2.68, run: (rig, vfx) => { vfx.shockwave(rig.sockets['foot-l'], 1.3, 1.1); vfx.eyes.intensity = 0.45; } },
       {
         at: 3.4,
         run: (rig, vfx) => {

@@ -200,182 +200,14 @@ visually.
 
 ---
 
-## The wood
-
-The export ships the figure as 115,350 triangles of smooth shading with the bark painted on in
-vertex colour. `object-sculpt-spec.json` records why: *"source had a normal map; NOT carried
-(vertex normals only)"*. So the silhouette is a tree and every surface between the silhouettes is
-soft. Two things had to be rebuilt, and both were found by measurement rather than by taste.
-
-### 1. The grain runs along the limb, taken from the rig
-
-Real wood grain runs the length of whatever grew it. A single vertical noise field gives a figure
-carved out of one plank — horizontal banding across the forearms, grain running sideways over the
-shoulders. So grain direction is a per-vertex attribute read off the skeleton: each vertex takes
-the bind-space axis of the bone it is most strongly weighted to, measured bone-to-child.
-
-| bone | measured axis | reads as |
-|---|---|---|
-| `L_Forearm` | `[ 0.00, 0.00, -1.00]` | along the arm |
-| `R_Forearm` | `[ 0.30, 0.00, 0.95]` | along the arm |
-| `L_Thigh` | `[-0.09, -0.99, -0.11]` | down the leg |
-| `Spine02` | `[-0.02, 0.96, -0.29]` | up the torso |
-
-40 of 41 bones resolve a real axis; 13 leaves inherit from their parent, and `Hip` is genuinely
-degenerate (`Pelvis` sits on top of it) so it falls back to +Y — the right answer for a hip anyway.
-Twist helpers are skipped when picking a bone's child: they sit at the *same position* as their
-parent, so aiming at one gives a zero-length axis for exactly the bones whose direction matters
-most.
-
-The value written is the **weighted blend of all four influences**, sign-aligned into the dominant
-bone's hemisphere, not the dominant bone's axis alone. Grain is an axis rather than an arrow — a
-limb pointing −Z and its neighbour pointing +Z describe the same fibre — so unflipped averaging
-cancels to zero. Taking the dominant axis outright makes the field jump wherever influence hands
-over between bones, and the relief built on it then seams along every one of those boundaries: the
-figure came back with a stippled chain drawn around each muscle group. That was diagnosed by
-ablation, not by inspection — switching the bump term off removed the chains while the veins and
-cavity stayed, which pointed at the field the bump reads.
-
-### 2. The albedo had no blue in it
-
-The figure rendered lime, and every plausible lighting fix failed. Measured on the lit chest at
-rgb(72, 78, **7**), then re-measured with the sap, the environment, every point light, the
-atmospherics, the rim and the hemisphere switched off one at a time: **the blue channel moved by at
-most 7/255**. Nothing in the lighting was responsible. The cavity and moss tints were the next
-suspects, and were cleared the same way.
-
-The albedo itself had no blue to light:
-
-| | median bark albedo | blue as a fraction of red |
-|---|---|---|
-| the generated mesh | `#3d2d0e` | **0.094** |
-| the reference photograph | `#4b3e2b` | **0.343** |
-
-**97% of the 56,588 bark vertices carry a blue channel under 55% of their red.** Tripo's bake took
-the blue out of the wood. The fix is a per-channel gain applied in linear space — the ratio of the
-two medians, `[1.508, 1.836, 5.501]` — which is a white balance to the reference, not a stylistic
-grade. It is the step that makes the wood grey-brown wood instead of olive.
-
-Cavity shading **darkens** rather than tints for the same reason: mixing toward `#231f12`, whose
-blue is a tenth of its red, crushed the channel again wherever the grain was deep.
-
-### What relief costs
-
-The bump is derivative-based (three's own `perturbNormalArb` construction), which needs neither UVs
-nor tangents — this mesh has neither. Two things were learned the expensive way:
-
-- **One height field cannot drive both colour and normals.** Albedo is sampled once per pixel with
-  no filtering, so a sharp field breaks into hard blotches; a normal can carry far more detail
-  because lighting integrates it. They are now two fields: coarse for colour, coarse+fibre for the
-  normal.
-- **An analytic object-space gradient was tried and reverted.** Four height evaluations per pixel
-  instead of one, on the theory that quantised 2×2 screen derivatives were stippling the surface.
-  They were not — the grain field was — and it cost half the frame rate to find out.
-
-Anisotropy is 4:1, not 10:1. Ten to one is corduroy: the fibres align so exactly that any real bump
-turns the chest into zebra stripes.
-
 ## VFX — all hand-written
 
 The img2threejs skill has **no particle subsystem, no trail subsystem and no shader library**.
-Every effect here was written for this demo, in plain three, with **no dependency added**. Textures
-are painted into a `<canvas>` at build time; nothing is fetched.
+Every effect here was written for this demo, in plain three, with **no dependency added**: the
+spore field and impact bursts are `THREE.Points` with a `ShaderMaterial`, the palm trails are a
+ribbon strip, the shockwaves are additive rings, and every texture is painted into a `<canvas>`.
 
-| effect | what it is | why |
-|---|---|---|
-| **sap veins** | `MeshStandardMaterial` patched through `onBeforeCompile`, fbm value noise thresholded to thin ridges, added to `totalEmissiveRadiance` | the character glows from *inside the wood*. The one effect that changes what the figure **is** rather than what is around it |
-| **spirit wisps** | 6 sprites on Lissajous orbits, each with a short additive tail, one shared `PointLight` | they hold station around the figure — the difference between atmosphere and *presence* |
-| **rune circles** | two counter-rotating glyph rings, painted once into a canvas | a ring says "impact"; a ring with turning script in it says the impact was **called for** |
-| **root eruption** | `TubeGeometry` along bent `CatmullRomCurve3`, staggered rise-and-sink | the only real geometry in the set — a shockwave you can see the far side of is what makes a stomp move earth |
-| **canopy shafts** | 5 soft additive slabs, drifting on separate phases | puts the figure under a broken forest roof instead of on a backdrop |
-| **ground mist** | one plane, alpha from two scrolling noise fields | one field alone reads as a sliding texture; two curl |
-| **spore field** | 340 `THREE.Points`, seeded PRNG, one draw call | ambient life |
-| **eye glow** | two additive sprites + a short-range `PointLight` | picks out the brow ridge rather than lighting the whole head |
-| **palm trails** | ribbon strip, per-vertex alpha via `ShaderMaterial` | the swing arc |
-| **impact bursts** | `THREE.Points` with gravity | the hit |
-
-### Three things that were wrong first, and what they cost
-
-- **The veins flooded the figure.** At a wide ridge and `pow(ridge, 7.0)` the seams merged and the
-  whole treant went flat neon, losing the bark relief that is its entire silhouette up close. The
-  ridge is now four times narrower at `pow(…, 14.0)` and a fifth the intensity.
-- **The wisp tails drew as straight scratches.** A tail tapers from full width at the head to
-  nothing at the tail, so length matters as much as width: at 14 segments a fast orbit outruns the
-  taper and the tail rasterises as a bright line across the frame. 8 segments, and hair-thin.
-- **The roots read as lime plastic straws.** The stage key is 7.0 and both the fill and the rim are
-  green, so a root with any real emissive comes back matte lime. They also rendered *before* they
-  rose — a tube at zero height is a bright plate lying on the floor — so each one is now hidden
-  until its own delay elapses.
-
-### The ribbons: lines of light drifting around the body
-
-Six wisps ride Lissajous orbits around the figure, each trailing a long, thin, soft-edged ribbon.
-Together they draw curved lines of light that travel around the body and undulate as they go. This
-is the effect, not a garnish on the sprites — and it is easy to destroy by tuning any one of four
-things wrongly, each of which was done at least once:
-
-- **Length.** A tail spanning a few tenths of a second covers only a few degrees of the orbit, so it
-  comes out *straight* and draws as a bright bar floating beside the character. It needs to span a
-  long enough arc to read as a curve: 64 samples at 45 Hz, about 1.4 s.
-- **Taper.** A swing trail wants a wedge — the fist is the wide end. A ribbon wants the opposite. At
-  full taper over a fast orbit it stops being a line at all and becomes a paper dart.
-- **Edges.** Flat colour with hard edges is tape laid through the air. The fragment shader fades
-  across the ribbon's width from an attribute that runs −1 to +1 between its two edges, with a hot
-  core on top; that falloff is what turns the same geometry into light.
-- **Radius.** At most of the arm span the long tail swings clear of the figure entirely and stops
-  looking attached to it. Half the span keeps the lines travelling *around* the body.
-
-Samples are taken on a **fixed timestep**, not once per frame. Per-frame sampling ties the ribbon's
-length to frame rate — the same trail spans a second at 45 fps and a third of one at 135 — so the
-effect quietly changes shape on a faster machine.
-
-A small fast wobble is added across each orbit. Without it the path is a clean ellipse and the
-ribbon is a smooth arc; with it the line undulates as it travels, which is the difference between
-something alive and a wire hoop around the figure.
-
-### Roots are branches, built to the figure's own proportions
-
-The first version of the eruption was a ring of plain tapered tubes with a green emissive, and it
-read as lime drinking straws standing in the dirt. What makes a shape a ROOT is not that it is thin
-and pointed: it FLARES where it meets the ground, tapers as it rises, bends more than once, and
-FORKS. All four now come from measurements of the character:
-
-| measured | value | what it sets |
-|---|---|---|
-| trunk radius, foot flare → top of leg | 0.078 → 0.037 | the taper, a base twice its tip |
-| shin spurs, stand-off vs limb radius | 2.1× | how wide a fork diverges |
-
-Each root is a chain of tapered cylinders on a gnarled curve, forking twice, all merged into **one**
-buffer — an eruption of eight roots is one draw call, not sixty. They carry the same `aGrain`
-attribute the shell does, each vertex holding its own segment's axis, so the **same bark shader**
-runs on them and the grain flows along every branch exactly as it flows along an arm. They are the
-character's wood coming up through the floor, not props standing near it.
-
-They scale up **uniformly**. Scaling only in Y — which the first version did — flattens the forks
-against the ground and undoes the branching that makes the shape a root at all.
-
-### Directed effects aim down the limb
-
-A cast thrown from an open hand that sprays evenly in every direction reads as an explosion at the
-wrist. It goes backwards through the forearm as readily as forwards, and it never agrees with the
-pose. So every directed effect takes a **cone** about an axis read off the bones at the instant the
-cue fires.
-
-The axis is `L_Forearm → grip-l`, not `L_Forearm → L_Hand`. This rig has no finger bones, so the
-bone pair alone stops at the wrist and only describes the forearm; `grip-l` is the measured centroid
-of the 150 most distal vertices of the hand, so elbow-to-socket runs out through the fingertips —
-which is where the arm is actually pointing.
-
-Verified rather than eyeballed: at the release frame of Wildfire Sap, the mean travel direction of
-the cast's 170 particles sits **0.1°** off the measured arm axis.
-
-That check found its own bug first. Sampling "the last burst alive" picked up the 60-particle chest
-bloom, which is deliberately isotropic and centred elsewhere, and reported 160.9° — a convincing
-number for a correct effect. The probe now selects the aimed burst by particle count.
-
-### Where things go
-
-Everything anchors to `actionProfile.sockets`, and every socket is a measured vertex centroid on a
+Everything anchors to `actionProfile.sockets` — and every socket is a measured vertex centroid on a
 real bone, not a coordinate someone typed:
 
 | socket | bone | kind | measured from |
@@ -390,14 +222,6 @@ The eye sockets double as a chirality check. They land at z = −0.023 and +0.02
 head midline, and the rig puts `L_Hand` at z = −0.35 and `R_Hand` at +0.33. With forward = +x and
 up = +y, right = forward × up = +z, so the rig's own L/R prefixes agree with the measured geometry:
 a mirrored pair, not a rotated one.
-
-Charge is **one number**. `vfx.charge` drives the chest core, the sap veins and the wisps together,
-because they are one event seen three ways — driving them separately from the skill table is how
-they drift out of step.
-
-Every effect object is flagged `userData.isHighlight`, which is the viewer's own marker for "an
-overlay that is not part of the model". Without it the Parts inspector lists `vfx:trail:vfx:wisp:0`
-beside the bark shell and clicking the glow in front of the character's face selects the glow.
 
 ### Colour
 

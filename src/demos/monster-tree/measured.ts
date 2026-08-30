@@ -38,18 +38,6 @@ export const PALETTE = {
   eyeIris: '#799d3d',
   eyeDeep: '#36581c',
   eyeRim: '#2f422f',
-  /**
-   * The reference's own studio backdrop — a NEUTRAL grey, median of its 54,227 near-neutral pixels
-   * (max-min channel spread < 12). Shadow side #565a53, lit side #797d77; B-R is -2 across all of
-   * them, i.e. genuinely achromatic.
-   *
-   * This is the ambient the photographed subject actually sits in, and it is the one measured
-   * colour in the set with a blue channel. Every other entry here is warm or green, so a light rig
-   * built only from the rest drives the render's blue to about 4/255 and the bark comes back lime
-   * no matter how the greens are balanced — measured on the torso, not guessed at. Skylight is
-   * what puts blue into wood in shade; this is that light, and it came out of the photograph.
-   */
-  studioAmbient: '#6b6f69',
 } as const;
 
 /**
@@ -61,27 +49,6 @@ export const PALETTE = {
 export const LIFE_HUE = 82.5 / 360;
 export const LIFE_SATURATION = 0.44;
 
-
-/**
- * Per-channel gain that white-balances the mesh's baked albedo to the reference photograph.
- *
- * The generated GLB's texture is not the reference's bark. Measured over the 56,588 bark vertices
- * (costume excluded), the mesh's median albedo is #3d2d0e, whose blue is 9.4% of its red. The same
- * bark measured off the photograph is #4b3e2b, at 34.3%. **97% of bark vertices have a blue channel
- * under 55% of their red** — Tripo's bake took almost all the blue out of the wood.
- *
- * That is why the figure rendered lime no matter how the lights were balanced, and it is worth
- * being precise about how that was established rather than tuned away: the lit chest measured
- * rgb(72, 78, 7), and switching off the sap, the environment, every point light, the atmospherics,
- * the rim and the hemisphere in turn moved the blue channel by at most 7/255. Nothing in the
- * lighting was responsible. Neither were the cavity and moss tints, which were the next suspects
- * and were also measured and cleared. The albedo itself had no blue to light.
- *
- * These gains are the ratio of the two medians in LINEAR space, which is the space the decoder
- * already leaves vertex colours in. Applying them is a white balance to the reference, not a
- * stylistic grade — it is the step that makes the wood grey-brown wood instead of olive.
- */
-export const ALBEDO_WHITE_BALANCE: readonly [number, number, number] = [1.508, 1.836, 5.501];
 
 export interface MeasuredSocket {
   id: string;

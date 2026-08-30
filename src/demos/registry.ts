@@ -214,15 +214,12 @@ const authored: DemoEntry[] = [
     title: 'Monster Tree \u2014 Rigged Treant, Separated Costume',
     subjectClass: 'character',
     blurb:
-      'A treant rebuilt from one photograph as code-only geometry, with wood that behaves like wood. '
-      + 'The export drops the source normal map, so the relief is rebuilt procedurally \u2014 and the grain '
-      + 'direction comes from the RIG: every vertex takes its dominant bone\u2019s bind-space axis, so fibres '
-      + 'run the length of each limb the way they would in a real branch. The baked albedo needed a measured '
-      + 'white balance too: 97% of its bark vertices carried a blue channel under 55% of their red, which is '
-      + 'why the figure rendered lime until it was corrected against the photograph. Sap veins flow along the '
-      + 'grain, spirit wisps hold station, rune circles are inscribed underfoot and roots tear up on impact. '
-      + 'The leather costume is four rigid meshes: left skinned, the bracers shear by up to 29% of a vertex '
-      + 'pair\u2019s rest length during a punch; as rigid pieces the shear is exactly 0.',
+      'A treant rebuilt from one photograph as code-only geometry: 41 real rig bones, 16 clips measured '
+      + 'rather than trusted, and a leather costume lifted out of the skinned shell into four rigid meshes. '
+      + 'Left skinned, the bracers shear by up to 29% of a vertex pair\u2019s rest length during a punch; as '
+      + 'rigid pieces driven by a per-frame least-squares fit the shear is exactly 0. Every effect anchors to '
+      + 'a socket measured off the mesh \u2014 the eyes are the green-dominant vertex cluster on the head \u2014 '
+      + 'and every emissive channel is built from the 82.5\u00b0 hue sampled off the character\u2019s own iris.',
     referenceImage: `${BASE}references/monster-tree/front.jpg`,
     sourcePath: 'src/demos/monster-tree/createMonsterTreeModel.ts',
     sourceUrl: `${REPO}/src/demos/monster-tree/createMonsterTreeModel.ts`,
@@ -234,14 +231,14 @@ const authored: DemoEntry[] = [
     author: 'Hoài Nhớ',
     authorUrl: 'https://github.com/hoainho',
     status: 'final',
-    updatedAt: '2026-08-30',
+    updatedAt: '2026-08-29',
     cameraPosition: [5.75, 1.55, 3.15],
     cameraTarget: [0, 0.95, 0],
     cameraFov: 30,
     accent: '#9ede4a',
     backgroundGradient: { inner: '#2a2f24', outer: '#0a0b08' },
     exposure: 1.35,
-    environmentIntensity: 0.42,
+    environmentIntensity: 0.9,
     toneMapping: 'aces',
     prewarm: prewarmMonsterTree,
     defaultAnimation: 'idle',
