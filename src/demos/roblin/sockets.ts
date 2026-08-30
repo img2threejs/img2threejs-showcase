@@ -10,7 +10,7 @@ import { BONES, type RigFrame } from './rigFrame';
  * centre. So there was nothing to hang an effect on, and inventing coordinates was the one thing
  * the brief forbade.
  *
- * What DOES exist and is real: 41 named bones from the Tripo biped rig. Every socket below is
+ * What DOES exist and is real: 41 named bones from the TRILLES biped rig. Every socket below is
  * therefore defined as (real bone) + (offset expressed as a multiple of a MEASURED body length,
  * along a MEASURED body axis). No literal world coordinate appears anywhere in this file. The
  * resulting socket set is written back into the spec as `actionProfile.sockets` with

@@ -928,7 +928,7 @@ export const demos: DemoEntry[] = [
     referenceImage: `${BASE}references/roblin.jpg`,
     sourcePath: 'src/demos/roblin/createRoblinModel.ts',
     sourceUrl: `${REPO}/src/demos/roblin/createRoblinModel.ts`,
-    generatedWith: 'img2threejs playground · Tripo v3.1-20260211 measurement · GLB fast lane · 1.5.2 Stage R animated-character',
+    generatedWith: 'img2threejs playground · TRILLES measurement · GLB fast lane · 1.5.2 Stage R animated-character',
     prompt:
       'Take the playground export past the geometry it already measured: use the embedded rig as-is, '
       + 'derive sockets from the real bone names, drive the embedded clips with cross-fades and '
