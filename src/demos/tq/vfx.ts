@@ -293,22 +293,65 @@ const DRAGON_FRAG = /* glsl */ `
  * primitive that carries "how far along am I", so the rings are generated here with an explicit
  * frame taken from the analytic tangent of the helix.
  */
+export interface SpiritDragonOptions {
+  /** How far it travels along its own axis. This is the reach of the attack. */
+  length?: number;
+  /** Radius of the corkscrew it flies in. */
+  coil?: number;
+  /** Radius of the body itself, in world units — not derived from the coil. */
+  thickness?: number;
+  body?: THREE.Color;
+  glow?: THREE.Color;
+}
+
+/**
+ * A dragon of light, thrown along an axis.
+ *
+ * The body is a helix built once as a tube of rings; the shader decides how much of it exists, so
+ * the dragon swims into being head-first and dissolves behind itself. `three` has no tube primitive
+ * carrying "how far along am I", so the rings are generated here with a frame taken from the
+ * analytic tangent of the helix.
+ *
+ * The HEAD is separate geometry rather than a shape in the tube shader, because a head is not a
+ * cross-section of a body: it needs a snout, horns, whiskers and eyes, and those are five small
+ * solids that read instantly at distance. Each frame it is placed at the point on the helix the
+ * reveal has reached and turned along the tangent there, so it genuinely leads the body it drags.
+ */
 export class SpiritDragon implements Effect {
-  readonly object: THREE.Mesh;
+  readonly object: THREE.Group;
   private readonly material: THREE.ShaderMaterial;
   private readonly geometry: THREE.BufferGeometry;
+  private readonly head: THREE.Group;
+  private readonly headMaterial: THREE.MeshBasicMaterial;
+  private readonly whiskers: THREE.Mesh[] = [];
+  private readonly length: number;
+  private readonly coil: number;
   private age = 0;
 
-  constructor(
-    private readonly duration: number,
-    height: number,
-    radius: number,
-    body: THREE.Color = SIGNATURE.crimson,
-    glow: THREE.Color = SIGNATURE.gold,
-  ) {
-    const SEGMENTS = 240;
-    const RING = 10;
-    const TURNS = 2.6;
+  private static readonly SEGMENTS = 260;
+  private static readonly RING = 10;
+  private static readonly TURNS = 3.4;
+
+  /** Point and tangent on the helix at parameter `u`, in the dragon's own space. */
+  private curveAt(u: number, point: THREE.Vector3, tangent: THREE.Vector3): void {
+    const theta = u * Math.PI * 2 * SpiritDragon.TURNS;
+    // The corkscrew opens slightly as it flies, so the far end reads as travelling rather than
+    // converging to a point.
+    const coil = this.coil * (0.75 + 0.45 * u);
+    point.set(Math.cos(theta) * coil, u * this.length, Math.sin(theta) * coil);
+    tangent.set(
+      -Math.sin(theta) * coil * Math.PI * 2 * SpiritDragon.TURNS,
+      this.length,
+      Math.cos(theta) * coil * Math.PI * 2 * SpiritDragon.TURNS,
+    ).normalize();
+  }
+
+  constructor(private readonly duration: number, options: SpiritDragonOptions = {}) {
+    this.length = options.length ?? 7;
+    this.coil = options.coil ?? 0.42;
+    const thickness = options.thickness ?? 0.075;
+    const body = options.body ?? SIGNATURE.crimson;
+    const glow = options.glow ?? SIGNATURE.gold;
 
     const position: number[] = [];
     const normal: number[] = [];
@@ -316,44 +359,33 @@ export class SpiritDragon implements Effect {
     const angle: number[] = [];
     const index: number[] = [];
 
+    const centre = new THREE.Vector3();
     const tangent = new THREE.Vector3();
     const up = new THREE.Vector3(0, 1, 0);
     const side = new THREE.Vector3();
     const nrm = new THREE.Vector3();
     const dir = new THREE.Vector3();
 
-    for (let s = 0; s <= SEGMENTS; s += 1) {
-      const t = s / SEGMENTS;
-      const theta = t * Math.PI * 2 * TURNS;
-      // The coil narrows as it rises, so it reads as a rising spiral rather than a cylinder.
-      const coil = radius * (1.15 - 0.45 * t);
-      const cx = Math.cos(theta) * coil;
-      const cz = Math.sin(theta) * coil;
-      const cy = t * height;
-
-      tangent.set(
-        -Math.sin(theta) * coil * Math.PI * 2 * TURNS,
-        height,
-        Math.cos(theta) * coil * Math.PI * 2 * TURNS,
-      ).normalize();
+    for (let s = 0; s <= SpiritDragon.SEGMENTS; s += 1) {
+      const u = s / SpiritDragon.SEGMENTS;
+      this.curveAt(u, centre, tangent);
       side.crossVectors(tangent, up).normalize();
       nrm.crossVectors(side, tangent).normalize();
-
-      for (let r = 0; r < RING; r += 1) {
-        const a = (r / RING) * Math.PI * 2;
+      for (let r = 0; r < SpiritDragon.RING; r += 1) {
+        const a = (r / SpiritDragon.RING) * Math.PI * 2;
         dir.copy(side).multiplyScalar(Math.cos(a)).addScaledVector(nrm, Math.sin(a));
-        position.push(cx, cy, cz);
+        position.push(centre.x, centre.y, centre.z);
         normal.push(dir.x, dir.y, dir.z);
-        along.push(t);
+        along.push(u);
         angle.push(a);
       }
     }
-    for (let s = 0; s < SEGMENTS; s += 1) {
-      for (let r = 0; r < RING; r += 1) {
-        const a = s * RING + r;
-        const b = s * RING + ((r + 1) % RING);
-        const c = (s + 1) * RING + r;
-        const d = (s + 1) * RING + ((r + 1) % RING);
+    for (let s = 0; s < SpiritDragon.SEGMENTS; s += 1) {
+      for (let r = 0; r < SpiritDragon.RING; r += 1) {
+        const a = s * SpiritDragon.RING + r;
+        const b = s * SpiritDragon.RING + ((r + 1) % SpiritDragon.RING);
+        const c = (s + 1) * SpiritDragon.RING + r;
+        const d = (s + 1) * SpiritDragon.RING + ((r + 1) % SpiritDragon.RING);
         index.push(a, c, b, b, c, d);
       }
     }
@@ -364,13 +396,13 @@ export class SpiritDragon implements Effect {
     this.geometry.setAttribute('aAlong', new THREE.Float32BufferAttribute(along, 1));
     this.geometry.setAttribute('aAngle', new THREE.Float32BufferAttribute(angle, 1));
     this.geometry.setIndex(index);
-    this.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, height / 2, 0), radius * 2 + height);
+    this.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, this.length / 2, 0), this.length);
 
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uReveal: { value: 0 },
-        uRadius: { value: radius * 0.075 },
+        uRadius: { value: thickness },
         uOpacity: { value: 1 },
         uBody: { value: body.clone() },
         uGlow: { value: glow.clone() },
@@ -383,9 +415,58 @@ export class SpiritDragon implements Effect {
       blending: THREE.AdditiveBlending,
     });
 
-    this.object = new THREE.Mesh(this.geometry, this.material);
-    this.object.frustumCulled = false;
-    this.object.renderOrder = 13;
+    const tube = new THREE.Mesh(this.geometry, this.material);
+    tube.frustumCulled = false;
+    tube.renderOrder = 13;
+
+    // --- the head: a snout, a brow, two horns, two eyes and two whiskers ------------------------
+    this.headMaterial = new THREE.MeshBasicMaterial({
+      color: glow.clone(),
+      transparent: true,
+      opacity: 0.5,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    this.head = new THREE.Group();
+    this.head.name = 'vfx:dragon-head';
+
+    // Sized against the BODY, not against nothing: the visible tube radius is about twice the
+    // thickness, and a head reads right at roughly three times that again. At fourteen it was a
+    // cluster of gold slabs the size of her torso.
+    const scale = thickness * 8.5;
+    const snout = new THREE.Mesh(new THREE.ConeGeometry(scale * 0.34, scale * 1.15, 7), this.headMaterial);
+    // A cone points +Y; the head aligns its local +Z to the direction of travel. Rotating +90° about
+    // X takes +Y to +Z — at -90° the snout pointed backwards down the body it was leading.
+    snout.rotation.x = Math.PI / 2;
+    snout.position.z = scale * 0.5;
+    this.head.add(snout);
+
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(scale * 0.36, 10, 8), this.headMaterial);
+    skull.scale.set(1, 0.82, 1.15);
+    this.head.add(skull);
+
+    for (const sign of [-1, 1]) {
+      // Horns, swept back off the brow.
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(scale * 0.09, scale * 0.75, 5), this.headMaterial);
+      horn.position.set(sign * scale * 0.2, scale * 0.28, -scale * 0.18);
+      // Negative pitch sweeps them back over the skull; positive laid them forward over the snout.
+      horn.rotation.set(-0.9, 0, sign * -0.3);
+      this.head.add(horn);
+
+      // Eyes.
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(scale * 0.09, 8, 6), this.headMaterial);
+      eye.position.set(sign * scale * 0.24, scale * 0.1, scale * 0.2);
+      this.head.add(eye);
+
+      // 龍鬚 — the long whiskers, which are what make a serpent read as a dragon at a glance.
+      const whisker = new THREE.Mesh(new THREE.ConeGeometry(scale * 0.06, scale * 3.2, 4), this.headMaterial);
+      whisker.position.set(sign * scale * 0.26, scale * 0.02, scale * 0.55);
+      this.whiskers.push(whisker);
+      this.head.add(whisker);
+    }
+
+    this.object = new THREE.Group();
+    this.object.add(tube, this.head);
     this.object.name = 'vfx:dragon';
     markAsEffect(this.object);
   }
@@ -395,11 +476,32 @@ export class SpiritDragon implements Effect {
     const t = Math.min(1, this.age / this.duration);
     this.material.uniforms.uTime.value = this.age;
     // The head runs past 1 so the tail has somewhere to finish dissolving into.
-    this.material.uniforms.uReveal.value = t * 1.62;
-    this.material.uniforms.uOpacity.value = 1 - smootherstep(t, 0.78, 1);
-    // `rotateY` and not `rotation.y +=`: the second rewrites the quaternion from Euler angles and
-    // would throw away an aim set with `setFromUnitVectors`. This turns the dragon about its OWN
-    // axis, which after aiming is the direction it is travelling.
+    const reveal = t * 1.62;
+    this.material.uniforms.uReveal.value = reveal;
+    const opacity = 1 - smootherstep(t, 0.78, 1);
+    this.material.uniforms.uOpacity.value = opacity;
+
+    // Ride the head on the curve at the point the reveal has reached, facing along the tangent.
+    const at = new THREE.Vector3();
+    const tangent = new THREE.Vector3();
+    this.curveAt(Math.min(reveal, 1), at, tangent);
+    this.head.position.copy(at);
+    this.head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tangent);
+    // Once the head has run off the end there is nothing left to lead; only the tail is dissolving.
+    this.head.visible = reveal <= 1.02 && opacity > 0.02;
+    this.headMaterial.opacity = 0.5 * opacity;
+
+    // The whiskers TRAIL. Pitched forward they read as two spikes off the snout; swept back along
+    // the body they read as whiskers streaming in the wind of its own flight, which is the thing
+    // that makes a serpent look like a dragon.
+    for (let i = 0; i < this.whiskers.length; i += 1) {
+      const sign = i === 0 ? -1 : 1;
+      const sway = Math.sin(this.age * 8 + i * 2.1) * 0.2;
+      this.whiskers[i].rotation.set(-1.95 + sway * 0.35, 0, sign * (0.55 + sway));
+    }
+
+    // Roll about its OWN axis: `rotation.y +=` would rewrite the quaternion from Euler angles and
+    // throw away an aim set with `setFromUnitVectors`.
     this.object.rotateY(dt * 0.5);
     return t < 1;
   }
@@ -407,6 +509,8 @@ export class SpiritDragon implements Effect {
   dispose(): void {
     this.geometry.dispose();
     this.material.dispose();
+    this.headMaterial.dispose();
+    this.head.traverse((o) => { if ((o as THREE.Mesh).geometry) (o as THREE.Mesh).geometry.dispose(); });
   }
 }
 

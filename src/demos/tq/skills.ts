@@ -70,8 +70,13 @@ export interface SkillDefinition {
    * than as scenery standing behind the caster.
    */
   array?: { socket: string; at: number; duration: number; radius: number; orient?: 'ground' | 'facing' | 'arm' };
-  /** 神龍 — the coiling dragon. `arm` sends it out along the pointing arm instead of straight up. */
-  dragon?: { socket: string; at: number; duration: number; height: number; radius: number; orient?: 'up' | 'arm' };
+  /**
+   * 神龍 — the dragon. `arm` throws it down the pointing arm instead of straight up.
+   *
+   * `length` is the reach of the attack: how far it travels along that axis. `coil` is the radius of
+   * the corkscrew it flies in, which is a separate thing from how far it goes.
+   */
+  dragon?: { socket: string; at: number; duration: number; length: number; coil: number; thickness?: number; orient?: 'up' | 'arm' };
   /** 符籙 — a fan of talismans. */
   talismans?: { socket: string; at: number; count: number; duration: number };
   /** 蓮華 — a lotus opening on the ground. */
@@ -119,13 +124,13 @@ export const SKILLS: readonly SkillDefinition[] = [
     title: '龍印 · Long Ấn',
     clip: 'preset:biped:cast_a_spell',
     rate: 1.6,
-    description: 'The seal is inscribed off her palm and the dragon runs out along the arm she points with.',
+    description: 'A seal off the palm, and a dragon thrown down the arm she points with — six and a half units of reach.',
     // Measured: both hands sweep from t=0.158 to 0.458, peaking at 0.217. The array is drawn on
     // that first sweep, the talismans leave the hands just after, and the dragon — the largest
     // thing on screen — arrives last, once the body has committed to the cast.
     array: { socket: 'grip.right', at: 0.28, duration: 2.6, radius: 0.8, orient: 'arm' },
     talismans: { socket: 'effect.chest', at: 0.24, count: 20, duration: 2.4 },
-    dragon: { socket: 'grip.right', at: 0.32, duration: 2.6, height: 2.6, radius: 0.5, orient: 'arm' },
+    dragon: { socket: 'grip.right', at: 0.30, duration: 2.4, length: 6.5, coil: 0.55, thickness: 0.05, orient: 'arm' },
     emit: [
       { socket: 'grip.left', from: 0.16, to: 0.6, rate: 55, sparkRatio: 0.7 },
       { socket: 'grip.right', from: 0.16, to: 0.6, rate: 55, sparkRatio: 0.7 },
@@ -505,7 +510,11 @@ export class SkillDirector {
       if (skill.dragon && t >= skill.dragon.at && !this.fired.has('dragon')) {
         const at = this.socketWorld(skill.dragon.socket);
         if (at) {
-          const dragon = new SpiritDragon(skill.dragon.duration, skill.dragon.height, skill.dragon.radius);
+          const dragon = new SpiritDragon(skill.dragon.duration, {
+            length: skill.dragon.length,
+            coil: skill.dragon.coil,
+            thickness: skill.dragon.thickness,
+          });
           if (skill.dragon.orient === 'arm' && this.pointingArm()) {
             // The helix is authored rising along +Y, so aiming it is one rotation: take +Y onto the
             // arm direction and the whole coil travels out of the palm along the line she points.
