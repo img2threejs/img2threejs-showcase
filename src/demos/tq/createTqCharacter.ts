@@ -60,7 +60,7 @@ export interface TqCharacter {
   rootMotion: RootMotion[];
   /** Height of the figure in world units, measured after assembly. */
   height: number;
-  play(clip: string | number, fadeSeconds?: number): boolean;
+  play(clip: string | number, fadeSeconds?: number, timeScale?: number): boolean;
   /** Current clip name, or null before the first play. */
   current(): string | null;
   update(deltaSeconds: number): void;
@@ -218,10 +218,13 @@ export function createTqCharacter(options: TqCharacterOptions = {}): TqCharacter
   let currentAction: THREE.AnimationAction | null = null;
   let currentName: string | null = null;
 
-  const play = (which: string | number, fadeSeconds = 0.3): boolean => {
+  const play = (which: string | number, fadeSeconds = 0.3, timeScale = 1): boolean => {
     const clip = typeof which === 'number' ? clips[which] : clips.find((c) => c.name === which);
     if (!clip) return false;
     const next = mixer.clipAction(clip);
+    // Set every time, even when the same action is replayed: the retargeted presets are authored
+    // at a documentary pace, and a skill needs its clip at combat speed rather than at that pace.
+    next.timeScale = timeScale;
     if (next === currentAction) return true;
     next.enabled = true;
     next.setLoop(THREE.LoopRepeat, Infinity);
