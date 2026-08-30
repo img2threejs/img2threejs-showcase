@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { LIFE_HUE, LIFE_SATURATION, PALETTE } from './measured';
+import { patchBarkVeins, type BarkVeins } from './veins';
 
 /**
  * Effects for the monster-tree showcase.
@@ -80,6 +81,77 @@ function ringTexture(): THREE.Texture {
   ctx.fillRect(0, 0, size, size);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+/**
+ * A ring of glyphs, painted once. Arcs, ticks and spokes at irregular angles read as script
+ * without spelling anything — inventing a legible alphabet would be a claim the demo cannot back,
+ * and a repeating one would read as a texture.
+ */
+function runeTexture(seed = 0x0d1e): THREE.Texture {
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const random = mulberry32(seed);
+  const c = size / 2;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineCap = 'round';
+
+  // Two hairline bounding circles for the band the glyphs sit in.
+  for (const [r, w, a] of [[0.90, 2.5, 0.85], [0.74, 1.6, 0.55], [0.52, 1.2, 0.35]] as const) {
+    ctx.globalAlpha = a;
+    ctx.lineWidth = w;
+    ctx.beginPath();
+    ctx.arc(c, c, c * r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Glyphs around the band.
+  const glyphs = 34;
+  for (let i = 0; i < glyphs; i += 1) {
+    const angle = (i / glyphs) * Math.PI * 2;
+    const rIn = c * 0.775;
+    const rOut = c * 0.885;
+    ctx.globalAlpha = 0.5 + random() * 0.5;
+    ctx.lineWidth = 1.4 + random() * 2.2;
+    ctx.save();
+    ctx.translate(c, c);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    const kind = Math.floor(random() * 3);
+    if (kind === 0) {
+      ctx.moveTo(rIn, 0);
+      ctx.lineTo(rOut, 0);
+      ctx.moveTo(rIn + (rOut - rIn) * 0.5, -c * 0.022);
+      ctx.lineTo(rIn + (rOut - rIn) * 0.5, c * 0.022);
+    } else if (kind === 1) {
+      ctx.arc(0, 0, rIn + (rOut - rIn) * random(), -0.045, 0.045);
+    } else {
+      ctx.moveTo(rIn, -c * 0.018);
+      ctx.lineTo(rOut, 0);
+      ctx.lineTo(rIn, c * 0.018);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Spokes reaching into the middle, at irregular angles so the figure never looks like a dial.
+  ctx.globalAlpha = 0.3;
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < 9; i += 1) {
+    const angle = random() * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(c + Math.cos(angle) * c * 0.52, c + Math.sin(angle) * c * 0.52);
+    ctx.lineTo(c + Math.cos(angle) * c * 0.74, c + Math.sin(angle) * c * 0.74);
+    ctx.stroke();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
   return texture;
 }
 
@@ -543,6 +615,352 @@ class CoreGlow implements Tickable {
 }
 
 /**
+ * Wisps: spirit lights that orbit the figure, each trailing its own tail.
+ *
+ * The ambient spore field says "alive". The wisps say "this thing is not only alive, something is
+ * attending it" — they hold station around the character rather than drifting past, which is the
+ * difference between atmosphere and presence.
+ *
+ * Each wisp rides its own Lissajous orbit: three sine terms at incommensurable rates, so a wisp
+ * never retraces the same path and no two of them fall into step. Their trails reuse `Trail`,
+ * sourced from a bare Object3D that this class moves, which is exactly what `Trail` already wants
+ * — it only ever reads `source.matrixWorld`.
+ */
+class Wisps implements Tickable {
+  readonly object: THREE.Group;
+  private readonly nodes: THREE.Object3D[] = [];
+  private readonly sprites: THREE.Sprite[] = [];
+  private readonly trails: Trail[] = [];
+  private readonly phase: number[] = [];
+  private readonly rate: number[] = [];
+  private readonly light: THREE.PointLight;
+  private readonly centre: THREE.Vector3;
+  private readonly radius: number;
+  private readonly height: number;
+  /** Raised while a power gathers: the wisps pull in and brighten. */
+  gather = 0;
+
+  constructor(bounds: THREE.Box3, count: number, texture: THREE.Texture) {
+    this.object = new THREE.Group();
+    this.object.name = 'vfx:wisps';
+    const size = bounds.getSize(new THREE.Vector3());
+    this.centre = bounds.getCenter(new THREE.Vector3());
+    this.radius = Math.max(size.x, size.z) * 0.78;
+    this.height = size.y;
+
+    const random = mulberry32(0x5115);
+    for (let i = 0; i < count; i += 1) {
+      const node = new THREE.Object3D();
+      node.name = `vfx:wisp:${i}`;
+      this.object.add(node);
+      this.nodes.push(node);
+
+      // Alternate the two ends of the measured eye ramp so the swarm has cool and hot members
+      // rather than one flat colour.
+      const hot = i % 3 === 0;
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: texture,
+        color: lifeColour(hot ? 0.62 : 0.44, 1),
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }));
+      sprite.scale.setScalar(this.height * (hot ? 0.030 : 0.021));
+      node.add(sprite);
+      this.sprites.push(sprite);
+
+      // Hair-thin and SHORT. A wisp tail tapers from full width at the head to nothing at the
+      // tail, so any real width turns a fast-moving orbit into a paper dart. Length matters just
+      // as much: at 14 segments the orbit outruns the taper and the tail draws as a straight
+      // bright scratch across the frame rather than a comet falling off behind the head.
+      const trail = new Trail(node, 8, this.height * 0.0032, lifeColour(0.40, 1));
+      trail.strength = 1;
+      this.object.add(trail.object);
+      this.trails.push(trail);
+
+      this.phase.push(random() * Math.PI * 2);
+      this.rate.push(0.5 + random() * 0.55);
+    }
+
+    // One shared light for the whole swarm. Seven point lights would each cost a forward-render
+    // pass over every lit fragment; one that rides the brightest wisp reads the same on screen.
+    this.light = new THREE.PointLight(lifeColour(0.5, 1), 0.9, this.height * 0.9, 2);
+    this.object.add(this.light);
+  }
+
+  tick(dt: number, elapsed: number): boolean {
+    const pull = 1 - this.gather * 0.55;
+    for (let i = 0; i < this.nodes.length; i += 1) {
+      const t = elapsed * this.rate[i] + this.phase[i];
+      const r = this.radius * pull * (0.72 + 0.28 * Math.sin(t * 0.73));
+      this.nodes[i].position.set(
+        this.centre.x + Math.cos(t) * r,
+        this.centre.y + Math.sin(t * 1.31 + this.phase[i]) * this.height * 0.34 + this.height * 0.06,
+        this.centre.z + Math.sin(t * 0.91) * r,
+      );
+      const flicker = 0.75 + 0.25 * Math.sin(elapsed * 3.1 + this.phase[i] * 2.0);
+      this.sprites[i].material.opacity = flicker * (0.7 + this.gather * 0.5);
+    }
+    for (const trail of this.trails) trail.tick(dt, elapsed);
+    this.light.position.copy(this.nodes[0].position);
+    this.light.intensity = 1.4 + this.gather * 3.0;
+    return true;
+  }
+}
+
+/**
+ * A rune circle: two counter-rotating glyph rings that bloom out of the ground and fade.
+ *
+ * This replaces a plain expanding ring for anything deliberate — a cast, a stomp. A ring says
+ * "impact"; a ring with turning script in it says the impact was *called for*. The glyphs are
+ * drawn into a canvas once at construction: arcs, ticks and radial spokes at irregular angles, so
+ * they read as writing without being any real alphabet.
+ */
+class RuneCircle implements Tickable {
+  readonly object: THREE.Group;
+  private readonly inner: THREE.Mesh;
+  private readonly outer: THREE.Mesh;
+  private age = 0;
+
+  constructor(
+    private readonly duration: number,
+    private readonly maxRadius: number,
+    colour: THREE.Color,
+    runeTexture: THREE.Texture,
+    ringTexture: THREE.Texture,
+  ) {
+    this.object = new THREE.Group();
+    this.object.name = 'vfx:rune-circle';
+    this.object.rotation.x = -Math.PI / 2;
+
+    const make = (map: THREE.Texture, opacity: number): THREE.Mesh => {
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(1, 1),
+        new THREE.MeshBasicMaterial({
+          map,
+          color: colour,
+          transparent: true,
+          opacity,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide,
+        }),
+      );
+      mesh.renderOrder = 2;
+      return mesh;
+    };
+    this.outer = make(runeTexture, 1);
+    this.inner = make(ringTexture, 1);
+    this.object.add(this.outer, this.inner);
+  }
+
+  tick(dt: number): boolean {
+    this.age += dt;
+    const t = this.age / this.duration;
+    if (t >= 1) return false;
+    // Snap open, then hold and fade — a rune circle is inscribed, not blown outward.
+    const open = 1 - (1 - Math.min(t * 2.2, 1)) ** 3;
+    const fade = t < 0.35 ? 1 : 1 - (t - 0.35) / 0.65;
+    const r = this.maxRadius * open;
+    this.outer.scale.set(r * 2, r * 2, 1);
+    this.inner.scale.set(r * 1.35, r * 1.35, 1);
+    this.outer.rotation.z += dt * 0.55;
+    this.inner.rotation.z -= dt * 0.9;
+    (this.outer.material as THREE.MeshBasicMaterial).opacity = fade * 0.95;
+    (this.inner.material as THREE.MeshBasicMaterial).opacity = fade * 0.7;
+    return true;
+  }
+}
+
+/**
+ * Roots that tear up out of the ground and sink back.
+ *
+ * The one effect here that is real geometry rather than a billboard, because a shockwave you can
+ * see the far side of is what makes a stomp feel like it moved earth. Each root is a tapered,
+ * slightly bent tube on its own delay, so they erupt as a ragged burst rather than a fence.
+ */
+class RootEruption implements Tickable {
+  readonly object: THREE.Group;
+  private readonly roots: Array<{ mesh: THREE.Mesh; delay: number; full: number }> = [];
+  private age = 0;
+
+  constructor(origin: THREE.Vector3, count: number, spread: number, scale: number, private readonly duration: number, seed: number) {
+    this.object = new THREE.Group();
+    this.object.name = 'vfx:root-eruption';
+    const random = mulberry32(seed);
+    // Bark-dark and unlit-ish: the roots read as silhouette against the glow, which is what keeps
+    // the effect from turning into another green blob.
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(PALETTE.barkDark).convertSRGBToLinear(),
+      roughness: 0.95,
+      metalness: 0,
+      // Barely lit. A root is wet earth and dark wood catching the glow around it, not a neon
+      // tube — at any real emissive the burst reads as lime plastic rather than torn ground.
+      // Almost unlit. The stage key is 7.0 and both the fill and the rim are green, so a root with
+      // any emissive at all comes back lime and matte — plastic straws standing round the figure
+      // instead of earth torn open. It should read as silhouette with the glow behind it.
+      emissive: lifeColour(0.03, 0.8),
+      emissiveIntensity: 0.5,
+    });
+
+    for (let i = 0; i < count; i += 1) {
+      const angle = (i / count) * Math.PI * 2 + random() * 0.7;
+      const dist = spread * (0.35 + random() * 0.6);
+      const full = scale * (0.09 + random() * 0.13);
+      // A three-point curve gives the root a natural lean instead of a spike.
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3((random() - 0.5) * full * 0.4, full * 0.55, (random() - 0.5) * full * 0.4),
+        new THREE.Vector3((random() - 0.5) * full * 0.9, full, (random() - 0.5) * full * 0.9),
+      ]);
+      const geometry = new THREE.TubeGeometry(curve, 6, full * 0.06, 5, false);
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(origin.x + Math.cos(angle) * dist, 0, origin.z + Math.sin(angle) * dist);
+      mesh.rotation.y = random() * Math.PI * 2;
+      mesh.scale.y = 0.001;
+      // Hidden until its own delay elapses. A root squashed flat against the floor still
+      // rasterises, and a tube at zero height reads as a bright plate lying on the ground —
+      // which is the entire effect, ruined, for the first fifth of a second.
+      mesh.visible = false;
+      mesh.castShadow = true;
+      this.object.add(mesh);
+      this.roots.push({ mesh, delay: random() * 0.22, full });
+    }
+  }
+
+  tick(dt: number): boolean {
+    this.age += dt;
+    if (this.age >= this.duration) return false;
+    for (const root of this.roots) {
+      const local = (this.age - root.delay) / (this.duration - root.delay);
+      if (local <= 0) continue;
+      root.mesh.visible = true;
+      // Out fast, back slowly: the ground breaks in an instant and settles over half a second.
+      const rise = local < 0.28 ? 1 - (1 - local / 0.28) ** 3 : 1 - ((local - 0.28) / 0.72) ** 2;
+      root.mesh.scale.y = Math.max(0.001, rise);
+    }
+    return true;
+  }
+}
+
+/**
+ * Ground mist. A single large plane just above the floor, its alpha driven by two scrolling noise
+ * fields so the fog curls instead of sliding. Cheap, and it does most of the work of putting the
+ * figure in a place rather than on a backdrop.
+ */
+class GroundMist implements Tickable {
+  readonly object: THREE.Mesh;
+  private readonly material: THREE.ShaderMaterial;
+
+  constructor(radius: number, colour: THREE.Color) {
+    this.material = new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 }, uColour: { value: colour } },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `
+        uniform float uTime;
+        uniform vec3 uColour;
+        varying vec2 vUv;
+        float mHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float mNoise(vec2 p) {
+          vec2 i = floor(p), f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(mHash(i), mHash(i + vec2(1,0)), f.x),
+                     mix(mHash(i + vec2(0,1)), mHash(i + vec2(1,1)), f.x), f.y);
+        }
+        void main() {
+          vec2 p = vUv * 6.0;
+          // Two fields at different rates and directions — one alone reads as a sliding texture.
+          float n = mNoise(p + vec2(uTime * 0.045, uTime * 0.02));
+          n = mix(n, mNoise(p * 2.3 - vec2(uTime * 0.03, uTime * 0.05)), 0.5);
+          float edge = 1.0 - smoothstep(0.18, 0.5, distance(vUv, vec2(0.5)));
+          float a = smoothstep(0.42, 0.86, n) * edge * 0.5;
+          if (a < 0.004) discard;
+          gl_FragColor = vec4(uColour, a);
+        }`,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+    });
+    this.object = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), this.material);
+    this.object.name = 'vfx:ground-mist';
+    this.object.rotation.x = -Math.PI / 2;
+    this.object.position.y = 0.02;
+    this.object.renderOrder = 1;
+  }
+
+  tick(_dt: number, elapsed: number): boolean {
+    this.material.uniforms.uTime.value = elapsed;
+    return true;
+  }
+}
+
+/**
+ * Canopy shafts: soft angled slabs of light from above, as though the figure were standing under a
+ * broken forest roof. They drift and breathe on separate phases so the light never sits still.
+ *
+ * Front-side only and additive, so they brighten whatever is behind them and never occlude.
+ */
+class LightShafts implements Tickable {
+  readonly object: THREE.Group;
+  private readonly shafts: Array<{ mesh: THREE.Mesh; phase: number }> = [];
+
+  constructor(count: number, height: number, colour: THREE.Color, seed: number) {
+    this.object = new THREE.Group();
+    this.object.name = 'vfx:canopy-shafts';
+    const random = mulberry32(seed);
+    const material = new THREE.ShaderMaterial({
+      uniforms: { uColour: { value: colour }, uOpacity: { value: 1 } },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `
+        uniform vec3 uColour; uniform float uOpacity;
+        varying vec2 vUv;
+        void main() {
+          // Soft across the width, and fading out toward the floor where a real shaft disperses.
+          float across = 1.0 - abs(vUv.x - 0.5) * 2.0;
+          across = pow(clamp(across, 0.0, 1.0), 1.8);
+          float down = smoothstep(0.0, 0.45, vUv.y) * (1.0 - smoothstep(0.55, 1.0, vUv.y) * 0.55);
+          float a = across * down * 0.16 * uOpacity;
+          if (a < 0.003) discard;
+          gl_FragColor = vec4(uColour, a);
+        }`,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+    });
+
+    for (let i = 0; i < count; i += 1) {
+      const w = height * (0.16 + random() * 0.2);
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, height * 2.1), material.clone());
+      const angle = (i / count) * Math.PI * 2 + random();
+      const dist = height * (0.2 + random() * 0.5);
+      mesh.position.set(Math.cos(angle) * dist, height * 0.95, Math.sin(angle) * dist);
+      mesh.rotation.set(random() * 0.24 - 0.12, angle + Math.PI / 2, random() * 0.3 - 0.15);
+      this.object.add(mesh);
+      this.shafts.push({ mesh, phase: random() * Math.PI * 2 });
+    }
+  }
+
+  tick(_dt: number, elapsed: number): boolean {
+    for (const shaft of this.shafts) {
+      const m = shaft.mesh.material as THREE.ShaderMaterial;
+      m.uniforms.uOpacity.value = 0.6 + 0.4 * Math.sin(elapsed * 0.34 + shaft.phase);
+      shaft.mesh.rotation.z += Math.sin(elapsed * 0.15 + shaft.phase) * 0.00035;
+    }
+    return true;
+  }
+}
+
+/**
  * The VFX system. Owns the shared textures, the persistent effects and the transient ones, and
  * runs them all from a single `update`.
  */
@@ -551,23 +969,46 @@ export class MonsterTreeVfx {
   readonly eyes: EyeGlow;
   readonly core: CoreGlow;
   readonly trails: Record<'grip-l' | 'grip-r', Trail>;
+  /** The bark's own inner glow. Null if the material could not be patched. */
+  readonly veins: BarkVeins | null;
+  readonly wisps: Wisps;
   private readonly spores: SporeField;
+  private readonly mist: GroundMist;
+  private readonly shafts: LightShafts;
   private readonly transient: Tickable[] = [];
   private readonly dot = dotTexture();
   private readonly ring = ringTexture();
+  private readonly runes = runeTexture();
   private elapsed = 0;
   private readonly scale: number;
+  /** 0 = dormant, 1 = a power fully gathered. Drives veins, wisps and the chest core together. */
+  private chargeLevel = 0;
 
   constructor(rig: {
     group: THREE.Object3D;
     sockets: Record<string, THREE.Object3D>;
     bones: Record<string, THREE.Bone>;
+    shell?: THREE.Mesh;
   }, bounds: THREE.Box3) {
     this.group.name = 'monster-tree-vfx';
     this.scale = bounds.getSize(new THREE.Vector3()).y;
 
+    // The bark lights from the inside. Patched rather than replaced so the shell keeps three's
+    // skinning and PBR lighting; `veins.patched` reports whether the injection actually landed.
+    const shellMaterial = rig.shell?.material;
+    this.veins = shellMaterial instanceof THREE.MeshStandardMaterial ? patchBarkVeins(shellMaterial) : null;
+
     this.spores = new SporeField(bounds, 340, this.dot);
     this.group.add(this.spores.object);
+
+    this.wisps = new Wisps(bounds, 6, this.dot);
+    this.group.add(this.wisps.object);
+
+    this.mist = new GroundMist(this.scale * 1.7, lifeColour(0.22, 0.7));
+    this.group.add(this.mist.object);
+
+    this.shafts = new LightShafts(5, this.scale, lifeColour(0.55, 0.55), 0x5a71);
+    this.group.add(this.shafts.object);
 
     this.eyes = new EyeGlow([rig.sockets['eye-l'], rig.sockets['eye-r']], this.dot, this.scale);
     this.group.add(this.eyes.object);
@@ -586,6 +1027,49 @@ export class MonsterTreeVfx {
     };
     this.group.add(this.trails['grip-l'].object, this.trails['grip-r'].object);
     this.markAsOverlay();
+  }
+
+  /**
+   * Gather or release a power, everywhere at once.
+   *
+   * The chest core, the sap veins and the wisps are one event seen three ways, so they take one
+   * number. Driving them separately from the skill table is how they drift out of step.
+   */
+  set charge(value: number) {
+    this.chargeLevel = value;
+    this.core.charge = value;
+    this.wisps.gather = value;
+    this.veins?.setCharge(value);
+  }
+
+  get charge(): number {
+    return this.chargeLevel;
+  }
+
+  /** A rune circle inscribed on the ground under a socket — for anything deliberate. */
+  runeCircle(at: THREE.Object3D, radius = 1.2, duration = 1.5): void {
+    const circle = new RuneCircle(duration, radius * this.scale * 0.62, lifeColour(0.55, 1), this.runes, this.ring);
+    const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
+    circle.object.position.set(world.x, 0.016, world.z);
+    circle.object.traverse((o) => { o.userData.isHighlight = true; });
+    this.group.add(circle.object);
+    this.transient.push(circle);
+  }
+
+  /** Roots torn up out of the ground around a socket. */
+  roots(at: THREE.Object3D, options: { count?: number; spread?: number; duration?: number } = {}): void {
+    const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
+    const eruption = new RootEruption(
+      world,
+      options.count ?? 8,
+      (options.spread ?? 0.30) * this.scale,
+      this.scale,
+      options.duration ?? 1.1,
+      (Math.random() * 1e9) | 0,
+    );
+    eruption.object.traverse((o) => { o.userData.isHighlight = true; });
+    this.group.add(eruption.object);
+    this.transient.push(eruption);
   }
 
   /** A shockwave on the ground, centred under a socket rather than at a guessed origin. */
@@ -620,11 +1104,15 @@ export class MonsterTreeVfx {
   /**
    * Mark every effect object as an overlay rather than a part of the model.
    *
-   * The showcase's inspector treats any named mesh as a selectable part and as a raycast target, so
-   * without this the Parts list fills up with `vfx:chest-core` and `vfx:trail:socket:grip-l` beside
-   * the bark shell, and clicking the glow in front of the character's face selects the glow. An
-   * additive halo is not a component of the treant, and `isHighlight` is exactly the flag the viewer
-   * already uses for "an overlay that is not part of the model".
+   * The showcase's inspector treats any named mesh as a selectable part AND as a raycast target,
+   * so without this the Parts list fills with `vfx:chest-core` and `vfx:trail:vfx:wisp:0` beside
+   * the bark shell, and clicking the glow in front of the character's face selects the glow. A
+   * wisp is not a component of the treant. `isHighlight` is the flag the viewer already uses for
+   * "an overlay that is not part of the model", which is exactly what every object here is.
+   *
+   * Called at the end of the constructor, so it covers everything parented under `group`;
+   * anything attached to a BONE instead (the eye sprites, the chest core) marks itself where it
+   * is built, and the transient effects mark themselves as they are spawned.
    */
   private markAsOverlay(): void {
     this.group.traverse((object) => {
@@ -634,7 +1122,11 @@ export class MonsterTreeVfx {
 
   update(dt: number): void {
     this.elapsed += dt;
+    this.veins?.setTime(this.elapsed);
     this.spores.tick(dt, this.elapsed);
+    this.wisps.tick(dt, this.elapsed);
+    this.mist.tick(dt, this.elapsed);
+    this.shafts.tick(dt, this.elapsed);
     this.eyes.tick(dt, this.elapsed);
     this.core.tick(dt, this.elapsed);
     this.trails['grip-l'].tick(dt, this.elapsed);

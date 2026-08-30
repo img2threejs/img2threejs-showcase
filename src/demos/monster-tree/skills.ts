@@ -112,7 +112,10 @@ export const SKILLS: Skill[] = [
       { at: 0.62, run: impact('grip-l', { radius: 0.8, count: 85, speed: 1.6 }) },
       {
         at: 0.66,
-        run: (rig, vfx) => vfx.burst(rig.sockets['crown'], { count: 40, speed: 0.9, spread: 0.5, lightness: 0.7 }),
+        run: (rig, vfx) => {
+          vfx.burst(rig.sockets['crown'], { count: 55, speed: 1.0, spread: 0.5, lightness: 0.7 });
+          vfx.runeCircle(rig.sockets['foot-l'], 0.85, 1.1);
+        },
       },
     ],
   },
@@ -132,6 +135,7 @@ export const SKILLS: Skill[] = [
           // under a foot that is not touching anything.
           vfx.burst(rig.sockets['foot-r'], { count: 110, speed: 1.7, spread: 0.35, gravity: -2.4 });
           vfx.shockwave(rig.sockets['foot-l'], 1.5, 0.95);
+          vfx.roots(rig.sockets['foot-l'], { count: 10, spread: 0.34, duration: 1.15 });
         },
       },
     ],
@@ -151,7 +155,8 @@ export const SKILLS: Skill[] = [
           // under the planted foot is the ground answering a beat later.
           vfx.burst(rig.sockets['foot-r'], { count: 90, speed: 1.4, spread: 0.25, gravity: -2.6 });
           vfx.shockwave(rig.sockets['foot-r'], 1.2, 0.8);
-          vfx.shockwave(rig.sockets['foot-l'], 0.8, 1.05);
+          vfx.runeCircle(rig.sockets['foot-r'], 1.0, 1.3);
+          vfx.roots(rig.sockets['foot-r'], { count: 8, spread: 0.26, duration: 0.95 });
         },
       },
     ],
@@ -165,16 +170,16 @@ export const SKILLS: Skill[] = [
     measured: 'L_Hand 0.771 while Head moves 0.035 and Spine02 0.040 — a planted cast, not a swing',
     trails: ['grip-l'],
     cues: [
-      { at: 0.0, run: (_rig, vfx) => { vfx.core.charge = 0; vfx.eyes.intensity = 1; } },
+      { at: 0.0, run: (rig, vfx) => { vfx.charge = 0; vfx.eyes.intensity = 1; vfx.runeCircle(rig.sockets['foot-l'], 1.35, 1.9); } },
       // Charge visibly gathers in the chest before the arm finishes, so the release reads as caused.
-      { at: 0.12, run: (_rig, vfx) => { vfx.core.charge = 0.45; vfx.eyes.intensity = 1.5; } },
-      { at: 0.55, run: (_rig, vfx) => { vfx.core.charge = 1; vfx.eyes.intensity = 2.3; } },
+      { at: 0.12, run: (_rig, vfx) => { vfx.charge = 0.45; vfx.eyes.intensity = 1.6; } },
+      { at: 0.55, run: (_rig, vfx) => { vfx.charge = 1; vfx.eyes.intensity = 2.4; } },
       {
         at: 1.18,
         run: (rig, vfx) => {
-          vfx.burst(rig.sockets['grip-l'], { count: 140, speed: 2.0, spread: 0.8, gravity: -0.5, lightness: 0.7 });
-          vfx.burst(rig.sockets['chest-core'], { count: 50, speed: 0.9, spread: 1, lightness: 0.75 });
-          vfx.core.charge = 0;
+          vfx.burst(rig.sockets['grip-l'], { count: 160, speed: 2.2, spread: 0.8, gravity: -0.5, lightness: 0.7 });
+          vfx.burst(rig.sockets['chest-core'], { count: 60, speed: 1.0, spread: 1, lightness: 0.75 });
+          vfx.charge = 0;
           vfx.eyes.intensity = 1;
         },
       },
@@ -188,8 +193,8 @@ export const SKILLS: Skill[] = [
     loop: false,
     measured: 'L_Hand 1.838 at 2.68s, Head 1.408 — the figure goes down',
     cues: [
-      { at: 0.0, run: (_rig, vfx) => { vfx.eyes.intensity = 1; } },
-      { at: 2.68, run: (rig, vfx) => { vfx.shockwave(rig.sockets['foot-l'], 1.3, 1.1); vfx.eyes.intensity = 0.45; } },
+      { at: 0.0, run: (_rig, vfx) => { vfx.eyes.intensity = 1; vfx.charge = 0; } },
+      { at: 2.68, run: (rig, vfx) => { vfx.shockwave(rig.sockets['foot-l'], 1.3, 1.1); vfx.roots(rig.sockets['foot-l'], { count: 6, spread: 0.30, duration: 1.4 }); vfx.eyes.intensity = 0.45; } },
       {
         at: 3.4,
         run: (rig, vfx) => {

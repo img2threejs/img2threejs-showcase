@@ -203,11 +203,38 @@ visually.
 ## VFX — all hand-written
 
 The img2threejs skill has **no particle subsystem, no trail subsystem and no shader library**.
-Every effect here was written for this demo, in plain three, with **no dependency added**: the
-spore field and impact bursts are `THREE.Points` with a `ShaderMaterial`, the palm trails are a
-ribbon strip, the shockwaves are additive rings, and every texture is painted into a `<canvas>`.
+Every effect here was written for this demo, in plain three, with **no dependency added**. Textures
+are painted into a `<canvas>` at build time; nothing is fetched.
 
-Everything anchors to `actionProfile.sockets` — and every socket is a measured vertex centroid on a
+| effect | what it is | why |
+|---|---|---|
+| **sap veins** | `MeshStandardMaterial` patched through `onBeforeCompile`, fbm value noise thresholded to thin ridges, added to `totalEmissiveRadiance` | the character glows from *inside the wood*. The one effect that changes what the figure **is** rather than what is around it |
+| **spirit wisps** | 6 sprites on Lissajous orbits, each with a short additive tail, one shared `PointLight` | they hold station around the figure — the difference between atmosphere and *presence* |
+| **rune circles** | two counter-rotating glyph rings, painted once into a canvas | a ring says "impact"; a ring with turning script in it says the impact was **called for** |
+| **root eruption** | `TubeGeometry` along bent `CatmullRomCurve3`, staggered rise-and-sink | the only real geometry in the set — a shockwave you can see the far side of is what makes a stomp move earth |
+| **canopy shafts** | 5 soft additive slabs, drifting on separate phases | puts the figure under a broken forest roof instead of on a backdrop |
+| **ground mist** | one plane, alpha from two scrolling noise fields | one field alone reads as a sliding texture; two curl |
+| **spore field** | 340 `THREE.Points`, seeded PRNG, one draw call | ambient life |
+| **eye glow** | two additive sprites + a short-range `PointLight` | picks out the brow ridge rather than lighting the whole head |
+| **palm trails** | ribbon strip, per-vertex alpha via `ShaderMaterial` | the swing arc |
+| **impact bursts** | `THREE.Points` with gravity | the hit |
+
+### Three things that were wrong first, and what they cost
+
+- **The veins flooded the figure.** At a wide ridge and `pow(ridge, 7.0)` the seams merged and the
+  whole treant went flat neon, losing the bark relief that is its entire silhouette up close. The
+  ridge is now four times narrower at `pow(…, 14.0)` and a fifth the intensity.
+- **The wisp tails drew as straight scratches.** A tail tapers from full width at the head to
+  nothing at the tail, so length matters as much as width: at 14 segments a fast orbit outruns the
+  taper and the tail rasterises as a bright line across the frame. 8 segments, and hair-thin.
+- **The roots read as lime plastic straws.** The stage key is 7.0 and both the fill and the rim are
+  green, so a root with any real emissive comes back matte lime. They also rendered *before* they
+  rose — a tube at zero height is a bright plate lying on the floor — so each one is now hidden
+  until its own delay elapses.
+
+### Where things go
+
+Everything anchors to `actionProfile.sockets`, and every socket is a measured vertex centroid on a
 real bone, not a coordinate someone typed:
 
 | socket | bone | kind | measured from |
@@ -222,6 +249,14 @@ The eye sockets double as a chirality check. They land at z = −0.023 and +0.02
 head midline, and the rig puts `L_Hand` at z = −0.35 and `R_Hand` at +0.33. With forward = +x and
 up = +y, right = forward × up = +z, so the rig's own L/R prefixes agree with the measured geometry:
 a mirrored pair, not a rotated one.
+
+Charge is **one number**. `vfx.charge` drives the chest core, the sap veins and the wisps together,
+because they are one event seen three ways — driving them separately from the skill table is how
+they drift out of step.
+
+Every effect object is flagged `userData.isHighlight`, which is the viewer's own marker for "an
+overlay that is not part of the model". Without it the Parts inspector lists `vfx:trail:vfx:wisp:0`
+beside the bark shell and clicking the glow in front of the character's face selects the glow.
 
 ### Colour
 
