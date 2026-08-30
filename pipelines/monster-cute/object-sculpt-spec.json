@@ -918,5 +918,39 @@
     "drivenBy": "footsteps fire on the same measured sole-socket ground crossing the dust uses, not on a clip-keyed timer, so they land with the foot in all 33 clips",
     "autoplay": "AudioContext is created on the first user gesture; nothing plays before that",
     "verified": "headless: context reaches 'running' after a gesture, 51 voices started across the cues and a run clip, muting stops new voices. Audible output NOT verified - a headless browser has no speaker."
+  },
+  "swim": {
+    "status": "authored-for-this-showcase",
+    "what": "a composed sequence: run -> leap -> water entry -> swim, with no authored poses",
+    "why": "preset:dive drives the hip from 0.71 to -0.17 world units, so on a bare stage the character descends through the floor. The clip is not broken; it is landing in water that was never built.",
+    "handovers": {
+      "measuredBy": "tools/stitch.ts, every pose in one clip against every pose in the other",
+      "unit": "mean degrees per joint",
+      "runCycle": {
+        "leave": 1.073,
+        "arrive": 0.438,
+        "gap": 0.9,
+        "naive": 3.35
+      },
+      "runToDive": {
+        "leave": 0.788,
+        "arrive": 0.373,
+        "gap": 4.26,
+        "naive": 7.11
+      },
+      "note": "the leap leaves from inside the run's loop window; the unconstrained best match at 0.285 s is never reached by a run phase cycling [0.438, 1.073]"
+    },
+    "water": {
+      "level": 0.22,
+      "entryTime": 1.678,
+      "surface": "three non-harmonic sine waves, analytic normal, no textures",
+      "splash": "three rings at different speeds, a gravity-bound droplet crown, and a lingering mist sheet"
+    },
+    "swimPhase": {
+      "method": "the dive is held at its most streamlined pose and a slow procedural stroke is layered on arms, legs and spine, plus a bob and roll on the group",
+      "why": "no swim clip exists, and the submerged stretch of the dive has no usable loop: the best pair in that window is 7.31 degrees apart, which reads as a hitch every cycle",
+      "breaks": "none by construction - a continuous sine cannot discontinue"
+    },
+    "clipsUnmodified": true
   }
 }

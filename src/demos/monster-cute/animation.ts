@@ -40,6 +40,12 @@ export interface Animator {
   durationOf(clip: string): number;
   /** Keep a non-looping clip going by cross-fading it back to its own start. On by default. */
   setAutoRepeat(on: boolean): void;
+  /** Move the playhead of a clip that is already running. Used to loop a measured window. */
+  setTime(clip: string, time: number): void;
+  /** Where the playhead of a clip currently is, or -1 if it is not running. */
+  timeOf(clip: string): number;
+  /** Park a running clip at a time and stop advancing it. */
+  pauseAt(clip: string, time: number): void;
 }
 
 export function createAnimator(rigged: RiggedModel): Animator {
@@ -205,5 +211,24 @@ export function createAnimator(rigged: RiggedModel): Animator {
     loops,
     durationOf: (name: string) => resolve(name)?.duration ?? 0,
     setAutoRepeat: (on: boolean) => { autoRepeat = on; },
+    setTime: (name: string, time: number) => {
+      const clip = resolve(name);
+      if (!clip || !current) return;
+      current.paused = false;
+      current.time = THREE.MathUtils.clamp(time, 0, clip.duration);
+    },
+    timeOf: (name: string) => {
+      const clip = resolve(name);
+      if (!clip || !current || currentName !== name) return -1;
+      return current.time;
+    },
+    pauseAt: (name: string, time: number) => {
+      const clip = resolve(name);
+      if (!clip || !current) return;
+      current.time = THREE.MathUtils.clamp(time, 0, clip.duration);
+      current.paused = true;
+      mixer.update(0);
+      group.updateMatrixWorld(true);
+    },
   };
 }

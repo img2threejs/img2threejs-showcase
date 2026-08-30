@@ -96,6 +96,8 @@ import {
 import { createAnimator } from './monster-cute/animation';
 import { createMonsterCuteVfx } from './monster-cute/vfx';
 import { createMonsterCuteGround, createMonsterCuteStageLights } from './monster-cute/lighting';
+import { createWater } from './monster-cute/water';
+import { createSwim } from './monster-cute/swim';
 import { frontCamera } from './monster-cute/characterProfile';
 
 export interface DemoEntry {
@@ -275,7 +277,14 @@ const authored: DemoEntry[] = [
       host.name = 'monster-cute';
       scene.add(host);
 
+      // The water preset:dive needs. Hidden until the swim runs: that clip drives the hip from 0.71
+      // down to -0.17 world units, so on the bare stage it descends straight through the floor.
+      const water = createWater();
+      water.setVisible(false);
+      host.add(water.group);
+
       let advance: ((dt: number, elapsed: number) => void) | null = null;
+      let swimTick: ((dt: number) => void) | null = null;
       // Set NOW, not when the rig lands. The viewer collects `userData.tick` once, and whether that
       // sweep happens before or after the payload resolves is a race; a hook that exists from the
       // first frame and does nothing until there is something to advance cannot lose it.
@@ -327,8 +336,29 @@ const authored: DemoEntry[] = [
 
         // The mixer wants a DELTA. Handing it elapsed time makes the first frame jump to wherever
         // the clip is by then and every frame after it race away.
+        const swim = createSwim(animator, rigged.mesh, rigged.group, {
+          onEnterWater: (at, force) => {
+            water.splash(at, force);
+            vfx.sfx.play('land', 1);
+            vfx.setEffectEnabled('footDust', false);
+            vfx.setEffectEnabled('landingWave', false);
+          },
+          onPhase: (p) => {
+            vfx.setEffectEnabled('footDust', p === 'run');
+            vfx.setEffectEnabled('handTrails', p === 'run' || p === 'leap');
+          },
+        });
+        swimTick = (dt) => swim.update(dt);
+
+        const toggleSwim = (): void => {
+          if (swim.active) { swim.stop(); water.setVisible(false); }
+          else { water.setVisible(true); swim.start(); }
+        };
+
         advance = (dt, elapsed) => {
           animator.update(dt);
+          swimTick?.(dt);
+          water.update(dt, elapsed);
           holdOnMark();
           // No camera argument: the effect layer captures the real one in onBeforeRender, because
           // this hook is only handed (dt, elapsed).
@@ -359,6 +389,7 @@ const authored: DemoEntry[] = [
           // chosen. Every one of these is anchored to a measured socket on a real bone.
           strikeVfx: {
             elements: [
+              { id: 'swim', label: 'Run, leap & swim' },
               { id: 'cast', label: 'Horn arc' },
               { id: 'blast', label: 'Palm bolt' },
               { id: 'slam', label: 'Ground slam' },
@@ -366,7 +397,11 @@ const authored: DemoEntry[] = [
               { id: 'sparkle', label: 'Sparkle' },
             ],
             current: 'cast',
-            setElement: (id: string) => { vfx.cue(id as Parameters<typeof vfx.cue>[0]); },
+            setElement: (id: string) => {
+              // The swim is a sequence rather than a one-shot, so it toggles instead of firing.
+              if (id === 'swim') { toggleSwim(); return; }
+              vfx.cue(id as Parameters<typeof vfx.cue>[0]);
+            },
           },
         };
       });
