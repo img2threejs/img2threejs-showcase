@@ -1987,6 +1987,107 @@ body.intro-active { overflow: hidden; }
   gap: 0.45rem;
 }
 
+/* Outfit toggles and effect sliders — the two control blocks a demo can opt into by publishing
+   `sculptRuntime.toggleGroups` / `sculptRuntime.parameters`. They reuse the `.demo-animations`
+   shell so a panel with all of them reads as one stack rather than three competing cards. */
+
+.demo-control-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.demo-toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.demo-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.28rem 0.2rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.demo-toggle:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.demo-toggle input {
+  flex: none;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.demo-toggle-swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  flex: none;
+  border-radius: 0.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.demo-toggle-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.demo-toggle-label small {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.66rem;
+}
+
+.demo-param-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.demo-param-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.demo-param-value {
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+}
+
+.demo-param-slider {
+  width: 100%;
+  margin: 0.3rem 0 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.demo-param-note {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+.demo-vfx-reset {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .demo-animation-btn {
   justify-content: center;
   min-width: 0;

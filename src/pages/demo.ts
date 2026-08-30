@@ -108,6 +108,22 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
               </div>
               <div class="demo-animation-buttons" id="demo-detail-buttons"></div>
             </section>
+            <section class="demo-animations" id="demo-outfit" hidden aria-labelledby="demo-outfit-title">
+              <div class="demo-animations-head">
+                <span class="parts-title" id="demo-outfit-title">Outfit</span>
+                <output class="demo-animation-status" id="demo-outfit-status"></output>
+              </div>
+              <p class="demo-control-note" id="demo-outfit-note" hidden></p>
+              <div class="demo-toggle-list" id="demo-outfit-list"></div>
+            </section>
+            <section class="demo-animations" id="demo-vfx" hidden aria-labelledby="demo-vfx-title">
+              <div class="demo-animations-head">
+                <span class="parts-title" id="demo-vfx-title">Effects</span>
+                <button class="btn demo-vfx-reset" id="demo-vfx-reset" type="button">Reset</button>
+              </div>
+              <p class="demo-control-note" id="demo-vfx-note" hidden></p>
+              <div class="demo-param-list" id="demo-vfx-list"></div>
+            </section>
             <section class="demo-parts" id="demo-parts" hidden>
               <div class="parts-head">
                 <span class="parts-title">Parts</span>
@@ -296,6 +312,160 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
         window.location.href = url.toString();
       });
       detailButtons.appendChild(button);
+    }
+  }
+
+  /**
+   * Sub-assembly visibility, for a model built from more than one mesh.
+   *
+   * Separate from the parts inspector: that one explains what the model is MADE of, this one changes
+   * what is SHOWN. A rigged character whose outfit is its own skinned mesh can have a piece hidden
+   * without disturbing the body under it, and being able to do that is how a reader confirms the
+   * split is real rather than taking the blurb's word for it.
+   */
+  type ToggleGroups = {
+    title?: string;
+    note?: string;
+    items: ReadonlyArray<{ id: string; label: string; note?: string; swatch?: string }>;
+    isVisible: (id: string) => boolean;
+    set: (id: string, visible: boolean) => void;
+  };
+  const toggles = (model.userData.sculptRuntime as { toggleGroups?: ToggleGroups } | undefined)
+    ?.toggleGroups;
+  const toggleSection = mount.querySelector<HTMLElement>('#demo-outfit');
+  const toggleList = mount.querySelector<HTMLElement>('#demo-outfit-list');
+  const toggleCleanups: Array<() => void> = [];
+  if (toggles && toggleSection && toggleList && !capture) {
+    toggleSection.hidden = false;
+    const heading = mount.querySelector<HTMLElement>('#demo-outfit-title');
+    if (heading && toggles.title) heading.textContent = toggles.title;
+    const note = mount.querySelector<HTMLElement>('#demo-outfit-note');
+    if (note && toggles.note) {
+      note.textContent = toggles.note;
+      note.hidden = false;
+    }
+    const status = mount.querySelector<HTMLOutputElement>('#demo-outfit-status');
+    const syncStatus = (): void => {
+      if (!status) return;
+      const shown = toggles.items.filter((item) => toggles.isVisible(item.id)).length;
+      status.value = `${shown}/${toggles.items.length} shown`;
+    };
+    for (const item of toggles.items) {
+      const row = document.createElement('label');
+      row.className = 'demo-toggle';
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = toggles.isVisible(item.id);
+      const onChange = (): void => {
+        toggles.set(item.id, box.checked);
+        syncStatus();
+      };
+      box.addEventListener('change', onChange);
+      toggleCleanups.push(() => box.removeEventListener('change', onChange));
+      row.appendChild(box);
+      if (item.swatch) {
+        const swatch = document.createElement('i');
+        swatch.className = 'demo-toggle-swatch';
+        swatch.style.background = item.swatch;
+        row.appendChild(swatch);
+      }
+      const text = document.createElement('span');
+      text.className = 'demo-toggle-label';
+      text.textContent = item.label;
+      if (item.note) {
+        const small = document.createElement('small');
+        small.textContent = item.note;
+        text.appendChild(small);
+      }
+      row.appendChild(text);
+      toggleList.appendChild(row);
+    }
+    syncStatus();
+  }
+
+  /**
+   * Numeric parameters a demo chooses to expose — effect strengths, mix amounts.
+   *
+   * A slider is worth more than a fixed value here: taking an effect to zero and watching what stops
+   * happening is the fastest way to see which part of a look each system was actually responsible
+   * for. Values are applied live; `Reset` returns every one to the authored default.
+   */
+  type DemoParameters = {
+    title?: string;
+    note?: string;
+    items: ReadonlyArray<{
+      id: string; label: string; min: number; max: number; step: number; value: number; note?: string;
+    }>;
+    set: (id: string, value: number) => void;
+  };
+  const parameters = (model.userData.sculptRuntime as { parameters?: DemoParameters } | undefined)
+    ?.parameters;
+  const paramSection = mount.querySelector<HTMLElement>('#demo-vfx');
+  const paramList = mount.querySelector<HTMLElement>('#demo-vfx-list');
+  const paramResetBtn = mount.querySelector<HTMLButtonElement>('#demo-vfx-reset');
+  const paramCleanups: Array<() => void> = [];
+  if (parameters && paramSection && paramList && !capture) {
+    paramSection.hidden = false;
+    const heading = mount.querySelector<HTMLElement>('#demo-vfx-title');
+    if (heading && parameters.title) heading.textContent = parameters.title;
+    const note = mount.querySelector<HTMLElement>('#demo-vfx-note');
+    if (note && parameters.note) {
+      note.textContent = parameters.note;
+      note.hidden = false;
+    }
+    const resets: Array<() => void> = [];
+    for (const item of parameters.items) {
+      const row = document.createElement('div');
+      row.className = 'demo-param';
+
+      const label = document.createElement('label');
+      label.className = 'demo-param-head';
+      const name = document.createElement('span');
+      name.textContent = item.label;
+      const readout = document.createElement('output');
+      readout.className = 'demo-param-value';
+      readout.value = item.value.toFixed(2);
+      label.append(name, readout);
+
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.className = 'demo-param-slider';
+      slider.min = String(item.min);
+      slider.max = String(item.max);
+      slider.step = String(item.step);
+      slider.value = String(item.value);
+      slider.setAttribute('aria-label', item.label);
+      if (item.note) slider.title = item.note;
+      label.htmlFor = `demo-param-${item.id}`;
+      slider.id = `demo-param-${item.id}`;
+
+      const onInput = (): void => {
+        const value = Number(slider.value);
+        readout.value = value.toFixed(2);
+        parameters.set(item.id, value);
+      };
+      slider.addEventListener('input', onInput);
+      paramCleanups.push(() => slider.removeEventListener('input', onInput));
+
+      resets.push(() => {
+        slider.value = String(item.value);
+        readout.value = item.value.toFixed(2);
+        parameters.set(item.id, item.value);
+      });
+
+      row.append(label, slider);
+      if (item.note) {
+        const hint = document.createElement('small');
+        hint.className = 'demo-param-note';
+        hint.textContent = item.note;
+        row.appendChild(hint);
+      }
+      paramList.appendChild(row);
+    }
+    if (paramResetBtn) {
+      const onReset = (): void => { for (const reset of resets) reset(); };
+      paramResetBtn.addEventListener('click', onReset);
+      paramCleanups.push(() => paramResetBtn.removeEventListener('click', onReset));
     }
   }
 
@@ -697,6 +867,8 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     animationController?.stop();
     unsubscribeAnimation?.();
     for (const cleanup of animationButtonCleanups) cleanup();
+    for (const cleanup of toggleCleanups) cleanup();
+    for (const cleanup of paramCleanups) cleanup();
     viewer.dispose();
   };
 }

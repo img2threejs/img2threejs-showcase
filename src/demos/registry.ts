@@ -73,6 +73,11 @@ import {
   createWarriorModel,
   prewarmWarrior,
 } from './warrior/createWarriorModel';
+import {
+  createTqModel,
+  createTqLookDevLights,
+  prewarmTq,
+} from './tq/createTqModel';
 
 export interface DemoEntry {
   /** route id, e.g. 'crown-chest' */
@@ -157,6 +162,48 @@ const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
 export const demos: DemoEntry[] = [
+  {
+    id: 'tq',
+    title: 'Tq — Three Kingdoms Officer, One Skeleton and Five Meshes',
+    subjectClass: 'character',
+    blurb:
+      'A code-only rigged character: 41 bones and 24 embedded clips driving FIVE skinned meshes — '
+      + 'crimson lacquer, gold filigree, indigo cloth, hair and skin — off one shared skeleton. The '
+      + 'playground export was a single merged shell; splitting it by vertex partition rather than '
+      + 'decimation keeps every joint weight intact, so the outfit can be toggled piece by piece and '
+      + 'still deforms bit-identically to the merged original. The retarget had baked locomotion onto '
+      + 'Hip instead of Root, dragging the figure metres off the stage; that is measured and fixed. '
+      + 'Four attack skills, timed from measured socket speed, drive hand-written VFX anchored to ten '
+      + 'sockets on real bones. Outfit and effect controls are live in the panel.',
+    referenceImage: `${BASE}references/tq.jpg`,
+    sourcePath: 'src/demos/tq/createTqModel.ts',
+    sourceUrl: `${REPO}/src/demos/tq/createTqModel.ts`,
+    generatedWith: 'img2threejs v1.5.2 Stage R · playground GLB fast lane · Tripo v3.1-20260211 measurement',
+    prompt:
+      'Take the playground export as measured, not as a starting point: fix the animation defect that '
+      + 'drags the mesh, make the costume its own geometry, and add VFX and attack skills drawn from '
+      + "the character's own measured palette.",
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    tripoUrl: 'https://studio.tripo3d.ai/3d-model/a17263a4-00d5-411e-b9e8-dc73092cd857',
+    status: 'placeholder',
+    cameraPosition: [1.7695, 1.045, 5.0558],
+    cameraTarget: [0, 0.95, 0],
+    cameraFov: 30,
+    accent: '#ffc247',
+    backgroundGradient: { inner: '#191428', outer: '#07080e' },
+    exposure: 1.05,
+    environmentIntensity: 0.85,
+    toneMapping: 'aces',
+    // The surfaces are decoded out of base64 here so `build` stays synchronous and cheap.
+    prewarm: prewarmTq,
+    installLights: (scene) => { scene.add(createTqLookDevLights()); },
+    build: (scene) => {
+      const group = createTqModel({ castShadow: true, receiveShadow: true });
+      scene.add(group);
+      return group;
+    },
+  },
   {
     id: 'warrior',
     title: 'Mouse Warrior — Rigged Surface Character',
