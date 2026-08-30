@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { buildModel, buildModelProgressive, createStudioLights, preferredQuality, buildRiggedModel, type BuildOptions, type EncodedModel, type EncodedRig, type ProgressiveOptions, type Quality, type RiggedModel } from './meshCodec';
+import { conditionHeadSkin, type SkinFixReport } from './skinFix';
 
 /**
  * Monster Cute — a code-only Three.js model with 1 named parts and 192,082 triangles.
@@ -48,6 +49,12 @@ function loadLevel(quality: Quality): Promise<{ SURFACE_MODEL: EncodedModel; SUR
 
 let loaded: { quality: Quality; model: EncodedModel; stream: string } | null = null;
 let loadedRig: EncodedRig | null = null;
+let lastSkinFix: SkinFixReport | null = null;
+
+/** What the head-skin conditioning pass did on the last build, or null before one has run. */
+export function monsterCuteSkinFix(): SkinFixReport | null {
+  return lastSkinFix;
+}
 
 /**
  * Fetch and hold the skeleton, the skin weights and every clip.
@@ -156,6 +163,18 @@ export function createMonsterCuteRigged(options: MonsterCuteOptions = {}): Rigge
     ...options,
   });
   rigged.group.name = 'monster-cute';
+
+  /**
+   * Take the shoulders off the face before anything renders.
+   *
+   * The generated rig gives the clavicles about a fifth of the head's weight, so every arm swing
+   * drags the face with it — visible as a torn eye and a sheared fang. See `skinFix.ts` for the
+   * measurement and for what the pass is and is not allowed to touch.
+   */
+  // `?skinfix=off` skips it, so the defect and the repair can be compared in the same frame.
+  const skip = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('skinfix') === 'off';
+  lastSkinFix = skip ? null : conditionHeadSkin(rigged.mesh, loadedRig);
   return rigged;
 }
 

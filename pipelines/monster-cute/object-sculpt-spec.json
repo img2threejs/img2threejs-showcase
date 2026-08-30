@@ -28,7 +28,8 @@
       "Colour, roughness and metalness are measured from the source, not invented.",
       "Every clip is seeked to at least 5 times and its binding delta compared against its own track values (Gate R1).",
       "Every VFX emitter resolves to a socket measured on a bone the rig really has.",
-      "Effect and light colours are measured off the character or a stated HSL move from one."
+      "Effect and light colours are measured off the character or a stated HSL move from one.",
+      "Features that must stay rigid (eyes, fangs) are not split across joints that rotate apart."
     ],
     "notDone": [
       "AI-vision review against the reference (the skill's stage 4) has not run. The renders in evidence/renders are captures, not a scored comparison sheet.",
@@ -816,7 +817,29 @@
     },
     "singleShell": true,
     "levelsOfDetail": 1,
-    "decimation": "REFUSED. The rigged model is one skinned shell at a single level of detail. A decimate pass rewrites the vertex set, so skinIndex/skinWeight would point at vertices that no longer exist and the figure would tear the moment a clip ran. geometryDescriptor.decimate is absent from this spec and must stay absent while the rig is bound."
+    "decimation": "REFUSED. The rigged model is one skinned shell at a single level of detail. A decimate pass rewrites the vertex set, so skinIndex/skinWeight would point at vertices that no longer exist and the figure would tear the moment a clip ran. geometryDescriptor.decimate is absent from this spec and must stay absent while the rig is bound.",
+    "skinConditioning": {
+      "status": "applied at build time by src/skinFix.ts",
+      "defect": "the generated rig weights the head to the CLAVICLES: over the 24,373 head-dominated vertices, L_Clavicle holds 0.106 and R_Clavicle 0.096 of the total weight, and the largest share held by a non-dominant joint on an iris vertex is 0.581. Clavicles rotate on nearly every clip, so every arm swing dragged a fifth of the face with it - visible as smeared eyes and melted fangs.",
+      "repair": "arm-chain influence is removed from vertices the head already dominates and redistributed proportionally across the joints that remain, preserving the generator's balance between Head, NeckTwist02 and Spine01. Spine and neck influence is untouched.",
+      "removed": [
+        "L_Clavicle",
+        "R_Clavicle",
+        "L_UpperarmTwist01",
+        "R_UpperarmTwist01"
+      ],
+      "verticesChanged": 24373,
+      "maxWeightMovedOnOneVertex": 0.5261,
+      "overwritesMeasuredData": true,
+      "justification": "a head does not follow a shoulder in any anatomy; this is auto-rigger spill, not a modelling choice",
+      "gatesAfter": {
+        "G4_maxWeightError": 4.47e-08,
+        "G5_maxSkinIndex": 40,
+        "gateR1": "unchanged at 5.96e-8"
+      },
+      "disableWith": "?skinfix=off",
+      "evidence": "tools/facebind.ts for the measurement, tools/skinfix_check.ts for the gates"
+    }
   },
   "animation": {
     "clips": 33,

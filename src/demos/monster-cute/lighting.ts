@@ -107,9 +107,13 @@ export function createMonsterCuteStageLights(): StageLights {
 /**
  * The floor.
  *
- * A shadow-only disc plus a faint additive ring in the fur's deep tone: enough to seat the figure
- * without introducing a surface that competes with it. The ring is what makes the ground read as
- * a stage rather than as nothing.
+ * A shadow-only disc, and nothing else. It seats the figure without introducing a surface that
+ * competes with it.
+ *
+ * There was a faint additive ring here as well, meant to make the floor read as a stage. It did
+ * not earn its place — with the rim light carrying the silhouette and the dust carrying the
+ * contact, the ring was one more circle on the ground saying nothing the shadow was not already
+ * saying.
  */
 export function createMonsterCuteGround(): THREE.Group {
   const group = new THREE.Group();
@@ -122,17 +126,6 @@ export function createMonsterCuteGround(): THREE.Group {
   shadow.rotation.x = -Math.PI / 2;
   shadow.receiveShadow = true;
   group.add(shadow);
-
-  const halo = new THREE.Mesh(
-    new THREE.RingGeometry(0.42 * H, 1.5 * H, 96),
-    new THREE.MeshBasicMaterial({
-      color: PALETTE.furDeep, transparent: true, opacity: 0.09,
-      blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
-    }),
-  );
-  halo.rotation.x = -Math.PI / 2;
-  halo.position.y = 0.002;
-  group.add(halo);
 
   return group;
 }
