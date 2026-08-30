@@ -97,26 +97,26 @@ export interface SkillDefinition {
 export const SKILLS: readonly SkillDefinition[] = [
   {
     id: 'crimson-arc',
-    name: 'Crimson Arc',
-    title: '烈斬 · Liệt Trảm',
-    clip: 'preset:biped:chop',
-    rate: 2.4,
-    description: 'One cut, written as one brush stroke — pressed through the belly, dry at the tail.',
-    // Measured: the right hand spikes to 7.67 m/s at t=0.317 and is above half that for only
-    // 0.308..0.325. A long windup and a very short strike, so the stroke is laid down fast and the
-    // impact lands on the frame the hand actually arrives.
-    slash: { socket: 'grip.right', from: 0.27, to: 0.42, width: 0.5 },
+    name: 'Crimson Palm',
+    title: '烈掌 · Liệt Chưởng',
+    clip: 'preset:biped:box_03',
+    rate: 1.3,
+    description: 'An open-hand strike. She carries no weapon, so the arc is the one her palm leaves.',
+    // Was `chop` — a two-handed downward cut, which reads as swinging a blade she does not have and
+    // the rig could not hold anyway: each hand is a single bone with no fingers. `box_03` is a real
+    // unarmed strike, and measuring every clip's hand speed showed it is LEFT-lead: 3.94 m/s on the
+    // left at t=0.290 against 0.96 on the right, so the stroke follows the left hand.
+    slash: { socket: 'grip.left', from: 0.20, to: 0.42, width: 0.42 },
     bursts: [
-      { socket: 'grip.right', at: 0.325, count: 120, speed: 2.1, radius: 0.09, sparkRatio: 0.5 },
-      { socket: 'attachment.foot.right', at: 0.34, count: 70, speed: 1.5, radius: 0.12, sparkRatio: 0.25 },
+      { socket: 'grip.left', at: 0.30, count: 120, speed: 2.1, radius: 0.09, sparkRatio: 0.5 },
+      { socket: 'attachment.foot.right', at: 0.33, count: 70, speed: 1.5, radius: 0.12, sparkRatio: 0.25 },
     ],
-    array: { socket: 'attachment.foot.right', at: 0.33, duration: 1.15, radius: 1.35 },
-    // The cut does not just land — it splits the air it passed through.
-    fractures: [{ socket: 'grip.right', at: 0.33, count: 2, radius: 0.8, duration: 0.85, spread: 0.5 }],
-    flame: { from: 0.2, mid: 0.36, to: 0.7, peak: 0.75 },
-    aura: { from: 0.18, mid: 0.32, to: 0.55, peak: 0.55 },
-    emissive: { from: 0.18, mid: 0.32, to: 0.6, peak: 1.5 },
-    accent: { from: 0.2, mid: 0.33, to: 0.6, peak: 6 },
+    array: { socket: 'attachment.foot.right', at: 0.31, duration: 1.15, radius: 1.35 },
+    fractures: [{ socket: 'grip.left', at: 0.30, count: 2, radius: 0.8, duration: 0.85, spread: 0.5 }],
+    flame: { from: 0.16, mid: 0.32, to: 0.7, peak: 0.75 },
+    aura: { from: 0.15, mid: 0.30, to: 0.55, peak: 0.55 },
+    emissive: { from: 0.15, mid: 0.30, to: 0.6, peak: 1.5 },
+    accent: { from: 0.17, mid: 0.31, to: 0.6, peak: 6 },
   },
   {
     id: 'dragon-seal',
