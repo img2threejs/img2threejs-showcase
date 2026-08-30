@@ -4,6 +4,7 @@ import { BoltPool, type BoltOptions } from './projectile';
 import { Shockwave } from './shockwave';
 import { GroundGlow } from './groundGlow';
 import { Flare } from './flare';
+import { Scorch } from './scorch';
 
 /**
  * The whole effect layer, in one object.
@@ -35,6 +36,8 @@ export interface BurstOptions {
   jitter?: number;
   /** Velocity added to every particle, e.g. the floor's motion under a runner. */
   inherit?: THREE.Vector3;
+  /** 0 steady, 1 guttering ember. */
+  flicker?: number;
 }
 
 interface Flash {
@@ -51,6 +54,7 @@ export class VfxSystem {
   readonly glow: GroundGlow;
   private readonly waves: Shockwave[];
   private readonly flares: Flare[];
+  private readonly scorches: Scorch[];
   private readonly flashes: Flash[];
   private elapsed = 0;
 
@@ -61,6 +65,7 @@ export class VfxSystem {
     this.glow = new GroundGlow(figureHeight * 0.72, auraColour);
     this.waves = Array.from({ length: 8 }, () => new Shockwave());
     this.flares = Array.from({ length: 6 }, () => new Flare());
+    this.scorches = Array.from({ length: 6 }, () => new Scorch());
     // Impact lights are pooled for the same reason bolts are: `new PointLight` mid-cast forces the
     // renderer to recompile every material that can receive light, which drops a frame every time.
     // Five, not eight: a radial skill lands its impacts together, and the sixth simultaneous
@@ -75,6 +80,7 @@ export class VfxSystem {
     this.root.add(this.particles.points, this.bolts.group, this.glow.mesh);
     for (const wave of this.waves) this.root.add(wave.mesh);
     for (const flare of this.flares) this.root.add(flare.mesh);
+    for (const scorch of this.scorches) this.root.add(scorch.mesh);
     for (const flash of this.flashes) this.root.add(flash.light);
   }
 
@@ -98,6 +104,7 @@ export class VfxSystem {
       swirl: options.swirl ?? 0,
       jitter: options.jitter ?? 0,
       inherit: options.inherit,
+      flicker: options.flicker,
     });
   }
 
@@ -122,6 +129,12 @@ export class VfxSystem {
     free?.fire(at, aim, colour, length, girth, duration);
   }
 
+  /** A burn that outlives the blast. See scorch.ts for why the impacts needed a slow half. */
+  scorch(at: THREE.Vector3, radius: number, hot: THREE.Color, cool: THREE.Color, duration = 1.4): void {
+    const free = this.scorches.find((s) => !s.busy);
+    free?.fire(at, radius, hot, cool, duration);
+  }
+
   /** A short, bright point light. This is what makes an impact read as light rather than as paint. */
   flash(at: THREE.Vector3, colour: THREE.Color, peak: number, duration = 0.24, distance = 8): void {
     const free = this.flashes.find((f) => f.t >= f.duration);
@@ -141,6 +154,7 @@ export class VfxSystem {
     this.bolts.update(delta, cameraPosition);
     for (const wave of this.waves) wave.update(delta);
     for (const flare of this.flares) flare.update(delta, cameraPosition);
+    for (const scorch of this.scorches) scorch.update(delta);
     for (const flash of this.flashes) {
       if (flash.t >= flash.duration) continue;
       flash.t += delta;
@@ -166,5 +180,6 @@ export class VfxSystem {
     this.glow.dispose();
     for (const wave of this.waves) wave.dispose();
     for (const flare of this.flares) flare.dispose();
+    for (const scorch of this.scorches) scorch.dispose();
   }
 }

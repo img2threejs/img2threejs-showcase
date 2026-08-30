@@ -943,8 +943,12 @@ export const demos: DemoEntry[] = [
     // 1.9-tall figure — so it looks straight at the character's right ear. These numbers come out of
     // frameCamera() in stage.ts, which builds the view from the measured body basis, and they put the
     // camera on the side that lets a bolt cross the frame instead of leaving it.
-    cameraPosition: [3.84, 1.32, -3.45],
-    cameraTarget: [0.83, 0.87, -0.02],
+    // Read out of the running standalone, not transcribed by hand — the previous pair was left
+    // over from an earlier framing and put the camera on the character's OTHER side, which mirrors
+    // the composition: the bolts left toward screen-left and off the edge instead of crossing the
+    // frame. frameCamera() in stage.ts derives these from the measured body basis.
+    cameraPosition: [4.2027, 1.6097, 3.3358],
+    cameraTarget: [1.1383, 0.9523, -0.0327],
     cameraFov: 32,
     accent: '#d3f52c',
     backgroundGradient: { inner: '#0b0f08', outer: '#05060a' },

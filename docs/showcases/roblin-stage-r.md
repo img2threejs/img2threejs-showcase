@@ -386,6 +386,46 @@ Thresholds are in figure heights per second, and they were set against measured 
 | box_02 | 6.09 | 4.42 | 1.00 |
 | front_kick_01 | 6.76 | 7.48 | 0.99 |
 
+### Ember Volley
+
+The volley started life as the toxic bolt recoloured orange, and looked it. It now has its own
+vocabulary, built out of four additions that the rest of the effect layer inherited:
+
+* **A gradient along the wake.** `Ribbon` carries a head and a tail colour and cools between them,
+  with the hot centreline cooling more slowly than the edges — which is what a flame does. A single
+  flat colour down the strip is what made an ember trail look like a plastic tube.
+* **Guttering.** Particles carry a `flicker` amount and a per-particle seed, and pulse on two
+  detuned sines. The bolt core, its halo and its light gutter on the same rule. A field of perfectly
+  steady dots reads as confetti, not fire.
+* **Embers that RISE.** The shed sparks take a negative gravity, so the wake sheds upward-drifting
+  embers instead of falling gravel.
+* **A scorch that outlives the blast** (`vfx/scorch.ts`) — a ragged, noise-broken mark that cools
+  from the ember hue to nothing over about a second and a half, so a three-punch combination lands
+  on ground its earlier hits have already marked.
+
+The three punches **escalate** — 0.55, 0.68, then 1.05 — and the cross gets a visible quarter-clip
+wind-up of embers gathering around the fist, swirled about the hand's own axis so it wraps the fist
+rather than drifting near it.
+
+Four things had to be corrected by looking at it:
+
+1. **`EMBER_WHITE` was 78% white.** Every hot part of the volley — wake head, muzzle, impact shell —
+   rendered as white confetti with an orange fringe. Fire's hottest visible part is still distinctly
+   warm; it is now 62% of the way to the ember hue.
+2. **The flare was a flat white wedge.** A linear across-term inside the quad gave it hard edges
+   that additive blending clipped. Sharper taper, softer falloff, and it now fades out before the
+   quad's own border — without that last part the round variant shows a rectangle around itself.
+3. **The scorch out-glowed the explosion.** It spent most of its life at its hot colour and was
+   laid down under airbursts too, where it is a metre-wide mark on ground the blast never touched —
+   and with the camera angled down it landed mostly below the frame. It now cools much faster, at
+   half the alpha, and only appears when something actually hit the floor.
+4. **The hands trailed toxic green through a fire attack.** The limb trails are keyed to limb speed
+   and know nothing about which skill is casting, so a cast can now tint them for its own duration.
+
+An airburst also got its own signature — a ROUND flare alongside the directional one. The volley
+detonates at chest height, so it never triggers the ground rings, and without it the impact was a
+cloud of particles with no event at its centre.
+
 The ribbon shader gained a hot centreline in the same pass. It had been varying alpha along the
 length only, never across the width, so every pixel of the strip got the same colour and a wake
 rendered as a flat painted band.

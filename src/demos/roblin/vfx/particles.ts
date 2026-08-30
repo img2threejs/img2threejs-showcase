@@ -34,6 +34,11 @@ export interface EmitOptions {
   swirl?: number;
   /** Extra offset randomised inside a sphere of this radius. */
   jitter?: number;
+  /**
+   * 0 for a steady spark, 1 for a guttering ember. Embers do not glow evenly — they pulse as they
+   * tumble, and a field of perfectly steady dots is what makes a fire effect read as confetti.
+   */
+  flicker?: number;
   /** Starting velocity added to every particle, e.g. the projectile's own. */
   inherit?: THREE.Vector3;
 }
@@ -44,14 +49,22 @@ const VERTEX = /* glsl */ `
   attribute float aLife;
   attribute vec3 aColour;
   attribute vec3 aColourEnd;
+  attribute float aFlicker;
+  attribute float aSeed;
   varying vec3 vColour;
   varying float vFade;
   uniform float uScale;
+  uniform float uTime;
 
   void main() {
     float t = clamp(aAge / max(aLife, 0.0001), 0.0, 1.0);
     // Fast in, slow out: a particle that fades linearly reads as a dot that switches off.
     vFade = pow(1.0 - t, 1.7);
+    // Two detuned sines so the pulse never settles into an obvious rhythm across the field.
+    float phase = aSeed * 6.2831853;
+    float gutter = 0.62 + 0.38 * (0.5 + 0.5 * sin(uTime * 17.0 + phase))
+                        * (0.65 + 0.35 * sin(uTime * 6.3 + phase * 2.7));
+    vFade *= mix(1.0, gutter, aFlicker);
     vColour = mix(aColour, aColourEnd, t);
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     // Grow a little then shrink, so a spark reads as expanding gas rather than a shrinking dot.
@@ -90,6 +103,8 @@ export class ParticleField {
   private readonly gravity: Float32Array;
   private readonly drag: Float32Array;
   private readonly swirl: Float32Array;
+  private readonly flicker: Float32Array;
+  private readonly seed: Float32Array;
   private readonly axis: Float32Array;
   private cursor = 0;
   private live = 0;
@@ -109,6 +124,8 @@ export class ParticleField {
     this.gravity = new Float32Array(capacity);
     this.drag = new Float32Array(capacity);
     this.swirl = new Float32Array(capacity);
+    this.flicker = new Float32Array(capacity);
+    this.seed = new Float32Array(capacity);
     this.axis = new Float32Array(capacity * 3);
     // Dead particles are parked with life 0; the shader fades them to nothing.
     this.life.fill(0);
@@ -120,11 +137,13 @@ export class ParticleField {
     geometry.setAttribute('aLife', new THREE.BufferAttribute(this.life, 1));
     geometry.setAttribute('aColour', new THREE.BufferAttribute(this.colour, 3));
     geometry.setAttribute('aColourEnd', new THREE.BufferAttribute(this.colourEnd, 3));
+    geometry.setAttribute('aFlicker', new THREE.BufferAttribute(this.flicker, 1));
+    geometry.setAttribute('aSeed', new THREE.BufferAttribute(this.seed, 1));
     geometry.setDrawRange(0, capacity);
     this.geometry = geometry;
 
     const material = new THREE.ShaderMaterial({
-      uniforms: { uScale: { value: 320 } },
+      uniforms: { uScale: { value: 320 }, uTime: { value: 0 } },
       vertexShader: VERTEX,
       fragmentShader: FRAGMENT,
       transparent: true,
@@ -150,7 +169,7 @@ export class ParticleField {
   emit(options: EmitOptions): void {
     const {
       position, count, speed, life, size, colour,
-      colourEnd = colour, gravity = 0, drag = 0, swirl = 0, jitter = 0,
+      colourEnd = colour, gravity = 0, drag = 0, swirl = 0, jitter = 0, flicker = 0,
       spread = Math.PI, direction, inherit,
     } = options;
     const axis = (direction ?? new THREE.Vector3(0, 1, 0)).clone().normalize();
@@ -196,10 +215,13 @@ export class ParticleField {
       this.gravity[i] = gravity;
       this.drag[i] = drag;
       this.swirl[i] = swirl;
+      this.flicker[i] = flicker;
+      this.seed[i] = this.rng();
     }
   }
 
   update(delta: number): void {
+    (this.points.material as THREE.ShaderMaterial).uniforms.uTime.value += delta;
     if (this.live === 0) return;
     const dt = Math.min(delta, 1 / 20); // a tab that was backgrounded must not teleport the field
     let live = 0;
@@ -246,6 +268,8 @@ export class ParticleField {
     this.geometry.getAttribute('aSize').needsUpdate = true;
     this.geometry.getAttribute('aColour').needsUpdate = true;
     this.geometry.getAttribute('aColourEnd').needsUpdate = true;
+    this.geometry.getAttribute('aFlicker').needsUpdate = true;
+    this.geometry.getAttribute('aSeed').needsUpdate = true;
   }
 
   dispose(): void {

@@ -35,6 +35,22 @@ export interface BoltOptions {
    * that fires many bolts turns this down rather than turning the bolts down.
    */
   lightScale?: number;
+  /** Wake colour at the head. Defaults to `halo`. */
+  trailHead?: THREE.Color;
+  /**
+   * Wake colour at the tail. Fire is white-hot where it leaves the fist and dull red where it has
+   * had time to cool; a single flat colour along the wake is what made the ember trail read as a
+   * plastic tube. Defaults to `halo`, which reproduces the old single-colour behaviour.
+   */
+  trailTail?: THREE.Color;
+  /** Colour the shed sparks cool to. Defaults to a dimmed `halo`. */
+  sparkEnd?: THREE.Color;
+  /** Downward acceleration on the shed sparks. NEGATIVE makes embers rise off the trail. */
+  sparkGravity?: number;
+  /** 0 steady, 1 guttering. Applies to the shed sparks and to the core's own brightness. */
+  flicker?: number;
+  /** Multiplies the shed spark size. */
+  sparkSize?: number;
   /** Called at the point of impact, with the impact position. */
   onImpact?(at: THREE.Vector3, direction: THREE.Vector3): void;
 }
@@ -46,6 +62,7 @@ class Bolt {
   private readonly light: THREE.PointLight;
   private readonly ribbon: Ribbon;
   private readonly velocity = new THREE.Vector3();
+  private baseIntensity = 0;
   private readonly start = new THREE.Vector3();
   private readonly direction = new THREE.Vector3();
   private travelled = 0;
@@ -57,6 +74,12 @@ class Bolt {
   private onImpact: BoltOptions['onImpact'];
   private state: 'idle' | 'flying' | 'fading' = 'idle';
   private fade = 0;
+  private sparkEnd = new THREE.Color();
+  private sparkGravity = 1.1;
+  private sparkSize = 1;
+  private flicker = 0;
+  private coreColour = new THREE.Color();
+  private life = 0;
 
   constructor(private readonly field: ParticleField) {
     this.core = new THREE.Mesh(
@@ -119,7 +142,10 @@ class Bolt {
   get busy(): boolean { return this.state !== 'idle'; }
 
   launch(options: BoltOptions): void {
-    const { from, direction, speed, range, core, halo, radius, sparkRate, onImpact, lightScale = 1 } = options;
+    const {
+      from, direction, speed, range, core, halo, radius, sparkRate, onImpact, lightScale = 1,
+      trailHead = halo, trailTail = halo, sparkEnd, sparkGravity = 1.1, flicker = 0, sparkSize = 1,
+    } = options;
     this.group.position.copy(from);
     this.start.copy(from);
     this.direction.copy(direction).normalize();
@@ -130,6 +156,12 @@ class Bolt {
     this.sparkRate = sparkRate;
     this.sparkDebt = 0;
     this.sparkColour.copy(halo);
+    this.sparkEnd.copy(sparkEnd ?? halo.clone().multiplyScalar(0.25));
+    this.sparkGravity = sparkGravity;
+    this.sparkSize = sparkSize;
+    this.flicker = flicker;
+    this.coreColour.copy(core);
+    this.life = 0;
     this.onImpact = onImpact;
 
     // The halo has to stay clearly dimmer than the core. At 3.1x and 0.42 opacity it and the core
@@ -143,10 +175,11 @@ class Bolt {
     // Tied to the bolt's own size so a volley pellet does not light the stage like the heavy bolt.
     // Measured down from 7 + 70r: at that strength the bolt's own light washed the figure to near
     // white as it passed, which the bloom pass had been hiding in the standalone build.
-    this.light.intensity = (5 + radius * 46) * lightScale;
+    this.baseIntensity = (5 + radius * 46) * lightScale;
+    this.light.intensity = this.baseIntensity;
     this.light.distance = radius * 27;
     this.ribbon.setWidth(radius * 1.25);
-    this.ribbon.setColour(halo);
+    this.ribbon.setColours(trailHead, trailTail);
     this.ribbon.setOpacity(0.55);
     this.ribbon.reset(from);
     this.group.visible = true;
@@ -179,6 +212,18 @@ class Bolt {
     this.core.rotation.x += delta * 7;
     this.core.rotation.y += delta * 5;
 
+    if (this.flicker > 0) {
+      // The core guts like a flame rather than burning at a constant brightness. Two detuned
+      // sines, the same trick the ember particles use, so it never falls into an obvious beat.
+      this.life += delta;
+      const gutter = 0.72 + 0.28
+        * (0.5 + 0.5 * Math.sin(this.life * 21)) * (0.6 + 0.4 * Math.sin(this.life * 7.7));
+      const k = 1 - this.flicker + this.flicker * gutter;
+      (this.core.material as THREE.MeshBasicMaterial).color.copy(this.coreColour).multiplyScalar(k);
+      (this.halo.material as THREE.ShaderMaterial).uniforms.uStrength.value = 0.85 * k;
+      this.light.intensity = this.baseIntensity * k;
+    }
+
     this.sparkDebt += this.sparkRate * delta;
     const sparks = Math.floor(this.sparkDebt);
     if (sparks > 0) {
@@ -190,12 +235,13 @@ class Bolt {
         count: sparks,
         speed: [0.4, 1.9],
         life: [0.16, 0.42],
-        size: [this.radius * 2, this.radius * 6],
+        size: [this.radius * 2 * this.sparkSize, this.radius * 6 * this.sparkSize],
         colour: this.sparkColour,
-        colourEnd: this.sparkColour.clone().multiplyScalar(0.25),
-        gravity: 1.1,
+        colourEnd: this.sparkEnd,
+        gravity: this.sparkGravity,
         drag: 2.6,
         jitter: this.radius * 0.6,
+        flicker: this.flicker,
       });
     }
 

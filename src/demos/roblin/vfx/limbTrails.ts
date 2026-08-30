@@ -21,8 +21,10 @@ interface Limb {
   socketId: string;
   ribbon: Ribbon;
   colour: THREE.Color;
+  tail: THREE.Color;
   spark: THREE.Color;
   sparkEnd: THREE.Color;
+  isHand: boolean;
   width: number;
   /** Below this the limb is considered still. */
   quiet: number;
@@ -39,6 +41,12 @@ export interface LimbTrails {
   update(delta: number, cameraPosition: THREE.Vector3): void;
   /** Peak trail opacity across all four limbs — the HUD reads it. */
   readonly intensity: number;
+  /**
+   * Override the HAND wake colours for a while, then fall back to the resting palette. A cast owns
+   * the look of the limbs that throw it: an ember punch trailing the character's toxic green reads
+   * as two unrelated effects sharing a fist.
+   */
+  tintHands(head: THREE.Color, tail: THREE.Color, seconds: number): void;
   dispose(): void;
 }
 
@@ -47,6 +55,8 @@ export interface LimbTrailSpec {
   colour: number;
   spark: number;
   sparkEnd: number;
+  /** Cooled colour at the tail of the wake. Defaults to `colour`. */
+  tail?: number;
   /** Multiple of figure height. */
   width: number;
   quiet: number;
@@ -74,6 +84,8 @@ export function createLimbTrails(
       socketId: spec.socketId,
       ribbon,
       colour: new THREE.Color(spec.colour),
+      tail: new THREE.Color(spec.tail ?? spec.colour),
+      isHand: spec.socketId.startsWith('effect:cast'),
       spark: new THREE.Color(spec.spark),
       sparkEnd: new THREE.Color(spec.sparkEnd),
       width: figureHeight * spec.width,
@@ -89,14 +101,24 @@ export function createLimbTrails(
   const here = new THREE.Vector3();
   const velocity = new THREE.Vector3();
   let intensity = 0;
+  const tintHead = new THREE.Color();
+  const tintTail = new THREE.Color();
+  let tintLeft = 0;
 
   return {
     group,
     get intensity() { return intensity; },
 
+    tintHands(head, tail, seconds) {
+      tintHead.copy(head);
+      tintTail.copy(tail);
+      tintLeft = Math.max(tintLeft, seconds);
+    },
+
     update(delta, cameraPosition) {
       if (delta <= 0) return;
       intensity = 0;
+      if (tintLeft > 0) tintLeft = Math.max(0, tintLeft - delta);
 
       for (const limb of limbs) {
         const socket = sockets.get(limb.socketId);
@@ -120,6 +142,8 @@ export function createLimbTrails(
         }
 
         if (limb.live) {
+          const tinted = limb.isHand && tintLeft > 0;
+          limb.ribbon.setColours(tinted ? tintHead : limb.colour, tinted ? tintTail : limb.tail);
           limb.ribbon.push(here);
           limb.ribbon.setWidth(limb.width * (0.45 + 0.55 * limb.opacity));
           limb.ribbon.setOpacity(limb.opacity * 0.9);
@@ -141,8 +165,8 @@ export function createLimbTrails(
           limb.debt -= count;
           vfx.burst(here, {
             count,
-            colour: limb.spark,
-            colourEnd: limb.sparkEnd,
+            colour: limb.isHand && tintLeft > 0 ? tintHead : limb.spark,
+            colourEnd: limb.isHand && tintLeft > 0 ? tintTail : limb.sparkEnd,
             direction: velocity.clone().normalize().negate(),
             spread: 0.65,
             speed: [speed * 0.05, speed * 0.28],

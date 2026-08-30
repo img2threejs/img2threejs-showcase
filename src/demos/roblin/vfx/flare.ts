@@ -42,11 +42,17 @@ export class Flare {
           // A teardrop: hot and wide at the muzzle, tapering away down the aim.
           vec2 p = vUv * 2.0 - 1.0;
           float along = clamp(p.x * 0.5 + 0.5, 0.0, 1.0);
-          float taper = pow(1.0 - along, 1.6);
+          // Sharper taper and a softer edge: at 1.6 with a linear across-term the quad filled with a
+          // hard-edged triangle, which additive blending then clipped to a flat white wedge.
+          float taper = pow(1.0 - along, 2.6);
           float across = 1.0 - min(1.0, abs(p.y) / max(taper, 0.02));
-          float body = pow(max(across, 0.0), 1.8) * taper;
-          float core = pow(max(1.0 - length(vec2(p.x * 1.6 + 0.9, p.y * 2.4)), 0.0), 2.0);
-          float alpha = (body * 0.85 + core) * uFade;
+          float body = pow(max(across, 0.0), 2.6) * taper;
+          float core = pow(max(1.0 - length(vec2(p.x * 1.8 + 1.05, p.y * 3.0)), 0.0), 2.4);
+          float alpha = (body * 0.42 + core * 0.8) * uFade;
+          // Fade to nothing before the quad's own border. Without this the teardrop reaches the
+          // edge of its plane and the flare shows a faint rectangle around itself — obvious once
+          // the round variant is used for an airburst, where length and girth are nearly equal.
+          alpha *= smoothstep(1.0, 0.68, max(abs(p.x), abs(p.y)));
           if (alpha <= 0.003) discard;
           gl_FragColor = vec4(uColour * alpha, 1.0);
         }

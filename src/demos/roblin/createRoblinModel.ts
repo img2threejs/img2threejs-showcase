@@ -148,20 +148,28 @@ export function createRoblinModel(scene: THREE.Scene): THREE.Group {
   const vfx = new VfxSystem(frame.figureHeight, new THREE.Color(VFX.venom.value));
   const animator = createAnimator(rigged, 'preset:biped:idle');
   const motion = createLimbMotion(sockets, frame);
-  const skills = createSkills({ frame, sockets, animator, vfx, lights, groundY: 0, root: group, motion });
+  // `trails` is created below and the skills need to recolour it while a cast runs, so the hook is
+  // a late binding rather than a construction-order rearrangement that would leave the trails
+  // without a motion tracker to read.
+  let trailsRef: { tintHands(h: THREE.Color, t: THREE.Color, s: number): void } | null = null;
+  const skills = createSkills({
+    frame, sockets, animator, vfx, lights, groundY: 0, root: group, motion,
+    tintTrails: (head, tail, seconds) => trailsRef?.tintHands(head, tail, seconds),
+  });
 
   // Speed-driven wakes on both hands and both feet, keyed to nothing but the measured limb speed,
   // so all sixteen clips get the streaks their own motion earns. Hands carry the signature hue and
   // feet the leather one, so a kick never looks like a cast.
   const trails = createLimbTrails(
     [
-      { socketId: 'effect:cast-primary', colour: VFX.toxic.value, spark: VFX.spore.value, sparkEnd: VFX.venom.value, width: 0.07, quiet: 0.5, loud: 2.6, sparkRate: 110 },
-      { socketId: 'effect:cast-secondary', colour: VFX.toxic.value, spark: VFX.spore.value, sparkEnd: VFX.venom.value, width: 0.07, quiet: 0.5, loud: 2.6, sparkRate: 110 },
-      { socketId: 'attachment:step-l', colour: VFX.ember.value, spark: VFX.ember.value, sparkEnd: VFX.emberDeep.value, width: 0.058, quiet: 0.7, loud: 3.2, sparkRate: 75 },
-      { socketId: 'attachment:step-r', colour: VFX.ember.value, spark: VFX.ember.value, sparkEnd: VFX.emberDeep.value, width: 0.058, quiet: 0.7, loud: 3.2, sparkRate: 75 },
+      { socketId: 'effect:cast-primary', colour: VFX.spore.value, tail: VFX.venom.value, spark: VFX.spore.value, sparkEnd: VFX.venom.value, width: 0.07, quiet: 0.5, loud: 2.6, sparkRate: 110 },
+      { socketId: 'effect:cast-secondary', colour: VFX.spore.value, tail: VFX.venom.value, spark: VFX.spore.value, sparkEnd: VFX.venom.value, width: 0.07, quiet: 0.5, loud: 2.6, sparkRate: 110 },
+      { socketId: 'attachment:step-l', colour: VFX.ember.value, tail: VFX.emberDeep.value, spark: VFX.ember.value, sparkEnd: VFX.emberDeep.value, width: 0.058, quiet: 0.7, loud: 3.2, sparkRate: 75 },
+      { socketId: 'attachment:step-r', colour: VFX.ember.value, tail: VFX.emberDeep.value, spark: VFX.ember.value, sparkEnd: VFX.emberDeep.value, width: 0.058, quiet: 0.7, loud: 3.2, sparkRate: 75 },
     ],
     sockets, motion, vfx, frame.figureHeight,
   );
+  trailsRef = trails;
   const aura = createAmbientAura({ frame, sockets, vfx });
   const footsteps = createFootstepWatcher(
     [sockets.get('attachment:step-l'), sockets.get('attachment:step-r')],
