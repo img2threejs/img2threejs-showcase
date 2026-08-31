@@ -259,7 +259,7 @@ export const CHUN_LI_ACTIONS: readonly ChunLiAction[] = [
     label: 'Kikoken',
     clip: 'preset:biped:cast_a_spell',
     kind: 'cast',
-    note: 'Gather, feint, gather, throw at t=2.505 — the orb flies 0.95 H over 0.62 s and bursts.',
+    note: 'Gather, feint, gather, throw at t=2.505 — the orb flies 0.62 H over 0.45 s and bursts.',
   },
   {
     id: 'ground-slam',
