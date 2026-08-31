@@ -1,4 +1,8 @@
 import * as THREE from 'three';
+import {
+  createHanHuanShouDaoModel,
+  createHanHuanShouDaoLookDevLights,
+} from './han-huan-shou-dao/createHanHuanShouDaoModel';
 import type { PinnedCaptureCamera } from '../scene';
 import {
   createM9DopplerModel,
@@ -204,6 +208,59 @@ const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
 const authored: DemoEntry[] = [
+  {
+    id: 'han-huan-shou-dao',
+    title: 'Han Huan-Shou Dao (汉代环首刀)',
+    subjectClass: 'object',
+    blurb:
+      'A code-only procedural Three.js reconstruction of a Han-dynasty huan-shou dao ' +
+      '(ring-pommel sabre) rebuilt from a three-view illustration plate — not photogrammetry ' +
+      'and not a downloaded mesh. Single-edged closed ground-blade, thin disk guard, gilt ' +
+      'collars, dark cord-wrapped grip with twelve diamond studs, and an open ring pommel ' +
+      'with engraved faces. Live: a gentle idle rock so steel grind and gilt catch the light; ' +
+      'six structural modules support the gallery explode view.',
+    referenceImage: `${BASE}references/han-huan-shou-dao.png`,
+    referenceKind: 'image',
+    sourcePath: 'src/demos/han-huan-shou-dao/createHanHuanShouDaoModel.ts',
+    sourceUrl: `${REPO}/src/demos/han-huan-shou-dao/createHanHuanShouDaoModel.ts`,
+    generatedWith: 'img2threejs v1.5.1 · dao family adapter / han-huan-shou subtype',
+    prompt:
+      'Reconstruct the Han-dynasty huan-shou dao from the supplied three-view illustration as a ' +
+      'code-only procedural Three.js object: closed single-edged ground blade, disk guard, ' +
+      'gilt front/rear ferrules, cord-wrapped handle with paired diamond inlays, and an open ' +
+      'ring pommel with front/back engraving. No imported meshes or art packs.',
+    author: 'abyssalyanbin',
+    authorUrl: 'https://github.com/abyssalyanbin',
+    status: 'final',
+    updatedAt: '2026-08-29',
+    // Hero: pan look-at toward the tip so the left 320px panel covers empty canvas, then
+    // pull in so the sabre occupies ~75–85% of the remaining right display. Capture is
+    // independent (frameForCapture + captureMargin) and must stay on the white plate.
+    cameraPosition: [1.52, 0.54, 4.62],
+    cameraTarget: [0.86, 0.02, 0],
+    cameraFov: 28,
+    // White-plate capture was ~10% short of the reference fill at the default 1.12 margin.
+    // 1.04 lands normalized length within ~5% of reference-face-clean (fill ≈ 0.95).
+    captureMargin: 1.04,
+    accent: '#c4a46a',
+    backgroundGradient: { inner: '#3a3f46', outer: '#16181c' },
+    exposure: 1.18,
+    environmentIntensity: 1.12,
+    toneMapping: 'aces',
+    installLights: (scene) => {
+      scene.add(createHanHuanShouDaoLookDevLights('reference'));
+    },
+    build: (scene) => {
+      const group = createHanHuanShouDaoModel({
+        castShadow: true,
+        receiveShadow: true,
+        textureSize: 1024,
+        animate: true,
+      });
+      scene.add(group);
+      return group;
+    },
+  },
   {
     id: 'leesin',
     title: 'Lee Sin \u2014 Game Character',

@@ -505,7 +505,7 @@ body.intro-active { overflow: hidden; }
   display: block;
   width: 100%;
   aspect-ratio: 4 / 5;
-  object-fit: cover;
+  object-fit: contain;
   opacity: 0.9;
 }
 
