@@ -185,7 +185,7 @@ export const demos: DemoEntry[] = [
       + "the character's own measured palette.",
     author: 'Hoài Nhớ',
     authorUrl: 'https://github.com/hoainho',
-    tripoUrl: 'https://studio.tripo3d.ai/3d-model/a17263a4-00d5-411e-b9e8-dc73092cd857',
+    tripoUrl: 'https://studio.tripo3d.ai/3d-model/3656e32c-f095-4bf4-8aa7-37cbdc2ec86f?invite_code=PW9ZEA',
     status: 'placeholder',
     cameraPosition: [1.7695, 1.045, 5.0558],
     cameraTarget: [0, 0.95, 0],
