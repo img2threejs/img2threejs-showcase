@@ -393,36 +393,41 @@ tube visibly corkscrews along its own length; transport carries the previous fra
 rotates it only by the change in tangent, which is the smallest rotation that keeps it square. The
 normal is re-orthogonalised each step, because the error accumulates over a long path.
 
-### The lance is a branch, not a light
+### The lance is one of the grove's own trees
 
-Impaling Bough throws a wooden shaft, and getting it to read as *wood* took longer than getting it
-to exist. The failures, in order, each producing a different wrong object:
+Impaling Bough throws a tree. Not something spear-shaped, not something branch-*like* — the same
+`growBranch` recursion that raises the grove, with the same material and the same instanced crown
+twigs, posed as a spear: many steps, almost no wander, forks kept to a quarter length, and the tip
+closed to a point instead of stopping at the measured 0.27 a branch keeps.
 
-| symptom | cause |
+It took five wrong objects to get there, and the instructive part is that **four of them came from
+giving the lance its own code**:
+
+| what came out | why |
 |---|---|
-| a thicket on the arm | it was built by the branch recursion, so it forked and carried twigs |
-| invisible | dark wood on a dark stage; it needed its own material |
-| **"just a light streak"** | that material was given a life-hue emissive to make it visible, which turned it into a glowing green line indistinguishable from the swing trail |
-| a bar across the frame | reach 1.35 made it longer than the character is tall |
-| a drawn line | radius 0.013 of its length — too slight to have mass |
-| a machined spike | a mathematically perfect taper is a turned spear, not a branch |
+| a thicket on the arm | branch recursion at full fork length |
+| invisible | dark wood on a dark stage |
+| **a light streak** | given a life-hue emissive to fix that, which stopped it being wood at all |
+| a bar across the frame | reach longer than the character is tall |
+| a machined cone | a separate spike generator with none of a tree's structure |
 
-The emissive one is worth naming plainly: it was a **self-inflicted regression**. An earlier version
-used the plain wood material and read correctly; brightening it to solve visibility destroyed the
-thing it was meant to show. It is now lit as wood — white material colour so the vertex colour *is*
-the albedo (tinting it with barkLight multiplied one dark brown by another and drove it almost
-black, which is what invited the emissive in the first place), with a low moss-toned emissive that
-lifts it off a black stage without pretending to be a lamp.
+A separate generator was wrong twice over: it produced a shape with no tree in it, and having its
+own code path meant it drifted from the grove's look with every change made to either. One
+generator, shaped differently, cannot drift.
 
-The shaft **swells and pinches** along its run on two detuned sines, because wood thickens at its
-knots and narrows between them, and it carries two or three **snapped-off nubs** where side
-branches used to be — stubs at a hard angle, starting *inside* the shaft so they grow out of it
-rather than sit on it. Those are what say "stripped branch" rather than "spear". A nub is three
-rings, not a recursion, so it costs nothing.
+Two fixes underneath it apply to **all** grown wood:
 
-The swing trail is **switched off** for this move. The trail is additive and blazing, the shaft is
-lit wood; side by side the eye finds the trail and never finds the lance — which is how a move
-whose entire subject is a thrown branch came back looking like a streak of light.
+- **The material's colour is white**, so the vertex colour *is* the albedo. Tinting it with
+  `barkLight` multiplied one dark brown by another, grown wood came back nearly black, and that is
+  what forced the emissive up — a strong emissive over near-black albedo is a flat green shape with
+  no wood in it. Far off, as a grove, that passes as silhouette; on a lance a metre from the camera
+  it is unmistakable.
+- **Twigs are sized off the branch's radius, not its length.** A twig is proportional to the wood it
+  grows from. Keyed to length, the same code gave sensible twigs on a short grove tree and
+  metre-long claws on a lance fourteen times longer.
+
+The swing trail is switched off for this move: it is additive and blazing, the shaft is lit wood,
+and side by side the eye finds the trail and never finds the lance.
 
 ### The swing trail
 

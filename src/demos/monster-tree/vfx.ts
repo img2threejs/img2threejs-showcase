@@ -838,81 +838,6 @@ class RuneCircle implements Tickable {
  * see the far side of is what makes a stomp feel like it moved earth. Each root is a tapered,
  * slightly bent tube on its own delay, so they erupt as a ragged burst rather than a fence.
  */
-/**
- * A single spike, tapering to an actual point.
- *
- * Deliberately NOT `growBranch`. A lance shares nothing with a branch except being made of wood:
- * it forks nowhere, carries no twigs, and its whole job is to arrive somewhere sharp. Driving it
- * through the branch recursion gave a thicket on the end of the character's arm — every fork and
- * every instanced twig working against the one thing a thrust has to read as.
- *
- * Three differences do the work. It tapers on a POWER curve to exactly zero rather than to the
- * measured 0.27 a branch keeps, so the shaft closes to a genuine point. It barely wanders, because
- * a spear that meanders is not aimed. And it is thinner than a branch of the same length.
- *
- * Swept as ONE tube, like every other grown thing here, so the shaft has no joints along it.
- */
-function growSpike(
-  length: number,
-  baseRadius: number,
-  random: () => number,
-  out: THREE.BufferGeometry[],
-): void {
-  const steps = 16;
-  const path: THREE.Vector3[] = [];
-  const radii: number[] = [];
-  let point = new THREE.Vector3();
-  let heading = new THREE.Vector3(0, 1, 0);
-  // A couple of seeded phases so the shaft's swelling is different every time it is thrown.
-  const knotPhase = random() * 6.28;
-  const knotPhase2 = random() * 6.28;
-
-  for (let i = 0; i <= steps; i += 1) {
-    const t = i / steps;
-    path.push(point.clone());
-    // ^1.7 holds the shaft near full thickness for most of its run and then closes over the last
-    // of it. A linear taper reads as a long cone, which is a carrot.
-    let r = baseRadius * (1 - t) ** 1.7;
-    // Swell and pinch along the run. A mathematically perfect taper is a machined spike; wood
-    // thickens at its knots and narrows between them, and this small variation is most of what
-    // separates a branch from a cone.
-    r *= 1 + 0.22 * Math.sin(t * 9.0 + knotPhase) + 0.12 * Math.sin(t * 21.0 + knotPhase2);
-    radii.push(Math.max(baseRadius * 0.012, r));
-    if (i === steps) break;
-    heading = heading.clone().add(new THREE.Vector3(
-      (random() - 0.5) * 0.05, 0, (random() - 0.5) * 0.05,
-    )).normalize();
-    point = point.clone().addScaledVector(heading, length / steps);
-  }
-
-  const tube = taperedTube(path, radii, 12, TRUNK_COLOUR);
-  if (tube) out.push(tube);
-
-  // Two or three snapped-off nubs along the shaft, where side branches used to be. They are stubs,
-  // not forks: a few centimetres each, at a hard angle. This is what stops the shaft reading as a
-  // turned spear and makes it a branch that has been stripped — and it is cheap, because a nub is
-  // three rings, not a recursion.
-  const nubs = 2 + Math.floor(random() * 2);
-  for (let n = 0; n < nubs; n += 1) {
-    const at = 0.18 + random() * 0.5;
-    const index = Math.min(path.length - 2, Math.floor(at * steps));
-    const shaftRadius = radii[index];
-    const side = new THREE.Vector3(random() - 0.5, 0, random() - 0.5).normalize();
-    const dir = new THREE.Vector3(0, 1, 0).multiplyScalar(0.35).addScaledVector(side, 0.94).normalize();
-    const len = length * (0.045 + random() * 0.05);
-    const base = path[index].clone();
-    const nubPath = [
-      // Start INSIDE the shaft so the stub grows out of it rather than being stuck on the surface.
-      base.clone().addScaledVector(dir, -shaftRadius * 0.6),
-      base.clone().addScaledVector(dir, len * 0.55),
-      base.clone().addScaledVector(dir, len),
-    ];
-    const nubRadii = [shaftRadius * 0.62, shaftRadius * 0.4, shaftRadius * 0.1];
-    const nub = taperedTube(nubPath, nubRadii, 7, TRUNK_COLOUR);
-    if (nub) out.push(nub);
-  }
-}
-
 class RootEruption implements Tickable {
   readonly object: THREE.Group;
   private readonly roots: Array<{ mesh: THREE.Mesh; delay: number; full: number }> = [];
@@ -1385,6 +1310,17 @@ const TRUNK_COLOUR = new THREE.Color(PALETTE.barkMid).convertSRGBToLinear().mult
  * a crooked branch those seams opened into visible breaks, which is what made the grove look
  * disjointed. Building the whole path first and sweeping one surface along it removes the joints.
  */
+interface BranchShape {
+  /** How far the heading wanders per step. 0.52 is a crooked tree; near 0 is a shaft. */
+  wander?: number;
+  /** Steps along the run. More gives a longer, smoother trunk. */
+  steps?: number;
+  /** Close the last of the run to a point instead of stopping at the tip ratio. */
+  sharpTip?: boolean;
+  /** Length of a fork relative to its parent. Small values keep side branches as detail. */
+  forkScale?: number;
+}
+
 function growBranch(
   origin: THREE.Vector3,
   direction: THREE.Vector3,
@@ -1394,10 +1330,14 @@ function growBranch(
   random: () => number,
   out: THREE.BufferGeometry[],
   stock: THREE.BufferGeometry | null = null,
+  shape: BranchShape = {},
 ): void {
-  const steps = depth >= 3 ? 5 : (depth === 2 ? 4 : 3);
+  const wander = shape.wander ?? 0.52;
+  const forkScale = shape.forkScale ?? 1;
+  const steps = shape.steps ?? (depth >= 3 ? 5 : (depth === 2 ? 4 : 3));
   const forkAt = Math.max(1, Math.floor(random() * (steps - 1)));
 
+  const knotPhase = random() * 6.28;
   const path: THREE.Vector3[] = [origin.clone()];
   const radii: number[] = [baseRadius];
   let point = origin.clone();
@@ -1407,20 +1347,31 @@ function growBranch(
     // Crooked. Dead wood is not straight, and a thin straight shaft reads as a pole however it is
     // shaded. The wander is biased sideways so a branch bends across its own line, not nods.
     heading = heading.clone().add(new THREE.Vector3(
-      (random() - 0.5) * 0.52,
-      (random() - 0.5) * 0.22,
-      (random() - 0.5) * 0.52,
+      (random() - 0.5) * wander,
+      (random() - 0.5) * wander * 0.42,
+      (random() - 0.5) * wander,
     )).normalize();
     point = point.clone().addScaledVector(heading, length / steps);
     const t1 = (i + 1) / steps;
     path.push(point.clone());
-    radii.push(baseRadius * (1 - t1 * (1 - BRANCH_TIP_RATIO)));
+    // A branch stops at the measured tip ratio; a spear closes to nothing over its last quarter.
+    const taper = shape.sharpTip
+      ? (1 - t1) ** 1.5
+      : (1 - t1 * (1 - BRANCH_TIP_RATIO));
+    // Wood thickens at its knots and narrows between them. Without this the shaft is a machined
+    // cone, which is most of what separated the old spike from anything that had grown.
+    const knot = 1 + 0.16 * Math.sin(t1 * 11.0 + knotPhase);
+    radii.push(Math.max(baseRadius * 0.008, baseRadius * taper * knot));
 
     // Real twigs off the character, near the tips.
     if (stock && depth <= 1 && i >= steps - 2) {
       const side = new THREE.Vector3(random() - 0.5, random() * 0.5 + 0.25, random() - 0.5).normalize();
       const lean = heading.clone().multiplyScalar(0.55).addScaledVector(side, 0.8).normalize();
-      const size = length * (0.45 + random() * 0.35);
+      // Sized off the branch's RADIUS at this node, not its length. A twig is proportional to the
+      // wood it grows from, and keying it to length meant the same code produced sensible twigs on
+      // a short grove tree and metre-long claws on the lance, which is fourteen times longer.
+      const here = radii[radii.length - 1];
+      const size = here * (13 + random() * 9);
       const instance = stock.clone();
       instance.applyMatrix4(new THREE.Matrix4().compose(
         point.clone(),
@@ -1438,13 +1389,13 @@ function growBranch(
       const r1 = radii[radii.length - 1];
       // Forks start ON the parent path, so the child tube begins inside the parent's surface and
       // the two read as joined rather than as two sticks meeting.
-      growBranch(point, forkDir, length * (0.52 + random() * 0.2), r1 * 0.7, depth - 1, random, out, stock);
+      growBranch(point, forkDir, length * (0.52 + random() * 0.2) * forkScale, r1 * 0.7, depth - 1, random, out, stock);
       // A second, smaller twig now and then. Kept to a third: two forks at every node of a deep
       // recursion is exponential, and the grove came up as a thicket that buried the character.
       if (random() < 0.30) {
         const twigSide = new THREE.Vector3(random() - 0.5, random() * 0.4, random() - 0.5).normalize();
         const twigDir = heading.clone().multiplyScalar(0.5).addScaledVector(twigSide, 0.92).normalize();
-        growBranch(point, twigDir, length * (0.42 + random() * 0.22), r1 * 0.52, depth - 1, random, out, stock);
+        growBranch(point, twigDir, length * (0.42 + random() * 0.22) * forkScale, r1 * 0.52, depth - 1, random, out, stock);
       }
     }
   }
@@ -1545,16 +1496,30 @@ class BranchLance implements Tickable {
     private readonly duration: number,
     seed: number,
     material: THREE.Material,
+    stock: THREE.BufferGeometry | null,
   ) {
     this.object = new THREE.Group();
     this.object.name = 'vfx:branch-lance';
     const random = mulberry32(seed);
 
     const parts: THREE.BufferGeometry[] = [];
-    // 0.035 of its length — a shaft with real body to it. 0.013 read as a drawn line and 0.020
-    // was still slight enough to lose against a bright trail; the thing has to look like it has
-    // mass before it can look like wood.
-    growSpike(reach, reach * 0.035, random, parts);
+    // The SAME generator the grove trees use, posed as a spear. That is the whole point: the thing
+    // thrown has to be one of this creature's own trees — the same silhouette, the same bark, the
+    // same instanced twigs off its crown — only drawn out long and closed to a point.
+    //
+    // A separate spike generator was tried and was wrong twice over. It produced a machined cone
+    // with none of a tree's structure, and having its own code path meant it drifted away from the
+    // grove's look with every change made to either.
+    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), reach, reach * 0.030, 1, random, parts, stock, {
+      // Long and slender: many steps over a shaft that barely wanders. At the tree's 0.52 it
+      // corkscrews and stops reading as thrown.
+      steps: 14,
+      wander: 0.085,
+      sharpTip: true,
+      // Side branches stay SMALL. They are the decayed stubs the brief asks for, not a canopy —
+      // at full length they turn the spear back into the thicket this move started as.
+      forkScale: 0.28,
+    });
     const geometry = mergeGeometries(parts) ?? new THREE.BufferGeometry();
     for (const g of parts) g.dispose();
 
@@ -1746,16 +1711,6 @@ export class MonsterTreeVfx {
    */
   private readonly rootMaterial: THREE.MeshStandardMaterial;
   private readonly rootBark: BarkSurface;
-  /**
-   * The lance's own material, brighter than grown wood.
-   *
-   * A root or a grove tree is scenery and can sit in shadow; the lance is the move. Measured on
-   * the render, the spike is geometrically correct at 2.56 long and 0.15 across — and completely
-   * invisible, because it is dark wood in front of a dark stage while the swing trail beside it is
-   * additive and blazing. Sap running hot along the shaft is what makes a thrust legible.
-   */
-  private readonly lanceMaterial: THREE.MeshStandardMaterial;
-  private readonly lanceBark: BarkSurface;
   /** A branch taken off the character's shoulder; every grown thing instances it. */
   private readonly stock: THREE.BufferGeometry | null;
   /**
@@ -1808,22 +1763,6 @@ export class MonsterTreeVfx {
     });
     this.rootBark = patchBarkSurface(this.rootMaterial);
 
-    this.lanceMaterial = new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      // WHITE, so the vertex colour IS the albedo. Tinting it with barkLight multiplied one dark
-      // brown by another and the shaft came out almost black, which is what drove the emissive up
-      // in the first place.
-      color: 0xffffff,
-      roughness: 0.85,
-      metalness: 0,
-      // Wood, not light. A life-hue emissive at any strength turns the shaft into a glowing green
-      // line — indistinguishable from the swing trail beside it, and the reason this move read as
-      // "just a streak" with no shaft in it at all. The moss tone lifts it off a black stage
-      // without pretending to be a lamp.
-      emissive: new THREE.Color(PALETTE.mossDark).convertSRGBToLinear(),
-      emissiveIntensity: 0.22,
-    });
-    this.lanceBark = patchBarkSurface(this.lanceMaterial);
 
     this.spores = new SporeField(bounds, 460, this.dot);
     this.group.add(this.spores.object);
@@ -1868,7 +1807,6 @@ export class MonsterTreeVfx {
     this.wisps.gather = value;
     this.veins?.setCharge(value);
     this.rootBark.setCharge(value);
-    this.lanceBark.setCharge(value);
   }
 
   get charge(): number {
@@ -1988,7 +1926,10 @@ export class MonsterTreeVfx {
       (options.reach ?? 1.1) * this.scale,
       options.duration ?? 1.4,
       (Math.random() * 1e9) | 0,
-      this.lanceMaterial,
+      // The grove's own material, not a special one. A lance with its own look is a lance that
+      // stops matching the trees it is supposed to be made of.
+      this.rootMaterial,
+      this.stock,
     );
     effect.object.traverse((o) => { o.userData.isHighlight = true; });
     this.group.add(effect.object);
@@ -2122,7 +2063,6 @@ export class MonsterTreeVfx {
     }
     this.veins?.setTime(this.elapsed);
     this.rootBark.setTime(this.elapsed);
-    this.lanceBark.setTime(this.elapsed);
     this.spores.tick(dt, this.elapsed);
     this.wisps.tick(dt, this.elapsed);
     this.mist.tick(dt, this.elapsed);
