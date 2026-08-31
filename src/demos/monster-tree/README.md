@@ -393,41 +393,38 @@ tube visibly corkscrews along its own length; transport carries the previous fra
 rotates it only by the change in tangent, which is the smallest rotation that keeps it square. The
 normal is re-orthogonalised each step, because the error accumulates over a long path.
 
-### The lance is one of the grove's own trees
+### The spear is thrown, not held
 
-Impaling Bough throws a tree. Not something spear-shaped, not something branch-*like* — the same
-`growBranch` recursion that raises the grove, with the same material and the same instanced crown
-twigs, posed as a spear: many steps, almost no wander, forks kept to a quarter length, and the tip
-closed to a point instead of stopping at the measured 0.27 a branch keeps.
+Impaling Bough hurls a spear. Every earlier version grew one out of the fist and kept it there,
+which made it a prop: nothing was thrown, so nothing arrived anywhere, and nothing could happen on
+arrival. Now it leaves the hand at the strike, flies, lands, and **everything downrange happens
+because it got there** — sparks torn off along the flight path, then a burst, a shockwave, cracks
+and a toxin bloom where it strikes.
 
-It took five wrong objects to get there, and the instructive part is that **four of them came from
-giving the lance its own code**:
+The shaft comes from the same `growBranch` recursion as the grove, posed as a weapon: thirteen
+steps, almost no wander, forks cut to a fifth of their length, knotting raised to 0.34 so the wood
+swells and pinches, and the tip closed to a point instead of stopping at the 0.27 a branch keeps.
+It carries **no crown twigs** — the grove hangs those at its forks, and on a shaft in flight they
+read as a cloud of debris travelling alongside rather than as one thrown object.
 
-| what came out | why |
-|---|---|
-| a thicket on the arm | branch recursion at full fork length |
-| invisible | dark wood on a dark stage |
-| **a light streak** | given a life-hue emissive to fix that, which stopped it being wood at all |
-| a bar across the frame | reach longer than the character is tall |
-| a machined cone | a separate spike generator with none of a tree's structure |
+**A light travels with it.** The alternative was raising the shaft's emissive, and that is exactly
+what once turned this move into "just a light streak": an emissive bright enough to be seen against
+a black stage stops the thing being wood at all. A carried light leaves the albedo alone — the
+spear is lit rather than glowing, and it rakes the ground it passes over, which sells the flight
+better than the shaft could on its own. The light dies as it lands; a spear standing in the ground
+is spent, not still burning.
 
-A separate generator was wrong twice over: it produced a shape with no tree in it, and having its
-own code path meant it drifted from the grove's look with every change made to either. One
-generator, shaped differently, cannot drift.
+### Where a projectile can be seen from
 
-Two fixes underneath it apply to **all** grown wood:
+The camera moved for this, and the reason is measurable. The figure faces +X and the old framing
+sat at +X too — flattering for the face, and it sent every projectile straight at the lens.
+Projected against the actual **canvas** (708 × 900, not the browser window — the stage shares the
+page with a panel), a spear thrown 1.4 units landed at screen (1020, 910): past the right edge and
+below the bottom. The impact, the cracks and the toxin all happened where nobody was looking.
 
-- **The material's colour is white**, so the vertex colour *is* the albedo. Tinting it with
-  `barkLight` multiplied one dark brown by another, grown wood came back nearly black, and that is
-  what forced the emissive up — a strong emissive over near-black albedo is a flat green shape with
-  no wood in it. Far off, as a grove, that passes as silhouette; on a lance a metre from the camera
-  it is unmistakable.
-- **Twigs are sized off the branch's radius, not its length.** A twig is proportional to the wood it
-  grows from. Keyed to length, the same code gave sensible twigs on a short grove tree and
-  metre-long claws on a lance fourteen times longer.
-
-The swing trail is switched off for this move: it is additive and blazing, the shaft is lit wood,
-and side by side the eye finds the trail and never finds the lance.
+Viewing from +Z puts the character's forward axis **across** the frame. The same throw now lands at
+79% of the way across, inside the shot, with the figure at the left and the impact at the right —
+and Deep Root Surge, which also fires forward, became visible for free.
 
 ### The swing trail
 

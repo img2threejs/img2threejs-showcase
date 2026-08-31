@@ -1319,6 +1319,8 @@ interface BranchShape {
   sharpTip?: boolean;
   /** Length of a fork relative to its parent. Small values keep side branches as detail. */
   forkScale?: number;
+  /** How much the shaft swells and pinches at its knots. Higher is rougher, more weathered wood. */
+  knot?: number;
 }
 
 function growBranch(
@@ -1360,7 +1362,7 @@ function growBranch(
       : (1 - t1 * (1 - BRANCH_TIP_RATIO));
     // Wood thickens at its knots and narrows between them. Without this the shaft is a machined
     // cone, which is most of what separated the old spike from anything that had grown.
-    const knot = 1 + 0.16 * Math.sin(t1 * 11.0 + knotPhase);
+    const knot = 1 + (shape.knot ?? 0.16) * Math.sin(t1 * 11.0 + knotPhase);
     radii.push(Math.max(baseRadius * 0.008, baseRadius * taper * knot));
 
     // Real twigs off the character, near the tips.
@@ -1478,84 +1480,124 @@ class GroveEruption implements Tickable {
 }
 
 /**
- * A branch lance driven out of the hand along the arm, then withdrawn.
+ * A spear the character hurls, rather than an effect held in its hand.
  *
- * Built along +Y in local space and rotated onto the aim direction, so it can be pointed anywhere
- * without rebuilding the geometry. It extends by scaling along its own axis only — a uniform scale
- * would fatten the spike as it lengthened, which reads as a balloon rather than a thrust.
+ * The previous version grew out of the fist and stayed there, which made it a prop: nothing was
+ * ever thrown, so nothing could arrive anywhere or do anything on arrival. This one leaves the
+ * hand at the strike and flies, and everything that happens downrange happens because it got
+ * there.
+ *
+ * Its shaft is the SAME `growBranch` recursion that raises the grove, posed long, knotted, and
+ * closed to a point — the creature throws one of its own trees. It spins slowly about its axis in
+ * flight, which is what stops a rigid object reading as a decal sliding across the screen, and it
+ * sheds sparks the whole way so the flight path is legible even at speed.
  */
-class BranchLance implements Tickable {
+class HurledSpear implements Tickable {
   readonly object: THREE.Group;
   private readonly shaft: THREE.Mesh;
+  /**
+   * A light travelling WITH the spear.
+   *
+   * The alternative was raising the shaft's own emissive, and that is exactly what once turned
+   * this move into "just a light streak" — an emissive strong enough to be seen against a black
+   * stage stops the thing being wood. A carried light leaves the albedo alone: the spear is still
+   * lit rather than glowing, it is visible while it moves, and it rakes the ground it passes over,
+   * which sells the flight better than the shaft ever could on its own.
+   */
+  private readonly lamp: THREE.PointLight;
+  private readonly heading = new THREE.Vector3();
+  private readonly start = new THREE.Vector3();
+  private readonly at = new THREE.Vector3();
   private age = 0;
+  private landed = false;
+  private sparkClock = 0;
 
   constructor(
-    private readonly source: THREE.Object3D,
+    origin: THREE.Vector3,
     direction: THREE.Vector3,
-    reach: number,
-    private readonly duration: number,
+    length: number,
+    private readonly distance: number,
+    private readonly flightTime: number,
+    private readonly linger: number,
     seed: number,
     material: THREE.Material,
-    stock: THREE.BufferGeometry | null,
+    private readonly onSpark: (at: THREE.Vector3) => void,
+    private readonly onImpact: (at: THREE.Vector3) => void,
   ) {
     this.object = new THREE.Group();
-    this.object.name = 'vfx:branch-lance';
+    this.object.name = 'vfx:hurled-spear';
     const random = mulberry32(seed);
 
     const parts: THREE.BufferGeometry[] = [];
-    // The SAME generator the grove trees use, posed as a spear. That is the whole point: the thing
-    // thrown has to be one of this creature's own trees — the same silhouette, the same bark, the
-    // same instanced twigs off its crown — only drawn out long and closed to a point.
-    //
-    // A separate spike generator was tried and was wrong twice over. It produced a machined cone
-    // with none of a tree's structure, and having its own code path meant it drifted away from the
-    // grove's look with every change made to either.
-    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), reach, reach * 0.030, 1, random, parts, stock, {
-      // Long and slender: many steps over a shaft that barely wanders. At the tree's 0.52 it
-      // corkscrews and stops reading as thrown.
-      steps: 14,
-      wander: 0.085,
+    // Depth 2 with short forks: the stubs are what make the shaft ROUGH. A clean taper is a
+    // turned dowel; a thrown branch has the broken-off remains of its side growth all along it.
+    // NO crown twigs on this one. The grove hangs them at its forks and they read as foliage,
+    // which on a shaft in flight reads as a cloud of debris travelling with it rather than as one
+    // thrown object. The short forks and the knotting carry the roughness on their own.
+    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), length, length * 0.055, 2, random, parts, null, {
+      steps: 13,
+      wander: 0.10,
       sharpTip: true,
-      // Side branches stay SMALL. They are the decayed stubs the brief asks for, not a canopy —
-      // at full length they turn the spear back into the thicket this move started as.
-      forkScale: 0.28,
+      forkScale: 0.20,
+      knot: 0.34,
     });
     const geometry = mergeGeometries(parts) ?? new THREE.BufferGeometry();
     for (const g of parts) g.dispose();
 
     this.shaft = new THREE.Mesh(geometry, material);
     this.shaft.castShadow = true;
-    this.shaft.scale.set(1, 0.001, 1);
+    // Built from the origin along +Y; shifted back so the spear's MIDDLE sits on the flight point,
+    // otherwise it appears to trail its own launch position by its whole length.
+    this.shaft.position.y = -length * 0.5;
     this.object.add(this.shaft);
-    // Orientation is fixed at the cue; only the position rides the fist. See `follow`.
-    this.object.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
-    this.follow();
-  }
 
-  /**
-   * Ride the fist, every frame — POSITION only.
-   *
-   * Two failures bracket this. Placed once and left in world space, the lance is abandoned the
-   * moment the arm keeps moving, and this move doubles the arm's length, so the shaft ended up
-   * hanging in mid-air with a visible gap to the hand holding it. Made to track the forearm's
-   * heading as well, it then followed the arm down through the follow-through and finished
-   * pointing at the floor — the opposite of a thrust.
-   *
-   * A thrust goes where it was aimed. The direction is captured once, at the instant of the
-   * strike; the position keeps up with the fist so the two stay joined.
-   */
-  private follow(): void {
-    this.object.position.setFromMatrixPosition(this.source.matrixWorld);
+    this.lamp = new THREE.PointLight(lifeColour(0.5, 1), 6, length * 3.4, 2);
+    this.object.add(this.lamp);
+
+    this.start.copy(origin);
+    this.at.copy(origin);
+    this.heading.copy(direction).setY(0);
+    if (this.heading.lengthSq() < 1e-8) this.heading.set(1, 0, 0);
+    this.heading.normalize();
+    this.object.position.copy(origin);
+    this.object.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), this.heading);
   }
 
   tick(dt: number): boolean {
     this.age += dt;
-    const t = this.age / this.duration;
-    if (t >= 1) return false;
-    this.follow();
-    // Out hard, hold briefly, snap back — the withdrawal is faster than the strike.
-    const out = t < 0.22 ? 1 - (1 - t / 0.22) ** 4 : (t < 0.62 ? 1 : 1 - (t - 0.62) / 0.38);
-    this.shaft.scale.y = Math.max(0.001, out);
+    if (!this.landed) {
+      const t = Math.min(1, this.age / this.flightTime);
+      // Launches hard and holds its speed: a thrown spear does not ease out.
+      const travelled = this.distance * (1 - (1 - t) ** 1.6);
+      this.at.copy(this.start).addScaledVector(this.heading, travelled);
+      this.object.position.copy(this.at);
+      // Spin about the flight axis. Without it a rigid shaft slides across the frame like a decal.
+      this.shaft.rotation.y += dt * 9;
+
+      this.sparkClock += dt;
+      if (this.sparkClock > 0.045) {
+        this.sparkClock = 0;
+        this.onSpark(this.at);
+      }
+
+      if (t >= 1) {
+        this.landed = true;
+        this.age = 0;
+        // Bury the point and pitch it forward, so it reads as having struck rather than stopped.
+        this.object.position.set(this.at.x, 0.0, this.at.z);
+        const pitched = this.heading.clone().multiplyScalar(0.55).add(new THREE.Vector3(0, 0.83, 0)).normalize();
+        this.object.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pitched);
+        this.onImpact(this.at.clone());
+      }
+      return true;
+    }
+
+    if (this.age >= this.linger) return false;
+    // Sinks back into the ground it opened, over the last third of its stay.
+    const t = this.age / this.linger;
+    // The light dies with the throw: a spear standing in the ground is spent, not still burning.
+    this.lamp.intensity = 6 * Math.max(0, 1 - t * 2.2);
+    if (t > 0.66) this.object.scale.setScalar(Math.max(0.001, 1 - (t - 0.66) / 0.34));
     return true;
   }
 }
@@ -1918,24 +1960,6 @@ export class MonsterTreeVfx {
     this.delay(links * 0.075, () => options.onArrive?.(target));
   }
 
-  /** A branch lance driven out of a socket along the limb, riding it for its whole life. */
-  lance(at: THREE.Object3D, direction: THREE.Vector3, options: { reach?: number; duration?: number } = {}): void {
-    const effect = new BranchLance(
-      at,
-      direction,
-      (options.reach ?? 1.1) * this.scale,
-      options.duration ?? 1.4,
-      (Math.random() * 1e9) | 0,
-      // The grove's own material, not a special one. A lance with its own look is a lance that
-      // stops matching the trees it is supposed to be made of.
-      this.rootMaterial,
-      this.stock,
-    );
-    effect.object.traverse((o) => { o.userData.isHighlight = true; });
-    this.group.add(effect.object);
-    this.transient.push(effect);
-  }
-
   /** A burst at a WORLD point rather than a socket — for things that happen away from the figure. */
   burstAt(at: THREE.Vector3, options: { count?: number; speed?: number; duration?: number; spread?: number; gravity?: number; lightness?: number } = {}): void {
     const burst = new Burst(
@@ -1955,26 +1979,43 @@ export class MonsterTreeVfx {
   }
 
   /**
-   * Toxin left at a distance along a heading, rather than under the socket.
+   * Hurl a spear from a socket along a heading: it flies, it lands, and it does its damage where
+   * it ARRIVES rather than where it was thrown.
    *
-   * A limb that has just doubled in length does its damage where the tip ended up, not where the
-   * shoulder is; centring the stain on the socket puts the contamination behind the character.
+   * The previous version grew out of the fist and stayed there, which made it a prop — nothing was
+   * ever thrown, so nothing could arrive anywhere or do anything on arrival.
    */
-  toxinAt(from: THREE.Object3D, direction: THREE.Vector3, distance: number, options: { radius?: number; duration?: number } = {}): void {
-    const world = new THREE.Vector3().setFromMatrixPosition(from.matrixWorld);
-    const flat = new THREE.Vector3(direction.x, 0, direction.z);
-    if (flat.lengthSq() > 1e-8) world.addScaledVector(flat.normalize(), distance * this.scale * 0.5);
-    const effect = new ToxinBloom(
-      world,
-      options.duration ?? 10,
-      (options.radius ?? 1.0) * this.scale * 0.55,
-      lifeColour(0.30, 1),
-      this.dot,
+  hurlSpear(from: THREE.Object3D, direction: THREE.Vector3, options: {
+    length?: number; distance?: number; flightTime?: number; linger?: number;
+  } = {}): void {
+    const origin = new THREE.Vector3().setFromMatrixPosition(from.matrixWorld);
+    const spear = new HurledSpear(
+      origin,
+      direction,
+      (options.length ?? 0.55) * this.scale,
+      (options.distance ?? 3.4) * this.scale * 0.5,
+      options.flightTime ?? 0.42,
+      options.linger ?? 2.4,
       (Math.random() * 1e9) | 0,
+      this.rootMaterial,
+      // Sparks torn off along the flight path, so the throw is legible at speed.
+      (at) => this.burstAt(at, { count: 5, speed: 0.5, duration: 0.5, gravity: -0.6, lightness: 0.7 }),
+      (at) => {
+        // What arriving means: the ground breaking open, and the toxin going into it. A bare
+        // Object3D is parked at the landing point because the ground effects all take a socket.
+        this.burstAt(at, { count: 150, speed: 2.0, spread: 0.55, gravity: -1.9 });
+        const ground = new THREE.Object3D();
+        ground.position.set(at.x, 0, at.z);
+        ground.updateMatrixWorld(true);
+        this.shockwave(ground, 1.35, 0.9);
+        this.cracks(ground, { radius: 1.25 });
+        this.toxin(ground, { radius: 1.15 });
+      },
     );
-    this.addLingering(effect);
+    spear.object.traverse((o) => { o.userData.isHighlight = true; });
+    this.group.add(spear.object);
+    this.transient.push(spear);
   }
-
   /** Run something later, on the effect clock, so cues can be sequenced without setTimeout. */
   delay(seconds: number, run: () => void): void {
     this.pending.push({ at: this.elapsed + seconds, run });

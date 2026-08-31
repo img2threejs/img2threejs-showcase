@@ -79,23 +79,6 @@ const impact = (socket: string, options?: { radius?: number; count?: number; spe
     vfx.toxin(rig.sockets[socket], { radius: options?.toxin ?? 0.8 });
   };
 
-/**
- * The direction a limb is POINTING, in world space, read off its own bones at the instant it is
- * called.
- *
- * `to` resolves to a SOCKET first, then a bone. That matters for the arms: this rig has no finger
- * bones, so `L_Forearm -> L_Hand` stops at the wrist and only describes the forearm, while
- * `L_Forearm -> grip-l` runs from the elbow out through the fingertips — grip-l being the measured
- * centroid of the 150 most distal vertices of the hand. That is the line these moves are aimed
- * along, and it stays correct as the arm swings because it is re-read per cue rather than fixed.
- */
-function aim(rig: MonsterTreeRig, from: string, to: string): THREE.Vector3 {
-  const target = rig.sockets[to] ?? rig.bones[to];
-  const a = new THREE.Vector3().setFromMatrixPosition(rig.bones[from].matrixWorld);
-  const b = new THREE.Vector3().setFromMatrixPosition(target.matrixWorld);
-  const d = b.sub(a);
-  return d.lengthSq() > 1e-10 ? d.normalize() : new THREE.Vector3(0, 1, 0);
-}
 
 /**
  * The direction the character is FACING, flattened to the ground, in world space.
@@ -191,24 +174,15 @@ export const SKILLS: Skill[] = [
       {
         at: 0.46,
         run: (rig, vfx) => {
-          // 0.8 of figure height. At 1.35 the shaft came out longer than the character is tall, and
-          // a spear that outreaches its wielder by half reads as a prop lying across the frame.
-          // It rides the grip socket and aims down the forearm, so it stays in the fist.
-          // 0.85s, not 1.5. The lance rides the fist, and box_01 spends its back half retracting the
-          // arm — a shaft that outlives the thrust gets carried down and ends up pointing at the
-          // floor, which is the opposite of what it was for.
-          // Aimed along the character's facing rather than the forearm: at the strike frame the
-          // forearm is already angling down, and a spear should go where the figure is pointed.
-          vfx.lance(rig.sockets['grip-l'], facing(rig), { reach: 0.95, duration: 0.9 });
+          // Thrown, not held. It leaves the hand along the character's facing and everything that
+          // happens downrange happens because it got there.
+          vfx.hurlSpear(rig.sockets['grip-l'], facing(rig), {
+            // 2.1 units, not 3.4. The demo's own camera frames the figure, and a throw that
+            // carries further than that lands the impact — the cracks, the toxin, the whole point
+            // of the move — outside the shot nobody has moved the camera off.
+            length: 0.55, distance: 2.2, flightTime: 0.34, linger: 2.6,
+          });
           vfx.burst(rig.sockets['grip-l'], { count: 70, speed: 1.7, spread: 0.5 });
-        },
-      },
-      {
-        at: 0.72,
-        run: (rig, vfx) => {
-          // Contamination is left at the far end of the reach, not at the shoulder.
-          const heading = aim(rig, 'L_Forearm', 'grip-l');
-          vfx.toxinAt(rig.sockets['grip-l'], heading, 1.25, { radius: 0.85 });
         },
       },
     ],
