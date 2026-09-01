@@ -868,6 +868,23 @@ export function buildMonsterTreeRig(
   /** Live aims, and scratch for the pose pass. Allocated once, not per bone per frame. */
   const aims = new Map<string, { dir: THREE.Vector3; weight: number }>();
   const worldQ = new Map<string, THREE.Quaternion>();
+  /**
+   * What each aimed bone's rotation was BEFORE this system wrote it, and what it wrote.
+   *
+   * Same reason the stretch keeps this: `PropertyMixer.apply` writes to the scene graph only when
+   * the value it accumulated differs from the snapshot it took, so a track whose value never
+   * changes is never written back. A partial-weight aim that slerps from the LIVE quaternion is
+   * then reading its own previous output, and it converges to full weight within two frames —
+   * which makes every weight below 1 a lie, and makes fading a pose out impossible.
+   *
+   * Restoring the captured base first means a weight is a weight. The equality test keeps it
+   * honest in the other direction: if the mixer did write something new, it will not match what we
+   * left there, and we leave it alone.
+   */
+  const poseApplied = new Map<string, { base: THREE.Quaternion; set: THREE.Quaternion; active: boolean }>();
+  for (const name of Object.keys(AIM_CHILD)) {
+    poseApplied.set(name, { base: new THREE.Quaternion(), set: new THREE.Quaternion(), active: false });
+  }
   const POSE_TARGET = new THREE.Vector3();
   const POSE_LOCAL = new THREE.Vector3();
   const POSE_SWING = new THREE.Quaternion();
@@ -876,6 +893,15 @@ export function buildMonsterTreeRig(
   const POSE_GROUP = new THREE.Quaternion();
 
   const applyPose = (): void => {
+    // Hand back anything this system wrote last frame, so a weight blends from the CLIP's value
+    // rather than from our own previous output. Runs even when nothing is aimed any more, or a
+    // released bone would keep the last pose it was given for ever.
+    for (const [name, record] of poseApplied) {
+      if (!record.active) continue;
+      record.active = false;
+      const bone = boneByName[name];
+      if (bone && record.set.equals(bone.quaternion)) bone.quaternion.copy(record.base);
+    }
     if (!aims.size) return;
     group.getWorldQuaternion(POSE_GROUP);
     // Seed from the group above the bones, so the walk below is in world space throughout and an
@@ -893,8 +919,11 @@ export function buildMonsterTreeRig(
         POSE_LOCAL.copy(POSE_TARGET).applyQuaternion(POSE_PARENT_INV).normalize();
         POSE_SWING.setFromUnitVectors(rest.dir, POSE_LOCAL);
         POSE_AIMED.copy(POSE_SWING).multiply(rest.quat);
+        const record = poseApplied.get(bone.name);
+        if (record) record.base.copy(bone.quaternion);
         if (aim.weight >= 1) bone.quaternion.copy(POSE_AIMED);
         else bone.quaternion.slerp(POSE_AIMED, aim.weight);
+        if (record) { record.set.copy(bone.quaternion); record.active = true; }
       }
       let mine = worldQ.get(bone.name);
       if (!mine) { mine = new THREE.Quaternion(); worldQ.set(bone.name, mine); }

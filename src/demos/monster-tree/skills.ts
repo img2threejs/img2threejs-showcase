@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { EchoChorus, ECHO_RIM, type EchoChorusOptions } from './echoes';
-import { BEATS, clearPose, drivePose, logsPose, passivePose, ultimatePose, vinePose } from './poses';
+import { BEATS, blendPose, clearPose, type Key, logsPose, passivePose, ultimatePose, vinePose } from './poses';
 import { beats, clipEvents, HANDS, loudestArrest } from './events';
 import { PALETTE } from './measured';
 import type { MonsterTreeRig } from './rig';
@@ -63,6 +63,13 @@ export interface Skill {
    * stretch has to be re-applied on every frame because the mixer rewrites bone scale each update.
    */
   drive?: (rig: MonsterTreeRig, vfx: MonsterTreeVfx, time: number, duration: number) => void;
+  /**
+   * The authored gesture, if this skill has one.
+   *
+   * Declared rather than driven inside `drive`, so the RUNNER owns it — which is what lets one move
+   * cross-fade into the next. A skill that posed itself could only ever snap.
+   */
+  pose?: (time: number) => Key[];
   /** Copies of the figure this skill puts on stage. See `echoes.ts`. */
   chorus?: EchoChorusOptions & {
     /** Clip time the copies appear on. */
@@ -283,6 +290,7 @@ export const SKILLS: Skill[] = [
     id: 'passive',
     accent: ACCENT.moss,
     label: 'Passive · Greatwood Body',
+    pose: (time) => passivePose(time),
     clip: 'authored:passive',
     fade: 0.45,
     loop: true,
@@ -292,7 +300,6 @@ export const SKILLS: Skill[] = [
     // body is the character spending something, and this is the character TAKING something from
     // the ground it is standing on.
     drive: (rig, vfx, time) => {
-      drivePose(rig, passivePose(time), time);
       const foot = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
       // Armour, breathing. Held well below a skill's release so the passive never reads as a cast
       // about to happen — it is a state, not an event.
@@ -325,13 +332,13 @@ export const SKILLS: Skill[] = [
     id: 'vine',
     accent: ACCENT.iris,
     label: 'Vine Lash',
+    pose: () => vinePose(),
     clip: 'authored:vine',
     fade: 0.14,
     loop: false,
     measured: 'POSED. Wind the arm back across the body, then throw it straight out along +X — the direction the figure was MEASURED to face, off its own eye clusters. The vine leaves at 0.34s, the frame the hand stops, and the arm stays out while there is something on the end of it.',
     // The arm lengthens into the throw so the reach peaks exactly as the hand stops.
     drive: (rig, vfx, time) => {
-      drivePose(rig, vinePose(), time);
       // Enough to read as "duỗi tay" without the forearm becoming a tentacle: at 0.85 the arm
       // stretched most of a metre and the shoulder pinched away from the body.
       const reach = swell(time, 0.14, 0.72) * 0.40;
@@ -408,12 +415,12 @@ export const SKILLS: Skill[] = [
     id: 'natures-call',
     accent: ACCENT.deep,
     label: "Nature's Call",
+    pose: () => logsPose(),
     clip: 'authored:logs',
     fade: 0.18,
     loop: false,
     measured: 'POSED as a HOLD. Both arms go up by 0.42s and stay there, light winding around them, while wood comes down in front of him at 0.62, 0.95 and 1.28 and once more at 1.70. He is the source, not the hammer.',
-    drive: (rig, vfx, time) => {
-      drivePose(rig, logsPose(), time);
+    drive: (_rig, vfx, time) => {
       // The coils fade in as the arms arrive and out as they drop, so the light belongs to the
       // hold rather than being switched on beside it.
       const up = Math.min(1, Math.max(0, (time - 0.14) / (BEATS.logs.raised - 0.14)));
@@ -456,12 +463,12 @@ export const SKILLS: Skill[] = [
     id: 'ultimate',
     accent: ACCENT.iris,
     label: 'Ultimate · Seeds of Destiny',
+    pose: () => ultimatePose(),
     clip: 'authored:ultimate',
     fade: 0.26,
     loop: false,
     measured: 'POSED as a CHANNEL. He sinks, roots — legs straight and wide and never moving again — the trunk grows, and the canopy is thrown open at 0.80s and held open for the whole downpour. A barrage that covers the field is not aimed at anything, so he opens and stays open.',
     drive: (rig, vfx, time) => {
-      drivePose(rig, ultimatePose(), time);
       const grow = Math.min(1, time / BEATS.ultimate.rooted)
         * (time > BEATS.ultimate.rainEnds ? Math.max(0, 1 - (time - BEATS.ultimate.rainEnds) / 0.5) : 1);
       // The growth COMPOUNDS down the chain — waist, then spine, then chest — so these are much
@@ -816,6 +823,30 @@ export class SkillRunner {
   private emberEvery = 0.1;
   /** The copies. Built on their first cast, then reused for every one after. */
   private readonly chorus: EchoChorus;
+  /**
+   * The gesture being handed over FROM, frozen at the frame the change happened, and how far
+   * through the hand-over we are.
+   *
+   * A clip cross-fades and a pose does not, so without this the whole authored gesture snapped back
+   * to the resting animation between two frames. Measured on the review harness: ending the
+   * ultimate moved a hand **1.10 units in a single frame**, the largest discontinuity in the demo
+   * and one that no still frame shows.
+   */
+  private outgoing: { keys: Key[]; time: number } | null = null;
+  /** The gesture being driven now, kept so the next change has something to fade FROM. */
+  private activePose: { keys: Key[]; time: number } | null = null;
+  private handover = 1;
+  private handoverSpan = 0.3;
+  /**
+   * Where the figure was standing when the last change happened, and how far it has walked back.
+   *
+   * Vine Lash's empowered form steps forward. Snapping the figure back to `HOME` on the frame the
+   * next move starts moves the whole subject of the shot between two frames — measured at 0.35
+   * units of hand jump, and it is the body that moved, not the arm. It eases back over the same
+   * window everything else hands over in.
+   */
+  private readonly lungeFrom = new THREE.Vector3();
+  private lungeK = 1;
   /** The skill returned to when a one-shot finishes. */
   restingId = 'idle';
 
@@ -862,14 +893,24 @@ export class SkillRunner {
     // A move interrupted mid-cast must not leave five copies standing on the floor, nor the
     // figure standing where a lunge left it.
     this.chorus.dismiss();
-    // Hand every aimed bone back to its clip. A move interrupted mid-throw must not leave an arm
-    // pointing where it was pointing while the next move plays around it.
-    clearPose(this.rig);
+    // Freeze the gesture being left and hand it over across the same window the clip cross-fades
+    // in, so the body and the pose arrive together. A move with no gesture to leave clears
+    // outright — there is nothing to fade.
+    this.outgoing = this.activePose;
+    this.handoverSpan = Math.max(0.08, skill.fade);
+    // ALWAYS from zero, even with nothing to fade out of. Coming from idle — which has no authored
+    // gesture at all — the incoming pose was previously applied at full weight on its first frame,
+    // so the arms snapped into the new stance in one step: measured at 0.28 units of hand jump on
+    // idle -> Vine Lash. With no outgoing pose the blend is simply the incoming one fading in
+    // against the clip underneath, which is the third case `blendPose` already handles.
+    this.handover = 0;
+    if (!this.outgoing && !skill.pose) clearPose(this.rig);
     // Continuous layers a skill turned ON have to be turned off by the CHANGE, not by the skill
     // that set them — a move interrupted halfway never reaches its own cleanup. The coils outlived
     // Nature's Call this way and were still winding around the arms during the ultimate.
     this.vfx.coils = 0;
-    this.rig.group.position.copy(HOME);
+    this.lungeFrom.copy(this.rig.group.position);
+    this.lungeK = this.lungeFrom.distanceToSquared(HOME) > 1e-8 ? 0 : 1;
     this.rig.group.userData.empowered = false;
     // A skill that does not raise the eyes itself gets them back at rest, so a cancelled Wildfire
     // Sap cannot leave the character permanently over-lit.
@@ -913,6 +954,24 @@ export class SkillRunner {
         cue.run(this.rig, this.vfx);
       }
     });
+
+    // Walk back from a lunge rather than teleporting back from it.
+    if (this.lungeK < 1) {
+      this.lungeK = Math.min(1, this.lungeK + _dt / this.handoverSpan);
+      const k = this.lungeK * this.lungeK * (3 - 2 * this.lungeK);
+      this.rig.group.position.lerpVectors(this.lungeFrom, HOME, k);
+    }
+
+    // The gesture, and the hand-over from whatever was posed before it.
+    const incoming = this.active.pose ? { keys: this.active.pose(time), time } : null;
+    this.activePose = incoming;
+    if (this.handover < 1) {
+      this.handover = Math.min(1, this.handover + _dt / this.handoverSpan);
+      blendPose(this.rig, this.outgoing, incoming, this.handover);
+      if (this.handover >= 1) this.outgoing = null;
+    } else if (incoming) {
+      blendPose(this.rig, null, incoming, 1);
+    }
 
     this.active.drive?.(this.rig, this.vfx, time, clip.duration);
     this.chorus.tick();

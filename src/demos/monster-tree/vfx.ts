@@ -1470,6 +1470,12 @@ interface BranchShape {
   /** How much the shaft swells and pinches at its knots. Higher is rougher, more weathered wood. */
   knot?: number;
   /**
+   * How much narrower the far end is than the base, as a fraction. Defaults to the branch tip
+   * ratio, which is right for something still growing and wrong for something that was cut: a log
+   * tapered to a quarter of its butt is a wedge, and a wedge lit flat reads as a leaf.
+   */
+  taper?: number;
+  /**
    * Collects the end point of every branch and fork, in the branch's own local space.
    *
    * A canopy has to sit where the wood actually ended. Scattering leaves through a bounding sphere
@@ -1515,7 +1521,7 @@ function growBranch(
     // A branch stops at the measured tip ratio; a spear closes to nothing over its last quarter.
     const taper = shape.sharpTip
       ? (1 - t1) ** 1.5
-      : (1 - t1 * (1 - BRANCH_TIP_RATIO));
+      : (1 - t1 * (1 - (shape.taper ?? BRANCH_TIP_RATIO)));
     // Wood thickens at its knots and narrows between them. Without this the shaft is a machined
     // cone, which is most of what separated the old spike from anything that had grown.
     const knot = 1 + (shape.knot ?? 0.16) * Math.sin(t1 * 11.0 + knotPhase);
@@ -2177,8 +2183,12 @@ class LogSlam implements Tickable {
     // keeps the broken stubs of its side growth without turning it into a shrub.
     // Thick. At 0.13 of its length the log came out as a flat sliver that read as a leaf blade
     // from any angle but square on; a called log has to be a chunk of trunk.
-    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), length, length * 0.21, 1, random, parts, null, {
-      steps: 6, wander: 0.06, knot: 0.26, forkScale: 0.14,
+    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), length, length * 0.19, 1, random, parts, null, {
+      // Barely tapered, so both ends are nearly the same gauge — a length cut out of a trunk, not
+      // a branch that narrows to a tip. With the default branch taper the log came out as a long
+      // wedge, and a wedge lying flat and lit from above reads as a leaf blade from every angle
+      // except square on.
+      steps: 6, wander: 0.06, knot: 0.26, forkScale: 0.14, taper: 0.86,
     });
     const geometry = mergeGeometries(parts);
     for (const g of parts) g.dispose();

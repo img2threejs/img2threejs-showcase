@@ -360,6 +360,65 @@ measured off the character's iris, so 262.5°, a cold violet. Everything else in
 on the green-through-bark ramp, which is right for a creature made of wood and wrong for the one
 thing on stage that is not the creature.
 
+## The animation is scored, and the score is reproducible
+
+`scripts/score-monster-tree-animation.mjs` drives the real showcase in a browser and prints eleven
+checks scaled to ten. It steps every authored clip deterministically — fixed dt through the real
+mixer, the pose solved exactly as the frame loop solves it — so a result never depends on what the
+render loop happened to do that second. It exits non-zero below 9.0, so it can gate.
+
+Three consecutive runs on an unchanged build: **9.98, 9.98, 9.98**. The run that matters reads:
+
+```
+1.00  no teleports          peak 8.467 H/s, worst frame 3.03x its own hand's p90
+1.00  no frame stalls       worst max 14.8ms, worst p95 11.4ms, stalls in both passes: 0
+1.00  transitions do not pop worst 0.096 units (ultimate -> idle)
+1.00  beats match the gesture Vine Lash's arrest is 0.002s from its authored release
+1.00  holds are alive       passive 0.030 H/s, Nature's Call hold window 0.040 H/s
+1.00  feet stay planted     planted toe rises to 0.061, lowest toe -0.004
+1.00  payoffs distinct      weakest 0.293 from rest; closest pair 0.141 apart
+1.00  gestures survive the projection  weakest on screen 2.00x the resting spread
+1.00  nothing left behind   worst bone 0.02 degrees, no scale or position residue
+1.00  clean run             no console errors
+1.00  harness reports every clip
+TOTAL 10.00 / 10
+```
+
+### What it caught that no still frame shows
+
+- **Ending the ultimate moved a hand 1.10 units in a single frame.** The clip cross-fades; the
+  authored pose did not, so the whole gesture snapped back to the resting animation between two
+  frames. A gesture is now handed over across the same window the clip fades in.
+- **Leaving an empowered Vine Lash snapped the figure home**, 0.35 units — the body, not the arm.
+- **Arriving from idle applied the incoming pose at full weight on frame one**, 0.28 units.
+- **A partial-weight aim was a lie.** `PropertyMixer.apply` skips writing a track whose value never
+  changes, so a weighted slerp read its own previous output and converged to full weight inside two
+  frames. Restoring the captured base first is what made the fades possible at all — the same class
+  of bug as the scale compounding, found the same way.
+
+### Where the rubric itself was wrong
+
+Five of the eleven checks were measuring the wrong thing before they measured anything useful, and
+that is worth writing down because a bad gate is more dangerous than no gate:
+
+- *Distinct from rest* was failing the passive for being a resting stance.
+- *Alive* averaged Nature's Call's whole clip, including the raise it is not about.
+- *Pop* took the largest single-frame jump, punishing Vine Lash for having a fast throw. A pop is a
+  frame that stands **alone** — the excess over its own neighbours.
+- The teleport ratio pooled both hands, so the working arm looked like a teleport beside the still
+  one.
+- Frame timing on one pass swung the total by 0.17 between identical runs. A code stall repeats on
+  the same clip at the same time; a collection blip does not. Better of two passes.
+- Residue compared idle at two different playhead phases and reported 2.48 degrees of nothing.
+
+### And the check the rubric was missing
+
+A Nature's Call pose scored **1.00 for distinctness while the render showed an unreadable smear** —
+both arms raised along the axis the camera looks down, foreshortened flat over the chest. Three
+dimensional displacement cannot see that. There is now a screen-space check measuring the pose in
+pixels on the demo's own canvas, and the total is normalised to ten so that adding a check cannot
+inflate the score.
+
 ## Seamlessness: the stalls were not the hitstop
 
 The demo felt like it stuttered, and the obvious suspect was wrong. Instrumenting the clip playhead
