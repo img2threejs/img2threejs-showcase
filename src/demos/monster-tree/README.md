@@ -1,4 +1,4 @@
-# Monster Tree — img2threejs `animated-character`, Stage R
+# Y'bneth — img2threejs `animated-character`, Stage R
 
 A treant rebuilt from `public/references/monster-tree.jpg`, built **on top of** the playground's
 own export rather than re-deriving it. The geometry was already measured; nothing here re-sculpts
@@ -175,6 +175,108 @@ height and make every one of those moves slide rather than settle. Pass `inPlace
 clips exactly as retargeted.
 
 ---
+
+## Y'bneth's kit
+
+The character is **Y'bneth**, and the four moves at the top of the panel are his own kit rather
+than invented ones. Each is mapped onto the clip whose measured dynamics actually fit it — see the
+event table below for where the beats come from.
+
+| | clip | why that clip | what it does |
+|---|---|---|---|
+| **Nội tại · Thân Thể Đại Thụ** | `standing_relax` | the quietest thing in the library: bodyMean 0.006 H/s, **not one measured event** | plants real undergrowth, then draws sap up out of it into the chest on a slow repeating beat, hardening the bark as it arrives |
+| **Chiêu 1 · Dây Leo** | `box_01` | L_ToeBase plants at 0.375 s, L_Hand arrests at extension at 0.467 s | a vine thrown on the plant that **catches** on the arrest — slow and toxin where it lands, and if he is standing in his own undergrowth it reaches further, holds longer, knocks back, and he steps forward along it |
+| **Chiêu 2 · Thiên Nhiên Vẫy Gọi** | `box_02` | arrests at 0.667, 0.833, 1.000 and the double-hand slam at 1.800 (decel 366.5, the hardest stop anywhere) | one log called down per arrest, each further out than the last, the slam bringing down the big one and the ground holding it |
+| **Chiêu cuối · Hạt Giống Thần Mệnh** | `dance_05` | 18 arrests in 2.333 s, one every ~130 ms — the only clip whose arms never stop | the trunk itself grows, roots take his feet, a canopy opens off his crown, three volleys of seeds leave on the three hardest arrests and sprout where they land, then everything is wound back to the centre and held |
+
+### The passive is a real condition, not a mime
+
+Y'bneth's passive reads the ground he is standing on, and his first skill changes shape depending
+on the same thing. A showcase has no map to read, so the grass was made a **real object** with a
+position, a radius and a lifetime: the passive plants it, and Dây Leo asks `vfx.inGrass(foot)`
+before it decides which form to play. The two skills genuinely interact — play the passive, then
+Dây Leo, and you get the empowered version; play Dây Leo cold and you get the plain one.
+
+### Everything forward is capped at a measured reach
+
+The figure faces azimuth 75° while the showcase camera sits at −4°, so "forward" runs *across* the
+frame and off the right edge fast. Projected on the demo's own 628-pixel canvas, a point 1.0 unit
+ahead of his feet lands at px 565 and one at 1.3 units lands at px 642 — outside the canvas. The
+first log barrage stepped out to 1.66 units and every log of it fell where nobody could see it. The
+barrage, the vine and the grove stands are all capped against that measurement.
+
+The camera itself was aimed beside the character rather than at it: the target sat at x = 0.95
+while the Hip is at x = 0.18, which put the figure at px 117 of 628 with the whole right half of
+the frame empty. It is now aimed at the measured mid-torso.
+
+## Phân Thân — five copies, each at its own frame
+
+Five real `THREE.SkinnedMesh` copies over the character's own 101,466-triangle geometry, each with
+its **own skeleton** and its own `AnimationMixer`. Only the bones are duplicated; the vertex buffer
+is shared.
+
+The separate skeletons are the point. Locked to the original's playhead, five copies hold one pose
+in five places and the eye reads a mirror artifact. Each copy runs the clip a fixed interval
+behind, so on any frame the fan shows the whole strike sequence at once — and each flares and lands
+its blow when **its own** playhead crosses **its own** measured arrest.
+
+Which arrests: `beats()` takes the hardest arrest in each of five windows rather than the five
+loudest outright, because the five loudest cluster — dance_05's all fall at 0.433 and 1.633, so a
+move built on them fires in two bursts and runs silent for a second and a half. One per window
+gives 0.200, 0.433, 0.833, 1.233, 1.633.
+
+Two things had to be measured rather than chosen:
+
+- **Where they stand.** Even angles do not give even spacing. The camera is 7.7° above the floor,
+  so the ring projects nearly edge-on and a copy's place in frame goes as the *sine* of its angle;
+  five copies spread evenly over an arc landed at sine 0.77, 0.91, 0, −0.91, −0.77 — two pairs
+  almost on top of each other. Inverting it (pick the position in frame, solve for the angle with
+  `asin`) spreads them at −1, −½, 0, +½, +1 of the radius and keeps every one on the half of the
+  ring away from the viewer. The chorus learns where the viewer is from an `onBeforeRender` hook on
+  a one-triangle probe, which works in any host without the model knowing anything about a renderer.
+- **How solid.** The first version decayed each copy to nothing after its beat; with beats 0.4 s
+  apart and a 0.75 s decay, at most two were ever lit at once. Five copies never once on stage
+  together are not five copies. A copy that has struck now settles and stays.
+
+They carry the demo's **one contrasting accent** — the exact complement of `LIFE_HUE`, the 82.5°
+measured off the character's iris, so 262.5°, a cold violet. Everything else in the showcase sits
+on the green-through-bark ramp, which is right for a creature made of wood and wrong for the one
+thing on stage that is not the creature.
+
+## Seamlessness: the stalls were not the hitstop
+
+The demo felt like it stuttered, and the obvious suspect was wrong. Instrumenting the clip playhead
+in the browser — sampling `action.time` against `performance.now()` every frame — showed 8 ms
+frames throughout a strike **except at the impact frames**, which took 70 ms and 52 ms. A six-to-
+eight frame stall, landing exactly on the beat. Three causes, all found by measurement:
+
+1. **Shader compiles.** A `GroundCracks`, a `ToxinBloom`, a rune circle and a grove each build a
+   `ShaderMaterial` the first time they are spawned, and three compiles its program at the first
+   render that encounters it. Every effect type cost one stall on its own first impact — which is
+   every impact a viewer sees first. Fixed by spawning one of each at a millimetre scale far under
+   the floor on the first frame, with `frustumCulled` off so they are actually submitted.
+2. **Lights.** Adding a `PointLight` changes the scene's lighting configuration, and three responds
+   by marking **every lit material** for recompilation — including the character's own patched bark
+   shader. Then the flash expires and it all recompiles again. Fixed by a pool of four permanent
+   lights whose *intensity* changes; the count never moves.
+3. **Skeletons.** A skeleton uploads its bone texture on the first frame it is rendered. Warming one
+   copy of the chorus left the other four to upload theirs on the frame of the split.
+
+Measured after: all fourteen skills run at a median 8.3 ms with a worst frame of 25.4 ms on the
+heaviest move, and **not one frame over 25 ms anywhere else**.
+
+Two more discontinuities came out of the same pass:
+
+- **Hitstop was firing eight times a clip.** Splinter Combo held for 0.386 s of a 2.267 s clip
+  across eight separate stalls — 17% of the move frozen — and it read as broken rather than heavy.
+  There is now a 0.18 s refractory gap, jabs in a flurry do not hold at all, and the hold **eases
+  out** instead of releasing on one frame.
+- **Two skills sharing a clip could not follow one another.** Deep Root Surge and Splinter Combo
+  were both `box_02`; `play` returned early when the action was already current, so the second
+  skill started from wherever the first had got to, with its windup already behind it.
+- **Charge stepped rather than swelled.** Cues set it 0 → 0.5 → 1, which is two visible pops inside
+  what the viewer is being told is one gathering. Rises now ramp; the release still snaps, because
+  the snap *is* the spend.
 
 ## Skills, named by measurement
 

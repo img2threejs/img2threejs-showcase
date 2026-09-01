@@ -145,6 +145,31 @@ export interface MonsterTreeRig {
    * `mixer.update` and this has to be reapplied after.
    */
   stretch(bone: string, amount: number): void;
+  /**
+   * Build an independent copy of the figure that can be posed at its own point in a clip.
+   *
+   * A second skinned shell with its OWN skeleton and its OWN mixer, sharing the original's
+   * geometry — 101,466 triangles are not duplicated, only the ~60 bones and the bone texture are.
+   * Because the skeleton is separate, an echo can stand at a different frame of the same clip from
+   * the figure that cast it, which is the whole point: five copies all locked to the original's
+   * playhead are one pose seen five times, and that reads as a mirror artifact rather than as
+   * five bodies.
+   *
+   * Move the echo by transforming `object`. The skinning is invariant under the mesh's own
+   * transform (AttachedBindMode cancels it), so the transform has to land on the group that
+   * carries the BONES — which is what `object` is.
+   */
+  makeEcho(material: THREE.Material): RigEcho;
+  dispose(): void;
+}
+
+/** One independently posed copy of the figure. See `MonsterTreeRig.makeEcho`. */
+export interface RigEcho {
+  /** Transform this to place the echo. Add it to the scene yourself. */
+  object: THREE.Group;
+  mesh: THREE.SkinnedMesh;
+  /** Pose this copy at an absolute time inside a clip. Clamped into the clip. */
+  seek(clip: string, seconds: number): void;
   dispose(): void;
 }
 
@@ -516,6 +541,16 @@ function rigidFit(samples: FitSample[], posed: THREE.Vector3[], bindCentroid: TH
   );
 }
 
+/**
+ * Minimum seconds between two hitstops.
+ *
+ * 0.18 is a third of the shortest measured gap between two beats a move is built on (dance_05's
+ * arrests come every ~0.35s at their densest, box_02's flurry every 0.167s) — close enough to let
+ * a deliberate double-beat through, wide enough that a clip whose table lists eight arrests cannot
+ * turn into eight stalls.
+ */
+const HITSTOP_GAP = 0.18;
+
 const FIT_M = new Float64Array(9);
 const FIT_R = new THREE.Matrix3();
 const FIT_S = new THREE.Matrix3();
@@ -772,9 +807,13 @@ export function buildMonsterTreeRig(
     }
   };
 
-  // Hitstop state. The remaining hold and how slowly the clip runs during it.
+  // Hitstop state. The remaining hold, its full length, how slowly the clip runs at the deepest
+  // point of it, and how long since the last one ended.
   let stopFor = 0;
+  let stopSpan = 1;
   let stopScale = 1;
+  let sinceStop = 99;
+  let lastWeight = 0;
 
   const mixer = new THREE.AnimationMixer(shell);
   const clips = buildClips(rig);
@@ -786,7 +825,17 @@ export function buildMonsterTreeRig(
     const clip = typeof which === 'number' ? clips[which] : clips.find((c) => c.name === which);
     if (!clip) return false;
     const next = mixer.clipAction(clip);
-    if (next === action) return true;
+    if (next === action) {
+      // RESTART, do not no-op. Three pairs of skills share a clip — Deep Root Surge and Splinter
+      // Combo are both box_02, Impaling Bough and Bark Strike are both box_01, Grove Awakening and
+      // Wildfire Sap are both `fire` — and returning early left the action running from wherever
+      // the previous move had reached. The incoming skill then cleared its fired set and started
+      // firing cues against a playhead already past half of them, so choosing Deep Root Surge
+      // straight after Splinter Combo began the move from its own middle with its windup skipped.
+      next.reset();
+      next.play();
+      return true;
+    }
     next.enabled = true;
     next.setLoop(THREE.LoopRepeat, Infinity);
     next.reset();
@@ -802,6 +851,69 @@ export function buildMonsterTreeRig(
     action = next;
     currentName = clip.name;
     return true;
+  };
+
+  /**
+   * Echoes share `clips` deliberately. An AnimationClip is immutable keyframe data and every
+   * mixer builds its own actions and interpolants over it, so five echoes cost five sets of
+   * actions rather than five copies of 9.4 MB of keyframes — and, more usefully, they inherit the
+   * root-motion hold that `holdRootMotion` already applied in place. Rebuilding the clips per echo
+   * would silently give the copies their original root motion back and send them walking out from
+   * under their own ghosts.
+   */
+  const makeEcho = (material: THREE.Material): RigEcho => {
+    const object = new THREE.Group();
+    object.name = 'monster-tree-echo';
+
+    const echoSkinRoot = new THREE.Group();
+    echoSkinRoot.position.copy(skinRoot.position);
+    echoSkinRoot.scale.copy(skinRoot.scale);
+    object.add(echoSkinRoot);
+
+    const built = buildSkeleton(rig);
+    echoSkinRoot.add(built.root);
+
+    const mesh = new THREE.SkinnedMesh(shellGeometry, material);
+    mesh.name = 'monster-tree-echo-shell';
+    // A ghost is not a body: it neither casts nor receives. Shadows from five overlapping copies
+    // put five hard silhouettes on the floor around a figure that has one, which is the single
+    // fastest way to make copies read as five separate props instead of as one thing repeating.
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    mesh.frustumCulled = false;
+    object.add(mesh);
+    mesh.bind(built.skeleton, new THREE.Matrix4());
+
+    const echoMixer = new THREE.AnimationMixer(mesh);
+    let echoAction: THREE.AnimationAction | null = null;
+    let echoClip: string | null = null;
+
+    return {
+      object,
+      mesh,
+      seek: (which: string, seconds: number) => {
+        if (which !== echoClip) {
+          const clip = clips.find((c) => c.name === which);
+          if (!clip) return;
+          echoAction?.stop();
+          echoAction = echoMixer.clipAction(clip);
+          echoAction.setLoop(THREE.LoopRepeat, Infinity);
+          echoAction.reset();
+          echoAction.play();
+          echoClip = which;
+        }
+        if (!echoAction) return;
+        // Seek rather than integrate. An echo trailing the original by a fixed lag has to land on
+        // an exact clip time every frame; advancing it by its own delta lets the two drift apart
+        // over a long move, and the lag is the only thing that makes an afterimage read as one.
+        echoAction.time = Math.max(0, seconds % echoAction.getClip().duration);
+        echoMixer.update(0);
+      },
+      dispose: () => {
+        echoMixer.stopAllAction();
+        built.skeleton.dispose();
+      },
+    };
   };
 
   const rigged: MonsterTreeRig = {
@@ -825,19 +937,42 @@ export function buildMonsterTreeRig(
         // Scale only the part of this frame that falls inside the hold, so a long frame that
         // straddles the end of it does not swallow the rest of the hold whole.
         const held = Math.min(stopFor, deltaSeconds);
-        step = held * stopScale + (deltaSeconds - held);
+        // EASE OUT of the hold instead of releasing it on one frame. A hold that ends abruptly
+        // takes the body from near-frozen to full speed between two frames, and that step is a
+        // larger discontinuity than the hold was ever worth — it is felt as a hitch in the
+        // animation rather than as weight in the blow. Measured on box_02 at scale 0.06: the
+        // release frame jumped the clip 16x its neighbours' step. Ramping the scale back over the
+        // tail of the hold keeps the largest frame-to-frame ratio under 2.
+        const through = 1 - Math.max(0, stopFor - held * 0.5) / stopSpan;
+        const scale = stopScale + (1 - stopScale) * through ** 0.55;
+        step = held * scale + (deltaSeconds - held);
         stopFor -= held;
+        if (stopFor <= 0) sinceStop = 0;
+      } else {
+        sinceStop += deltaSeconds;
       }
       mixer.update(step);
     },
     hitstop: (seconds: number, scale = 0.08) => {
+      if (seconds <= 0) return;
+      // REFRACTORY GAP. Holds landing closer together than this stop reading as impacts and start
+      // reading as a dropped frame rate, because there is no run of normal-speed motion between
+      // them to be interrupted. Splinter Combo measured eight holds inside 2.267s — 17% of the
+      // clip frozen across eight separate stalls — and the move looked broken rather than heavy.
+      // A hold inside the gap is admitted only if it is genuinely stronger than the one just
+      // played, so a real payoff can still cut through a flurry.
+      const weight = seconds * (1 - scale);
+      if (stopFor <= 0 && sinceStop < HITSTOP_GAP && weight < lastWeight * 1.5) return;
       // The strongest hold wins rather than the latest, so a light hit landing inside a heavy
       // one's hold cannot shorten it.
-      if (seconds * (1 - scale) >= stopFor * (1 - stopScale)) {
+      if (weight >= stopFor * (1 - stopScale)) {
         stopFor = seconds;
+        stopSpan = seconds;
         stopScale = scale;
+        lastWeight = weight;
       }
     },
+    makeEcho,
     applyStretch: () => applyStretches(),
     stretch: (bone: string, amount: number) => {
       if (amount === 0) stretches.delete(bone);

@@ -20,6 +20,7 @@ import { mkdirSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 const JSON_OUT = process.argv.includes('--json');
+const EMIT = process.argv.includes('--emit');   // rewrite src/demos/monster-tree/events.ts in place
 const RATE = 240;                 // sampling rate, Hz
 const ARREST_ENTER = 1.1;         // H/s a limb must exceed to be "travelling"
 const ARREST_FALL = 0.34;         // fraction of entry speed it must fall below to count as stopped
@@ -28,7 +29,7 @@ const DRIVEN_ACCEL = 9.0;         // hip acceleration, in H/s^2, that needs an o
 const LIMBS = ['L_Hand', 'R_Hand', 'L_ToeBase', 'R_ToeBase'];
 const FEET = ['L_ToeBase', 'R_ToeBase'];
 
-const entry = await import(pathToFileURL(process.cwd() + '/node_modules/.monster-tree/measure-entry.mjs').href);
+const entry = await import(pathToFileURL(process.cwd() + '/tests/.build/measure-entry.mjs').href);
 const { rig: RIG, build } = await entry.loadRig();
 const rig = build();
 const scene = new THREE.Scene();
@@ -166,7 +167,27 @@ for (const clip of rig.clips) {
 const out = { figureHeight: round(H), sampleRate: RATE, thresholds: { ARREST_ENTER, ARREST_FALL, PLANT_LOW, DRIVEN_ACCEL }, clips: table };
 mkdirSync('tests/.build', { recursive: true });
 
-if (JSON_OUT) {
+if (EMIT) {
+  const { writeFileSync, readFileSync } = await import('node:fs');
+  const path = 'src/demos/monster-tree/events.ts';
+  const src = readFileSync(path, 'utf8');
+  const marker = 'export const CLIP_EVENTS';
+  const head = src.slice(0, src.indexOf(marker));
+  const tail = src.slice(src.indexOf('/** The events of one clip'));
+  const body = table.map((c) => {
+    const events = c.events.map((e) => {
+      const bits = [`kind: '${e.kind}'`, `bone: '${e.bone}'`, `at: ${e.at}`];
+      if (e.decel !== undefined) bits.push(`decel: ${e.decel}`);
+      if (e.speed !== undefined) bits.push(`speed: ${e.speed}`);
+      if (e.height !== undefined) bits.push(`height: ${e.height}`);
+      return `      { ${bits.join(', ')} },`;
+    }).join('\n');
+    return `  '${c.clip}': {\n    clip: '${c.clip}', duration: ${c.duration}, handPeak: ${c.handPeak}, bodyMean: ${c.bodyMean},\n`
+      + (events ? `    events: [\n${events}\n    ],\n` : '    events: [],\n') + '  },';
+  }).join('\n');
+  writeFileSync(path, `${head}export const FIGURE_HEIGHT = ${out.figureHeight};\n\nexport const CLIP_EVENTS: Record<string, ClipEvents> = {\n${body}\n};\n\n${tail}`);
+  console.log(`events.ts rewritten: ${table.length} clips, ${table.reduce((s, c) => s + c.events.length, 0)} events`);
+} else if (JSON_OUT) {
   console.log(JSON.stringify(out, null, 2));
 } else {
   console.log(`\nfigure height ${out.figureHeight}   sampled at ${RATE} Hz   speeds in figure-heights/second\n`);

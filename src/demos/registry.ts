@@ -211,31 +211,33 @@ const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 const authored: DemoEntry[] = [
   {
     id: 'monster-tree',
-    title: 'Monster Tree \u2014 Rigged Treant, Separated Costume',
+    title: 'Y\u2019bneth \u2014 Rigged Treant, Measured Kit',
     subjectClass: 'character',
     blurb:
-      'A treant rebuilt from one photograph as code-only geometry, doing three things its rig does not '
-      + 'contain. The 16 shipped clips are a generic biped library, so the skeleton is driven procedurally '
-      + 'on top of them: the arm lengthens until the fist reaches the floor, a fracture runs away '
-      + 'underground and a grove tears up where it arrives, and a branch lance is driven out of a limb that '
-      + 'has doubled in length \u2014 measured at 2.047x shoulder-to-wrist, along the local +Y every arm bone\u2019s '
-      + 'child was measured to sit on. Impacts leave cracks and spreading toxin for ten seconds. The wood '
-      + 'grain follows the bone axes, and the albedo needed a measured white balance: 97% of its bark '
-      + 'vertices carried a blue channel under 55% of their red.',
+      'A treant rebuilt from one photograph as code-only geometry, then given Y\u2019bneth\u2019s own kit: a '
+      + 'passive that plants real undergrowth and draws sap up out of it, a vine that reaches further and '
+      + 'knocks back when he is standing in that undergrowth, a barrage of logs called down along a line, '
+      + 'and an ultimate that grows the trunk itself, throws seeds that sprout where they land, and winds '
+      + 'everything back to the centre. Nothing is hand-timed: a 240 Hz sweep through every clip finds where '
+      + 'limbs arrest, feet plant and the body is driven, and each cue fires on a frame the sweep found. '
+      + 'Five afterimage copies \u2014 real skinned meshes, each with its own skeleton, each running the clip a '
+      + 'fixed interval behind \u2014 land their blows on five measured beats of the densest strike clip in the '
+      + 'library. Every effect shader and every light is built at load, so no impact costs a stalled frame.',
     referenceImage: `${BASE}references/monster-tree/front.jpg`,
     sourcePath: 'src/demos/monster-tree/createMonsterTreeModel.ts',
     sourceUrl: `${REPO}/src/demos/monster-tree/createMonsterTreeModel.ts`,
     generatedWith: 'img2threejs v1.5.2 \u00b7 GLB fast lane \u00b7 animated-character stage R',
     prompt:
       'Take the playground export as measured and build on it: verify the rig by measurement rather than '
-      + 'assertion, separate the costume so animation cannot stretch it, and add attack skills and effects '
-      + 'anchored to real bones and lit in the character\u2019s own colours.',
+      + 'assertion, separate the costume so animation cannot stretch it, and give the character his own '
+      + 'named kit \u2014 passive, two actives and an ultimate \u2014 with every effect anchored to a real bone and '
+      + 'cued off measured clip dynamics rather than by eye.',
     author: 'Hoài Nhớ',
     authorUrl: 'https://github.com/hoainho',
     status: 'final',
-    updatedAt: '2026-08-30',
-    cameraPosition: [0.55, 1.75, 6.1],
-    cameraTarget: [0.95, 0.92, 0],
+    updatedAt: '2026-09-01',
+    cameraPosition: [-0.22, 1.78, 6.1],
+    cameraTarget: [0.18, 0.95, 0],
     cameraFov: 32,
     accent: '#9ede4a',
     backgroundGradient: { inner: '#141610', outer: '#030403' },

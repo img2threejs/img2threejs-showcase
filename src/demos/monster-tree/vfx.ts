@@ -797,11 +797,28 @@ class CoreGlow implements Tickable {
     const pulse = 0.82 + Math.sin(elapsed * 9) * 0.18;
     const k = this.charge * pulse;
     (this.object.material as THREE.MeshBasicMaterial).opacity = Math.min(1, k * 0.9);
-    this.object.scale.setScalar(0.6 + k * 0.8);
+    // COUNTER the parent's world scale. The glow hangs off the chest socket, which hangs off
+    // Spine02, and two things multiply into it there: the rig's 1.99x normalise scale, and any
+    // bone stretch a skill has applied. Hạt Giống Thần Mệnh lengthens Waist, Spine01 and Spine02
+    // together, and the glow inherited all three — it came out as a pale ellipse two metres tall
+    // that swallowed the entire character. Dividing by the parent's measured world scale keeps it
+    // the size it is supposed to be whatever the skeleton is doing.
+    const parent = this.object.parent;
+    if (parent) parent.getWorldScale(CORE_SCALE);
+    else CORE_SCALE.set(1, 1, 1);
+    const size = 0.6 + k * 0.8;
+    this.object.scale.set(
+      size / Math.max(1e-4, CORE_SCALE.x),
+      size / Math.max(1e-4, CORE_SCALE.y),
+      size / Math.max(1e-4, CORE_SCALE.z),
+    );
     this.light.intensity = k * 3.2;
     return true;
   }
 }
+
+/** Scratch for the core glow's counter-scale, allocated once. */
+const CORE_SCALE = new THREE.Vector3();
 
 /**
  * Wisps: spirit lights that orbit the figure, each trailing its own tail.
@@ -1452,6 +1469,14 @@ interface BranchShape {
   forkScale?: number;
   /** How much the shaft swells and pinches at its knots. Higher is rougher, more weathered wood. */
   knot?: number;
+  /**
+   * Collects the end point of every branch and fork, in the branch's own local space.
+   *
+   * A canopy has to sit where the wood actually ended. Scattering leaves through a bounding sphere
+   * instead puts them in the air around the tree and inside its trunk, and the tree stops reading
+   * as a thing that grew — the crown has to be the tips.
+   */
+  tips?: THREE.Vector3[];
 }
 
 function growBranch(
@@ -1522,19 +1547,106 @@ function growBranch(
       const r1 = radii[radii.length - 1];
       // Forks start ON the parent path, so the child tube begins inside the parent's surface and
       // the two read as joined rather than as two sticks meeting.
-      growBranch(point, forkDir, length * (0.52 + random() * 0.2) * forkScale, r1 * 0.7, depth - 1, random, out, stock);
+      growBranch(point, forkDir, length * (0.52 + random() * 0.2) * forkScale, r1 * 0.7, depth - 1, random, out, stock, { tips: shape.tips });
       // A second, smaller twig now and then. Kept to a third: two forks at every node of a deep
       // recursion is exponential, and the grove came up as a thicket that buried the character.
       if (random() < 0.30) {
         const twigSide = new THREE.Vector3(random() - 0.5, random() * 0.4, random() - 0.5).normalize();
         const twigDir = heading.clone().multiplyScalar(0.5).addScaledVector(twigSide, 0.92).normalize();
-        growBranch(point, twigDir, length * (0.42 + random() * 0.22) * forkScale, r1 * 0.52, depth - 1, random, out, stock);
+        growBranch(point, twigDir, length * (0.42 + random() * 0.22) * forkScale, r1 * 0.52, depth - 1, random, out, stock, { tips: shape.tips });
       }
     }
   }
 
+  shape.tips?.push(path[path.length - 1].clone());
+
   const tube = taperedTube(path, radii, 7, TRUNK_COLOUR);
   if (tube) out.push(tube);
+}
+
+/**
+ * The crown: leaves clustered on the points where the wood actually ended.
+ *
+ * Bare branches are the single largest thing that was wrong with the grove. A tree that is only
+ * its skeleton reads as driftwood however good the bark is, and a ring of them reads as a fence —
+ * the silhouette that says "tree" from any distance is the mass at the top, not the trunk.
+ *
+ * Additively blended and tinted with the character's own life colour, because this grove is
+ * something the creature pulled up out of the ground, not scenery: it should be lit from inside
+ * the way the creature's own sap is. On a dark floor a normally-blended dark-green leaf is
+ * invisible, which is the same reason the trunk material carries a little emissive.
+ */
+function canopyPoints(
+  tips: THREE.Vector3[],
+  height: number,
+  leaf: THREE.Texture,
+  random: () => number,
+): THREE.Points | null {
+  if (!tips.length) return null;
+  // Denser on the outer tips than on the inner ones, and capped: a deep recursion can hand back
+  // forty tips, and forty full clusters is a solid ball rather than a crown.
+  const per = Math.max(7, Math.round(90 / Math.max(4, tips.length)) + 6);
+  const positions: number[] = [];
+  const sizes: number[] = [];
+  const spread = height * 0.085;
+  for (const tip of tips) {
+    for (let i = 0; i < per; i += 1) {
+      positions.push(
+        tip.x + (random() - 0.5) * spread * 2,
+        tip.y + (random() - 0.35) * spread * 1.7,
+        tip.z + (random() - 0.5) * spread * 2,
+      );
+      sizes.push(height * (0.075 + random() * 0.105));
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('aSize', new THREE.Float32BufferAttribute(sizes, 1));
+
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      uMap: { value: leaf },
+      uColour: { value: lifeColour(0.34, 0.95) },
+      uOpacity: { value: 0.62 },
+      // Point size is `aSize * uScale / distance`, in pixels. At 320 a leaf on a tree five units
+      // away came out six pixels across and the crown read as a dusting of specks on a bare pole.
+      uScale: { value: 900 },
+    },
+    vertexShader: `
+      attribute float aSize;
+      uniform float uScale;
+      varying float vFleck;
+      void main() {
+        vFleck = fract(sin(position.x * 91.7 + position.z * 47.3) * 43758.5453);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = aSize * uScale / max(0.001, -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      uniform sampler2D uMap;
+      uniform vec3 uColour;
+      uniform float uOpacity;
+      varying float vFleck;
+      void main() {
+        vec4 tex = texture2D(uMap, gl_PointCoord);
+        if (tex.a < 0.04) discard;
+        // A leaf is not one green. Fleck the cluster across a small range so the crown has depth
+        // instead of reading as one flat card.
+        vec3 tint = uColour * (0.55 + vFleck * 0.95);
+        gl_FragColor = vec4(tint * tex.a, tex.a * uOpacity);
+      }`,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+
+  const points = new THREE.Points(geometry, material);
+  points.name = 'vfx:canopy';
+  points.frustumCulled = false;
+  // Every crown compiles its own ShaderMaterial, so every crown has to give it back. The trunks
+  // share one material owned by the VFX system and must NOT be disposed with the tree.
+  points.userData.ownMaterial = true;
+  return points;
 }
 
 /**
@@ -1550,7 +1662,7 @@ function growBranch(
  */
 class GroveEruption implements Tickable {
   readonly object: THREE.Group;
-  private readonly trees: Array<{ mesh: THREE.Mesh; delay: number; lean: number }> = [];
+  private readonly trees: Array<{ mesh: THREE.Mesh; delay: number; lean: number; rate: number }> = [];
   private age = 0;
 
   constructor(
@@ -1562,6 +1674,7 @@ class GroveEruption implements Tickable {
     seed: number,
     material: THREE.Material,
     stock: THREE.BufferGeometry | null,
+    leaf: THREE.Texture | null = null,
   ) {
     this.object = new THREE.Group();
     this.object.name = 'vfx:grove';
@@ -1569,12 +1682,28 @@ class GroveEruption implements Tickable {
 
     for (let i = 0; i < count; i += 1) {
       const angle = (i / count) * Math.PI * 2 + random() * 0.9;
-      const dist = spread * Math.sqrt(random());
-      const height = scale * (0.30 + random() * 0.30);
+      const radial = Math.sqrt(random());
+      const dist = spread * radial;
+      // A SIZE HIERARCHY, not a uniform stand. Roughly a quarter of the trunks come up as heroes
+      // at more than twice the height of the rest; the others fill in around them. A ring of
+      // equal-height trees is read as a fence or a palisade — the eye takes regular spacing at a
+      // regular height as something built. Real stands are a few tall ones and a lot of scrub, and
+      // that irregularity is what makes the silhouette look grown.
+      const hero = random() < 0.28;
+      const height = scale * (hero ? 0.62 + random() * 0.30 : 0.24 + random() * 0.22);
       const lean = new THREE.Vector3((random() - 0.5) * 0.3, 1, (random() - 0.5) * 0.3).normalize();
 
       const parts: THREE.BufferGeometry[] = [];
-      growBranch(new THREE.Vector3(), lean, height, height * BRANCH_THICKNESS, 3, random, parts, stock);
+      const tips: THREE.Vector3[] = [];
+      growBranch(new THREE.Vector3(), lean, height, height * BRANCH_THICKNESS, 3, random, parts, stock, {
+        // A hero holds itself up: less wander on the trunk so a tall trunk stands instead of
+        // flopping, more steps so the extra height is a curve rather than three long straights,
+        // and deeper knots because a big trunk shows its age.
+        wander: hero ? 0.30 : 0.46,
+        steps: hero ? 7 : 5,
+        knot: hero ? 0.22 : 0.16,
+        tips,
+      });
       const geometry = mergeGeometries(parts);
       for (const g of parts) g.dispose();
       if (!geometry) continue;
@@ -1585,8 +1714,25 @@ class GroveEruption implements Tickable {
       mesh.scale.setScalar(0.001);
       mesh.visible = false;
       mesh.castShadow = true;
+      if (leaf) {
+        const crown = canopyPoints(tips, height, leaf, random);
+        // Parented to the trunk, so the crown grows WITH it. Held separately it would have to
+        // repeat the scale, the sway and the sink, and the leaves would drift off the wood the
+        // first time any of the three went out of step.
+        if (crown) mesh.add(crown);
+      }
       this.object.add(mesh);
-      this.trees.push({ mesh, delay: random() * 0.55, lean: (random() - 0.5) * 0.06 });
+      this.trees.push({
+        // Growth as ONE WAVE travelling outward from the centre, not as random pops. The delay is
+        // the tree's own distance from the origin, so the grove opens from the point the blow
+        // landed and the eye follows it out. A random stagger says several things happened at
+        // once; a wave says one thing happened, there.
+        mesh,
+        delay: radial * 0.62 + random() * 0.1,
+        lean: (random() - 0.5) * 0.06,
+        // Tall wood comes up slower than scrub, which is most of what makes a hero read as heavy.
+        rate: hero ? 1.5 : 0.95,
+      });
     }
   }
 
@@ -1599,13 +1745,247 @@ class GroveEruption implements Tickable {
       if (local <= 0) continue;
       tree.mesh.visible = true;
       // Grow fast, overshoot slightly, settle — then sink only in the last fifth of the life.
-      const grow = local < 1.1 ? 1 - (1 - local / 1.1) ** 3 : 1;
-      const overshoot = local < 1.1 ? 1 + Math.sin(Math.min(1, local / 1.1) * Math.PI) * 0.07 : 1;
+      const span = tree.rate;
+      const grow = local < span ? 1 - (1 - local / span) ** 3 : 1;
+      const overshoot = local < span ? 1 + Math.sin(Math.min(1, local / span) * Math.PI) * 0.07 : 1;
       const sink = t > 0.8 ? 1 - (t - 0.8) / 0.2 : 1;
       tree.mesh.scale.setScalar(Math.max(0.001, grow * overshoot * sink));
       // A slow sway once standing, so the grove is alive rather than planted scenery.
       tree.mesh.rotation.z = Math.sin(elapsed * 0.9 + tree.delay * 6) * tree.lean * grow;
     }
+    return true;
+  }
+}
+
+/**
+ * A patch of undergrowth: the one piece of TERRAIN this demo owns, and the hinge of the whole kit.
+ *
+ * Y'bneth's passive reads the ground he is standing on, and his first skill changes shape
+ * depending on the same thing. A showcase has no map to read, so the grass is made a real object
+ * with a real lifetime: the passive plants it, it stands for a while, and Dây Leo asks whether it
+ * is still there. The two skills then genuinely interact rather than each miming an interaction
+ * with a game state that does not exist here.
+ *
+ * Blades are one merged geometry, not one mesh each — 220 separate draw calls for grass would cost
+ * more than every other effect in the demo put together. They sway on a vertex shader keyed to
+ * each blade's own base, so no blade moves with its neighbour.
+ */
+class GrassPatch implements Tickable {
+  readonly object: THREE.Mesh;
+  private readonly material: THREE.ShaderMaterial;
+  private age = 0;
+  /** Where it is and how far it reaches, so a skill can ask whether the character stands in it. */
+  readonly centre: THREE.Vector3;
+  readonly radius: number;
+
+  constructor(origin: THREE.Vector3, radius: number, count: number, colour: THREE.Color, seed: number, private readonly duration: number) {
+    this.centre = origin.clone();
+    this.radius = radius;
+    const random = mulberry32(seed);
+    const position: number[] = [];
+    const base: number[] = [];
+    const up: number[] = [];
+    const index: number[] = [];
+
+    for (let i = 0; i < count; i += 1) {
+      // Square-root radial so the blades spread evenly over the AREA rather than crowding the
+      // middle, which is what a uniform radius does and it reads as a tuft, not a patch.
+      const angle = random() * Math.PI * 2;
+      const dist = radius * Math.sqrt(random());
+      const x = origin.x + Math.cos(angle) * dist;
+      const z = origin.z + Math.sin(angle) * dist;
+      // Undergrowth. 6-15% of the patch radius keeps it around the knee on a 1.9 m figure; at
+      // twice that it came up to his chest and the character stopped being the subject of the
+      // shot.
+      const height = radius * (0.06 + random() * 0.09);
+      const halfWidth = height * 0.055;
+      const leanX = (random() - 0.5) * height * 0.5;
+      const leanZ = (random() - 0.5) * height * 0.5;
+      const phase = random() * 6.28;
+      const v = position.length / 3;
+      // Three vertices: a base pair and a tip. A blade is a triangle; anything more is detail
+      // nobody can see at this size and geometry nobody needs to pay for.
+      const nx = Math.cos(angle + Math.PI / 2) * halfWidth;
+      const nz = Math.sin(angle + Math.PI / 2) * halfWidth;
+      position.push(x - nx, 0, z - nz, x + nx, 0, z + nz, x + leanX, height, z + leanZ);
+      for (let k = 0; k < 3; k += 1) { base.push(x, 0, z); up.push(k === 2 ? 1 : 0, phase, dist / radius); }
+      index.push(v, v + 1, v + 2);
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+    geometry.setAttribute('aBase', new THREE.Float32BufferAttribute(base, 3));
+    geometry.setAttribute('aBlade', new THREE.Float32BufferAttribute(up, 3));
+    geometry.setIndex(index);
+
+    this.material = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uGrow: { value: 0 },
+        uColour: { value: colour.clone() },
+        uTip: { value: colour.clone().multiplyScalar(1.5) },
+      },
+      vertexShader: `
+        attribute vec3 aBase;
+        attribute vec3 aBlade;
+        uniform float uTime;
+        uniform float uGrow;
+        varying float vTip;
+        varying float vOut;
+        void main() {
+          vTip = aBlade.x;
+          vOut = aBlade.z;
+          vec3 p = position;
+          // Grows outward from the middle of the patch, so it unrolls under the character rather
+          // than switching on.
+          float grow = clamp((uGrow - aBlade.z * 0.45) / 0.55, 0.0, 1.0);
+          p.y = mix(0.0, p.y, grow);
+          // Only the tip moves, and each blade keeps its own phase.
+          float sway = sin(uTime * 1.5 + aBlade.y) * 0.5 + sin(uTime * 0.7 + aBlade.y * 1.7) * 0.5;
+          p.xz += sway * aBlade.x * 0.055 * (p.y + 0.001) * vec2(1.0, 0.6);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+        }`,
+      fragmentShader: `
+        uniform vec3 uColour;
+        uniform vec3 uTip;
+        varying float vTip;
+        varying float vOut;
+        void main() {
+          // Lit from inside at the tips: this is the creature's own undergrowth, and on a near
+          // black floor a grass that is only albedo is a black patch on a black patch.
+          vec3 c = mix(uColour, uTip, vTip * vTip);
+          gl_FragColor = vec4(c * (1.0 - vOut * 0.35), 1.0);
+        }`,
+      side: THREE.DoubleSide,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+
+    this.object = new THREE.Mesh(geometry, this.material);
+    this.object.name = 'vfx:grass';
+    this.object.frustumCulled = false;
+    this.object.userData.ownMaterial = true;
+  }
+
+  /** True while the patch is still standing — what Dây Leo asks before it commits to a shape. */
+  get standing(): boolean {
+    return this.age < this.duration * 0.85;
+  }
+
+  covers(at: THREE.Vector3): boolean {
+    const dx = at.x - this.centre.x;
+    const dz = at.z - this.centre.z;
+    return this.standing && dx * dx + dz * dz <= this.radius * this.radius;
+  }
+
+  tick(dt: number, elapsed: number): boolean {
+    this.age += dt;
+    if (this.age >= this.duration) return false;
+    this.material.uniforms.uTime.value = elapsed;
+    const t = this.age / this.duration;
+    // Up over the first second, down over the last fifth.
+    this.material.uniforms.uGrow.value = Math.min(1, this.age / 1.0) * (t > 0.8 ? 1 - (t - 0.8) / 0.2 : 1);
+    return true;
+  }
+}
+
+/**
+ * A vine thrown from the hand: it flies out, snaps taut, holds, and is pulled back.
+ *
+ * Not a spear. A spear is released and a vine is not — it stays attached to the hand the whole
+ * way, which is why the far end is driven along a heading while the near end is re-read from the
+ * grip socket on every frame. That tether is the difference between a thrown object and a whip,
+ * and it is also what makes the empowered version legible: when the vine catches, the character
+ * is pulled along it.
+ *
+ * The body is rebuilt each frame rather than scaled, because a vine that lashes has to CURVE, and
+ * a curve that changes cannot be a rigid mesh with a scale on it.
+ */
+class VineWhip implements Tickable {
+  readonly object: THREE.Group;
+  private readonly tube: THREE.Mesh;
+  private readonly points: THREE.Vector3[] = [];
+  private readonly radii: number[] = [];
+  private age = 0;
+  private struck = false;
+
+  constructor(
+    private readonly from: THREE.Object3D,
+    direction: THREE.Vector3,
+    private readonly reach: number,
+    private readonly outTime: number,
+    private readonly holdTime: number,
+    private readonly backTime: number,
+    colour: THREE.Color,
+    material: THREE.Material,
+    private readonly onCatch: (at: THREE.Vector3) => void,
+  ) {
+    this.object = new THREE.Group();
+    this.object.name = 'vfx:vine';
+    this.heading.copy(direction).setY(0);
+    if (this.heading.lengthSq() < 1e-8) this.heading.set(1, 0, 0);
+    this.heading.normalize();
+
+    for (let i = 0; i <= VineWhip.LINKS; i += 1) {
+      this.points.push(new THREE.Vector3());
+      // Thickest at the hand, tapering to a tendril: a vine is not a rope of constant gauge. At
+      // half these gauges it came out as a drawn line rather than as something with a body.
+      this.radii.push(reach * (0.032 - 0.021 * (i / VineWhip.LINKS)));
+    }
+    this.colour = colour;
+    this.tube = new THREE.Mesh(new THREE.BufferGeometry(), material);
+    this.tube.name = 'vfx:vine-body';
+    this.tube.frustumCulled = false;
+    this.object.add(this.tube);
+  }
+
+  private static readonly LINKS = 22;
+  private readonly heading = new THREE.Vector3();
+  private readonly colour: THREE.Color;
+  private readonly origin = new THREE.Vector3();
+  private readonly tip = new THREE.Vector3();
+
+  tick(dt: number): boolean {
+    this.age += dt;
+    const total = this.outTime + this.holdTime + this.backTime;
+    if (this.age >= total) return false;
+
+    let extend: number;
+    if (this.age < this.outTime) {
+      // Out fast and decelerating — a whip runs out of length, it does not ease into it.
+      extend = 1 - (1 - this.age / this.outTime) ** 2.4;
+    } else if (this.age < this.outTime + this.holdTime) {
+      extend = 1;
+    } else {
+      extend = 1 - (this.age - this.outTime - this.holdTime) / this.backTime;
+    }
+
+    this.origin.setFromMatrixPosition(this.from.matrixWorld);
+    this.tip.copy(this.origin).addScaledVector(this.heading, this.reach * extend);
+
+    if (!this.struck && this.age >= this.outTime) {
+      this.struck = true;
+      this.onCatch(this.tip.clone());
+    }
+
+    // A travelling S-wave down the length, strongest while it is running out and gone once it is
+    // taut. A straight line from hand to target reads as a beam; the wave is what makes it rope.
+    const lash = this.age < this.outTime ? 1 - this.age / this.outTime : 0;
+    const side = new THREE.Vector3(-this.heading.z, 0, this.heading.x);
+    for (let i = 0; i <= VineWhip.LINKS; i += 1) {
+      const s = i / VineWhip.LINKS;
+      const point = this.points[i];
+      point.lerpVectors(this.origin, this.tip, s);
+      const wave = Math.sin(s * 7.0 - this.age * 16) * lash * this.reach * 0.10 * s;
+      point.addScaledVector(side, wave);
+      // Sags under its own weight once it is out, most in the middle.
+      point.y -= Math.sin(s * Math.PI) * this.reach * 0.07 * (1 - lash);
+    }
+
+    this.tube.geometry.dispose();
+    const geometry = taperedTube(this.points, this.radii, 6, this.colour);
+    if (geometry) this.tube.geometry = geometry;
     return true;
   }
 }
@@ -1635,7 +2015,7 @@ class HurledSpear implements Tickable {
    * lit rather than glowing, it is visible while it moves, and it rakes the ground it passes over,
    * which sells the flight better than the shaft ever could on its own.
    */
-  private readonly lamp: THREE.PointLight;
+  private readonly lamp: THREE.PointLight | null;
   private readonly heading = new THREE.Vector3();
   private readonly start = new THREE.Vector3();
   private readonly at = new THREE.Vector3();
@@ -1654,6 +2034,8 @@ class HurledSpear implements Tickable {
     material: THREE.Material,
     private readonly onSpark: (at: THREE.Vector3) => void,
     private readonly onImpact: (at: THREE.Vector3) => void,
+    lamp: THREE.PointLight | null,
+    private readonly onDone: () => void,
   ) {
     this.object = new THREE.Group();
     this.object.name = 'vfx:hurled-spear';
@@ -1682,8 +2064,11 @@ class HurledSpear implements Tickable {
     this.shaft.position.y = -length * 0.5;
     this.object.add(this.shaft);
 
-    this.lamp = new THREE.PointLight(lifeColour(0.5, 1), 6, length * 3.4, 2);
-    this.object.add(this.lamp);
+    this.lamp = lamp;
+    if (this.lamp) {
+      this.lamp.color.copy(lifeColour(0.5, 1));
+      this.lamp.intensity = 6;
+    }
 
     this.start.copy(origin);
     this.at.copy(origin);
@@ -1702,6 +2087,9 @@ class HurledSpear implements Tickable {
       const travelled = this.distance * (1 - (1 - t) ** 1.6);
       this.at.copy(this.start).addScaledVector(this.heading, travelled);
       this.object.position.copy(this.at);
+      // The lamp is pooled and lives in the effect group rather than under the spear, so it is
+      // carried by hand along the flight instead of riding the shaft's own transform.
+      if (this.lamp) this.lamp.position.copy(this.at);
       // Spin about the flight axis. Without it a rigid shaft slides across the frame like a decal.
       this.shaft.rotation.y += dt * 9;
 
@@ -1723,12 +2111,262 @@ class HurledSpear implements Tickable {
       return true;
     }
 
-    if (this.age >= this.linger) return false;
+    if (this.age >= this.linger) {
+      this.onDone();
+      return false;
+    }
     // Sinks back into the ground it opened, over the last third of its stay.
     const t = this.age / this.linger;
     // The light dies with the throw: a spear standing in the ground is spent, not still burning.
-    this.lamp.intensity = 6 * Math.max(0, 1 - t * 2.2);
+    if (this.lamp) {
+      this.lamp.intensity = 6 * Math.max(0, 1 - t * 2.2);
+      // A pooled light lives in the effect group, not under the spear, so it has to be carried.
+      this.lamp.position.copy(this.at);
+    }
     if (t > 0.66) this.object.scale.setScalar(Math.max(0.001, 1 - (t - 0.66) / 0.34));
+    return true;
+  }
+}
+
+/**
+ * A log summoned overhead and driven down onto a point.
+ *
+ * Thiên Nhiên Vẫy Gọi calls wood down repeatedly, and the repetition is the skill: one log is a
+ * hit, several in a row is a knockdown. So a log is deliberately cheap — one short knotted trunk
+ * from the same `growBranch` recursion everything else here grows from — and the move fires a
+ * line of them, each on a measured arrest of the clip driving it.
+ *
+ * It falls from above the frame under real acceleration rather than a tween. A log arriving at
+ * constant speed reads as a prop being lowered; one that arrives fastest at the floor reads as
+ * weight, and it lands on the frame the arithmetic says it lands on rather than the frame a
+ * duration happened to end.
+ */
+class LogSlam implements Tickable {
+  readonly object: THREE.Group;
+  private readonly log: THREE.Mesh;
+  private age = 0;
+  private landed = false;
+  private readonly dropFrom: number;
+
+  constructor(
+    private readonly target: THREE.Vector3,
+    length: number,
+    private readonly fallTime: number,
+    private readonly linger: number,
+    seed: number,
+    material: THREE.Material,
+    private readonly onLand: (at: THREE.Vector3) => void,
+  ) {
+    this.object = new THREE.Group();
+    this.object.name = 'vfx:log';
+    const random = mulberry32(seed);
+    const parts: THREE.BufferGeometry[] = [];
+    // Short, thick, heavily knotted, barely wandering: a cut log, not a growing branch. Depth 1
+    // keeps the broken stubs of its side growth without turning it into a shrub.
+    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), length, length * 0.13, 1, random, parts, null, {
+      steps: 6, wander: 0.08, knot: 0.30, forkScale: 0.18,
+    });
+    const geometry = mergeGeometries(parts);
+    for (const g of parts) g.dispose();
+    this.log = new THREE.Mesh(geometry ?? new THREE.BufferGeometry(), material);
+    this.log.castShadow = true;
+    // Lying across the direction of travel, so it lands flat like a battering ram rather than
+    // spearing the ground point first.
+    //
+    // The offsets are not cosmetic. `growBranch` builds along +Y from the origin, so after the
+    // quarter turn about Z the log runs along -X and its base is at the group's origin. Offsetting
+    // by +X half its length re-centres it on the target, and lifting it by its own radius rests it
+    // ON the floor. Without the lift the first version dropped the whole log to y = -length/2 and
+    // buried it: the barrage was landing correctly and every log of it was underground.
+    this.log.rotation.z = Math.PI / 2;
+    this.log.position.set(length * 0.5, length * 0.145, 0);
+    this.object.add(this.log);
+    this.object.rotation.y = random() * Math.PI * 2;
+    this.dropFrom = length * 3.4;
+    this.object.position.set(target.x, this.dropFrom, target.z);
+  }
+
+  tick(dt: number): boolean {
+    this.age += dt;
+    if (!this.landed) {
+      const t = Math.min(1, this.age / this.fallTime);
+      // Quadratic: constant acceleration, fastest at the floor.
+      this.object.position.y = this.dropFrom * (1 - t * t);
+      this.log.rotation.x += dt * 2.2;
+      if (t >= 1) {
+        this.landed = true;
+        this.age = 0;
+        this.object.position.y = 0;
+        this.onLand(this.target.clone());
+      }
+      return true;
+    }
+    if (this.age >= this.linger) return false;
+    // Settles, then sinks back into the ground it broke.
+    const t = this.age / this.linger;
+    if (t > 0.6) this.object.scale.setScalar(Math.max(0.001, 1 - (t - 0.6) / 0.4));
+    return true;
+  }
+}
+
+/**
+ * Seeds thrown outward on arcs, each sprouting where it lands.
+ *
+ * The ultimate throws continuously, so this is one volley of several and the volleys are cued off
+ * the clip's own arrests. Each seed is a point travelling a ballistic arc — thrown UP and out,
+ * falling under gravity — because a seed that travels in a straight line to its landing point is
+ * a bullet, and the whole read of this move is that something is being scattered.
+ */
+class SeedVolley implements Tickable {
+  readonly object: THREE.Points;
+  private readonly velocity: Float32Array;
+  private readonly landAt: Float32Array;
+  private readonly landed: boolean[];
+  private age = 0;
+
+  constructor(
+    origin: THREE.Vector3,
+    count: number,
+    spread: number,
+    private readonly flight: number,
+    colour: THREE.Color,
+    dot: THREE.Texture,
+    seed: number,
+    private readonly onLand: (at: THREE.Vector3) => void,
+  ) {
+    const random = mulberry32(seed);
+    const positions = new Float32Array(count * 3);
+    this.velocity = new Float32Array(count * 3);
+    this.landAt = new Float32Array(count * 3);
+    this.landed = new Array(count).fill(false);
+
+    for (let i = 0; i < count; i += 1) {
+      const angle = (i / count) * Math.PI * 2 + random() * 0.5;
+      const dist = spread * (0.45 + random() * 0.55);
+      const lx = origin.x + Math.cos(angle) * dist;
+      const lz = origin.z + Math.sin(angle) * dist;
+      positions[i * 3] = origin.x;
+      positions[i * 3 + 1] = origin.y;
+      positions[i * 3 + 2] = origin.z;
+      this.landAt[i * 3] = lx;
+      this.landAt[i * 3 + 1] = 0;
+      this.landAt[i * 3 + 2] = lz;
+      // Solve the arc rather than tween it: horizontal speed is fixed by the flight time, and the
+      // vertical launch is whatever gets it back to the floor in that same time under g.
+      const g = 9.0;
+      this.velocity[i * 3] = (lx - origin.x) / flight;
+      this.velocity[i * 3 + 1] = (0 - origin.y) / flight + 0.5 * g * flight;
+      this.velocity[i * 3 + 2] = (lz - origin.z) / flight;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const material = new THREE.PointsMaterial({
+      map: dot,
+      color: colour,
+      size: spread * 0.075,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+    });
+    this.object = new THREE.Points(geometry, material);
+    this.object.name = 'vfx:seeds';
+    this.object.frustumCulled = false;
+    this.object.userData.ownMaterial = true;
+  }
+
+  tick(dt: number): boolean {
+    this.age += dt;
+    const positions = this.object.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const array = positions.array as Float32Array;
+    let alive = false;
+    for (let i = 0; i < this.landed.length; i += 1) {
+      if (this.landed[i]) continue;
+      alive = true;
+      this.velocity[i * 3 + 1] -= 9.0 * dt;
+      array[i * 3] += this.velocity[i * 3] * dt;
+      array[i * 3 + 1] += this.velocity[i * 3 + 1] * dt;
+      array[i * 3 + 2] += this.velocity[i * 3 + 2] * dt;
+      if (array[i * 3 + 1] <= 0.01 || this.age > this.flight * 1.6) {
+        this.landed[i] = true;
+        array[i * 3 + 1] = -50;
+        this.onLand(new THREE.Vector3(this.landAt[i * 3], 0, this.landAt[i * 3 + 2]));
+      }
+    }
+    positions.needsUpdate = true;
+    return alive;
+  }
+}
+
+/**
+ * The pull: everything loose on the ground dragged in toward one point, and held there.
+ *
+ * The inward ring already existed for a blow TAKEN, and it is the right shape for this too, but a
+ * ring on its own only says "inward" for the third of a second it takes to close. A gather has to
+ * keep gathering, so this carries motes that spiral in over the whole duration and pile up at the
+ * centre — and they SPIRAL rather than run straight in, because a straight radial line reads as
+ * something falling into a hole and a spiral reads as something being wound in.
+ */
+class Vortex implements Tickable {
+  readonly object: THREE.Points;
+  private readonly angle: Float32Array;
+  private readonly radius: Float32Array;
+  private readonly rate: Float32Array;
+  private readonly height: Float32Array;
+  private age = 0;
+
+  constructor(
+    private readonly centre: THREE.Vector3,
+    count: number,
+    private readonly reach: number,
+    private readonly duration: number,
+    colour: THREE.Color,
+    dot: THREE.Texture,
+    seed: number,
+  ) {
+    const random = mulberry32(seed);
+    const positions = new Float32Array(count * 3);
+    this.angle = new Float32Array(count);
+    this.radius = new Float32Array(count);
+    this.rate = new Float32Array(count);
+    this.height = new Float32Array(count);
+    for (let i = 0; i < count; i += 1) {
+      this.angle[i] = random() * Math.PI * 2;
+      this.radius[i] = reach * (0.35 + random() * 0.65);
+      this.rate[i] = 0.5 + random() * 0.8;
+      this.height[i] = random() * reach * 0.35;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const material = new THREE.PointsMaterial({
+      map: dot, color: colour, size: reach * 0.055,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
+    });
+    this.object = new THREE.Points(geometry, material);
+    this.object.name = 'vfx:vortex';
+    this.object.frustumCulled = false;
+    this.object.userData.ownMaterial = true;
+  }
+
+  tick(dt: number): boolean {
+    this.age += dt;
+    if (this.age >= this.duration) return false;
+    const t = this.age / this.duration;
+    const positions = this.object.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const array = positions.array as Float32Array;
+    for (let i = 0; i < this.angle.length; i += 1) {
+      // Winds faster as it closes, which is what conservation of angular momentum looks like and
+      // what stops the last half of the pull going slack.
+      const closing = Math.max(0.06, 1 - t);
+      this.angle[i] += dt * this.rate[i] * 3.4 / closing;
+      this.radius[i] = Math.max(0, this.radius[i] - dt * this.reach * 0.55);
+      array[i * 3] = this.centre.x + Math.cos(this.angle[i]) * this.radius[i];
+      array[i * 3 + 1] = 0.04 + this.height[i] * (this.radius[i] / this.reach) + t * this.reach * 0.28;
+      array[i * 3 + 2] = this.centre.z + Math.sin(this.angle[i]) * this.radius[i];
+    }
+    positions.needsUpdate = true;
+    (this.object.material as THREE.PointsMaterial).opacity = t < 0.85 ? 1 : 1 - (t - 0.85) / 0.15;
     return true;
   }
 }
@@ -1919,6 +2557,67 @@ const IMPACTS: Record<ImpactKind, ImpactSpec> = {
 };
 
 /**
+ * Every short-lived light in the demo, created once and never added to or removed from the scene.
+ *
+ * This is the largest single stall that was left after the shader prewarm, and it is invisible
+ * until it is measured. Adding a `PointLight` to a scene changes the LIGHTING CONFIGURATION, and
+ * three responds by marking every lit material in the scene for recompilation — including the
+ * character's own 101,466-triangle patched bark shader. Instrumenting the clip playhead in the
+ * browser caught it exactly: a 52 ms frame on Bark Strike's payoff, a 37 ms frame on the split of
+ * Phân Thân, both landing on the beat. Then the light expires, the count drops back, and
+ * everything recompiles a second time.
+ *
+ * So the lights are permanent and their INTENSITY is what changes. The count never moves, nothing
+ * ever recompiles, and a flash costs one uniform write. They are kept `visible` deliberately: an
+ * invisible light is not collected by the renderer, which would move the count and put the stall
+ * straight back.
+ */
+class LightPool {
+  readonly object = new THREE.Group();
+  private readonly lights: THREE.PointLight[] = [];
+  private readonly busy: boolean[] = [];
+
+  constructor(count: number, range: number) {
+    this.object.name = 'vfx:lights';
+    for (let i = 0; i < count; i += 1) {
+      const light = new THREE.PointLight(0xffffff, 0, range, 2);
+      light.userData.isHighlight = true;
+      this.lights.push(light);
+      this.busy.push(false);
+      this.object.add(light);
+    }
+  }
+
+  /** A light to drive yourself. Null when all of them are already in use. */
+  take(): THREE.PointLight | null {
+    const free = this.busy.indexOf(false);
+    if (free < 0) return null;
+    this.busy[free] = true;
+    return this.lights[free];
+  }
+
+  release(light: THREE.PointLight): void {
+    const index = this.lights.indexOf(light);
+    if (index < 0) return;
+    light.intensity = 0;
+    this.busy[index] = false;
+  }
+}
+
+/** Give back everything an expired effect owns: its geometry, and any material it made itself. */
+function disposeTree(root: THREE.Object3D): void {
+  root.traverse((o) => {
+    const node = o as THREE.Mesh;
+    node.geometry?.dispose();
+    if (node.userData.ownMaterial) {
+      const material = node.material;
+      if (Array.isArray(material)) for (const m of material) m.dispose();
+      else material?.dispose();
+    }
+  });
+}
+
+/**
  * The VFX system. Owns the shared textures, the persistent effects and the transient ones, and
  * runs them all from a single `update`.
  */
@@ -1954,6 +2653,9 @@ export class MonsterTreeVfx {
    * flight peaks at nine live bursts — with headroom, and fires drop the oldest rather than
    * allocating a fifteenth. */
   private readonly burstPool: BurstSlot[] = [];
+  private readonly lights: LightPool;
+  /** The undergrowth currently standing, if any. See `grass` and `inGrass`. */
+  private patch: GrassPatch | null = null;
   private readonly rootMaterial: THREE.MeshStandardMaterial;
   private readonly rootBark: BarkSurface;
   /** A branch taken off the character's shoulder; every grown thing instances it. */
@@ -1976,6 +2678,8 @@ export class MonsterTreeVfx {
   private readonly scale: number;
   /** 0 = dormant, 1 = a power fully gathered. Drives veins, wisps and the chest core together. */
   private chargeLevel = 0;
+  /** Where the charge is heading. See the `charge` setter: rises ramp, falls do not. */
+  private chargeTarget = 0;
   private flashLevel = 0;
   /**
    * The accent every impact effect is tinted with, and the single biggest thing this demo was
@@ -2001,6 +2705,8 @@ export class MonsterTreeVfx {
   breath = 1;
   /** The sap's own clock, advanced at the breath rate. See `update` for why it is integrated. */
   private sapClock = 0;
+  /** Whether the one-off shader prewarm has run. See `prewarm`. */
+  private warmed = false;
 
   constructor(rig: {
     group: THREE.Object3D;
@@ -2052,6 +2758,11 @@ export class MonsterTreeVfx {
     this.shafts = new LightShafts(5, this.scale, lifeColour(0.52, 0.34), 0x5a71);
     this.group.add(this.shafts.object);
 
+    // Four covers the worst measured overlap — a flurry's three light flashes and a spear's lamp
+    // alive at once — and every one of them is in the scene from the first frame.
+    this.lights = new LightPool(4, this.scale * 2.2);
+    this.group.add(this.lights.object);
+
     this.eyes = new EyeGlow([rig.sockets['eye-l'], rig.sockets['eye-r']], this.dot, this.scale);
     this.group.add(this.eyes.object);
 
@@ -2078,15 +2789,26 @@ export class MonsterTreeVfx {
    * number. Driving them separately from the skill table is how they drift out of step.
    */
   set charge(value: number) {
+    this.chargeTarget = value;
+    // A RELEASE is instant; a GATHER is not. Sap spent at the moment of impact should be gone on
+    // that frame — the snap is the spend — while sap being gathered is a build, and driving it
+    // from cues that step 0 -> 0.5 -> 1 puts two hard jumps in the middle of what the viewer is
+    // being told is one continuous swell. Those jumps are most of why the windups read as
+    // stuttering rather than as tension.
+    if (value <= this.chargeLevel) this.applyCharge(value);
+  }
+
+  get charge(): number {
+    return this.chargeLevel;
+  }
+
+  /** Push one charge value to everything that shows it: they are one event seen four ways. */
+  private applyCharge(value: number): void {
     this.chargeLevel = value;
     this.core.charge = value;
     this.wisps.gather = value;
     this.veins?.setCharge(value);
     this.rootBark.setCharge(value);
-  }
-
-  get charge(): number {
-    return this.chargeLevel;
   }
 
   /** Register a long-lived effect, retiring the oldest if too many are alive at once. */
@@ -2097,7 +2819,7 @@ export class MonsterTreeVfx {
       const index = this.transient.indexOf(oldest);
       if (index >= 0) this.transient.splice(index, 1);
       this.group.remove(oldest.object);
-      oldest.object.traverse((o) => { (o as THREE.Mesh).geometry?.dispose(); });
+      disposeTree(oldest.object);
     }
     this.lingering.push(effect);
     this.transient.push(effect);
@@ -2156,6 +2878,7 @@ export class MonsterTreeVfx {
       (Math.random() * 1e9) | 0,
       this.rootMaterial,
       this.stock,
+      this.leaf,
     );
     this.addLingering(effect);
   }
@@ -2231,6 +2954,7 @@ export class MonsterTreeVfx {
     length?: number; distance?: number; flightTime?: number; linger?: number;
   } = {}): void {
     const origin = new THREE.Vector3().setFromMatrixPosition(from.matrixWorld);
+    const lamp = this.lights.take();
     const spear = new HurledSpear(
       origin,
       direction,
@@ -2251,11 +2975,148 @@ export class MonsterTreeVfx {
         ground.updateMatrixWorld(true);
         this.toxin(ground, { radius: 1.15 });
       },
+      lamp,
+      () => { if (lamp) this.lights.release(lamp); },
     );
     spear.object.traverse((o) => { o.userData.isHighlight = true; });
     this.group.add(spear.object);
     this.transient.push(spear);
   }
+  /**
+   * Plant undergrowth under the character and remember it.
+   *
+   * The patch is held on the system rather than just spawned, because it is a CONDITION as well as
+   * an effect: `inGrass` is what Dây Leo asks before it decides whether to play its plain form or
+   * its empowered one.
+   */
+  grass(at: THREE.Vector3, options: { radius?: number; duration?: number; count?: number } = {}): void {
+    const patch = new GrassPatch(
+      new THREE.Vector3(at.x, 0, at.z),
+      (options.radius ?? 0.9) * this.scale * 0.5,
+      options.count ?? 260,
+      lifeColour(0.13, 0.85),
+      (Math.random() * 1e9) | 0,
+      options.duration ?? 12,
+    );
+    this.patch = patch;
+    patch.object.userData.isHighlight = true;
+    this.group.add(patch.object);
+    this.transient.push(patch);
+  }
+
+  /** Whether a point stands in living undergrowth. The passive's condition, asked by the kit. */
+  inGrass(at: THREE.Vector3): boolean {
+    return this.patch?.covers(at) ?? false;
+  }
+
+  /**
+   * Sap drawn UP out of the ground and into the chest — the regeneration the passive is.
+   *
+   * Upward gravity, slow, and started at the floor rather than at the body: healing that emits
+   * from the character is the character spending something, and healing that climbs into it from
+   * the ground it is standing on is the character taking something. The passive is the second one.
+   */
+  drawUp(at: THREE.Vector3, options: { radius?: number; count?: number } = {}): void {
+    this.burstAt(new THREE.Vector3(at.x, 0.02, at.z), {
+      count: options.count ?? 40,
+      speed: (options.radius ?? 0.55) * 0.5,
+      duration: 1.5,
+      spread: 1,
+      // Positive: these fall UPWARD.
+      gravity: 1.5,
+      lightness: 0.72,
+    });
+  }
+
+  /**
+   * Throw a vine from a socket along a heading. Stays attached to the hand for its whole life.
+   *
+   * `onCatch` fires on the frame it reaches full extension, which is the frame it has hold of
+   * something — the same principle as an arrest: the payoff is the STOP, not the travel.
+   */
+  vine(from: THREE.Object3D, direction: THREE.Vector3, options: {
+    reach?: number; out?: number; hold?: number; back?: number; onCatch?: (at: THREE.Vector3) => void;
+  } = {}): void {
+    const whip = new VineWhip(
+      from,
+      direction,
+      (options.reach ?? 1.1) * this.scale,
+      options.out ?? 0.16,
+      options.hold ?? 0.30,
+      options.back ?? 0.22,
+      lifeColour(0.34, 1),
+      this.rootMaterial,
+      (at) => options.onCatch?.(at),
+    );
+    whip.object.traverse((o) => { o.userData.isHighlight = true; });
+    this.group.add(whip.object);
+    this.transient.push(whip);
+  }
+
+  /** A log called down onto a world point. `onLand` is the frame it arrives, not when it started. */
+  log(at: THREE.Vector3, options: { length?: number; fall?: number; linger?: number } = {}): void {
+    const slam = new LogSlam(
+      new THREE.Vector3(at.x, 0, at.z),
+      (options.length ?? 0.42) * this.scale,
+      options.fall ?? 0.26,
+      options.linger ?? 1.6,
+      (Math.random() * 1e9) | 0,
+      this.rootMaterial,
+      (landed) => {
+        this.impact('heavy', landed);
+      },
+    );
+    slam.object.traverse((o) => { o.userData.isHighlight = true; });
+    this.group.add(slam.object);
+    this.transient.push(slam);
+  }
+
+  /** A volley of seeds thrown outward from a point, each sprouting where it lands. */
+  seeds(from: THREE.Vector3, options: { count?: number; spread?: number; flight?: number } = {}): void {
+    const volley = new SeedVolley(
+      from.clone(),
+      options.count ?? 9,
+      (options.spread ?? 1.2) * this.scale * 0.5,
+      options.flight ?? 0.55,
+      this.accentColour,
+      this.dot,
+      (Math.random() * 1e9) | 0,
+      (landed) => {
+        // A seed lands and something grows. Two trunks rather than one, and small: nine of these
+        // per volley across three volleys is twenty-seven sprouts, and they have to read as a
+        // field coming up rather than as a forest burying the frame.
+        this.grove(landed, { count: 2, spread: 0.12, duration: 6 });
+        this.burstAt(landed.clone().setY(0.05), { count: 10, speed: 0.4, duration: 0.7, spread: 0.5, gravity: -1.2 });
+      },
+    );
+    volley.object.userData.isHighlight = true;
+    this.group.add(volley.object);
+    this.transient.push(volley);
+  }
+
+  /** Everything loose dragged in toward a point and wound up there. */
+  vortex(at: THREE.Vector3, options: { radius?: number; duration?: number; count?: number } = {}): void {
+    const pull = new Vortex(
+      new THREE.Vector3(at.x, 0, at.z),
+      options.count ?? 140,
+      (options.radius ?? 1.6) * this.scale * 0.5,
+      options.duration ?? 1.6,
+      this.accentColour,
+      this.dot,
+      (Math.random() * 1e9) | 0,
+    );
+    pull.object.userData.isHighlight = true;
+    this.group.add(pull.object);
+    this.transient.push(pull);
+    // The ring that says which way it is going. `inward` is the same converging ring a blow taken
+    // uses, and it means the same thing here: the motion is toward the middle.
+    const ring = new GroundRing((options.duration ?? 1.6) * 0.55, (options.radius ?? 1.6) * this.scale * 0.6, this.accentColour, this.ring, true);
+    ring.object.position.set(at.x, 0.013, at.z);
+    ring.object.userData.isHighlight = true;
+    this.group.add(ring.object);
+    this.transient.push(ring);
+  }
+
   /** Run something later, on the effect clock, so cues can be sequenced without setTimeout. */
   delay(seconds: number, run: () => void): void {
     this.pending.push({ at: this.elapsed + seconds, run });
@@ -2335,16 +3196,22 @@ export class MonsterTreeVfx {
 
   /** A short, bright light at a world point — the scene registering a hit. */
   impactFlash(at: THREE.Vector3, strength = 6, life = 0.28): void {
-    const light = new THREE.PointLight(this.accentColour, strength, this.scale * 2.2, 2);
+    const light = this.lights.take();
+    // Nothing to do if all four are already burning. A fifth flash inside a quarter of a second
+    // adds nothing a viewer can separate, and the alternative — making one — is the recompile the
+    // pool exists to avoid.
+    if (!light) return;
+    light.color.copy(this.accentColour);
     light.position.copy(at);
-    light.userData.isHighlight = true;
-    this.group.add(light);
     let age = 0;
     this.transient.push({
-      object: light,
+      object: new THREE.Object3D(),
       tick: (dt) => {
         age += dt;
-        if (age >= life) return false;
+        if (age >= life) {
+          this.lights.release(light);
+          return false;
+        }
         // Snap on, fall off fast — a flash that eases in is a lamp being turned up.
         light.intensity = strength * (1 - age / life) ** 2.2;
         return true;
@@ -2413,7 +3280,61 @@ export class MonsterTreeVfx {
     });
   }
 
+  /**
+   * Compile every effect's shader BEFORE anything is timed.
+   *
+   * This is the fix for the largest discontinuity measured in the whole demo, and it was not the
+   * hitstop. Instrumenting the clip playhead in the browser showed frames of 8 ms throughout a
+   * strike except at the two impact frames, which took 70 ms and 52 ms — a six-to-eight frame
+   * stall landing exactly on the beat. The cause is that a `GroundCracks`, a `ToxinBloom`, a rune
+   * circle and a grove each build a `ShaderMaterial` the first time they are spawned, and three
+   * compiles its program at the first render that encounters it. Every effect type therefore cost
+   * one stall, on its own first impact — which is every impact a viewer sees first.
+   *
+   * So one of each is spawned here, at a millimetre scale far under the floor, and killed after a
+   * few frames. `frustumCulled` is off on purpose: a culled object is never submitted and never
+   * compiles, which would defeat the entire point of placing them out of shot. The programs are
+   * cached by shader source, so every later spawn of the same effect reuses them.
+   */
+  private prewarm(): void {
+    const below = new THREE.Object3D();
+    below.position.set(0, -60, 0);
+    below.scale.setScalar(0.001);
+    below.updateMatrixWorld(true);
+    const before = this.transient.length;
+    this.cracks(below, { radius: 0.01, duration: 0.2 });
+    this.toxin(below, { radius: 0.01, duration: 0.2 });
+    this.runeCircle(below, 0.01, 0.2);
+    this.roots(below, { count: 1, spread: 0.01, duration: 0.2 });
+    this.grove(new THREE.Vector3(0, -60, 0), { count: 1, spread: 0.01, duration: 0.2 });
+    this.shockwave(below, 0.01, 0.2);
+    this.hurlSpear(below, new THREE.Vector3(0, -1, 0), { length: 0.01, distance: 0.01, flightTime: 0.1, linger: 0.1 });
+    this.burstAt(new THREE.Vector3(0, -60, 0), { count: 4, duration: 0.2, speed: 0.01 });
+    // Y'bneth's own kit. Each of these builds a ShaderMaterial or a PointsMaterial of its own the
+    // first time it runs, and every one of them would otherwise have cost a stall on the beat it
+    // was first cued on.
+    this.grass(new THREE.Vector3(0, -60, 0), { radius: 0.01, duration: 0.2, count: 4 });
+    this.vine(below, new THREE.Vector3(0, -1, 0), { reach: 0.01, out: 0.05, hold: 0.05, back: 0.05 });
+    this.log(new THREE.Vector3(0, -60, 0), { length: 0.01, fall: 0.05, linger: 0.1 });
+    this.seeds(new THREE.Vector3(0, -60, 0), { count: 3, spread: 0.01, flight: 0.1 });
+    this.vortex(new THREE.Vector3(0, -60, 0), { radius: 0.01, duration: 0.2, count: 6 });
+    // The prewarm patch must not be mistaken for real undergrowth by `inGrass`, or the very first
+    // Dây Leo would come out empowered because of a patch 60 units under the floor.
+    this.patch = null;
+    for (let i = before; i < this.transient.length; i += 1) {
+      this.transient[i].object.traverse((o) => {
+        o.frustumCulled = false;
+        (o as THREE.Mesh).castShadow = false;
+        (o as THREE.Mesh).receiveShadow = false;
+      });
+    }
+  }
+
   update(dt: number): void {
+    if (!this.warmed) {
+      this.warmed = true;
+      this.prewarm();
+    }
     this.elapsed += dt;
     for (let i = this.pending.length - 1; i >= 0; i -= 1) {
       if (this.pending[i].at > this.elapsed) continue;
@@ -2423,6 +3344,13 @@ export class MonsterTreeVfx {
     // Integrated, not `elapsed * factor`: multiplying the absolute clock makes the whole sap
     // pattern JUMP the instant the breath rate changes on a skill switch. Advancing a private
     // clock by the scaled delta changes only the speed from here on, which is the intent.
+    // 3.2/s takes a gather from nothing to full in about 0.31 s, which is the shortest gap
+    // between a windup cue and its impact anywhere in the skill table (Impaling Bough: the sap
+    // starts at 0.30 and the throw leaves at 0.467). A slower ramp would still be climbing when
+    // the blow lands and the release would have nothing to release.
+    if (this.chargeLevel < this.chargeTarget) {
+      this.applyCharge(Math.min(this.chargeTarget, this.chargeLevel + dt * 3.2));
+    }
     this.sapClock += dt * (0.55 + 0.45 * this.breath);
     this.veins?.setTime(this.sapClock);
     this.rootBark.setTime(this.sapClock);
@@ -2445,7 +3373,10 @@ export class MonsterTreeVfx {
     for (let i = this.transient.length - 1; i >= 0; i -= 1) {
       if (!this.transient[i].tick(dt, this.elapsed)) {
         this.group.remove(this.transient[i].object);
-        (this.transient[i].object as THREE.Mesh).geometry?.dispose();
+        // Traverse, not just the root. A grove is a Group of trees and every tree carries its own
+        // merged trunk geometry and its own crown; disposing only the root freed nothing at all,
+        // and repeated casts leaked a full grove's worth of buffers each time.
+        disposeTree(this.transient[i].object);
         this.transient.splice(i, 1);
       }
     }
