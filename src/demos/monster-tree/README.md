@@ -443,6 +443,76 @@ And the swing now **sheds embers** while it is fast — a few sparks every 45 ms
 grip socket. A trail alone is a clean surface moving through clean air with nothing coming off it,
 which is most of why one reads as drawn.
 
+### The event table: where things actually happen
+
+`scripts/measure-monster-tree-events.mjs` sweeps every embedded clip through a real
+`AnimationMixer` at 240 Hz and reads the dynamics — no timings were eyeballed off a scrub bar.
+Three event kinds, all defined by motion:
+
+- **arrest** — a limb travelling above 1.1 H/s that stops, recorded at the frame of greatest
+  *deceleration*: the frame the impact happens on, which is later than the frame the limb was
+  fastest and earlier than the frame it finally rests.
+- **plant** — weight arriving: a foot below 0.14 H whose vertical velocity crosses from falling to
+  still.
+- **driven** — the body accelerated by something that is not its own limbs: a hip spike with no
+  limb arrest within 120 ms. That is what a blow *taken* looks like from inside a clip, and it
+  plays as one — ring turning inward, debris off the body, no flash at the hand.
+
+Everything is in figure heights, so the table survives a change of scale. It is baked into
+`events.ts` and the skills schedule against it. Scheduling — not a live "it just decelerated"
+test — is what lets a **windup** exist: the sap starts gathering 0.2–0.4 s before the arrest
+because the table knows the strike is coming, and nothing watching live motion knows any such
+thing.
+
+The table corrected both hero moves. Deep Root Surge's old climax was hand-timed at 0.40 s — a
+frame with no event in it at all; the sweep found the real one at **1.800 s, where both hands
+arrest on the same frame and R_Hand posts a deceleration of 366.5 H/s², the loudest stop in the
+entire clip library**. The move is now a measured flurry (0.667, 0.833, 1.000 — each a light hit)
+building to that double-hand slam. Impaling Bough's spear now leaves at box_01's measured arrest
+at extension (0.467 s), one frame after the measured foot plant at 0.375 s.
+
+### Hitstop
+
+On every impact the clip itself is held nearly still for 35–95 ms (`rig.hitstop`), scaled on the
+mixer's own delta so the effects, the ambient drift and the camera keep running while the body
+stops. This is most of the felt difference between effects happening *near* the character and the
+character *hitting something*. The strongest hold wins, so a light hit landing inside a heavy
+one's hold cannot shorten it.
+
+### The impact vocabulary
+
+Four kinds that differ in **motion first, colour second** — a light hit that is only a paler heavy
+hit is still a heavy hit:
+
+| kind | ring | debris | hold | ground |
+|---|---|---|---|---|
+| light | out fast, gone in 0.3 s | flat radial fling, barely falls | 35 ms | untouched |
+| heavy | keeps expanding after the sound would stop | thrown in an arc, falls under 2.6 G | 95 ms | cracks |
+| ground | wide and low — weight spreads along the floor | dust climbs slowly, not thrown | 80 ms | cracks + roots |
+| taken | **converges inward** | comes off the **body** | 70 ms | — |
+
+`taken` fires automatically from measured `driven` events, and has **no flash at the hand**,
+because nothing was swung.
+
+### Continuous layers are calibrated per clip
+
+The clip set spans handPeak 0.134 H/s (`fire`) to 5.231 (`box_02`) — a factor of 39. One global
+threshold either smears the fast clips or leaves the slow ones bare, so trails, ember shedding and
+the sap's breathing each read their own clip's measured budget: trails scale with hand speed,
+embers shed in proportion, and the breath is strongest on `standing_relax` (bodyMean 0.006), where
+it carries the whole sense of life, and nearly flat during a dance, where breathing on top of the
+body's own motion reads as flicker. The breath clock is *integrated*, not scaled — multiplying the
+absolute clock makes the sap pattern jump the instant the rate changes.
+
+### Pooling
+
+Bursts — the hottest allocation path; every impact kind carries one and a flurry fires three in a
+second — are a fixed pool of fourteen slots, buffers sized for the largest burst ever fired,
+allocated once at construction and **invisible until fired**. When all fourteen are alive the
+oldest is stolen rather than a fifteenth allocated. Starting everything invisible also means the
+viewer's framing pass measures the figure alone, never whichever effect happened to be alive when
+the page settled.
+
 ### One palette, used across its range
 
 Every effect in this demo was built from `LIFE_HUE` — the 82.5 degrees measured off the

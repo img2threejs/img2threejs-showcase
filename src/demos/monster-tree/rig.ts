@@ -117,6 +117,18 @@ export interface MonsterTreeRig {
   /** Advance the animation. Takes the frame DELTA in seconds, never elapsed time. */
   update(deltaSeconds: number): void;
   /**
+   * Hitstop: hold the clip nearly still for a few tens of milliseconds.
+   *
+   * This is most of what an impact feels like, and none of it is a particle. A blow that lands
+   * while the animation keeps running at full speed reads as the effects happening NEAR the
+   * character; the same blow with the clip arrested for 70 ms reads as the character having hit
+   * something. It is applied to the mixer's own delta rather than to a global clock, so the
+   * effects, the ambient drift and the camera all keep running while the body stops.
+   *
+   * `scale` is how slowly time runs during the hold — 0.08 is near-frozen, 1 is normal.
+   */
+  hitstop(seconds: number, scale?: number): void;
+  /**
    * Re-apply the current stretches to the skeleton.
    *
    * Call this exactly ONCE per frame, after whatever sets the stretches. The mixer rewrites every
@@ -760,6 +772,10 @@ export function buildMonsterTreeRig(
     }
   };
 
+  // Hitstop state. The remaining hold and how slowly the clip runs during it.
+  let stopFor = 0;
+  let stopScale = 1;
+
   const mixer = new THREE.AnimationMixer(shell);
   const clips = buildClips(rig);
   if (options.inPlace !== false) holdRootMotion(clips, 'Hip');
@@ -803,7 +819,25 @@ export function buildMonsterTreeRig(
     // NOTE: this does NOT apply the stretches. `applyStretch` does, and it has to be called
     // separately, after whatever decides them for this frame. Doing both here and there multiplies
     // the factor twice — the limb reached nearly five times its length instead of twice.
-    update: (deltaSeconds: number) => mixer.update(deltaSeconds),
+    update: (deltaSeconds: number) => {
+      let step = deltaSeconds;
+      if (stopFor > 0) {
+        // Scale only the part of this frame that falls inside the hold, so a long frame that
+        // straddles the end of it does not swallow the rest of the hold whole.
+        const held = Math.min(stopFor, deltaSeconds);
+        step = held * stopScale + (deltaSeconds - held);
+        stopFor -= held;
+      }
+      mixer.update(step);
+    },
+    hitstop: (seconds: number, scale = 0.08) => {
+      // The strongest hold wins rather than the latest, so a light hit landing inside a heavy
+      // one's hold cannot shorten it.
+      if (seconds * (1 - scale) >= stopFor * (1 - stopScale)) {
+        stopFor = seconds;
+        stopScale = scale;
+      }
+    },
     applyStretch: () => applyStretches(),
     stretch: (bone: string, amount: number) => {
       if (amount === 0) stretches.delete(bone);

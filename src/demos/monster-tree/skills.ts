@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { clipEvents, loudestArrest } from './events';
 import { PALETTE } from './measured';
 import type { MonsterTreeRig } from './rig';
 import type { MonsterTreeVfx } from './vfx';
@@ -129,6 +130,85 @@ const ACCENT = {
   bark: new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(),
 } as const;
 
+/**
+ * Build a skill's cue list from the measured event table instead of hand-typed times.
+ *
+ * Two things fall out of scheduling that a live "it just decelerated" test can never give:
+ * the cue fires on the exact frame the sweep found, and a WINDUP can exist at all — the sap
+ * starts gathering `lead` seconds before the arrest because the table knows the strike is
+ * coming, and nothing that watches live motion knows any such thing.
+ */
+function impactCues(
+  clip: string,
+  options: {
+    /** Seconds of gathering glow before the loudest arrest. */
+    lead?: number;
+    /** Which impact kind the loudest arrest lands as. */
+    kind?: 'light' | 'heavy';
+    /** Play every remaining arrest as a light hit (a flurry), or only the loudest. */
+    flurry?: boolean;
+    /** Give foot plants a ground impact. */
+    plants?: boolean;
+  } = {},
+): SkillCue[] {
+  const cues: SkillCue[] = [];
+  const table = clipEvents(clip);
+  const loudest = loudestArrest(clip);
+
+  if (loudest) {
+    const lead = options.lead ?? 0.22;
+    if (loudest.at > lead) {
+      cues.push({
+        at: loudest.at - lead,
+        run: (_rig, vfx) => { vfx.charge = Math.max(vfx.charge, 0.7); },
+      });
+    }
+    cues.push({
+      at: loudest.at,
+      run: (rig, vfx) => {
+        vfx.charge = 0;
+        const at = new THREE.Vector3().setFromMatrixPosition(
+          (rig.sockets[GRIP_OF[loudest.bone] ?? ''] ?? rig.bones[loudest.bone]).matrixWorld);
+        vfx.impact(options.kind ?? 'heavy', at, rig);
+      },
+    });
+  }
+
+  for (const e of table.events) {
+    if (e.kind === 'arrest' && options.flurry && e !== loudest) {
+      cues.push({
+        at: e.at,
+        run: (rig, vfx) => {
+          const at = new THREE.Vector3().setFromMatrixPosition(
+            (rig.sockets[GRIP_OF[e.bone] ?? ''] ?? rig.bones[e.bone]).matrixWorld);
+          vfx.impact('light', at, rig);
+        },
+      });
+    }
+    if (e.kind === 'plant' && options.plants) {
+      cues.push({
+        at: e.at,
+        run: (rig, vfx) => {
+          const at = new THREE.Vector3().setFromMatrixPosition(rig.bones[e.bone].matrixWorld);
+          vfx.impact('ground', at, rig);
+        },
+      });
+    }
+    if (e.kind === 'driven') {
+      // The body being shoved by something outside the clip is a blow TAKEN.
+      if ((e.decel ?? 0) >= 20) {
+        cues.push({ at: e.at, run: (rig, vfx) => vfx.struck(rig.bones.Spine02) });
+      }
+    }
+  }
+  return cues.sort((a, b) => a.at - b.at);
+}
+
+/** Which grip socket carries each hand bone's impacts; feet map to their own sockets. */
+const GRIP_OF: Record<string, string> = {
+  L_Hand: 'grip-l', R_Hand: 'grip-r', L_ToeBase: 'foot-l', R_ToeBase: 'foot-r',
+};
+
 /** Every bone any skill lengthens, so a change of move can reset all of them. */
 const STRETCHED = ['L_Forearm', 'L_Upperarm', 'R_Forearm', 'R_Upperarm'] as const;
 
@@ -147,34 +227,49 @@ export const SKILLS: Skill[] = [
     clip: 'preset:biped:box_02',
     fade: 0.16,
     loop: false,
-    measured: 'box_02 brings a hand to y 0.446 at 0.40s — the lowest beat of any punch in the set',
-    trails: ['grip-l'],
-    // The arm LENGTHENS on the way down, which is what puts the fist on the floor. The clip only
-    // ever gets the hand to 0.446 on a 1.9 m figure; no shipped animation in this library has a
-    // treant punching the ground, so the limb makes up the difference itself.
+    measured: 'box_02 carries the loudest arrest in the whole set: R_Hand at 1.800s, decel 366.5 H/s² — and L_Hand arrests on the same frame. A double-hand slam, measured, not assumed.',
+    trails: ['grip-l', 'grip-r'],
+    // Both arms lengthen toward the measured slam. The old drive peaked at 0.40s — a window with
+    // no event in it at all; the sweep found the real climax 1.4 seconds later.
     drive: (rig, _vfx, time) => {
-      const reach = swell(time, 0.16, 0.62) * 0.85;
-      rig.stretch('L_Forearm', reach);
-      rig.stretch('L_Upperarm', reach * 0.45);
+      const reach = swell(time, 1.30, 2.05) * 0.85;
+      rig.stretch('R_Forearm', reach);
+      rig.stretch('R_Upperarm', reach * 0.45);
+      rig.stretch('L_Forearm', reach * 0.7);
     },
     cues: [
+      // The flurry: every measured arrest before the slam lands as a LIGHT hit — quick flat
+      // flick, 35ms hold — so the exchange reads as jabs building toward something.
       {
-        at: 0.40,
+        at: 0.667,
+        run: (rig, vfx) => vfx.impact('light', new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld), rig),
+      },
+      {
+        at: 0.833,
+        run: (rig, vfx) => vfx.impact('light', new THREE.Vector3().setFromMatrixPosition(rig.sockets['grip-l'].matrixWorld), rig),
+      },
+      {
+        at: 1.0,
+        run: (rig, vfx) => vfx.impact('light', new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld), rig),
+      },
+      // The windup exists because the table knows the slam is coming: sap gathers from 1.40s.
+      { at: 1.40, run: (_rig, vfx) => { vfx.charge = 0.5; } },
+      { at: 1.65, run: (_rig, vfx) => { vfx.charge = 1; } },
+      {
+        // The measured frame, not a guess: both hands arrest at 1.800s.
+        at: 1.80,
         run: (rig, vfx) => {
-          vfx.burst(rig.sockets['grip-l'], { count: 90, speed: 1.5, spread: 0.4, gravity: -2.2 });
-          vfx.shockwave(rig.sockets['grip-l'], 1.0, 0.8);
-          vfx.cracks(rig.sockets['grip-l'], { radius: 1.0 });
-          // The fracture runs away from the figure along the arm's own heading and the ground
-          // fails where it arrives — a grove tearing up out of the far end of the punch.
-          vfx.surge(rig.sockets['grip-l'], facing(rig), {
-            distance: 3.4,
-            links: 6,
-            onArrive: (at) => {
-              // Dense: this is the point of the move, a stand of trees tearing up where the
-              // fracture arrives. Packed tighter than it is wide so it reads as a thicket rather
-              // than a scattering.
-              vfx.grove(at, { count: 18, spread: 0.7 });
-              vfx.burstAt(at, { count: 130, speed: 1.9, spread: 0.6 });
+          vfx.charge = 0;
+          const at = new THREE.Vector3().setFromMatrixPosition(rig.sockets['grip-r'].matrixWorld);
+          vfx.impact('heavy', at, rig);
+          vfx.surge(rig.sockets['grip-r'], facing(rig), {
+            // 1.7, for the same measured reason as the spear's 1.8: projected on the demo's own
+            // canvas the landing sits inside the frame at up to ~2.1 units and off it beyond.
+            distance: 1.7,
+            links: 5,
+            onArrive: (arrive) => {
+              vfx.grove(arrive, { count: 14, spread: 0.6 });
+              vfx.impact('ground', arrive);
             },
           });
         },
@@ -188,33 +283,31 @@ export const SKILLS: Skill[] = [
     clip: 'preset:biped:box_01',
     fade: 0.12,
     loop: false,
-    measured: 'box_01 is the straightest lead punch — L_Hand 1.321, forward reach 0.804 at 0.49s',
-    // No swing trail on this one. The trail is additive and blazing, the shaft is lit wood, and
-    // side by side the eye reads the trail and never finds the lance — which is how a move whose
-    // whole subject is a thrown branch came back looking like "just a light streak".
-    // The signature of the whole set: the arm roughly doubles in length through the thrust and
-    // comes back. Along local +Y, which is measured — every arm bone's child sits on its parent's
-    // +Y at 100% of the segment length, so scale.y IS length for this skeleton.
+    measured: 'box_01: L_ToeBase plants at 0.375s, then L_Hand arrests at extension at 0.467s, decel 67.4 — the spear leaves on that frame',
+    // The arm grows through the windup and the throw leaves at the measured arrest, so the
+    // stretch peaks exactly when the hand stops — the launch is the arm's own momentum arriving
+    // at the end of a limb that ran out of length.
     drive: (rig, _vfx, time) => {
-      const reach = swell(time, 0.22, 0.95) * 1.0;
+      const reach = swell(time, 0.20, 0.75) * 1.0;
       rig.stretch('L_Forearm', reach);
       rig.stretch('L_Upperarm', reach * 0.6);
     },
     cues: [
       {
-        at: 0.46,
+        // Weight arrives before the throw: the measured L foot plant.
+        at: 0.375,
+        run: (rig, vfx) => vfx.impact('ground', new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld), rig),
+      },
+      { at: 0.30, run: (_rig, vfx) => { vfx.charge = 0.6; } },
+      {
+        // The measured arrest at extension. The strike STOPS here; that stop is the release.
+        at: 0.467,
         run: (rig, vfx) => {
-          // Thrown, not held. It leaves the hand along the character's facing and everything that
-          // happens downrange happens because it got there.
+          vfx.charge = 0;
+          vfx.impact('light', new THREE.Vector3().setFromMatrixPosition(rig.sockets['grip-l'].matrixWorld), rig);
           vfx.hurlSpear(rig.sockets['grip-l'], facing(rig), {
-            // Tuned against the CANVAS, not by eye. Projected on the demo's own framing, the
-            // landing point sits at 56% of the way across at 1.0 units, 70% at 1.4 and 95% at 2.1 —
-            // so 1.8 puts the impact around 85%: clearly downrange of the figure, comfortably
-            // inside the shot. At 3.4 it was off the frame entirely and the whole payoff of the
-            // move happened where nobody was looking.
             length: 0.55, distance: 1.8, flightTime: 0.30, linger: 2.6,
           });
-          vfx.burst(rig.sockets['grip-l'], { count: 70, speed: 1.7, spread: 0.5 });
         },
       },
     ],
@@ -278,7 +371,10 @@ export const SKILLS: Skill[] = [
     loop: false,
     measured: 'L_Hand leads at 1.321, peaking 0.54s in',
     trails: ['grip-l'],
-    cues: [{ at: 0.54, run: impact('grip-l', { radius: 0.75, count: 80 }) }],
+    // Cues generated from the measured table: every arrest above threshold lands as a light hit,
+    // the loudest as the payoff, plants as ground contacts, and the windup leads the loudest by
+    // 0.18s because the table knows it is coming.
+    cues: impactCues('preset:biped:box_01', { kind: 'light', flurry: true, plants: true, lead: 0.18 }),
   },
   {
     id: 'combo',
@@ -289,10 +385,7 @@ export const SKILLS: Skill[] = [
     loop: false,
     measured: 'both hands clear 1.0; R_Hand peaks 1.87s, L_Hand earlier — a two-hand exchange',
     trails: ['grip-l', 'grip-r'],
-    cues: [
-      { at: 0.42, run: impact('grip-l', { radius: 0.6, count: 50 }) },
-      { at: 1.87, run: impact('grip-r', { radius: 0.95, count: 90, speed: 1.5 }) },
-    ],
+    cues: impactCues('preset:biped:box_02', { kind: 'heavy', flurry: true, plants: true }),
   },
   {
     id: 'uppercut',
@@ -432,6 +525,8 @@ export class SkillRunner {
   private fired = new Set<number>();
   private previousTime = 0;
   private emberClock = 0;
+  private trailStrength = 1;
+  private emberEvery = 0.1;
   /** The skill returned to when a one-shot finishes. */
   restingId = 'idle';
 
@@ -461,8 +556,18 @@ export class SkillRunner {
       this.vfx.eyes.intensity = 1;
       this.vfx.core.charge = 0;
     }
+    // Continuous layers, calibrated against THIS clip's measured motion budget rather than a
+    // global threshold. The set spans handPeak 0.134 (fire) to 5.231 (box_02) — a factor of 39 —
+    // so one threshold either smears the fast clips or leaves the slow ones bare. Trails scale
+    // with how fast the hands actually go; embers shed in proportion; breath rides the torso's
+    // own mean speed so a still clip breathes gently and a dance hardly breathes at all.
+    const budget = clipEvents(skill.clip);
+    const speedFactor = Math.min(1, budget.handPeak / 3.5);
+    this.trailStrength = 0.45 + 0.55 * speedFactor;
+    this.emberEvery = budget.handPeak > 0.5 ? 0.10 / Math.max(0.35, speedFactor) : Infinity;
+    this.vfx.breath = Math.max(0.25, 1 - budget.bodyMean * 2.2);
     for (const key of ['grip-l', 'grip-r'] as const) {
-      this.vfx.trails[key].strength = skill.trails?.includes(key) ? 1 : 0;
+      this.vfx.trails[key].strength = skill.trails?.includes(key) ? this.trailStrength : 0;
     }
     // A skill that lengthened a limb must not hand it over stretched. Cleared on every change
     // rather than by the skill that set it, so a move interrupted halfway still tidies up.
@@ -493,7 +598,7 @@ export class SkillRunner {
     // Taper the swing trails off through the back half of a strike.
     if (this.active.trails?.length) {
       const t = time / clip.duration;
-      const strength = t < 0.7 ? 1 : Math.max(0, 1 - (t - 0.7) / 0.3);
+      const strength = (t < 0.7 ? 1 : Math.max(0, 1 - (t - 0.7) / 0.3)) * this.trailStrength;
       for (const key of this.active.trails) this.vfx.trails[key].strength = strength;
 
       // Embers shed off the swing while it is fast. A trail alone is a clean surface moving through
@@ -501,7 +606,7 @@ export class SkillRunner {
       // burning: nothing is coming OFF it. A few sparks a frame, thrown backwards along the arc,
       // give the ribbon a wake.
       this.emberClock += _dt;
-      if (strength > 0.35 && this.emberClock > 0.045) {
+      if (strength > 0.3 && this.emberClock > this.emberEvery) {
         this.emberClock = 0;
         for (const key of this.active.trails) {
           this.vfx.burst(this.rig.sockets[key], {

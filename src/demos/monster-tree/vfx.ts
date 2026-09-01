@@ -605,6 +605,7 @@ class GroundRing implements Tickable {
     private readonly maxRadius: number,
     colour: THREE.Color,
     texture: THREE.Texture,
+    private readonly inward = false,
   ) {
     const material = new THREE.MeshBasicMaterial({
       map: texture,
@@ -624,54 +625,49 @@ class GroundRing implements Tickable {
     this.age += dt;
     const t = this.age / this.duration;
     if (t >= 1) return false;
-    // Fast out, slow settle — a shockwave does not expand linearly.
-    const radius = this.maxRadius * (1 - (1 - t) ** 3);
+    // Fast out, slow settle — a shockwave does not expand linearly. An INWARD ring runs the same
+    // curve backwards: it converges on the point that was struck, which is the difference between
+    // dealing a blow and taking one.
+    const grow = 1 - (1 - t) ** 3;
+    const radius = this.maxRadius * (this.inward ? 1 - grow * 0.92 : grow);
     this.object.scale.set(radius * 2, radius * 2, 1);
     (this.object.material as THREE.MeshBasicMaterial).opacity = (1 - t) ** 1.5;
     return true;
   }
 }
 
-/** A one-shot puff of motes, thrown outward from a point and pulled back down by gravity. */
-class Burst implements Tickable {
-  readonly object: THREE.Points;
-  private readonly velocity: Float32Array;
-  private age = 0;
+const CONE_LOCAL = new THREE.Vector3();
+const CONE_ROT = new THREE.Quaternion();
+const CONE_AXIS = new THREE.Vector3(0, 0, 1);
 
-  constructor(
-    origin: THREE.Vector3,
-    count: number,
-    speed: number,
-    private readonly duration: number,
-    colour: THREE.Color,
-    texture: THREE.Texture,
-    private readonly gravity = -1.6,
-    spread = 1,
-    seed = 1,
-  ) {
-    const random = mulberry32(seed);
-    const positions = new Float32Array(count * 3);
-    const sizes = new Float32Array(count);
-    this.velocity = new Float32Array(count * 3);
-    for (let i = 0; i < count; i += 1) {
-      positions[i * 3] = origin.x;
-      positions[i * 3 + 1] = origin.y;
-      positions[i * 3 + 2] = origin.z;
-      // Uniform on a sphere, then squashed toward the horizontal by `spread`.
-      const theta = random() * Math.PI * 2;
-      const z = random() * 2 - 1;
-      const r = Math.sqrt(1 - z * z);
-      const v = speed * (0.35 + random() * 0.65);
-      this.velocity[i * 3] = Math.cos(theta) * r * v;
-      this.velocity[i * 3 + 1] = z * v * spread;
-      this.velocity[i * 3 + 2] = Math.sin(theta) * r * v;
-      sizes[i] = 0.02 + random() * 0.05;
-    }
+/**
+ * A pooled burst slot: buffers sized for the largest burst the demo ever fires, allocated once at
+ * construction, INVISIBLE until fired, and returned to the pool when spent.
+ *
+ * Bursts are the demo's hottest allocation path — a flurry fires three in under a second and every
+ * impact kind carries one — and each un-pooled burst was a fresh BufferGeometry and ShaderMaterial
+ * handed to the GC a second later. Pooling also fixes a subtler problem: every object exists and
+ * is invisible from construction, so the viewer's framing pass measures the figure alone and can
+ * never be thrown by whichever effect happened to be alive when the page settled.
+ */
+class BurstSlot {
+  static readonly MAX = 180;
+  readonly object: THREE.Points;
+  private readonly velocity = new Float32Array(BurstSlot.MAX * 3);
+  private readonly material: THREE.ShaderMaterial;
+  private count = 0;
+  private duration = 1;
+  private gravity = -1;
+  private age = 0;
+  alive = false;
+
+  constructor(dot: THREE.Texture) {
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-    const material = new THREE.ShaderMaterial({
-      uniforms: { map: { value: texture }, uColour: { value: colour }, uOpacity: { value: 1 } },
+    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(BurstSlot.MAX * 3), 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(new Float32Array(BurstSlot.MAX), 1));
+    geometry.setDrawRange(0, 0);
+    this.material = new THREE.ShaderMaterial({
+      uniforms: { map: { value: dot }, uColour: { value: new THREE.Color() }, uOpacity: { value: 1 } },
       vertexShader: `
         attribute float size;
         void main() {
@@ -690,28 +686,88 @@ class Burst implements Tickable {
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
-    this.object = new THREE.Points(geometry, material);
+    this.object = new THREE.Points(geometry, this.material);
     this.object.name = 'vfx:burst';
     this.object.frustumCulled = false;
+    this.object.visible = false;
+    this.object.userData.isHighlight = true;
   }
 
-  tick(dt: number): boolean {
+  fire(
+    origin: THREE.Vector3,
+    count: number,
+    speed: number,
+    duration: number,
+    colour: THREE.Color,
+    gravity: number,
+    spread: number,
+    direction: THREE.Vector3 | null,
+    cone: number,
+    seed: number,
+  ): void {
+    const random = mulberry32(seed);
+    this.count = Math.min(count, BurstSlot.MAX);
+    this.duration = duration;
+    this.gravity = gravity;
+    this.age = 0;
+    const positions = this.object.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const sizes = this.object.geometry.getAttribute('size') as THREE.BufferAttribute;
+    for (let i = 0; i < this.count; i += 1) {
+      positions.setXYZ(i, origin.x, origin.y, origin.z);
+      const v = speed * (0.35 + random() * 0.65);
+      if (direction) {
+        const cosTheta = 1 - random() * (1 - Math.cos(cone));
+        const sinTheta = Math.sqrt(Math.max(0, 1 - cosTheta * cosTheta));
+        const phi = random() * Math.PI * 2;
+        CONE_LOCAL.set(Math.cos(phi) * sinTheta, Math.sin(phi) * sinTheta, cosTheta);
+        CONE_ROT.setFromUnitVectors(CONE_AXIS, direction);
+        CONE_LOCAL.applyQuaternion(CONE_ROT).multiplyScalar(v);
+        this.velocity[i * 3] = CONE_LOCAL.x;
+        this.velocity[i * 3 + 1] = CONE_LOCAL.y;
+        this.velocity[i * 3 + 2] = CONE_LOCAL.z;
+      } else {
+        const theta = random() * Math.PI * 2;
+        const z = random() * 2 - 1;
+        const r = Math.sqrt(1 - z * z);
+        this.velocity[i * 3] = Math.cos(theta) * r * v;
+        this.velocity[i * 3 + 1] = z * v * spread;
+        this.velocity[i * 3 + 2] = Math.sin(theta) * r * v;
+      }
+      sizes.setX(i, 0.02 + random() * 0.05);
+    }
+    positions.needsUpdate = true;
+    sizes.needsUpdate = true;
+    this.object.geometry.setDrawRange(0, this.count);
+    (this.material.uniforms.uColour.value as THREE.Color).copy(colour);
+    this.material.uniforms.uOpacity.value = 1;
+    this.object.visible = true;
+    this.alive = true;
+  }
+
+  tick(dt: number): void {
+    if (!this.alive) return;
     this.age += dt;
     const t = this.age / this.duration;
-    if (t >= 1) return false;
-    const attr = this.object.geometry.getAttribute('position') as THREE.BufferAttribute;
-    const positions = attr.array as Float32Array;
-    for (let i = 0; i < positions.length / 3; i += 1) {
-      this.velocity[i * 3 + 1] += this.gravity * dt;
-      positions[i * 3] += this.velocity[i * 3] * dt;
-      positions[i * 3 + 1] += this.velocity[i * 3 + 1] * dt;
-      positions[i * 3 + 2] += this.velocity[i * 3 + 2] * dt;
+    if (t >= 1) {
+      this.alive = false;
+      this.object.visible = false;
+      return;
     }
-    attr.needsUpdate = true;
-    (this.object.material as THREE.ShaderMaterial).uniforms.uOpacity.value = (1 - t) ** 1.4;
-    return true;
+    const positions = this.object.geometry.getAttribute('position') as THREE.BufferAttribute;
+    for (let i = 0; i < this.count; i += 1) {
+      this.velocity[i * 3 + 1] += this.gravity * dt;
+      positions.setXYZ(
+        i,
+        positions.getX(i) + this.velocity[i * 3] * dt,
+        positions.getY(i) + this.velocity[i * 3 + 1] * dt,
+        positions.getZ(i) + this.velocity[i * 3 + 2] * dt,
+      );
+    }
+    positions.needsUpdate = true;
+    this.material.uniforms.uOpacity.value = (1 - t) ** 1.4;
   }
 }
+
 
 /** The chest core: a sphere that swells and brightens while a power is being gathered. */
 class CoreGlow implements Tickable {
@@ -1796,6 +1852,73 @@ class LightShafts implements Tickable {
 }
 
 /**
+ * The impact vocabulary.
+ *
+ * Four kinds, and they differ in MOTION before they differ in colour. A light hit that is only a
+ * paler heavy hit is still a heavy hit: what separates them is how fast the ring leaves, whether
+ * the debris flies flat or arcs under gravity, how long the clip is held, and — for a blow the
+ * character TAKES — which way the ring travels and where the debris comes from.
+ *
+ *   light   a quick flat flick. Ring out fast and gone, debris flung radially with almost no
+ *           gravity, 35 ms of hold. Nothing touches the ground.
+ *   heavy   slow and wide. The ring keeps expanding after the sound would have stopped, debris is
+ *           thrown in an ARC and falls, 95 ms of hold, and the floor cracks.
+ *   ground  weight arriving. Rings stay low and spread far wider than they are tall, dust climbs
+ *           slowly instead of being thrown, roots tear up, 80 ms of hold.
+ *   taken   a blow received. The ring converges INWARD, debris comes off the BODY rather than off
+ *           a fist, there is no flash at the hand, and the accent drains toward bark. It is not a
+ *           strike played backwards.
+ */
+export type ImpactKind = 'light' | 'heavy' | 'ground' | 'taken';
+
+interface ImpactSpec {
+  hitstop: number;
+  hitstopScale: number;
+  ring: { radius: number; life: number; inward: boolean } | null;
+  debris: { count: number; speed: number; gravity: number; spread: number; life: number };
+  flash: { light: number; life: number } | null;
+  /** How hard the creature's own sap spikes. A blow taken barely lights it at all. */
+  veinFlash: number;
+  cracks: number;
+  roots: number;
+  dust: boolean;
+}
+
+const IMPACTS: Record<ImpactKind, ImpactSpec> = {
+  light: {
+    hitstop: 0.035, hitstopScale: 0.25,
+    ring: { radius: 0.55, life: 0.32, inward: false },
+    debris: { count: 34, speed: 1.9, gravity: -0.35, spread: 1, life: 0.45 },
+    flash: { light: 5, life: 0.16 },
+    veinFlash: 0.55, cracks: 0, roots: 0, dust: false,
+  },
+  heavy: {
+    hitstop: 0.095, hitstopScale: 0.06,
+    ring: { radius: 1.15, life: 1.05, inward: false },
+    debris: { count: 110, speed: 1.5, gravity: -2.6, spread: 0.85, life: 1.15 },
+    flash: { light: 9, life: 0.3 },
+    veinFlash: 1.25, cracks: 1.0, roots: 0, dust: false,
+  },
+  ground: {
+    hitstop: 0.08, hitstopScale: 0.1,
+    // Wide and short-lived at the rim, because weight spreads outward along the floor rather than
+    // blooming off it.
+    ring: { radius: 1.6, life: 0.9, inward: false },
+    debris: { count: 90, speed: 0.55, gravity: -0.55, spread: 0.22, life: 1.5 },
+    flash: { light: 7, life: 0.26 },
+    veinFlash: 1.0, cracks: 1.3, roots: 9, dust: true,
+  },
+  taken: {
+    hitstop: 0.07, hitstopScale: 0.14,
+    ring: { radius: 0.95, life: 0.6, inward: true },
+    debris: { count: 60, speed: 1.1, gravity: -3.2, spread: 1, life: 0.9 },
+    // No flash. Nothing lit up here; something hit the character.
+    flash: null,
+    veinFlash: 0.3, cracks: 0, roots: 0, dust: false,
+  },
+};
+
+/**
  * The VFX system. Owns the shared textures, the persistent effects and the transient ones, and
  * runs them all from a single `update`.
  */
@@ -1827,6 +1950,10 @@ export class MonsterTreeVfx {
    * barkLIGHT rather than barkMid: grown wood is lit only by the rim and what the ground bounces,
    * and at the trunk's own mid tone it comes back as a black cut-out against a dark floor.
    */
+  /** Fourteen slots covers the worst measured case — a flurry inside a grove with a spear in
+   * flight peaks at nine live bursts — with headroom, and fires drop the oldest rather than
+   * allocating a fifteenth. */
+  private readonly burstPool: BurstSlot[] = [];
   private readonly rootMaterial: THREE.MeshStandardMaterial;
   private readonly rootBark: BarkSurface;
   /** A branch taken off the character's shoulder; every grown thing instances it. */
@@ -1864,6 +1991,16 @@ export class MonsterTreeVfx {
    * is invented; the palette is simply used across its range instead of at one point on it.
    */
   private accentColour = lifeColour(0.55, 1);
+  /**
+   * How much the idle sap breathes, 0..1 — calibrated per clip by the skill runner.
+   *
+   * A near-still clip (standing_relax, bodyMean 0.006 H/s) needs the breathing to carry the whole
+   * sense of life; during a dance the body supplies the motion and full-amplitude breathing on
+   * top of it reads as flicker. The runner hands this the clip's own measured torso speed.
+   */
+  breath = 1;
+  /** The sap's own clock, advanced at the breath rate. See `update` for why it is integrated. */
+  private sapClock = 0;
 
   constructor(rig: {
     group: THREE.Object3D;
@@ -1896,6 +2033,12 @@ export class MonsterTreeVfx {
     });
     this.rootBark = patchBarkSurface(this.rootMaterial);
 
+
+    for (let i = 0; i < 14; i += 1) {
+      const slot = new BurstSlot(this.dot);
+      this.burstPool.push(slot);
+      this.group.add(slot.object);
+    }
 
     this.spores = new SporeField(bounds, 460, this.dot, this.leaf);
     this.group.add(this.spores.object);
@@ -2054,20 +2197,27 @@ export class MonsterTreeVfx {
 
   /** A burst at a WORLD point rather than a socket — for things that happen away from the figure. */
   burstAt(at: THREE.Vector3, options: { count?: number; speed?: number; duration?: number; spread?: number; gravity?: number; lightness?: number } = {}): void {
-    const burst = new Burst(
+    this.fireBurst(at, options);
+  }
+
+  /** Fire a pooled slot; if all fourteen are alive, the oldest is stolen rather than allocated over. */
+  private fireBurst(at: THREE.Vector3, options: {
+    count?: number; speed?: number; duration?: number; spread?: number;
+    gravity?: number; lightness?: number; direction?: THREE.Vector3 | null; cone?: number;
+  }): void {
+    const slot = this.burstPool.find((s) => !s.alive) ?? this.burstPool[0];
+    slot.fire(
       at,
       options.count ?? 60,
       (options.speed ?? 1.1) * this.scale * 0.5,
       options.duration ?? 0.9,
       this.accentColour,
-      this.dot,
       (options.gravity ?? -1.6) * this.scale * 0.5,
       options.spread ?? 1,
+      options.direction ?? null,
+      options.cone ?? 0.5,
       (Math.random() * 1e9) | 0,
     );
-    burst.object.userData.isHighlight = true;
-    this.group.add(burst.object);
-    this.transient.push(burst);
   }
 
   /**
@@ -2093,14 +2243,12 @@ export class MonsterTreeVfx {
       // Sparks torn off along the flight path, so the throw is legible at speed.
       (at) => this.burstAt(at, { count: 5, speed: 0.5, duration: 0.5, gravity: -0.6, lightness: 0.7 }),
       (at) => {
-        // What arriving means: the ground breaking open, and the toxin going into it. A bare
-        // Object3D is parked at the landing point because the ground effects all take a socket.
-        this.burstAt(at, { count: 150, speed: 2.0, spread: 0.55, gravity: -1.9 });
+        // Arrival is a HEAVY impact — the same vocabulary entry a slam uses, so a spear landing
+        // and a fist landing agree about what force looks like — plus the toxin the move is for.
+        this.impact('heavy', at);
         const ground = new THREE.Object3D();
         ground.position.set(at.x, 0, at.z);
         ground.updateMatrixWorld(true);
-        this.shockwave(ground, 1.35, 0.9);
-        this.cracks(ground, { radius: 1.25 });
         this.toxin(ground, { radius: 1.15 });
       },
     );
@@ -2111,6 +2259,58 @@ export class MonsterTreeVfx {
   /** Run something later, on the effect clock, so cues can be sequenced without setTimeout. */
   delay(seconds: number, run: () => void): void {
     this.pending.push({ at: this.elapsed + seconds, run });
+  }
+
+  /**
+   * Play one impact kind at a world point.
+   *
+   * This is the single entry point the skills speak through now. Before it, every cue hand-rolled
+   * its own burst + ring + cracks combination, which is exactly how all the impacts converged on
+   * looking identical: the combinations differed, the MOTION never did.
+   */
+  impact(kind: ImpactKind, at: THREE.Vector3, rig?: { hitstop(s: number, k?: number): void }): void {
+    const spec = IMPACTS[kind];
+    rig?.hitstop(spec.hitstop, spec.hitstopScale);
+    this.flash(spec.veinFlash);
+
+    if (spec.ring) {
+      const ring = new GroundRing(spec.ring.life, spec.ring.radius * this.scale * 0.6, this.accentColour, this.ring, spec.ring.inward);
+      ring.object.position.set(at.x, 0.012, at.z);
+      ring.object.userData.isHighlight = true;
+      this.group.add(ring.object);
+      this.transient.push(ring);
+    }
+
+    this.burstAt(at.clone().setY(Math.max(at.y, 0.05)), {
+      count: spec.debris.count,
+      speed: spec.debris.speed,
+      duration: spec.debris.life,
+      spread: spec.debris.spread,
+      gravity: spec.debris.gravity,
+    });
+
+    if (spec.flash) this.impactFlash(at, spec.flash.light, spec.flash.life);
+    if (spec.cracks > 0) {
+      const ground = new THREE.Object3D();
+      ground.position.set(at.x, 0, at.z);
+      ground.updateMatrixWorld(true);
+      this.cracks(ground, { radius: spec.cracks });
+    }
+    if (spec.roots > 0) {
+      const ground = new THREE.Object3D();
+      ground.position.set(at.x, 0, at.z);
+      ground.updateMatrixWorld(true);
+      this.roots(ground, { count: spec.roots, spread: 0.3, duration: 1.1 });
+    }
+    if (spec.dust) {
+      this.burstAt(at.clone().setY(0.04), { count: 46, speed: 0.28, duration: 2.1, spread: 0.16, gravity: -0.12 });
+    }
+  }
+
+  /** A blow the character TAKES, at a bone: debris off the body, ring converging on it. */
+  struck(bone: THREE.Object3D): void {
+    const at = new THREE.Vector3().setFromMatrixPosition(bone.matrixWorld);
+    this.impact('taken', at);
   }
 
   /** Tint every impact effect spawned from now on. Set per skill; reset when the skill changes. */
@@ -2191,20 +2391,7 @@ export class MonsterTreeVfx {
   /** A puff of motes at a socket. `spread` < 1 flattens it toward the ground. */
   burst(at: THREE.Object3D, options: { count?: number; speed?: number; duration?: number; spread?: number; gravity?: number; lightness?: number } = {}): void {
     const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
-    const burst = new Burst(
-      world,
-      options.count ?? 60,
-      (options.speed ?? 1.1) * this.scale * 0.5,
-      options.duration ?? 0.9,
-      lifeColour(options.lightness ?? 0.6, 1),
-      this.dot,
-      (options.gravity ?? -1.6) * this.scale * 0.5,
-      options.spread ?? 1,
-      (Math.random() * 1e9) | 0,
-    );
-    this.group.add(burst.object);
-    burst.object.userData.isHighlight = true;
-    this.transient.push(burst);
+    this.fireBurst(world, options);
   }
 
   /**
@@ -2233,8 +2420,12 @@ export class MonsterTreeVfx {
       const cue = this.pending.splice(i, 1)[0];
       cue.run();
     }
-    this.veins?.setTime(this.elapsed);
-    this.rootBark.setTime(this.elapsed);
+    // Integrated, not `elapsed * factor`: multiplying the absolute clock makes the whole sap
+    // pattern JUMP the instant the breath rate changes on a skill switch. Advancing a private
+    // clock by the scaled delta changes only the speed from here on, which is the intent.
+    this.sapClock += dt * (0.55 + 0.45 * this.breath);
+    this.veins?.setTime(this.sapClock);
+    this.rootBark.setTime(this.sapClock);
     // The flash decays on its own and rides ON TOP of whatever charge a skill has set, so a hit
     // landing during a cast brightens from where the cast already was instead of resetting it.
     if (this.flashLevel > 0) {
@@ -2248,6 +2439,7 @@ export class MonsterTreeVfx {
     this.shafts.tick(dt, this.elapsed);
     this.eyes.tick(dt, this.elapsed);
     this.core.tick(dt, this.elapsed);
+    for (const slot of this.burstPool) slot.tick(dt);
     this.trails['grip-l'].tick(dt, this.elapsed);
     this.trails['grip-r'].tick(dt, this.elapsed);
     for (let i = this.transient.length - 1; i >= 0; i -= 1) {
