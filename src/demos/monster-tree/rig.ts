@@ -146,6 +146,34 @@ export interface MonsterTreeRig {
    */
   stretch(bone: string, amount: number): void;
   /**
+   * Point a bone's segment along a direction, on top of whatever the clip is doing.
+   *
+   * `direction` is in the FIGURE's own frame — forward +X, up +Y, its left -Z, measured off the
+   * eye clusters in `model.ts` — and is converted to world internally, so an authored gesture
+   * survives the viewer spinning the turntable. `weight` blends between the clip's own value (0)
+   * and the aimed one (1), so a gesture can take an arm without taking the body with it.
+   *
+   * Set it every frame; like `stretch` it does not persist, because the mixer overwrites every
+   * bone's rotation on each `update`.
+   */
+  aim(bone: string, direction: THREE.Vector3 | null, weight?: number): void;
+  /**
+   * Re-apply the current aims. Call once per frame, after `update` and before `applyStretch`.
+   *
+   * Parents first, accumulating world rotations as it goes: a bone's aim is solved against where
+   * its parent has ALREADY been put this frame, so aiming a shoulder and then the elbow off it
+   * composes the way a limb does rather than fighting.
+   */
+  applyPose(): void;
+  /**
+   * Author a clip of a given length that keeps the body alive underneath a gesture.
+   *
+   * A trimmed copy of `standing_relax` — the quietest clip in the library — registered under a new
+   * name. The gesture on top comes from `aim`; this supplies the duration the runner needs, the
+   * breathing, and the weight shifts nobody wants to hand-author.
+   */
+  authorClip(name: string, duration: number, fromSeconds?: number): THREE.AnimationClip;
+  /**
    * Build an independent copy of the figure that can be posed at its own point in a clip.
    *
    * A second skinned shell with its OWN skeleton and its OWN mixer, sharing the original's
@@ -796,14 +824,191 @@ export function buildMonsterTreeRig(
     if (!/Twist/.test(b.name) && !childOf.has(parent)) childOf.set(parent, b.name);
   });
 
+  /**
+   * Which child each aimable bone actually points at, and where that child sits at rest.
+   *
+   * NOT `children[0]`, which is wrong on this rig in two ways that matter. The twist bones are
+   * co-located with their parents — `L_ForearmTwist01` sits exactly on `L_Forearm` — so taking the
+   * first child gives a zero-length segment with no direction at all; and the child ORDER differs
+   * left to right (`L_Thigh` lists L_Calf first, `R_Thigh` lists R_ThighTwist01 first), so the same
+   * code would aim the two legs by different bones. Every pair below is named.
+   *
+   * The twists are not left out — they are children of the bones named here and ride along, which
+   * is what matters because they carry most of the arm and leg skin weight.
+   */
+  const AIM_CHILD: Record<string, string> = {
+    Waist: 'Spine01', Spine01: 'Spine02', Spine02: 'NeckTwist01',
+    L_Clavicle: 'L_Upperarm', L_Upperarm: 'L_Forearm', L_Forearm: 'L_Hand',
+    R_Clavicle: 'R_Upperarm', R_Upperarm: 'R_Forearm', R_Forearm: 'R_Hand',
+    L_Thigh: 'L_Calf', L_Calf: 'L_Foot', L_Foot: 'L_ToeBase',
+    R_Thigh: 'R_Calf', R_Calf: 'R_Foot', R_Foot: 'R_ToeBase',
+  };
+
+  /**
+   * Each aimable bone's rest segment direction, expressed in its PARENT's frame.
+   *
+   * `q_rest * normalize(childLocalPosition)`. Aiming then means finding the swing that takes this
+   * to the target and applying it BEFORE the rest rotation, which preserves the bone's authored
+   * twist instead of throwing it away — the difference between an arm that points somewhere and an
+   * arm that points somewhere with its elbow rotated to a random roll.
+   */
+  const restAim = new Map<string, { dir: THREE.Vector3; quat: THREE.Quaternion }>();
+  for (const [name, childName] of Object.entries(AIM_CHILD)) {
+    const bone = boneByName[name];
+    const child = boneByName[childName];
+    if (!bone || !child) continue;
+    const local = child.position.clone();
+    if (local.lengthSq() < 1e-12) continue;
+    restAim.set(name, {
+      dir: local.normalize().applyQuaternion(bone.quaternion).normalize(),
+      quat: bone.quaternion.clone(),
+    });
+  }
+
+  /** Live aims, and scratch for the pose pass. Allocated once, not per bone per frame. */
+  const aims = new Map<string, { dir: THREE.Vector3; weight: number }>();
+  const worldQ = new Map<string, THREE.Quaternion>();
+  const POSE_TARGET = new THREE.Vector3();
+  const POSE_LOCAL = new THREE.Vector3();
+  const POSE_SWING = new THREE.Quaternion();
+  const POSE_AIMED = new THREE.Quaternion();
+  const POSE_PARENT_INV = new THREE.Quaternion();
+  const POSE_GROUP = new THREE.Quaternion();
+
+  const applyPose = (): void => {
+    if (!aims.size) return;
+    group.getWorldQuaternion(POSE_GROUP);
+    // Seed from the group above the bones, so the walk below is in world space throughout and an
+    // aim stays correct while the viewer rotates the figure.
+    const seed = worldQ.get('__seed__') ?? new THREE.Quaternion();
+    root.parent?.getWorldQuaternion(seed);
+    worldQ.set('__seed__', seed);
+
+    const visit = (bone: THREE.Bone, parentWorld: THREE.Quaternion): void => {
+      const aim = aims.get(bone.name);
+      const rest = restAim.get(bone.name);
+      if (aim && rest && aim.weight > 0) {
+        POSE_TARGET.copy(aim.dir).applyQuaternion(POSE_GROUP).normalize();
+        POSE_PARENT_INV.copy(parentWorld).invert();
+        POSE_LOCAL.copy(POSE_TARGET).applyQuaternion(POSE_PARENT_INV).normalize();
+        POSE_SWING.setFromUnitVectors(rest.dir, POSE_LOCAL);
+        POSE_AIMED.copy(POSE_SWING).multiply(rest.quat);
+        if (aim.weight >= 1) bone.quaternion.copy(POSE_AIMED);
+        else bone.quaternion.slerp(POSE_AIMED, aim.weight);
+      }
+      let mine = worldQ.get(bone.name);
+      if (!mine) { mine = new THREE.Quaternion(); worldQ.set(bone.name, mine); }
+      mine.copy(parentWorld).multiply(bone.quaternion);
+      for (const child of bone.children) if ((child as THREE.Bone).isBone) visit(child as THREE.Bone, mine);
+    };
+    visit(root, seed);
+  };
+
+  const relaxClip = (): THREE.AnimationClip | undefined => clips.find((c) => c.name === 'preset:biped:standing_relax');
+
+  const authorClip = (name: string, duration: number, fromSeconds = 3.0): THREE.AnimationClip => {
+    const existing = clips.find((c) => c.name === name);
+    if (existing) return existing;
+    const base = relaxClip();
+    const tracks: THREE.KeyframeTrack[] = [];
+    if (base) {
+      for (const track of base.tracks) {
+        const times: number[] = [];
+        const values: number[] = [];
+        const stride = track.getValueSize();
+        for (let i = 0; i < track.times.length; i += 1) {
+          const at = track.times[i] - fromSeconds;
+          if (at < -0.001 || at > duration + 0.001) continue;
+          times.push(Math.max(0, at));
+          for (let k = 0; k < stride; k += 1) values.push(track.values[i * stride + k]);
+        }
+        // A track with one key still holds the pose; a track with none would leave the bone at its
+        // bind rotation, which on this rig reads as the figure snapping to a T-pose.
+        if (!times.length) {
+          times.push(0);
+          for (let k = 0; k < stride; k += 1) values.push(track.values[k]);
+        }
+        const Ctor = track.constructor as new (n: string, t: number[], v: number[]) => THREE.KeyframeTrack;
+        tracks.push(new Ctor(track.name, times, values));
+      }
+    }
+    const clip = new THREE.AnimationClip(name, duration, tracks);
+    clips.push(clip);
+    return clip;
+  };
+
+  /**
+   * The scale each stretched bone had before this system touched it, captured on the first frame
+   * of a stretch and restored when it ends.
+   *
+   * This exists because of a three.js behaviour that is invisible until it is measured.
+   * `PropertyMixer.apply` compares the value it accumulated against the snapshot it took, and
+   * writes to the scene graph ONLY if the two differ. Every clip here carries a scale track for
+   * all 41 bones, and every one of those tracks is a constant 1 — so the mixer decides nothing has
+   * changed and never writes scale at all. A stretch that MULTIPLIES the live value is then never
+   * reset, and it compounds: measured on the authored log barrage, `L_Forearm.scale.y` reached
+   * **106,195** by the end of a 2.3-second move, throwing the hand hundreds of units out of the
+   * world. It survived this long only because the shipped presets happen to vary their scale
+   * enough for the mixer to keep writing.
+   *
+   * Setting from a captured base instead of multiplying the live value cannot compound, whether
+   * the mixer writes or not.
+   */
+  const stretchApplied = new Map<string, { base: number; set: number }>();
+  const stretchFactor = new Map<string, number>();
+  const stretchDivisor = new Map<string, number>();
+  const stretchTouched = new Set<string>();
+
+  /**
+   * Apply every stretch, writing each bone exactly ONCE from a value the clip owns.
+   *
+   * Two things here are not obvious and both were found by measuring rather than reading.
+   *
+   * 1. NEVER MULTIPLY THE LIVE VALUE. `PropertyMixer.apply` writes to the scene graph only when
+   *    the value it accumulated differs from the snapshot it took, and every scale track in this
+   *    rig is a constant 1 — so for scale the mixer decides nothing changed and never writes.
+   *    A stretch that multiplies what is already there is therefore never reset and compounds:
+   *    measured on the authored log barrage, `L_Forearm.scale.y` reached **106,195** inside 2.3
+   *    seconds and threw the hand hundreds of units out of the world.
+   *
+   * 2. A BONE CAN BE BOTH. Waist is stretched and Spine01 is stretched, and Spine01 is also
+   *    Waist's child, so it is divided as well as multiplied. Handling those in one pass over the
+   *    stretch list wrote Spine01 twice and recorded the second base from the first write's
+   *    output — which compounds in the other direction, dragging the spine shorter every frame and
+   *    putting a lurch in the shoulders every time the mixer happened to write. So the factors and
+   *    the divisors are collected first, and only then is each affected bone written once.
+   *
+   * The equality test on restore keeps this honest: if the mixer DID write a new value, it will
+   * not match what we left there, and we leave it alone.
+   */
   const applyStretches = (): void => {
-    for (const [name, amount] of stretches) {
+    for (const [name, record] of stretchApplied) {
       const bone = boneByName[name];
-      if (!bone || amount === 0) continue;
-      const factor = 1 + amount;
-      bone.scale.y *= factor;
+      if (bone && Math.abs(bone.scale.y - record.set) < 1e-9) bone.scale.y = record.base;
+    }
+    stretchApplied.clear();
+    stretchFactor.clear();
+    stretchDivisor.clear();
+    stretchTouched.clear();
+
+    for (const [name, amount] of stretches) {
+      if (amount === 0 || !boneByName[name]) continue;
+      stretchFactor.set(name, 1 + amount);
+      stretchTouched.add(name);
       const child = childOf.get(name);
-      if (child && boneByName[child]) boneByName[child].scale.y /= factor;
+      if (child && boneByName[child]) {
+        stretchDivisor.set(child, (stretchDivisor.get(child) ?? 1) * (1 + amount));
+        stretchTouched.add(child);
+      }
+    }
+
+    for (const name of stretchTouched) {
+      const bone = boneByName[name];
+      if (!bone) continue;
+      const base = bone.scale.y;
+      const value = base * (stretchFactor.get(name) ?? 1) / (stretchDivisor.get(name) ?? 1);
+      bone.scale.y = value;
+      stretchApplied.set(name, { base, set: value });
     }
   };
 
@@ -973,6 +1178,14 @@ export function buildMonsterTreeRig(
       }
     },
     makeEcho,
+    aim: (bone: string, direction: THREE.Vector3 | null, weight = 1) => {
+      if (!direction || weight <= 0) { aims.delete(bone); return; }
+      const held = aims.get(bone);
+      if (held) { held.dir.copy(direction).normalize(); held.weight = weight; }
+      else aims.set(bone, { dir: direction.clone().normalize(), weight });
+    },
+    applyPose,
+    authorClip,
     applyStretch: () => applyStretches(),
     stretch: (bone: string, amount: number) => {
       if (amount === 0) stretches.delete(bone);

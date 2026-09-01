@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { EchoChorus, ECHO_RIM, type EchoChorusOptions } from './echoes';
+import { BEATS, clearPose, drivePose, logsPose, passivePose, ultimatePose, vinePose } from './poses';
 import { beats, clipEvents, HANDS, loudestArrest } from './events';
 import { PALETTE } from './measured';
 import type { MonsterTreeRig } from './rig';
@@ -282,15 +283,16 @@ export const SKILLS: Skill[] = [
     id: 'passive',
     accent: ACCENT.moss,
     label: 'Nội tại · Thân Thể Đại Thụ',
-    clip: 'preset:biped:standing_relax',
+    clip: 'authored:passive',
     fade: 0.45,
     loop: true,
-    measured: 'standing_relax is the quietest clip in the library — bodyMean 0.006 H/s, handPeak 0.103, not one measured event. Nothing is cued off an impact because nothing impacts; the whole passive is continuous, which is what a passive is.',
+    measured: 'POSED, not borrowed. The body plays a trimmed standing_relax — the quietest clip in the library, bodyMean 0.006 H/s, not one measured event — and the arms are aimed on top of it: low and open, palms turned down over the undergrowth he is drawing out of.',
     // Undergrowth comes up under him and he draws out of it: sap climbs from the floor into the
     // chest, and the bark hardens as it arrives. The direction matters — an effect leaving the
     // body is the character spending something, and this is the character TAKING something from
     // the ground it is standing on.
     drive: (rig, vfx, time) => {
+      drivePose(rig, passivePose(time), time);
       const foot = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
       // Armour, breathing. Held well below a skill's release so the passive never reads as a cast
       // about to happen — it is a state, not an event.
@@ -321,27 +323,30 @@ export const SKILLS: Skill[] = [
     id: 'vine',
     accent: ACCENT.iris,
     label: 'Chiêu 1 · Dây Leo',
-    clip: 'preset:biped:box_01',
-    fade: 0.12,
+    clip: 'authored:vine',
+    fade: 0.14,
     loop: false,
-    measured: 'box_01: L_ToeBase plants at 0.375s, then L_Hand arrests at extension at 0.467s, decel 67.4. The vine leaves on the plant and CATCHES on the arrest — the payoff is the stop, not the travel.',
+    measured: 'POSED. Wind the arm back across the body, then throw it straight out along +X — the direction the figure was MEASURED to face, off its own eye clusters. The vine leaves at 0.34s, the frame the hand stops, and the arm stays out while there is something on the end of it.',
     // The arm lengthens into the throw so the reach peaks exactly as the hand stops.
     drive: (rig, vfx, time) => {
-      const reach = swell(time, 0.18, 0.80) * 0.85;
+      drivePose(rig, vinePose(), time);
+      // Enough to read as "duỗi tay" without the forearm becoming a tentacle: at 0.85 the arm
+      // stretched most of a metre and the shoulder pinched away from the body.
+      const reach = swell(time, 0.14, 0.72) * 0.40;
       rig.stretch('L_Forearm', reach);
       rig.stretch('L_Upperarm', reach * 0.55);
-      const build = buildTo(time, 0.467, 0.42);
+      const build = buildTo(time, BEATS.vine.release, 0.30);
       if (build > vfx.charge) vfx.charge = build;
       // The lunge of the empowered form. Bounded and self-returning: it is a step, not a
       // relocation, so the figure is back where the viewer framed it by the time the move ends.
       if (rig.group.userData.empowered) {
-        rig.group.position.copy(HOME).addScaledVector(LUNGE, swell(time, 0.46, 1.05) * 0.26);
+        rig.group.position.copy(HOME).addScaledVector(LUNGE, swell(time, BEATS.vine.release, 1.10) * 0.26);
       }
     },
     cues: [
-      { at: 0.375, run: (rig, vfx) => vfx.impact('ground', new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld), rig) },
+      { at: 0.20, run: (rig, vfx) => vfx.impact('ground', new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld), rig) },
       {
-        at: 0.467,
+        at: BEATS.vine.release,
         run: (rig, vfx) => {
           vfx.charge = 0;
           const heading = facing(rig);
@@ -359,8 +364,8 @@ export const SKILLS: Skill[] = [
             // measured one the log barrage has: a point 1.0 unit ahead of his feet projects to
             // px 565 of a 628-pixel canvas, and 1.3 units lands at 642, off the edge.
             reach: empowered ? 0.52 : 0.42,
-            out: 0.15,
-            hold: empowered ? 0.42 : 0.26,
+            out: 0.14,
+            hold: empowered ? 0.42 : 0.30,
             back: 0.24,
             onCatch: (at) => {
               // Plain: it holds and it SLOWS — a stain of creeping toxin under whatever it caught,
@@ -387,16 +392,17 @@ export const SKILLS: Skill[] = [
     id: 'natures-call',
     accent: ACCENT.deep,
     label: 'Chiêu 2 · Thiên Nhiên Vẫy Gọi',
-    clip: 'preset:biped:box_02',
+    clip: 'authored:logs',
     fade: 0.16,
     loop: false,
-    measured: 'box_02 gives the beat this move needs already: arrests at 0.667, 0.833 and 1.000, then the double-hand slam at 1.800 where R_Hand posts decel 366.5 — the hardest stop in the library. One log per arrest, each further out, and the slam brings the last one down.',
+    measured: 'POSED as a RHYTHM. Both arms called up, then driven down and forward on 0.42, 0.70 and 0.98 — each slam calls a log, each is followed by a partial lift so the barrage keeps travelling — then a higher, slower fourth at 1.52 that lands with the stun.',
     trails: ['grip-l', 'grip-r'],
     drive: (rig, vfx, time) => {
-      const reach = swell(time, 1.30, 2.05) * 0.7;
+      drivePose(rig, logsPose(), time);
+      const reach = swell(time, BEATS.logs.finish - 0.34, BEATS.logs.finish + 0.35) * 0.55;
       rig.stretch('R_Forearm', reach);
-      rig.stretch('L_Forearm', reach * 0.7);
-      const build = buildTo(time, 1.80, 0.62);
+      rig.stretch('L_Forearm', reach);
+      const build = buildTo(time, BEATS.logs.finish, 0.44);
       if (build > vfx.charge) vfx.charge = build;
     },
     // Wood called down along a line running away from him. The distances step outward with the
@@ -412,17 +418,17 @@ export const SKILLS: Skill[] = [
     // ahead of his feet lands at px 565 and one at 1.3 lands at px 642, outside the canvas. The
     // first version stepped out to 1.66 and the entire barrage fell where nobody could see it.
     cues: [
-      ...[[0.667, 0.40], [0.833, 0.62], [1.0, 0.84]].map(([at, distance]) => ({
+      ...BEATS.logs.slams.map((at, i) => ({
         at: at - 0.26,
         run: (rig: MonsterTreeRig, vfx: MonsterTreeVfx) => {
           const from = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          vfx.log(from.addScaledVector(facing(rig), distance), { length: 0.34, fall: 0.26, linger: 2.9 });
+          vfx.log(from.addScaledVector(facing(rig), 0.40 + i * 0.22), { length: 0.34, fall: 0.26, linger: 2.9 });
         },
       })),
       {
         // The slam. The last log is bigger, it lands on the measured frame, and the ground answers
         // with the stun: a rune circle holding where it fell.
-        at: 1.80 - 0.30,
+        at: BEATS.logs.finish - 0.30,
         run: (rig, vfx) => {
           const from = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
           const at = from.clone().addScaledVector(facing(rig), 1.06);
@@ -444,21 +450,28 @@ export const SKILLS: Skill[] = [
     id: 'ultimate',
     accent: ACCENT.strike,
     label: 'Chiêu cuối · Hạt Giống Thần Mệnh',
-    clip: 'preset:biped:dance_05',
-    fade: 0.20,
+    clip: 'authored:ultimate',
+    fade: 0.24,
     loop: false,
-    measured: 'dance_05 throws 18 measured arrests in 2.333s, one every ~130ms — the only clip in the library whose arms never stop. That is what "ném liên tục" needs, and every volley below leaves on one of them.',
+    measured: 'POSED in four movements. He sinks, then roots — legs straight and wide and never moving again — the trunk grows, three alternating throws leave at 0.86, 1.20 and 1.54 with the other arm held up as a branch, then a wide sweep closes on his own chest at 2.34 and everything comes with it.',
     // HÓA THÂN THÀNH ĐẠI THỤ. The trunk itself grows: waist, spine and thighs all lengthen, so he
     // gains most of a head of height and keeps it for the whole channel. This is the honest limit
     // of what one skinned shell can do — the silhouette becomes a taller, rooted tree, and the
     // canopy and the roots below do the rest of the telling.
     drive: (rig, vfx, time) => {
-      const grow = Math.min(1, time / 0.55) * (time > 2.0 ? Math.max(0, 1 - (time - 2.0) / 0.33) : 1);
-      rig.stretch('Waist', grow * 0.42);
-      rig.stretch('Spine01', grow * 0.38);
-      rig.stretch('Spine02', grow * 0.30);
-      rig.stretch('L_Thigh', grow * 0.26);
-      rig.stretch('R_Thigh', grow * 0.26);
+      drivePose(rig, ultimatePose(), time);
+      const grow = Math.min(1, time / BEATS.ultimate.rooted)
+        * (time > BEATS.ultimate.stun + 0.2 ? Math.max(0, 1 - (time - BEATS.ultimate.stun - 0.2) / 0.4) : 1);
+      // The growth COMPOUNDS down the chain — waist, then spine, then chest — so these are much
+      // smaller than they look. Measured: at 0.42/0.38/0.30 the product is 2.55x and the crown
+      // left the top of the frame entirely, with the head somewhere above the canvas and the legs
+      // out of shot below. At these values it is about 1.45x, which puts the crown near y = 2.5
+      // against a frame that reaches y = 2.7 — visibly a bigger tree, still a figure.
+      rig.stretch('Waist', grow * 0.16);
+      rig.stretch('Spine01', grow * 0.14);
+      rig.stretch('Spine02', grow * 0.12);
+      rig.stretch('L_Thigh', grow * 0.10);
+      rig.stretch('R_Thigh', grow * 0.10);
       vfx.charge = Math.max(vfx.charge, grow * 0.34);
     },
     cues: [
@@ -475,14 +488,14 @@ export const SKILLS: Skill[] = [
         },
       },
       // The crown opens: a canopy pulled out of his own head as the trunk finishes growing.
-      { at: 0.45, run: (rig, vfx) => {
+      { at: BEATS.ultimate.rooted, run: (rig, vfx) => {
         const crown = new THREE.Vector3().setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
         vfx.grove(crown, { count: 5, spread: 0.26, duration: 3.2 });
         vfx.burst(rig.sockets['crown'], { count: 80, speed: 0.8, spread: 1, gravity: 0.4, lightness: 0.75 });
       } },
       // Three volleys, each leaving on a measured arrest — 0.433 (decel 574.8, the hardest stop
       // anywhere), 1.233 (535.3) and 1.633 (536.1). The three biggest throws in the clip.
-      ...[0.433, 1.233, 1.633].map((at, i) => ({
+      ...BEATS.ultimate.throws.map((at, i) => ({
         at,
         run: (rig: MonsterTreeRig, vfx: MonsterTreeVfx) => {
           const crown = new THREE.Vector3().setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
@@ -492,7 +505,7 @@ export const SKILLS: Skill[] = [
       {
         // GOM VỀ TRUNG TÂM. The pull starts while the last volley is still in the air, so the
         // seeds land inside something that is already closing rather than after it.
-        at: 1.75,
+        at: BEATS.ultimate.gather,
         run: (rig, vfx) => {
           const foot = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
           vfx.vortex(foot, { radius: 1.9, duration: 1.5, count: 170 });
@@ -501,7 +514,7 @@ export const SKILLS: Skill[] = [
       {
         // The stun: everything that was dragged in arrives at once. One heavy hit — the only
         // frame in this move where anything collides — and the ground holds it.
-        at: 2.20,
+        at: BEATS.ultimate.stun,
         run: (rig, vfx) => {
           const foot = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
           vfx.charge = 0;
@@ -813,6 +826,14 @@ export class SkillRunner {
     // forward and steps back, and a move that is interrupted halfway through its step has to hand
     // the figure back where it found it rather than leaving it a quarter of a unit downrange.
     HOME.copy(rig.group.position);
+    // The kit's clips do not ship with the rig — they are authored here. Each is a trimmed copy of
+    // standing_relax at the length its gesture needs, so the body keeps breathing under a pose
+    // that is driven bone by bone. Registered before the first `play`, or the runner would look
+    // for a clip that does not exist yet and refuse to start.
+    rig.authorClip('authored:passive', 8.0);
+    rig.authorClip('authored:vine', BEATS.vine.duration);
+    rig.authorClip('authored:logs', BEATS.logs.duration);
+    rig.authorClip('authored:ultimate', BEATS.ultimate.duration);
     // Parented to the rig's own root, so a copy placed at a world offset from the character
     // travels with the character when the viewer turns the turntable.
     this.chorus = new EchoChorus(
@@ -838,6 +859,9 @@ export class SkillRunner {
     // A move interrupted mid-cast must not leave five copies standing on the floor, nor the
     // figure standing where a lunge left it.
     this.chorus.dismiss();
+    // Hand every aimed bone back to its clip. A move interrupted mid-throw must not leave an arm
+    // pointing where it was pointing while the next move plays around it.
+    clearPose(this.rig);
     this.rig.group.position.copy(HOME);
     this.rig.group.userData.empowered = false;
     // A skill that does not raise the eyes itself gets them back at rest, so a cancelled Wildfire

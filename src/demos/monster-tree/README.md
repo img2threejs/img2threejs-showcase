@@ -176,18 +176,97 @@ clips exactly as retargeted.
 
 ---
 
+## The kit's animation is authored, not borrowed
+
+The rig ships sixteen clips from Tripo's generic biped library — boxing rounds, front kicks, six
+dances. They are real motion and they are measured honestly elsewhere in this demo, but none of
+them is the motion of a treant throwing a vine, calling wood down, or rooting itself into the
+ground. `box_01` under Dây Leo is a boxer's jab with a vine drawn on it, and no amount of effect
+work fixes a body doing the wrong thing.
+
+So the kit's four moves are **posed** (`poses.ts`). Each is a timeline of aim directions, one per
+bone, solved onto the skeleton by `rig.aim` / `rig.applyPose`. Underneath, the body still plays a
+trimmed copy of `standing_relax`, so the torso keeps breathing and the weight keeps shifting
+without any of that having to be hand-authored.
+
+### The aim solver, and why the child bones are named
+
+For each bone: take the rest direction of its segment in the parent's frame, find the swing that
+takes it to the target, and apply that **before** the rest rotation so the bone's authored twist
+survives. Parents are solved first and their world rotations accumulated, so aiming a shoulder and
+then the elbow off it composes the way a limb does.
+
+Every aim pair is named explicitly rather than taken as `children[0]`, which is wrong on this rig
+in two ways: the twist bones are co-located with their parents (`L_ForearmTwist01` sits exactly on
+`L_Forearm`, giving a zero-length segment with no direction at all), and the child *order* differs
+left to right — `L_Thigh` lists L_Calf first, `R_Thigh` lists R_ThighTwist01 first — so the same
+code would aim the two legs by different bones.
+
+### Authored beats
+
+Everywhere else this showcase schedules against `events.ts`, a 240 Hz sweep of clips nobody here
+wrote. For these four the relationship inverts: the gesture is designed around when the hand should
+stop, and `BEATS` holds those numbers in one place so the pose and the effect cannot drift apart.
+
+They are then measured back, with the same method, to check the gesture does what it claims:
+
+| move | peak hand | what the sweep finds |
+|---|---|---|
+| Thân Thể Đại Thụ | 0.04 H/s | nothing — three incommensurable oscillators and no beat at all |
+| Dây Leo | 7.5 H/s | an arrest at **0.333 s**, the frame `BEATS.vine.release` says the vine leaves |
+| Thiên Nhiên Vẫy Gọi | 10.8 H/s | arrests through the flurry, and one at **1.517 s** — `BEATS.logs.finish` |
+| Hạt Giống Thần Mệnh | 4.9 H/s | one arrest; the rest is a channel, which is what it is meant to be |
+
+That table is a gate, not decoration. It caught three defects that looked fine in a still frame:
+
+1. **Aim directions were lerped, not slerped.** A plain lerp of two unit vectors crawls at the ends
+   and whips through the middle, and the closer to opposite, the worse. The ultimate folds a
+   forearm from pointing left to pointing right in a fifth of a second; lerped, that measured a
+   hand speed of **60.7 H/s** — twelve times the fastest hand in any shipped clip — as a two-frame
+   spike that read as the arm teleporting.
+2. **The payoff slam was the gentlest motion in its own move.** Spreading the last slam over a
+   longer span made it slower than the three jabs leading into it. The arm now goes up early, holds
+   at the top — which is the windup the effects are already charging into — and covers the greatest
+   distance in the shortest time.
+3. **The passive was a statue.** Aiming at full weight replaces the clip's own hand motion, and the
+   first stance swept 0.01 H/s where `standing_relax` itself manages 0.103 — ten times stiller than
+   the quietest thing in the library. Blending at partial weight looked like the fix and is not
+   (see below); the life had to be authored.
+
+### Two three.js behaviours that only measurement finds
+
+`PropertyMixer.apply` writes to the scene graph **only when the value it accumulated differs from
+the snapshot it took**. Every scale track in this rig is a constant 1, so for scale the mixer
+decides nothing changed and never writes at all — and a stretch that *multiplies* the live value is
+therefore never reset. Measured on the authored log barrage, `L_Forearm.scale.y` reached
+**106,195** inside 2.3 seconds and threw the hand hundreds of units out of the world. It had
+survived this long only because the shipped presets vary their scale enough to keep the mixer
+writing. Stretches now restore what they applied and rewrite each bone once from the clip's own
+value.
+
+The same optimisation applies to quaternions, which is why a partial-weight aim does not work: it
+reads its own previous output, converges to the aim within two frames, and then jerks whenever the
+clip *does* change. That measured as a 1.08 H/s twitch on a stance that should be the stillest
+thing in the demo.
+
+And a bone can be **both** stretched and the child of a stretched bone — Waist is stretched, Spine01
+is stretched, and Spine01 is Waist's child. Handling those in one pass wrote Spine01 twice and
+recorded the second base from the first write's output, compounding in the other direction and
+lurching the shoulders every time the mixer happened to write. Factors and divisors are now
+collected first, and each affected bone is written exactly once.
+
 ## Y'bneth's kit
 
 The character is **Y'bneth**, and the four moves at the top of the panel are his own kit rather
 than invented ones. Each is mapped onto the clip whose measured dynamics actually fit it — see the
 event table below for where the beats come from.
 
-| | clip | why that clip | what it does |
+| | clip | the body under it | what it does |
 |---|---|---|---|
-| **Nội tại · Thân Thể Đại Thụ** | `standing_relax` | the quietest thing in the library: bodyMean 0.006 H/s, **not one measured event** | plants real undergrowth, then draws sap up out of it into the chest on a slow repeating beat, hardening the bark as it arrives |
-| **Chiêu 1 · Dây Leo** | `box_01` | L_ToeBase plants at 0.375 s, L_Hand arrests at extension at 0.467 s | a vine thrown on the plant that **catches** on the arrest — slow and toxin where it lands, and if he is standing in his own undergrowth it reaches further, holds longer, knocks back, and he steps forward along it |
-| **Chiêu 2 · Thiên Nhiên Vẫy Gọi** | `box_02` | arrests at 0.667, 0.833, 1.000 and the double-hand slam at 1.800 (decel 366.5, the hardest stop anywhere) | one log called down per arrest, each further out than the last, the slam bringing down the big one and the ground holding it |
-| **Chiêu cuối · Hạt Giống Thần Mệnh** | `dance_05` | 18 arrests in 2.333 s, one every ~130 ms — the only clip whose arms never stop | the trunk itself grows, roots take his feet, a canopy opens off his crown, three volleys of seeds leave on the three hardest arrests and sprout where they land, then everything is wound back to the centre and held |
+| **Nội tại · Thân Thể Đại Thụ** | `authored:passive` | the quietest thing in the library: bodyMean 0.006 H/s, **not one measured event** | plants real undergrowth, then draws sap up out of it into the chest on a slow repeating beat, hardening the bark as it arrives |
+| **Chiêu 1 · Dây Leo** | `authored:vine` | L_ToeBase plants at 0.375 s, L_Hand arrests at extension at 0.467 s | a vine thrown on the plant that **catches** on the arrest — slow and toxin where it lands, and if he is standing in his own undergrowth it reaches further, holds longer, knocks back, and he steps forward along it |
+| **Chiêu 2 · Thiên Nhiên Vẫy Gọi** | `authored:logs` | arrests at 0.667, 0.833, 1.000 and the double-hand slam at 1.800 (decel 366.5, the hardest stop anywhere) | one log called down per arrest, each further out than the last, the slam bringing down the big one and the ground holding it |
+| **Chiêu cuối · Hạt Giống Thần Mệnh** | `authored:ultimate` | 18 arrests in 2.333 s, one every ~130 ms — the only clip whose arms never stop | the trunk itself grows, roots take his feet, a canopy opens off his crown, three volleys of seeds leave on the three hardest arrests and sprout where they land, then everything is wound back to the centre and held |
 
 ### The passive is a real condition, not a mime
 
