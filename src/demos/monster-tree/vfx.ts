@@ -65,6 +65,43 @@ function dotTexture(): THREE.Texture {
   return texture;
 }
 
+/**
+ * A leaf: a pointed blade with a midrib, painted once.
+ *
+ * The ambient field was round dots, which read as fireflies — fine anywhere, and nothing to do
+ * with a forest. Mixing leaves into it is what makes the air around the character feel like
+ * something is shedding into it.
+ */
+function leafTexture(): THREE.Texture {
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const c = size / 2;
+  const grad = ctx.createLinearGradient(0, 0, 0, size);
+  grad.addColorStop(0, 'rgba(255,255,255,0.15)');
+  grad.addColorStop(0.5, 'rgba(255,255,255,1)');
+  grad.addColorStop(1, 'rgba(255,255,255,0.15)');
+  ctx.fillStyle = grad;
+  // Two mirrored curves meeting at a point each end — a lanceolate blade.
+  ctx.beginPath();
+  ctx.moveTo(c, 3);
+  ctx.quadraticCurveTo(size - 7, c, c, size - 3);
+  ctx.quadraticCurveTo(7, c, c, 3);
+  ctx.fill();
+  // The midrib, which is what makes it read as a leaf rather than as a lens flare.
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(c, 5);
+  ctx.lineTo(c, size - 5);
+  ctx.stroke();
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 /** A soft-edged ring, for the ground shockwave. */
 function ringTexture(): THREE.Texture {
   const size = 128;
@@ -178,7 +215,7 @@ class SporeField implements Tickable {
   private readonly random: () => number;
   private readonly bounds: THREE.Box3;
 
-  constructor(bounds: THREE.Box3, count: number, texture: THREE.Texture) {
+  constructor(bounds: THREE.Box3, count: number, texture: THREE.Texture, leaf: THREE.Texture) {
     this.bounds = bounds;
     this.random = mulberry32(0x5eed);
     const positions = new Float32Array(count * 3);
@@ -201,19 +238,37 @@ class SporeField implements Tickable {
       sizes[i] = 0.012 + this.random() * 0.03;
     }
 
+    // Which motes are leaves, and how fast each one turns. Roughly a third: all leaves reads as
+    // falling litter, none reads as fireflies, and the mix reads as a wood.
+    const kind = new Float32Array(count);
+    const spin = new Float32Array(count);
+    for (let i = 0; i < count; i += 1) {
+      kind[i] = this.random() < 0.34 ? 1 : 0;
+      spin[i] = (this.random() - 0.5) * 2.4;
+      if (kind[i] > 0.5) sizes[i] *= 2.1;   // a leaf has to be bigger than a spark to read at all
+    }
+
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colours, 3));
     geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute('aKind', new THREE.BufferAttribute(kind, 1));
+    geometry.setAttribute('aSpin', new THREE.BufferAttribute(spin, 1));
 
     const material = new THREE.ShaderMaterial({
-      uniforms: { map: { value: texture }, opacity: { value: 1 } },
+      uniforms: { map: { value: texture }, leafMap: { value: leaf }, uTime: { value: 0 }, opacity: { value: 1 } },
       vertexShader: `
         attribute float size;
+        attribute float aKind;
+        attribute float aSpin;
         varying vec3 vColour;
         varying float vFade;
+        varying float vKind;
+        varying float vSpin;
         void main() {
           vColour = color;
+          vKind = aKind;
+          vSpin = aSpin;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           // Fade with distance so the far side of the field does not read as noise over the figure.
           vFade = clamp(1.0 - (-mv.z - 2.0) / 8.0, 0.15, 1.0);
@@ -222,11 +277,30 @@ class SporeField implements Tickable {
         }`,
       fragmentShader: `
         uniform sampler2D map;
+        uniform sampler2D leafMap;
+        uniform float uTime;
         uniform float opacity;
         varying vec3 vColour;
         varying float vFade;
+        varying float vKind;
+        varying float vSpin;
         void main() {
-          float a = texture2D(map, gl_PointCoord).a;
+          float a;
+          if (vKind > 0.5) {
+            // Leaves turn as they fall. Rotating the point's own coordinate is the whole trick —
+            // a point sprite has no orientation of its own, so a static leaf texture reads as a
+            // decal pinned to the screen rather than as something tumbling through the air.
+            float ang = uTime * vSpin;
+            float s = sin(ang), c = cos(ang);
+            vec2 uv = gl_PointCoord - 0.5;
+            uv = vec2(uv.x * c - uv.y * s, uv.x * s + uv.y * c) + 0.5;
+            if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) discard;
+            // Flatten it edge-on periodically, so a leaf turns through its own plane.
+            float edge = abs(sin(ang * 0.5));
+            a = texture2D(leafMap, uv).a * (0.25 + 0.75 * edge);
+          } else {
+            a = texture2D(map, gl_PointCoord).a;
+          }
           if (a < 0.01) discard;
           gl_FragColor = vec4(vColour, a * vFade * opacity);
         }`,
@@ -256,6 +330,7 @@ class SporeField implements Tickable {
   }
 
   tick(dt: number, elapsed: number): boolean {
+    (this.object.material as THREE.ShaderMaterial).uniforms.uTime.value = elapsed;
     const attr = this.object.geometry.getAttribute('position') as THREE.BufferAttribute;
     const positions = attr.array as Float32Array;
     for (let i = 0; i < this.life.length; i += 1) {
@@ -1738,6 +1813,7 @@ export class MonsterTreeVfx {
   private readonly transient: Tickable[] = [];
   private readonly dot = dotTexture();
   private readonly ring = ringTexture();
+  private readonly leaf = leafTexture();
   private readonly runes = runeTexture();
   private readonly cracksMap = crackTexture();
   /**
@@ -1773,6 +1849,21 @@ export class MonsterTreeVfx {
   private readonly scale: number;
   /** 0 = dormant, 1 = a power fully gathered. Drives veins, wisps and the chest core together. */
   private chargeLevel = 0;
+  private flashLevel = 0;
+  /**
+   * The accent every impact effect is tinted with, and the single biggest thing this demo was
+   * missing.
+   *
+   * Everything was built from LIFE_HUE — the 82.5 degrees measured off the character's iris —
+   * which is right for the creature itself and wrong for everything it does. Sap, toxin, cracks,
+   * sparks, shockwaves and rune circles all arriving in one hue means no effect can be told from
+   * another, and a frame with six of them in it reads as a single green smear.
+   *
+   * The accents are still MEASURED. They are points on the reference's own eye ramp — the deep
+   * #36581c, the iris #799d3d, the near-white core #d6faca — plus its moss and bark tones. Nothing
+   * is invented; the palette is simply used across its range instead of at one point on it.
+   */
+  private accentColour = lifeColour(0.55, 1);
 
   constructor(rig: {
     group: THREE.Object3D;
@@ -1806,7 +1897,7 @@ export class MonsterTreeVfx {
     this.rootBark = patchBarkSurface(this.rootMaterial);
 
 
-    this.spores = new SporeField(bounds, 460, this.dot);
+    this.spores = new SporeField(bounds, 460, this.dot, this.leaf);
     this.group.add(this.spores.object);
 
     this.wisps = new Wisps(bounds, 9, this.dot);
@@ -1879,8 +1970,8 @@ export class MonsterTreeVfx {
     const effect = new GroundCracks(
       options.duration ?? 10,
       (options.radius ?? 0.9) * this.scale * 0.6,
-      lifeColour(0.66, 1),
-      lifeColour(0.14, 0.9),
+      this.accentColour,
+      this.accentColour.clone().multiplyScalar(0.18),
       this.cracksMap,
     );
     const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
@@ -1896,9 +1987,10 @@ export class MonsterTreeVfx {
       world,
       options.duration ?? 10,
       (options.radius ?? 1.0) * this.scale * 0.55,
-      // Sicklier than the sap: the hue is the character's own, held at a low, acid lightness so
-      // it reads as contamination rather than as more of the life running through the figure.
-      lifeColour(0.30, 1),
+      // The skill's accent, held down to a low acid value so it stays contamination rather than
+      // becoming another light source. Tinting it per skill is what stops every move leaving the
+      // same puddle behind it.
+      this.accentColour.clone().multiplyScalar(0.42),
       this.dot,
       (Math.random() * 1e9) | 0,
     );
@@ -1967,7 +2059,7 @@ export class MonsterTreeVfx {
       options.count ?? 60,
       (options.speed ?? 1.1) * this.scale * 0.5,
       options.duration ?? 0.9,
-      lifeColour(options.lightness ?? 0.6, 1),
+      this.accentColour,
       this.dot,
       (options.gravity ?? -1.6) * this.scale * 0.5,
       options.spread ?? 1,
@@ -2021,9 +2113,48 @@ export class MonsterTreeVfx {
     this.pending.push({ at: this.elapsed + seconds, run });
   }
 
+  /** Tint every impact effect spawned from now on. Set per skill; reset when the skill changes. */
+  set accent(colour: THREE.Color) {
+    this.accentColour = colour;
+  }
+
+  get accent(): THREE.Color {
+    return this.accentColour;
+  }
+
+  /**
+   * A hit registering ON the character.
+   *
+   * The creature's own sap spikes for a moment at the instant of contact, then falls back. Without
+   * it every effect happens in front of a figure that never reacts to any of it — the impacts read
+   * as something passing by rather than as something it did.
+   */
+  flash(strength = 1): void {
+    this.flashLevel = Math.max(this.flashLevel, strength);
+  }
+
+  /** A short, bright light at a world point — the scene registering a hit. */
+  impactFlash(at: THREE.Vector3, strength = 6, life = 0.28): void {
+    const light = new THREE.PointLight(this.accentColour, strength, this.scale * 2.2, 2);
+    light.position.copy(at);
+    light.userData.isHighlight = true;
+    this.group.add(light);
+    let age = 0;
+    this.transient.push({
+      object: light,
+      tick: (dt) => {
+        age += dt;
+        if (age >= life) return false;
+        // Snap on, fall off fast — a flash that eases in is a lamp being turned up.
+        light.intensity = strength * (1 - age / life) ** 2.2;
+        return true;
+      },
+    });
+  }
+
   /** A rune circle inscribed on the ground under a socket — for anything deliberate. */
   runeCircle(at: THREE.Object3D, radius = 1.2, duration = 1.5): void {
-    const circle = new RuneCircle(duration, radius * this.scale * 0.62, lifeColour(0.55, 1), this.runes, this.ring);
+    const circle = new RuneCircle(duration, radius * this.scale * 0.62, this.accentColour, this.runes, this.ring);
     const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
     circle.object.position.set(world.x, 0.016, world.z);
     circle.object.traverse((o) => { o.userData.isHighlight = true; });
@@ -2049,7 +2180,7 @@ export class MonsterTreeVfx {
 
   /** A shockwave on the ground, centred under a socket rather than at a guessed origin. */
   shockwave(at: THREE.Object3D, radius = 1.1, duration = 0.85): void {
-    const ring = new GroundRing(duration, radius * this.scale * 0.6, lifeColour(0.55, 1), this.ring);
+    const ring = new GroundRing(duration, radius * this.scale * 0.6, this.accentColour, this.ring);
     const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
     ring.object.position.set(world.x, 0.012, world.z);
     this.group.add(ring.object);
@@ -2104,6 +2235,13 @@ export class MonsterTreeVfx {
     }
     this.veins?.setTime(this.elapsed);
     this.rootBark.setTime(this.elapsed);
+    // The flash decays on its own and rides ON TOP of whatever charge a skill has set, so a hit
+    // landing during a cast brightens from where the cast already was instead of resetting it.
+    if (this.flashLevel > 0) {
+      this.flashLevel = Math.max(0, this.flashLevel - dt * 4.5);
+      this.veins?.setCharge(Math.min(2, this.chargeLevel + this.flashLevel));
+      this.rootBark.setCharge(Math.min(2, this.chargeLevel + this.flashLevel));
+    }
     this.spores.tick(dt, this.elapsed);
     this.wisps.tick(dt, this.elapsed);
     this.mist.tick(dt, this.elapsed);

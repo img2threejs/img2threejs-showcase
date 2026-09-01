@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PALETTE } from './measured';
 import type { MonsterTreeRig } from './rig';
 import type { MonsterTreeVfx } from './vfx';
 
@@ -50,6 +51,8 @@ export interface Skill {
   cues: SkillCue[];
   /** Sockets whose trail runs for the duration of the swing. */
   trails?: Array<'grip-l' | 'grip-r'>;
+  /** The colour every impact effect this skill spawns is tinted with. */
+  accent?: THREE.Color;
   /**
    * Driven every frame while this skill plays, with the clip's own playhead.
    *
@@ -77,6 +80,9 @@ const impact = (socket: string, options?: { radius?: number; count?: number; spe
     vfx.shockwave(rig.sockets[socket], options?.radius ?? 0.9, 0.7);
     vfx.cracks(rig.sockets[socket], { radius: (options?.radius ?? 0.9) * 0.85 });
     vfx.toxin(rig.sockets[socket], { radius: options?.toxin ?? 0.8 });
+    // The creature registers its own hit, and the scene lights up for an instant.
+    vfx.flash(0.9);
+    vfx.impactFlash(new THREE.Vector3().setFromMatrixPosition(rig.sockets[socket].matrixWorld), 7, 0.26);
   };
 
 
@@ -101,6 +107,28 @@ function facing(rig: MonsterTreeRig): THREE.Vector3 {
   return forward.lengthSq() > 1e-10 ? forward.normalize() : new THREE.Vector3(1, 0, 0);
 }
 
+/**
+ * Each skill's accent, taken from the reference's own measured palette.
+ *
+ * Not invented hues: the photograph's eye ramp runs from a deep #36581c through the iris #799d3d
+ * to a near-white #d6faca, and its bark and moss give the earth tones. Using that range instead of
+ * one point on it is what lets a punch, a stomp and a cast be told apart at a glance — before
+ * this, every effect in the demo arrived in the same green and a busy frame read as one smear.
+ *
+ * The assignment is by what the move DOES, not by taste:
+ *   strikes      the hot core — the flash of contact
+ *   earth moves  moss and deep green — what is being torn out of the ground
+ *   the cast     near-white, hottest of all: this is the sap itself being spent
+ *   the fall     bark, drained of green, because the light is going out of the wood
+ */
+const ACCENT = {
+  strike: new THREE.Color(PALETTE.eyeCore).convertSRGBToLinear(),
+  iris: new THREE.Color(PALETTE.eyeIris).convertSRGBToLinear(),
+  deep: new THREE.Color(PALETTE.eyeDeep).convertSRGBToLinear().multiplyScalar(2.2),
+  moss: new THREE.Color(PALETTE.mossLight).convertSRGBToLinear(),
+  bark: new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(),
+} as const;
+
 /** Every bone any skill lengthens, so a change of move can reset all of them. */
 const STRETCHED = ['L_Forearm', 'L_Upperarm', 'R_Forearm', 'R_Upperarm'] as const;
 
@@ -114,6 +142,7 @@ function swell(time: number, start: number, end: number): number {
 export const SKILLS: Skill[] = [
   {
     id: 'surge',
+    accent: ACCENT.deep,
     label: 'Deep Root Surge',
     clip: 'preset:biped:box_02',
     fade: 0.16,
@@ -154,6 +183,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'impale',
+    accent: ACCENT.bark,
     label: 'Impaling Bough',
     clip: 'preset:biped:box_01',
     fade: 0.12,
@@ -177,10 +207,12 @@ export const SKILLS: Skill[] = [
           // Thrown, not held. It leaves the hand along the character's facing and everything that
           // happens downrange happens because it got there.
           vfx.hurlSpear(rig.sockets['grip-l'], facing(rig), {
-            // 2.1 units, not 3.4. The demo's own camera frames the figure, and a throw that
-            // carries further than that lands the impact — the cracks, the toxin, the whole point
-            // of the move — outside the shot nobody has moved the camera off.
-            length: 0.55, distance: 2.2, flightTime: 0.34, linger: 2.6,
+            // Tuned against the CANVAS, not by eye. Projected on the demo's own framing, the
+            // landing point sits at 56% of the way across at 1.0 units, 70% at 1.4 and 95% at 2.1 —
+            // so 1.8 puts the impact around 85%: clearly downrange of the figure, comfortably
+            // inside the shot. At 3.4 it was off the frame entirely and the whole payoff of the
+            // move happened where nobody was looking.
+            length: 0.55, distance: 1.8, flightTime: 0.30, linger: 2.6,
           });
           vfx.burst(rig.sockets['grip-l'], { count: 70, speed: 1.7, spread: 0.5 });
         },
@@ -189,6 +221,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'grove',
+    accent: ACCENT.deep,
     label: 'Grove Awakening',
     clip: 'preset:biped:fire',
     fade: 0.22,
@@ -238,6 +271,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'strike',
+    accent: ACCENT.strike,
     label: 'Bark Strike',
     clip: 'preset:biped:box_01',
     fade: 0.14,
@@ -248,6 +282,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'combo',
+    accent: ACCENT.strike,
     label: 'Splinter Combo',
     clip: 'preset:biped:box_02',
     fade: 0.14,
@@ -261,6 +296,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'uppercut',
+    accent: ACCENT.strike,
     label: 'Heartwood Uppercut',
     clip: 'preset:biped:box_03',
     fade: 0.14,
@@ -280,6 +316,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'kick',
+    accent: ACCENT.moss,
     label: 'Rootfall Kick',
     clip: 'preset:biped:front_kick_01',
     fade: 0.16,
@@ -298,12 +335,15 @@ export const SKILLS: Skill[] = [
           vfx.cracks(rig.sockets['foot-l'], { radius: 1.45 });
           vfx.toxin(rig.sockets['foot-l'], { radius: 1.25 });
           vfx.roots(rig.sockets['foot-l'], { count: 10, spread: 0.34, duration: 1.15 });
+          vfx.flash(1.3);
+          vfx.impactFlash(new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld), 10, 0.34);
         },
       },
     ],
   },
   {
     id: 'stomp',
+    accent: ACCENT.moss,
     label: 'Grovebreaker Stomp',
     clip: 'preset:biped:front_kick_02',
     fade: 0.14,
@@ -321,12 +361,15 @@ export const SKILLS: Skill[] = [
           vfx.roots(rig.sockets['foot-r'], { count: 8, spread: 0.26, duration: 0.95 });
           vfx.cracks(rig.sockets['foot-r'], { radius: 1.15 });
           vfx.toxin(rig.sockets['foot-r'], { radius: 1.0 });
+          vfx.flash(1.1);
+          vfx.impactFlash(new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld), 9, 0.3);
         },
       },
     ],
   },
   {
     id: 'ignite',
+    accent: ACCENT.strike,
     label: 'Wildfire Sap',
     clip: 'preset:biped:fire',
     fade: 0.2,
@@ -354,6 +397,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'fall',
+    accent: ACCENT.bark,
     label: 'Deadfall',
     clip: 'preset:biped:defeat_03',
     fade: 0.25,
@@ -423,6 +467,7 @@ export class SkillRunner {
     // A skill that lengthened a limb must not hand it over stretched. Cleared on every change
     // rather than by the skill that set it, so a move interrupted halfway still tidies up.
     for (const bone of STRETCHED) this.rig.stretch(bone, 0);
+    this.vfx.accent = skill.accent ?? ACCENT.iris;
     return true;
   }
 

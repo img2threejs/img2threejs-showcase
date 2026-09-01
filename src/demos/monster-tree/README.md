@@ -443,6 +443,37 @@ And the swing now **sheds embers** while it is fast — a few sparks every 45 ms
 grip socket. A trail alone is a clean surface moving through clean air with nothing coming off it,
 which is most of why one reads as drawn.
 
+### One palette, used across its range
+
+Every effect in this demo was built from `LIFE_HUE` — the 82.5 degrees measured off the
+character's iris. That is right for the creature and wrong for everything it does: sap, toxin,
+cracks, sparks, shockwaves and rune circles all arriving in one hue means no effect can be told
+from another, and a frame with six of them in it reads as a single green smear.
+
+Each skill now carries an **accent**, and they are still measured — points on the reference's own
+eye ramp (deep `#36581c`, iris `#799d3d`, near-white core `#d6faca`) plus its moss and bark tones.
+Nothing is invented; the palette is used across its range instead of at one point on it. The
+assignment follows what a move *does*:
+
+| | accent | why |
+|---|---|---|
+| strikes, the cast | near-white core | the flash of contact, and sap being spent |
+| kick, stomp | moss | what is being torn out of the ground |
+| surge, grove | deep green | wood coming up from under it |
+| thrown spear, the fall | bark | drained of green; the light going out |
+
+**Impacts land on the creature too.** A hit spikes its own sap veins for a moment and drops a short
+bright light at the point of contact. Without that, every effect happened in front of a figure that
+never reacted to any of it — the hits read as something passing by rather than as something it did.
+
+### Leaves, not fireflies
+
+The ambient field was round dots, which read as fireflies: fine anywhere, and nothing to do with a
+forest. A third of the motes are now leaves — a lanceolate blade with a midrib, painted once — and
+they **turn as they fall**. A point sprite has no orientation of its own, so the sprite's own
+coordinate is rotated in the fragment shader and the blade flattens edge-on periodically, which is
+what makes a leaf tumble rather than sit pinned to the screen like a decal.
+
 ### Damage that outlives the blow
 
 Every impact leaves cracks and a toxin stain that run for **ten seconds** — roughly six times the
