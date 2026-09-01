@@ -83,29 +83,6 @@ function slerpDir(a: readonly [number, number, number], b: readonly [number, num
     .normalize();
 }
 
-/**
- * Drive a timeline onto the skeleton for one frame.
- *
- * Directions are interpolated and re-normalised rather than slerped as quaternions. For an aim
- * that is the same thing and it is far simpler: two unit vectors lerped and normalised sweep the
- * short way round the arc between them, which is exactly the path a limb takes.
- *
- * A bone named in ANY key is aimed for the whole move, holding its nearest keyed value outside the
- * span it is keyed over. Otherwise a bone would snap back to the underlying clip the moment it
- * dropped out of a key, and an arm that has finished its throw would twitch back to a resting
- * animation while the vine is still attached to it.
- */
-export function drivePose(rig: MonsterTreeRig, keys: Key[], time: number, weight = 1): void {
-  if (!keys.length) return;
-  for (const bone of BONES) {
-    // Blend across whichever pair of keys actually names this bone, not across the global pair —
-    // an arm keyed at 0.3 and 0.5 must not be dragged by a spine keyed at 0.1 and 0.9.
-    const dir = sample(keys, bone, time, SCRATCH);
-    if (!dir || dir.lengthSq() < 1e-8) continue;
-    rig.aim(bone, dir, weight);
-  }
-}
-
 /** The last key at or before `time` that names this bone (dir -1), or the first after it (dir 1). */
 function nearest(keys: Key[], bone: string, time: number, dir: -1 | 1): Key | null {
   let best: Key | null = null;

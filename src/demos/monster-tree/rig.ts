@@ -869,17 +869,8 @@ export function buildMonsterTreeRig(
   const aims = new Map<string, { dir: THREE.Vector3; weight: number }>();
   const worldQ = new Map<string, THREE.Quaternion>();
   /**
-   * What each aimed bone's rotation was BEFORE this system wrote it, and what it wrote.
-   *
-   * Same reason the stretch keeps this: `PropertyMixer.apply` writes to the scene graph only when
-   * the value it accumulated differs from the snapshot it took, so a track whose value never
-   * changes is never written back. A partial-weight aim that slerps from the LIVE quaternion is
-   * then reading its own previous output, and it converges to full weight within two frames —
-   * which makes every weight below 1 a lie, and makes fading a pose out impossible.
-   *
-   * Restoring the captured base first means a weight is a weight. The equality test keeps it
-   * honest in the other direction: if the mixer did write something new, it will not match what we
-   * left there, and we leave it alone.
+   * What each aimed bone's rotation was before this system wrote it, and what it wrote. Same
+   * mechanism, and the same reason, as the stretch — see the note on the mixer above.
    */
   const poseApplied = new Map<string, { base: THREE.Quaternion; set: THREE.Quaternion; active: boolean }>();
   for (const name of Object.keys(AIM_CHILD)) {
@@ -967,21 +958,25 @@ export function buildMonsterTreeRig(
   };
 
   /**
-   * The scale each stretched bone had before this system touched it, captured on the first frame
-   * of a stretch and restored when it ends.
+   * THE MIXER DOES NOT ALWAYS WRITE BACK, and everything below depends on knowing that.
    *
-   * This exists because of a three.js behaviour that is invisible until it is measured.
-   * `PropertyMixer.apply` compares the value it accumulated against the snapshot it took, and
-   * writes to the scene graph ONLY if the two differ. Every clip here carries a scale track for
-   * all 41 bones, and every one of those tracks is a constant 1 — so the mixer decides nothing has
-   * changed and never writes scale at all. A stretch that MULTIPLIES the live value is then never
-   * reset, and it compounds: measured on the authored log barrage, `L_Forearm.scale.y` reached
-   * **106,195** by the end of a 2.3-second move, throwing the hand hundreds of units out of the
-   * world. It survived this long only because the shipped presets happen to vary their scale
-   * enough for the mixer to keep writing.
+   * `PropertyMixer.apply` compares the value it accumulated against the snapshot it took and
+   * writes to the scene graph ONLY if the two differ. Every clip in this rig carries a scale track
+   * for all 41 bones and every one of those tracks is a constant 1, so for scale the mixer decides
+   * nothing has changed and never writes at all. Anything that modifies a bone in place is
+   * therefore never reset, and it compounds: measured on the authored log barrage,
+   * `L_Forearm.scale.y` reached **106,195** inside a 2.3-second move and threw the hand hundreds of
+   * units out of the world. It had survived this long only because the shipped presets vary their
+   * scale enough to keep the mixer writing.
    *
-   * Setting from a captured base instead of multiplying the live value cannot compound, whether
-   * the mixer writes or not.
+   * The same is true of rotation, which is why a partial-weight aim is impossible without this: a
+   * weighted slerp from the live quaternion reads its own previous output and converges to full
+   * weight inside two frames.
+   *
+   * So both systems below record what they found and what they left, restore the first before
+   * computing anything, and write each bone exactly once. The equality test on restore keeps it
+   * honest in the other direction — if the mixer DID write something new it will not match what we
+   * left there, and we leave it alone.
    */
   const stretchApplied = new Map<string, { base: number; set: number }>();
   const stretchFactor = new Map<string, number>();
@@ -989,26 +984,14 @@ export function buildMonsterTreeRig(
   const stretchTouched = new Set<string>();
 
   /**
-   * Apply every stretch, writing each bone exactly ONCE from a value the clip owns.
+   * Apply every stretch, writing each bone exactly once. See the note above on the mixer.
    *
-   * Two things here are not obvious and both were found by measuring rather than reading.
-   *
-   * 1. NEVER MULTIPLY THE LIVE VALUE. `PropertyMixer.apply` writes to the scene graph only when
-   *    the value it accumulated differs from the snapshot it took, and every scale track in this
-   *    rig is a constant 1 — so for scale the mixer decides nothing changed and never writes.
-   *    A stretch that multiplies what is already there is therefore never reset and compounds:
-   *    measured on the authored log barrage, `L_Forearm.scale.y` reached **106,195** inside 2.3
-   *    seconds and threw the hand hundreds of units out of the world.
-   *
-   * 2. A BONE CAN BE BOTH. Waist is stretched and Spine01 is stretched, and Spine01 is also
-   *    Waist's child, so it is divided as well as multiplied. Handling those in one pass over the
-   *    stretch list wrote Spine01 twice and recorded the second base from the first write's
-   *    output — which compounds in the other direction, dragging the spine shorter every frame and
-   *    putting a lurch in the shoulders every time the mixer happened to write. So the factors and
-   *    the divisors are collected first, and only then is each affected bone written once.
-   *
-   * The equality test on restore keeps this honest: if the mixer DID write a new value, it will
-   * not match what we left there, and we leave it alone.
+   * The ordering is the part specific to this one. A bone can be BOTH stretched and the child of a
+   * stretched bone — Waist is stretched, Spine01 is stretched, and Spine01 is Waist's child, so it
+   * is divided as well as multiplied. Handling those in a single pass over the stretch list wrote
+   * Spine01 twice and took the second base from the first write's output, which compounds in the
+   * other direction and lurched the shoulders every time the mixer happened to write. Collect the
+   * factors and the divisors first; only then touch a bone.
    */
   const applyStretches = (): void => {
     for (const [name, record] of stretchApplied) {
