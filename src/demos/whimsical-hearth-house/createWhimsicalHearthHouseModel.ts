@@ -621,7 +621,7 @@ function makeAttachmentEndpoint(attachment: unknown): AttachmentEndpoint | null 
 }
 
 // Generated from ObjectSculptSpec target: Whimsical Hearth House
-// Sculpt build pass: material-pass
+// Sculpt build pass: lighting-pass
 // This factory is intentionally pass-gated. Finish browser screenshot review before unlocking deeper passes.
 export function createWhimsicalHearthHouseModel(options: ProceduralModelOptions = {}): THREE.Group {
   const root = new THREE.Group();
@@ -2051,9 +2051,9 @@ export function createWhimsicalHearthHouseLookDevLights(
     mode === 'reference' ? 0xffcf8a : 0xfff4e8,
     mode === 'grazing' ? 4.2 : mode === 'reference' ? 2.6 : 2.15,
   );
-  if (mode === 'grazing') key.position.set(7.5, 1.1, 4.0);
-  else if (mode === 'reference') key.position.set(-4.5, 7.5, 5.0);
-  else key.position.set(-4.0, 6.0, 5.5);
+  if (mode === 'grazing') key.position.set(12.82, 1.88, 6.84);
+  else if (mode === 'reference') key.position.set(-7.69, 12.82, 8.55);
+  else key.position.set(-6.84, 10.25, 9.4);
   key.castShadow = true;
   key.shadow.mapSize.set(4096, 4096);
   key.shadow.bias = -0.00025;
@@ -2061,18 +2061,18 @@ export function createWhimsicalHearthHouseLookDevLights(
   key.shadow.radius = 7;
   key.shadow.blurSamples = 24;
   key.shadow.camera.near = 0.5;
-  key.shadow.camera.far = 30;
-  key.shadow.camera.left = -2.6;
-  key.shadow.camera.right = 2.6;
-  key.shadow.camera.top = 2.6;
-  key.shadow.camera.bottom = -2.6;
+  key.shadow.camera.far = 68.4;
+  key.shadow.camera.left = -11.96;
+  key.shadow.camera.right = 11.96;
+  key.shadow.camera.top = 11.96;
+  key.shadow.camera.bottom = -11.96;
   key.shadow.camera.updateProjectionMatrix();
   lights.add(key);
   const fill = new THREE.DirectionalLight(0xa8c4ff, mode === 'grazing' ? 0.12 : 0.42);
-  fill.position.set(4.0, 3.0, 3.5);
+  fill.position.set(6.84, 5.13, 5.98);
   lights.add(fill);
   const rim = new THREE.DirectionalLight(0xfff1c4, mode === 'grazing' ? 0.28 : 0.85);
-  rim.position.set(0.5, 4.5, -6.0);
+  rim.position.set(0.85, 7.69, -10.25);
   lights.add(rim);
   lights.userData.reviewMode = mode;
   lights.userData.lightingFromPhoto = [{"type": "key light", "direction": "upper-left/front", "color": "#FFF0D5", "intensity": 2.1, "softness": 0.72}, {"type": "fill light", "direction": "upper-right/front", "color": "#B9D0E2", "intensity": 0.72, "ratioToKey": 0.34}, {"type": "environment light", "color": "#E9DED0", "intensity": 0.52, "purpose": "soft studio fill"}, {"type": "render intent", "exposure": 1.0, "toneMapping": "ACESFilmic", "background": "#E6DDD2", "contact shadow": "soft oval beneath garden island"}];

@@ -680,19 +680,18 @@
       "interaction-pass",
       "optimization-pass"
     ],
-    "currentPass": "lighting-pass",
+    "currentPass": "interaction-pass",
     "completedPasses": [
       "blockout",
       "structural-pass",
       "form-refinement",
-      "material-pass"
+      "material-pass",
+      "lighting-pass"
     ],
-    "lastCompletedPass": "material-pass",
+    "lastCompletedPass": "lighting-pass",
     "blockedReason": "",
     "nextRequiredEvidence": [
-      "Match warm upper-left key, cool fill and soft contact shadow.",
-      "lightingFromPhoto with key/fill/rim or environment light",
-      "exposure, tone mapping, background, shadow softness, and contact shadow behavior",
+      "Expose click selection, reversible explode, door action, idle and reset.",
       "browser render screenshot from your agent's browser/screenshot tool",
       "single side-by-side full reference/render comparison sheet",
       "all critical semantic feature scores at or above their thresholds",
@@ -9757,6 +9756,37 @@
       "cameraView": "front-right-three-quarter",
       "notes": "",
       "aiVisionNotes": "Tier-1 diagnose: aspectRatioDelta 0.0042 (evidence squash), IoU 0.709 at blockout-geometry ceiling, maxDeltaE 48 driven by glossy planting - queued for lighting/optimization."
+    },
+    {
+      "timestamp": "2026-09-01T20:45:47.733097+00:00",
+      "passId": "lighting-pass",
+      "estimatedFidelity": 0.76,
+      "aiVisionScore": 0.76,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.82,
+        "componentStructure": 0.88,
+        "formDetail": 0.72,
+        "materialSurface": 0.78,
+        "lightingCamera": 0.82
+      },
+      "featureReviews": [
+        {
+          "id": "tower-openings",
+          "name": "Arched tower windows and warm light",
+          "tier": "important",
+          "score": 0.82,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "emissive mullioned panes glow warm under the reference rig; arched frames read at mid and upper tower"
+        }
+      ],
+      "referenceScreenshot": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/reference.png",
+      "renderScreenshot": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/source.png",
+      "comparisonImage": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/comparison-sheet.png",
+      "cameraView": "front-right-three-quarter",
+      "notes": "",
+      "aiVisionNotes": "Neutral capture proves material readability without the reference rig; grazing capture proves relief and exposes the remaining roughness gap on planting."
     }
   ],
   "reviewHistory": [
@@ -10168,6 +10198,64 @@
         "cameraView": "front-right-three-quarter",
         "notes": "",
         "aiVisionNotes": "Tier-1 diagnose: aspectRatioDelta 0.0042 (evidence squash), IoU 0.709 at blockout-geometry ceiling, maxDeltaE 48 driven by glossy planting - queued for lighting/optimization."
+      }
+    },
+    {
+      "timestamp": "2026-09-01T20:45:47.733097+00:00",
+      "passId": "lighting-pass",
+      "estimatedFidelity": 0.76,
+      "aiVisionScore": 0.76,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.82,
+        "componentStructure": 0.88,
+        "formDetail": 0.72,
+        "materialSurface": 0.78,
+        "lightingCamera": 0.82
+      },
+      "featureReviews": [
+        {
+          "id": "tower-openings",
+          "name": "Arched tower windows and warm light",
+          "tier": "important",
+          "score": 0.82,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "emissive mullioned panes glow warm under the reference rig; arched frames read at mid and upper tower"
+        }
+      ],
+      "action": "continue",
+      "summary": "Factory look-dev rig reviewed in all three modes: reference (warm #ffcf8a upper-left key, cool fill, warm rim, ACESFilmic exposure 1.0, warm ground) plus neutral and grazing captures. Fixed a real generator defect found by this review: the shadow camera was hardcoded to +-2.6 character scale, so a diorama's contact shadow could never land - now sized from the spec's estimated world radius (+-11.96, far 68.4) with scaled light positions, and the soft contact shadow falls correctly to the right of the island as in the reference. Focused tests added (test_lookdev_shadow_bounds.py).",
+      "matched": [
+        "warm upper-left key direction and shadow fall",
+        "cool fill",
+        "rim separation",
+        "ACES tone mapping and exposure",
+        "warm background",
+        "soft contact shadow beyond the island edge",
+        "emissive tower window under all modes"
+      ],
+      "mismatches": [
+        "shrub/canopy still reads glossy under key light (roughness, queued for optimization)",
+        "grazing mode exposes texture stretching on cylinder walls"
+      ],
+      "specFixes": [],
+      "codeFixes": [],
+      "evidence": [
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/source.png",
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/comparison-sheet.png",
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/stripped-source.png",
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/neutral-source.png",
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/grazing-source.png"
+      ],
+      "mapStrippedRender": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/stripped-source.png",
+      "visualEvidence": {
+        "referenceScreenshot": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/reference.png",
+        "renderScreenshot": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/source.png",
+        "comparisonImage": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/comparison-sheet.png",
+        "cameraView": "front-right-three-quarter",
+        "notes": "",
+        "aiVisionNotes": "Neutral capture proves material readability without the reference rig; grazing capture proves relief and exposes the remaining roughness gap on planting."
       }
     }
   ],
