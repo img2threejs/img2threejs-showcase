@@ -212,10 +212,10 @@ They are then measured back, with the same method, to check the gesture does wha
 
 | move | peak hand | what the sweep finds |
 |---|---|---|
-| Thân Thể Đại Thụ | 0.04 H/s | nothing — three incommensurable oscillators and no beat at all |
-| Dây Leo | 7.5 H/s | an arrest at **0.333 s**, the frame `BEATS.vine.release` says the vine leaves |
-| Thiên Nhiên Vẫy Gọi | 10.8 H/s | arrests through the flurry, and one at **1.517 s** — `BEATS.logs.finish` |
-| Hạt Giống Thần Mệnh | 4.9 H/s | one arrest; the rest is a channel, which is what it is meant to be |
+| Greatwood Body | 0.04 H/s | nothing — three incommensurable oscillators and no beat at all |
+| Vine Lash | 7.5 H/s | an arrest at **0.333 s**, the frame `BEATS.vine.release` says the vine leaves |
+| Nature's Call | 10.8 H/s | arrests through the flurry, and one at **1.517 s** — `BEATS.logs.finish` |
+| Seeds of Destiny | 4.9 H/s | one arrest; the rest is a channel, which is what it is meant to be |
 
 That table is a gate, not decoration. It caught three defects that looked fine in a still frame:
 
@@ -261,20 +261,58 @@ The character is **Y'bneth**, and the four moves at the top of the panel are his
 than invented ones. Each is mapped onto the clip whose measured dynamics actually fit it — see the
 event table below for where the beats come from.
 
-| | clip | the body under it | what it does |
-|---|---|---|---|
-| **Nội tại · Thân Thể Đại Thụ** | `authored:passive` | the quietest thing in the library: bodyMean 0.006 H/s, **not one measured event** | plants real undergrowth, then draws sap up out of it into the chest on a slow repeating beat, hardening the bark as it arrives |
-| **Chiêu 1 · Dây Leo** | `authored:vine` | L_ToeBase plants at 0.375 s, L_Hand arrests at extension at 0.467 s | a vine thrown on the plant that **catches** on the arrest — slow and toxin where it lands, and if he is standing in his own undergrowth it reaches further, holds longer, knocks back, and he steps forward along it |
-| **Chiêu 2 · Thiên Nhiên Vẫy Gọi** | `authored:logs` | arrests at 0.667, 0.833, 1.000 and the double-hand slam at 1.800 (decel 366.5, the hardest stop anywhere) | one log called down per arrest, each further out than the last, the slam bringing down the big one and the ground holding it |
-| **Chiêu cuối · Hạt Giống Thần Mệnh** | `authored:ultimate` | 18 arrests in 2.333 s, one every ~130 ms — the only clip whose arms never stop | the trunk itself grows, roots take his feet, a canopy opens off his crown, three volleys of seeds leave on the three hardest arrests and sprout where they land, then everything is wound back to the centre and held |
+| | clip | what it does |
+|---|---|---|
+| **Passive · Greatwood Body** | `authored:passive` | plants real undergrowth and draws sap up out of it into the chest on a slow repeating beat, hardening the bark as it arrives. No inscribed circle: a rune ring is something *drawn*, which makes a passive read as a spell being cast rather than as ground he happens to be standing on |
+| **Vine Lash** | `authored:vine` | winds the arm back across the body, throws it out along +X, and the vine **arcs** downrange — bowed to one side and lifted through the middle, so its path is a third longer than the ground it covers — cracking the air open where it lands. Standing in his own undergrowth it reaches further, holds longer, knocks back, and he steps forward along it |
+| **Nature's Call** | `authored:logs` | both arms go up by 0.42 s and **stay** there, light winding around them, while wood comes down in front of him at 0.62, 0.95 and 1.28 and once more at 1.70 |
+| **Ultimate · Seeds of Destiny** | `authored:ultimate` | sinks, roots, grows the trunk, throws the canopy open at 0.80 s and holds it open while **620 bolts** rain across the field in three widening volleys, each one staining the ground where it lands |
+
+### The vine breaks the air, and the bow is what keeps it in frame
+
+The far end of Vine Lash does not simply land — it puts a fracture through the air itself, a sheet
+of glass failing at a point and throwing its pieces out. It is the one effect in the demo that is
+not made of wood, sap or earth, and it is deliberately the payoff of the move that reaches furthest
+from him. The crack is a billboard (a fracture pattern seen edge-on is a line), it snaps to full
+size in 0.15 s because glass does not crack gradually, and the shards are 34 real triangles in a
+single geometry — the first version gave each its own mesh and measured 141 draw calls at 74 fps on
+a frame that otherwise runs at 120.
+
+The vine bows because a thrown vine bows, and because the bow is also what buys the reach: it lifts
+the middle of the path well above the straight line to the target, so a long throw stays inside the
+frame instead of running off the edge of it.
+
+### The rain is wider than the shot on purpose
+
+620 bolts in three overlapping volleys at widening radii, so the barrage opens outward and keeps
+arriving instead of falling as one sheet. The outer volley reaches 2.6 units against a frame that
+holds about 1.6 — "as wide as possible" only reads as wide if some of it falls off the edges, since
+rain that stops neatly inside the viewport reads as a *circle* of rain, which is a much smaller
+idea.
+
+Each bolt is a `LineSegments` pair, not a sprite: a round sprite falling fast reads as a bubble,
+while a short segment lying along its own velocity reads as something moving, and the tail is tied
+to the bolt's speed so the streaks lengthen as they accelerate. Every landing stamps a stain
+through one shared `InstancedMesh` — several hundred `ToxinBloom`s would be several hundred shader
+compiles on the beat, which is the exact stall the prewarm pass exists to prevent.
+
+### The camera leads the action
+
+Every attack he has travels the way he faces, and he faces azimuth 75° while the camera sits at
+−4° — so "forward" runs *across* the frame. Aimed squarely at him, a point 1.3 units downrange
+projected to px 642 of a 628-pixel canvas and the vine's fracture and the far end of the barrage
+were both landing outside the shot. The target is now pushed 0.42 units along his measured facing:
+his feet sit at px 214, 1.6 units downrange lands at px 610, and the usable reach grew by about
+40%. Leading the subject in the direction of the action is ordinary composition; here it is also
+arithmetic.
 
 ### The passive is a real condition, not a mime
 
-Y'bneth's passive reads the ground he is standing on, and his first skill changes shape depending
-on the same thing. A showcase has no map to read, so the grass was made a **real object** with a
+Y'bneth's passive reads the ground he is standing on, and Vine Lash changes shape depending on
+the same thing. A showcase has no map to read, so the grass was made a **real object** with a
 position, a radius and a lifetime: the passive plants it, and Dây Leo asks `vfx.inGrass(foot)`
 before it decides which form to play. The two skills genuinely interact — play the passive, then
-Dây Leo, and you get the empowered version; play Dây Leo cold and you get the plain one.
+Vine Lash, and you get the empowered version; play Vine Lash cold and you get the plain one.
 
 ### Everything forward is capped at a measured reach
 

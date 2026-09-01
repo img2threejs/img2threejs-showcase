@@ -214,15 +214,16 @@ const authored: DemoEntry[] = [
     title: 'Y\u2019bneth \u2014 Rigged Treant, Measured Kit',
     subjectClass: 'character',
     blurb:
-      'A treant rebuilt from one photograph as code-only geometry, then given Y\u2019bneth\u2019s own kit: a '
-      + 'passive that plants real undergrowth and draws sap up out of it, a vine that reaches further and '
-      + 'knocks back when he is standing in that undergrowth, a barrage of logs called down along a line, '
-      + 'and an ultimate that grows the trunk itself, throws seeds that sprout where they land, and winds '
-      + 'everything back to the centre. Nothing is hand-timed: a 240 Hz sweep through every clip finds where '
-      + 'limbs arrest, feet plant and the body is driven, and each cue fires on a frame the sweep found. '
-      + 'Five afterimage copies \u2014 real skinned meshes, each with its own skeleton, each running the clip a '
-      + 'fixed interval behind \u2014 land their blows on five measured beats of the densest strike clip in the '
-      + 'library. Every effect shader and every light is built at load, so no impact costs a stalled frame.',
+      'A treant rebuilt from one photograph as code-only geometry, then given Y\u2019bneth\u2019s own kit \u2014 and '
+      + 'his own animation. The rig ships sixteen generic biped clips and not one of them is a treant '
+      + 'throwing a vine, so the four moves are posed bone by bone through an aim solver over a trimmed '
+      + 'resting clip: Greatwood Body plants real undergrowth and draws sap up out of it, Vine Lash arcs '
+      + 'a vine downrange and cracks the air open where it lands, Nature\u2019s Call holds both arms up with '
+      + 'light winding around them while wood comes down in front of him, and Seeds of Destiny roots him, '
+      + 'opens a canopy and rains six hundred bolts across the field, every one staining the ground where '
+      + 'it hits. Five afterimage copies \u2014 real skinned meshes, each with its own skeleton \u2014 land their '
+      + 'blows on five measured beats. Every effect shader and every light is built at load, so no impact '
+      + 'costs a stalled frame.',
     referenceImage: `${BASE}references/monster-tree/front.jpg`,
     sourcePath: 'src/demos/monster-tree/createMonsterTreeModel.ts',
     sourceUrl: `${REPO}/src/demos/monster-tree/createMonsterTreeModel.ts`,
@@ -236,8 +237,8 @@ const authored: DemoEntry[] = [
     authorUrl: 'https://github.com/hoainho',
     status: 'final',
     updatedAt: '2026-09-01',
-    cameraPosition: [-0.22, 1.78, 6.1],
-    cameraTarget: [0.18, 0.95, 0],
+    cameraPosition: [0.19, 1.78, 6.21],
+    cameraTarget: [0.59, 0.95, 0.11],
     cameraFov: 32,
     accent: '#9ede4a',
     backgroundGradient: { inner: '#141610', outer: '#030403' },

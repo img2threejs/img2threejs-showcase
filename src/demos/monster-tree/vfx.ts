@@ -1919,6 +1919,7 @@ class VineWhip implements Tickable {
     private readonly backTime: number,
     colour: THREE.Color,
     material: THREE.Material,
+    private readonly bend: number,
     private readonly onCatch: (at: THREE.Vector3) => void,
   ) {
     this.object = new THREE.Group();
@@ -1969,18 +1970,29 @@ class VineWhip implements Tickable {
       this.onCatch(this.tip.clone());
     }
 
-    // A travelling S-wave down the length, strongest while it is running out and gone once it is
-    // taut. A straight line from hand to target reads as a beam; the wave is what makes it rope.
+    // THE ARC. A vine is not a beam and it is not a taut cable: it is thrown, so it bows out to
+    // one side and rises before it comes down on the target. The bow is what makes the path
+    // longer than the distance it covers — this one travels about a third further than the gap
+    // between the hand and the point it lands on — and it is also what keeps a long reach inside
+    // the frame, since the middle of the arc climbs instead of running off the edge.
+    //
+    // On top of the bow, a travelling S-wave, strongest while the vine is still running out and
+    // gone once it has taken hold. The bow gives it shape; the wave gives it life.
     const lash = this.age < this.outTime ? 1 - this.age / this.outTime : 0;
+    const settle = 1 - lash;
     const side = new THREE.Vector3(-this.heading.z, 0, this.heading.x);
     for (let i = 0; i <= VineWhip.LINKS; i += 1) {
       const s = i / VineWhip.LINKS;
       const point = this.points[i];
       point.lerpVectors(this.origin, this.tip, s);
-      const wave = Math.sin(s * 7.0 - this.age * 16) * lash * this.reach * 0.10 * s;
+      // sin(pi*s) is zero at both ends and one in the middle: the bow leaves the hand and arrives
+      // at the target cleanly however wide it swings between them.
+      const bow = Math.sin(s * Math.PI);
+      point.addScaledVector(side, bow * this.reach * (0.20 + 0.16 * lash) * this.bend);
+      point.y += bow * this.reach * (0.26 - 0.10 * settle);
+      const wave = Math.sin(s * 9.0 - this.age * 19) * lash * this.reach * 0.09 * s;
       point.addScaledVector(side, wave);
-      // Sags under its own weight once it is out, most in the middle.
-      point.y -= Math.sin(s * Math.PI) * this.reach * 0.07 * (1 - lash);
+      point.y -= bow * this.reach * 0.05 * settle;
     }
 
     this.tube.geometry.dispose();
@@ -2163,8 +2175,10 @@ class LogSlam implements Tickable {
     const parts: THREE.BufferGeometry[] = [];
     // Short, thick, heavily knotted, barely wandering: a cut log, not a growing branch. Depth 1
     // keeps the broken stubs of its side growth without turning it into a shrub.
-    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), length, length * 0.13, 1, random, parts, null, {
-      steps: 6, wander: 0.08, knot: 0.30, forkScale: 0.18,
+    // Thick. At 0.13 of its length the log came out as a flat sliver that read as a leaf blade
+    // from any angle but square on; a called log has to be a chunk of trunk.
+    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), length, length * 0.21, 1, random, parts, null, {
+      steps: 6, wander: 0.06, knot: 0.26, forkScale: 0.14,
     });
     const geometry = mergeGeometries(parts);
     for (const g of parts) g.dispose();
@@ -2370,6 +2384,503 @@ class Vortex implements Tickable {
     return true;
   }
 }
+
+/**
+ * A shattered-glass crack, drawn once and shared.
+ *
+ * Radial fractures from a point, each one splitting as it runs out, tied together by the polygon
+ * rings that a real impact leaves in glass. Straight segments only: a crack in a brittle sheet
+ * runs in a line until it turns, and any curve in it reads as a lightning bolt instead.
+ */
+function shatterTexture(seed = 0x5a7c): THREE.Texture {
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const random = mulberry32(seed);
+  const c = size / 2;
+  ctx.clearRect(0, 0, size, size);
+  ctx.lineCap = 'round';
+
+  // The rings first, so the radials draw over their joins.
+  for (let r = 0; r < 4; r += 1) {
+    const radius = size * (0.10 + r * 0.10 + random() * 0.03);
+    const points: Array<[number, number]> = [];
+    const n = 9 + r * 3;
+    for (let i = 0; i < n; i += 1) {
+      const a = (i / n) * Math.PI * 2;
+      const k = radius * (0.78 + random() * 0.44);
+      points.push([c + Math.cos(a) * k, c + Math.sin(a) * k]);
+    }
+    ctx.beginPath();
+    ctx.moveTo(points[0][0], points[0][1]);
+    for (const [x, y] of points.slice(1)) ctx.lineTo(x, y);
+    ctx.closePath();
+    ctx.strokeStyle = `rgba(255,255,255,${0.5 - r * 0.09})`;
+    ctx.lineWidth = 3.2 - r * 0.6;
+    ctx.stroke();
+  }
+
+  const radial = (x: number, y: number, angle: number, length: number, width: number, depth: number): void => {
+    if (length < 6 || depth > 3) return;
+    let px = x;
+    let py = y;
+    let a = angle;
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    const steps = 3 + Math.floor(random() * 3);
+    for (let i = 0; i < steps; i += 1) {
+      a += (random() - 0.5) * 0.34;
+      px += Math.cos(a) * (length / steps);
+      py += Math.sin(a) * (length / steps);
+      ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = `rgba(255,255,255,${Math.max(0.12, 0.95 - depth * 0.22)})`;
+    ctx.lineWidth = width;
+    ctx.stroke();
+    // Every fracture forks; the forks are what make it read as glass rather than as a starburst.
+    if (random() < 0.75) radial(px, py, a + 0.5 + random() * 0.5, length * 0.55, width * 0.6, depth + 1);
+    if (random() < 0.6) radial(px, py, a - 0.5 - random() * 0.5, length * 0.5, width * 0.6, depth + 1);
+  };
+
+  const spokes = 13;
+  for (let i = 0; i < spokes; i += 1) {
+    const a = (i / spokes) * Math.PI * 2 + random() * 0.3;
+    radial(c, c, a, size * (0.22 + random() * 0.20), 4.2, 0);
+  }
+
+  // A hot core: the point the sheet actually failed at.
+  const glow = ctx.createRadialGradient(c, c, 0, c, c, size * 0.14);
+  glow.addColorStop(0, 'rgba(255,255,255,0.95)');
+  glow.addColorStop(0.45, 'rgba(255,255,255,0.30)');
+  glow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, size, size);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+/**
+ * The void breaking: a sheet of reality cracking at a point, with the pieces coming out of it.
+ *
+ * Two halves. The crack itself is a billboard — it has to face the viewer or a fracture pattern
+ * reads as a smear on a wall — and it snaps to full size in a fifth of a second, because glass
+ * does not crack gradually. The shards are real triangles, flat and angular, tumbling as they go,
+ * and they are what turn a decal into an event: a crack alone is a picture of damage, and a crack
+ * throwing pieces at the camera is damage happening.
+ */
+class VoidShatter implements Tickable {
+  readonly object: THREE.Group;
+  private readonly plane: THREE.Mesh;
+  private readonly material: THREE.MeshBasicMaterial;
+  /**
+   * Every shard in ONE geometry, moved by writing vertices.
+   *
+   * The first version gave each sliver its own `THREE.Mesh`, and thirty-four of those is
+   * thirty-four draw calls for one effect — measured at 141 draw calls and 74 fps on a frame that
+   * otherwise runs at 120. They are three vertices each; rewriting 102 positions on the CPU costs
+   * nothing and draws once.
+   */
+  private readonly shards: THREE.Mesh;
+  private readonly rest: Float32Array;
+  private readonly live: Float32Array;
+  private readonly origin: Float32Array;
+  private readonly velocity: Float32Array;
+  private readonly spin: Float32Array;
+  private readonly angle: Float32Array;
+  private readonly count: number;
+  private age = 0;
+
+  constructor(
+    at: THREE.Vector3,
+    private readonly size: number,
+    private readonly duration: number,
+    colour: THREE.Color,
+    map: THREE.Texture,
+    seed: number,
+  ) {
+    this.object = new THREE.Group();
+    this.object.name = 'vfx:shatter';
+    this.object.position.copy(at);
+    const random = mulberry32(seed);
+
+    this.material = new THREE.MeshBasicMaterial({
+      map,
+      color: colour,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      opacity: 0,
+    });
+    this.plane = new THREE.Mesh(new THREE.PlaneGeometry(size, size), this.material);
+    this.plane.frustumCulled = false;
+    this.plane.userData.ownMaterial = true;
+    this.object.add(this.plane);
+
+    this.count = 34;
+    this.rest = new Float32Array(this.count * 9);
+    this.live = new Float32Array(this.count * 9);
+    this.origin = new Float32Array(this.count * 3);
+    this.velocity = new Float32Array(this.count * 3);
+    this.spin = new Float32Array(this.count);
+    this.angle = new Float32Array(this.count);
+
+    for (let i = 0; i < this.count; i += 1) {
+      // Irregular triangles, never equilateral: a broken sheet gives slivers and wedges, and a
+      // field of tidy triangles reads as confetti. Small, too — at twice this they read as leaves.
+      const a = random() * Math.PI * 2;
+      const s = size * (0.022 + random() * 0.05);
+      const b = a + 0.7 + random() * 1.4;
+      const k = 0.4 + random();
+      this.rest.set([
+        0, 0, 0,
+        Math.cos(a) * s, Math.sin(a) * s, 0,
+        Math.cos(b) * s * k, Math.sin(b) * s * k, 0,
+      ], i * 9);
+      const speed = size * (0.5 + random() * 1.4);
+      this.velocity.set([Math.cos(a) * speed, Math.sin(a) * speed, (random() - 0.5) * speed * 0.8], i * 3);
+      this.spin[i] = (random() - 0.5) * 14;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(this.live, 3));
+    (geometry.getAttribute('position') as THREE.BufferAttribute).setUsage(THREE.DynamicDrawUsage);
+    const shardMaterial = new THREE.MeshBasicMaterial({
+      color: colour.clone().multiplyScalar(1.4),
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, opacity: 0.9,
+    });
+    this.shards = new THREE.Mesh(geometry, shardMaterial);
+    this.shards.name = 'vfx:shatter-shards';
+    this.shards.frustumCulled = false;
+    this.shards.userData.ownMaterial = true;
+    this.object.add(this.shards);
+  }
+
+  tick(dt: number): boolean {
+    this.age += dt;
+    const t = this.age / this.duration;
+    if (t >= 1) return false;
+    // Face the viewer. A fracture pattern seen edge-on is a line.
+    this.plane.quaternion.copy(SHATTER_FACING);
+    this.shards.quaternion.copy(SHATTER_FACING);
+    // Snaps open, then holds and fades: glass cracks in one event and the crack stays.
+    const open = Math.min(1, this.age / 0.15);
+    this.plane.scale.setScalar(0.45 + open * 0.55 + t * 0.22);
+    this.material.opacity = open * (t < 0.4 ? 1 : Math.max(0, 1 - (t - 0.4) / 0.6));
+
+    for (let i = 0; i < this.count; i += 1) {
+      this.origin[i * 3] += this.velocity[i * 3] * dt;
+      this.origin[i * 3 + 1] += this.velocity[i * 3 + 1] * dt;
+      this.origin[i * 3 + 2] += this.velocity[i * 3 + 2] * dt;
+      this.velocity[i * 3 + 1] -= this.size * 1.5 * dt;
+      this.angle[i] += this.spin[i] * dt;
+      const cos = Math.cos(this.angle[i]);
+      const sin = Math.sin(this.angle[i]);
+      for (let v = 0; v < 3; v += 1) {
+        const o = i * 9 + v * 3;
+        const x = this.rest[o];
+        const y = this.rest[o + 1];
+        this.live[o] = this.origin[i * 3] + x * cos - y * sin;
+        this.live[o + 1] = this.origin[i * 3 + 1] + x * sin + y * cos;
+        this.live[o + 2] = this.origin[i * 3 + 2] + this.rest[o + 2];
+      }
+    }
+    (this.shards.geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
+    (this.shards.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.9 - t * 1.3);
+    return true;
+  }
+}
+
+/**
+ * Small toxin stains on the floor, hundreds of them, in ONE draw call.
+ *
+ * The bullet rain lands several hundred times inside two seconds and every landing leaves a mark.
+ * A `ToxinBloom` each would be several hundred shader compiles and several hundred point clouds;
+ * this is a single `InstancedMesh` over one circle, with each instance carrying the time it was
+ * stamped so the shader can fade it on its own. Instances are a ring buffer — the oldest is
+ * overwritten rather than a new one allocated — so the cost is fixed however long the rain runs.
+ */
+class ToxinSplats implements Tickable {
+  readonly object: THREE.InstancedMesh;
+  private readonly birth: THREE.InstancedBufferAttribute;
+  private readonly material: THREE.ShaderMaterial;
+  private readonly matrix = new THREE.Matrix4();
+  private readonly quat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+  private readonly scaleV = new THREE.Vector3();
+  private next = 0;
+  private elapsed = 0;
+
+  constructor(max: number, colour: THREE.Color, life: number) {
+    const geometry = new THREE.InstancedBufferGeometry();
+    const circle = new THREE.CircleGeometry(0.5, 12);
+    geometry.setAttribute('position', circle.getAttribute('position'));
+    geometry.setAttribute('uv', circle.getAttribute('uv'));
+    geometry.setIndex(circle.getIndex());
+    circle.dispose();
+    this.birth = new THREE.InstancedBufferAttribute(new Float32Array(max).fill(-1e3), 1);
+    geometry.setAttribute('aBirth', this.birth);
+
+    this.material = new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 }, uColour: { value: colour.clone() }, uLife: { value: life } },
+      vertexShader: `
+        attribute float aBirth;
+        uniform float uTime;
+        uniform float uLife;
+        varying float vAge;
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          vAge = (uTime - aBirth) / uLife;
+          vec3 p = position;
+          // Spreads a little as it soaks in, then stops.
+          p.xy *= 0.55 + clamp(vAge * 3.0, 0.0, 1.0) * 0.45;
+          vec4 mv = modelViewMatrix * instanceMatrix * vec4(p, 1.0);
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: `
+        uniform vec3 uColour;
+        varying float vAge;
+        varying vec2 vUv;
+        void main() {
+          if (vAge < 0.0 || vAge > 1.0) discard;
+          float r = length(vUv - 0.5) * 2.0;
+          if (r > 1.0) discard;
+          // Full through the middle and soft at the rim. The first version brightened the EDGE,
+          // which on additive blending over a dark floor turned every stain into a glowing donut
+          // and the ground into a field of rings.
+          float edge = smoothstep(1.0, 0.25, r);
+          float core = smoothstep(0.85, 0.0, r) * 0.5;
+          float fade = (1.0 - vAge) * (vAge < 0.08 ? vAge / 0.08 : 1.0);
+          gl_FragColor = vec4(uColour * (0.55 + core), edge * fade * 0.5);
+        }`,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+
+    this.object = new THREE.InstancedMesh(geometry, this.material, max);
+    this.object.name = 'vfx:splats';
+    this.object.frustumCulled = false;
+    this.object.userData.isHighlight = true;
+    this.object.userData.ownMaterial = true;
+    this.object.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    // Every instance starts parked far below the floor; `aBirth` of -1000 discards it anyway, but
+    // an unset matrix would otherwise stack them all at the origin for one frame.
+    for (let i = 0; i < max; i += 1) {
+      this.matrix.compose(new THREE.Vector3(0, -500, 0), this.quat, new THREE.Vector3(1, 1, 1));
+      this.object.setMatrixAt(i, this.matrix);
+    }
+  }
+
+  /** Stamp one stain, flat on the ground, at a world point. */
+  add(at: THREE.Vector3, size: number): void {
+    const index = this.next;
+    this.next = (this.next + 1) % this.object.count;
+    this.scaleV.set(size, size, size);
+    this.matrix.compose(SPLAT_AT.set(at.x, 0.011, at.z), this.quat, this.scaleV);
+    this.object.setMatrixAt(index, this.matrix);
+    this.object.instanceMatrix.needsUpdate = true;
+    this.birth.array[index] = this.elapsed;
+    this.birth.needsUpdate = true;
+  }
+
+  tick(dt: number): boolean {
+    this.elapsed += dt;
+    this.material.uniforms.uTime.value = this.elapsed;
+    return true;
+  }
+}
+
+const SPLAT_AT = new THREE.Vector3();
+
+/**
+ * A wide, dense rain of green bolts, each leaving a stain where it lands.
+ *
+ * Drawn as `LineSegments`, not points. A round sprite falling fast reads as a bubble; a short
+ * segment lying along its own velocity reads as something moving, and it costs the same two
+ * vertices either way. The tail length is tied to the bolt's speed, so the streaks lengthen as
+ * they accelerate exactly the way a real motion blur would.
+ */
+class BoltRain implements Tickable {
+  readonly object: THREE.LineSegments;
+  private readonly head: Float32Array;
+  private readonly speed: Float32Array;
+  private readonly delay: Float32Array;
+  private readonly landed: Uint8Array;
+  private readonly positions: THREE.BufferAttribute;
+  private age = 0;
+
+  constructor(
+    origin: THREE.Vector3,
+    count: number,
+    radius: number,
+    window: number,
+    height: number,
+    colour: THREE.Color,
+    seed: number,
+    private readonly onLand: (at: THREE.Vector3) => void,
+  ) {
+    const random = mulberry32(seed);
+    this.head = new Float32Array(count * 3);
+    this.speed = new Float32Array(count);
+    this.delay = new Float32Array(count);
+    this.landed = new Uint8Array(count);
+    const array = new Float32Array(count * 6);
+
+    for (let i = 0; i < count; i += 1) {
+      // Uniform over AREA, so the rain does not pile up in the middle of its own circle.
+      const angle = random() * Math.PI * 2;
+      const dist = radius * Math.sqrt(random());
+      this.head[i * 3] = origin.x + Math.cos(angle) * dist;
+      this.head[i * 3 + 1] = height * (0.75 + random() * 0.6);
+      this.head[i * 3 + 2] = origin.z + Math.sin(angle) * dist;
+      this.speed[i] = height * (1.5 + random() * 1.1);
+      this.delay[i] = random() * window;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    this.positions = new THREE.BufferAttribute(array, 3);
+    this.positions.setUsage(THREE.DynamicDrawUsage);
+    geometry.setAttribute('position', this.positions);
+    const material = new THREE.LineBasicMaterial({
+      color: colour, transparent: true, opacity: 0.75, depthWrite: false, blending: THREE.AdditiveBlending,
+    });
+    this.object = new THREE.LineSegments(geometry, material);
+    this.object.name = 'vfx:bolt-rain';
+    this.object.frustumCulled = false;
+    this.object.userData.ownMaterial = true;
+    geometry.setDrawRange(0, 0);
+  }
+
+  tick(dt: number): boolean {
+    this.age += dt;
+    const array = this.positions.array as Float32Array;
+    const n = this.speed.length;
+    let alive = false;
+    let written = 0;
+    for (let i = 0; i < n; i += 1) {
+      if (this.landed[i]) continue;
+      if (this.age < this.delay[i]) { alive = true; continue; }
+      alive = true;
+      const y = this.head[i * 3 + 1] - this.speed[i] * (this.age - this.delay[i]);
+      if (y <= 0) {
+        this.landed[i] = 1;
+        this.onLand(BOLT_AT.set(this.head[i * 3], 0, this.head[i * 3 + 2]));
+        continue;
+      }
+      // Tail proportional to speed: faster bolts draw longer streaks.
+      const tail = this.speed[i] * 0.055;
+      const o = written * 6;
+      array[o] = this.head[i * 3];
+      array[o + 1] = y;
+      array[o + 2] = this.head[i * 3 + 2];
+      array[o + 3] = this.head[i * 3];
+      array[o + 4] = Math.min(this.head[i * 3 + 1], y + tail);
+      array[o + 5] = this.head[i * 3 + 2];
+      written += 1;
+    }
+    this.object.geometry.setDrawRange(0, written * 2);
+    this.positions.needsUpdate = true;
+    return alive;
+  }
+}
+
+const BOLT_AT = new THREE.Vector3();
+
+/**
+ * Light winding around a limb: a helix rebuilt along the bones every frame.
+ *
+ * It has to follow the arm rather than be parented to it, because the arm is skinned and its
+ * segments move independently — a helix parented to the shoulder slides off the forearm the moment
+ * the elbow bends. Sampling the two ends each frame and sweeping a tube between them keeps the
+ * coil on the limb whatever the pose does, and the phase scrolls so the light travels up the arm.
+ */
+class ArmCoil implements Tickable {
+  readonly object: THREE.Mesh;
+  private readonly points: THREE.Vector3[] = [];
+  private readonly radii: number[] = [];
+  private readonly from = new THREE.Vector3();
+  private readonly to = new THREE.Vector3();
+  private readonly axis = new THREE.Vector3();
+  private readonly sideA = new THREE.Vector3();
+  private readonly sideB = new THREE.Vector3();
+  private readonly colour: THREE.Color;
+  private phase = 0;
+  /** 0..1, driven by the skill: the coil fades in as the arms come up and out as they drop. */
+  strength = 0;
+
+  private static readonly LINKS = 44;
+
+  constructor(
+    private readonly start: THREE.Object3D,
+    private readonly end: THREE.Object3D,
+    private readonly turns: number,
+    girth: number,
+    colour: THREE.Color,
+  ) {
+    for (let i = 0; i <= ArmCoil.LINKS; i += 1) {
+      this.points.push(new THREE.Vector3());
+      // Thin at both ends, full through the middle, so the coil enters and leaves the limb rather
+      // than being cut off square at the wrist.
+      const s = i / ArmCoil.LINKS;
+      this.radii.push(girth * Math.sin(s * Math.PI) ** 0.6);
+    }
+    this.colour = colour;
+    this.object = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({
+      color: colour, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
+    }));
+    this.object.name = 'vfx:arm-coil';
+    this.object.frustumCulled = false;
+    this.object.userData.isHighlight = true;
+    this.object.userData.ownMaterial = true;
+  }
+
+  tick(dt: number): boolean {
+    this.phase += dt * 2.6;
+    const material = this.object.material as THREE.MeshBasicMaterial;
+    material.opacity = this.strength * 0.85;
+    if (this.strength <= 0.01) { this.object.visible = false; return true; }
+    this.object.visible = true;
+
+    this.from.setFromMatrixPosition(this.start.matrixWorld);
+    this.to.setFromMatrixPosition(this.end.matrixWorld);
+    this.axis.subVectors(this.to, this.from);
+    const length = this.axis.length();
+    if (length < 1e-5) return true;
+    this.axis.divideScalar(length);
+    // Any perpendicular pair will do; deriving them from the axis keeps the coil from spinning
+    // about the limb when the arm turns.
+    this.sideA.set(0, 1, 0).cross(this.axis);
+    if (this.sideA.lengthSq() < 1e-6) this.sideA.set(1, 0, 0).cross(this.axis);
+    this.sideA.normalize();
+    this.sideB.crossVectors(this.axis, this.sideA).normalize();
+
+    // 0.085 of the limb's length. At 0.16 the helix was wider than the arm it was meant to be
+    // wrapping and it swung around the torso instead.
+    const wrap = length * 0.085;
+    for (let i = 0; i <= ArmCoil.LINKS; i += 1) {
+      const s = i / ArmCoil.LINKS;
+      const angle = s * Math.PI * 2 * this.turns + this.phase;
+      const swell = wrap * (0.6 + 0.4 * Math.sin(s * Math.PI));
+      this.points[i]
+        .copy(this.from)
+        .addScaledVector(this.axis, length * s)
+        .addScaledVector(this.sideA, Math.cos(angle) * swell)
+        .addScaledVector(this.sideB, Math.sin(angle) * swell);
+    }
+    this.object.geometry.dispose();
+    const geometry = taperedTube(this.points, this.radii, 5, this.colour);
+    if (geometry) this.object.geometry = geometry;
+    return true;
+  }
+}
+
+/** The camera's orientation, refreshed by the view probe so billboards can face it. */
+const SHATTER_FACING = new THREE.Quaternion();
 
 /**
  * Ground mist. A single large plane just above the floor, its alpha driven by two scrolling noise
@@ -2654,6 +3165,10 @@ export class MonsterTreeVfx {
    * allocating a fifteenth. */
   private readonly burstPool: BurstSlot[] = [];
   private readonly lights: LightPool;
+  private readonly splats: ToxinSplats;
+  private readonly coilL: ArmCoil;
+  private readonly coilR: ArmCoil;
+  private readonly shatterMap = shatterTexture();
   /** The undergrowth currently standing, if any. See `grass` and `inGrass`. */
   private patch: GrassPatch | null = null;
   private readonly rootMaterial: THREE.MeshStandardMaterial;
@@ -2747,6 +3262,14 @@ export class MonsterTreeVfx {
     }
 
     this.spores = new SporeField(bounds, 460, this.dot, this.leaf);
+    // The spore field is drawn every frame from the moment the demo starts, which makes it the
+    // cheapest place to learn where the viewer is. `onBeforeRender` is called by three on every
+    // object it draws, with the camera; a billboard that has to face the viewer — the void
+    // fracture — cannot work in the gallery any other way, because the host drives the model
+    // through `userData.tick(dt, elapsed)` and hands over no camera at all.
+    this.spores.object.onBeforeRender = (_renderer, _scene, camera) => {
+      camera.getWorldQuaternion(SHATTER_FACING);
+    };
     this.group.add(this.spores.object);
 
     this.wisps = new Wisps(bounds, 9, this.dot);
@@ -2762,6 +3285,17 @@ export class MonsterTreeVfx {
     // alive at once — and every one of them is in the scene from the first frame.
     this.lights = new LightPool(4, this.scale * 2.2);
     this.group.add(this.lights.object);
+
+    // 420 stains covers the densest rain the ultimate throws with room to spare, and the ring
+    // buffer means a longer one costs nothing more.
+    this.splats = new ToxinSplats(420, lifeColour(0.30, 1), 6.5);
+    this.group.add(this.splats.object);
+
+    // Shoulder to hand, not neck to hand. Anchored at the CLAVICLE the line ran from beside the
+    // head, so with the arms raised the helix wound around the torso rather than around the arm.
+    this.coilL = new ArmCoil(rig.sockets['grip-l'], rig.bones.L_Upperarm, 5.0, 0.013 * this.scale, lifeColour(0.32, 1));
+    this.coilR = new ArmCoil(rig.sockets['grip-r'], rig.bones.R_Upperarm, 5.0, 0.013 * this.scale, lifeColour(0.32, 1));
+    this.group.add(this.coilL.object, this.coilR.object);
 
     this.eyes = new EyeGlow([rig.sockets['eye-l'], rig.sockets['eye-r']], this.dot, this.scale);
     this.group.add(this.eyes.object);
@@ -3035,7 +3569,8 @@ export class MonsterTreeVfx {
    * something — the same principle as an arrest: the payoff is the STOP, not the travel.
    */
   vine(from: THREE.Object3D, direction: THREE.Vector3, options: {
-    reach?: number; out?: number; hold?: number; back?: number; onCatch?: (at: THREE.Vector3) => void;
+    reach?: number; out?: number; hold?: number; back?: number; bend?: number;
+    onCatch?: (at: THREE.Vector3) => void;
   } = {}): void {
     const whip = new VineWhip(
       from,
@@ -3046,6 +3581,7 @@ export class MonsterTreeVfx {
       options.back ?? 0.22,
       lifeColour(0.34, 1),
       this.rootMaterial,
+      options.bend ?? 1,
       (at) => options.onCatch?.(at),
     );
     whip.object.traverse((o) => { o.userData.isHighlight = true; });
@@ -3115,6 +3651,63 @@ export class MonsterTreeVfx {
     ring.object.userData.isHighlight = true;
     this.group.add(ring.object);
     this.transient.push(ring);
+  }
+
+  /**
+   * A wide, dense rain of bolts, each stamping a small stain where it lands.
+   *
+   * The stains go through the shared `ToxinSplats` pool rather than spawning a `ToxinBloom` each:
+   * a volley of this size lands several hundred times, and several hundred shader compiles on the
+   * beat is the exact stall the whole prewarm pass exists to prevent.
+   */
+  boltRain(at: THREE.Vector3, options: {
+    count?: number; radius?: number; window?: number; height?: number; splat?: number;
+  } = {}): void {
+    const splat = (options.splat ?? 0.13) * this.scale;
+    const rain = new BoltRain(
+      new THREE.Vector3(at.x, 0, at.z),
+      options.count ?? 260,
+      (options.radius ?? 1.3) * this.scale,
+      options.window ?? 1.5,
+      (options.height ?? 1.5) * this.scale,
+      // 0.30, not 0.6: an additively blended streak at high lightness saturates to white on the
+      // way through the tone mapper, and a green bullet rain that arrives white is just rain.
+      // Hundreds of them overlapping push each other brighter, so the individual bolt has to sit
+      // well below where it looks right on its own.
+      lifeColour(0.30, 1),
+      (Math.random() * 1e9) | 0,
+      (landed) => {
+        this.splats.add(landed, splat * (0.7 + Math.random() * 0.7));
+        // One in five throws a little debris, so the floor is not just picking up decals.
+        if (Math.random() < 0.2) {
+          this.burstAt(landed.clone().setY(0.05), { count: 5, speed: 0.3, duration: 0.5, spread: 0.6, gravity: -1.4 });
+        }
+      },
+    );
+    rain.object.userData.isHighlight = true;
+    this.group.add(rain.object);
+    this.transient.push(rain);
+  }
+
+  /** The void breaking at a point: a shattered-glass fracture that throws its own pieces. */
+  shatter(at: THREE.Vector3, options: { size?: number; duration?: number } = {}): void {
+    const effect = new VoidShatter(
+      at.clone(),
+      (options.size ?? 1.1) * this.scale,
+      options.duration ?? 1.5,
+      this.accentColour,
+      this.shatterMap,
+      (Math.random() * 1e9) | 0,
+    );
+    effect.object.traverse((o) => { o.userData.isHighlight = true; });
+    this.group.add(effect.object);
+    this.transient.push(effect);
+  }
+
+  /** Light winding around both arms, 0..1. Driven every frame while a skill holds them up. */
+  set coils(strength: number) {
+    this.coilL.strength = strength;
+    this.coilR.strength = strength;
   }
 
   /** Run something later, on the effect clock, so cues can be sequenced without setTimeout. */
@@ -3318,6 +3911,8 @@ export class MonsterTreeVfx {
     this.log(new THREE.Vector3(0, -60, 0), { length: 0.01, fall: 0.05, linger: 0.1 });
     this.seeds(new THREE.Vector3(0, -60, 0), { count: 3, spread: 0.01, flight: 0.1 });
     this.vortex(new THREE.Vector3(0, -60, 0), { radius: 0.01, duration: 0.2, count: 6 });
+    this.boltRain(new THREE.Vector3(0, -60, 0), { count: 4, radius: 0.01, window: 0.05, height: 0.02, splat: 0.001 });
+    this.shatter(new THREE.Vector3(0, -60, 0), { size: 0.01, duration: 0.2 });
     // The prewarm patch must not be mistaken for real undergrowth by `inGrass`, or the very first
     // Dây Leo would come out empowered because of a patch 60 units under the floor.
     this.patch = null;
@@ -3368,6 +3963,9 @@ export class MonsterTreeVfx {
     this.eyes.tick(dt, this.elapsed);
     this.core.tick(dt, this.elapsed);
     for (const slot of this.burstPool) slot.tick(dt);
+    this.splats.tick(dt);
+    this.coilL.tick(dt);
+    this.coilR.tick(dt);
     this.trails['grip-l'].tick(dt, this.elapsed);
     this.trails['grip-r'].tick(dt, this.elapsed);
     for (let i = this.transient.length - 1; i >= 0; i -= 1) {

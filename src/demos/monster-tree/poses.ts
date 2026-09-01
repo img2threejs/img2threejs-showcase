@@ -155,9 +155,12 @@ const UP_SPINE: [number, number, number] = [-0.02, 1, -0.05];
  * vine leaves a hand that is still winding up.
  */
 export const BEATS = {
-  vine: { release: 0.34, recover: 0.78, duration: 1.30 },
-  logs: { slams: [0.42, 0.70, 0.98], finish: 1.52, duration: 2.30 },
-  ultimate: { rooted: 0.62, throws: [0.86, 1.20, 1.54], gather: 1.90, stun: 2.34, duration: 3.00 },
+  vine: { release: 0.34, recover: 0.95, duration: 1.55 },
+  // Nature's Call no longer beats time with its arms. They go up, they STAY up, and the wood comes
+  // down while they are held there — so these are the moments the summons land, not the moments an
+  // arm moves. `raised` is when the hold is reached and the coils are at full strength.
+  logs: { raised: 0.42, calls: [0.62, 0.95, 1.28], finish: 1.70, duration: 2.60 },
+  ultimate: { rooted: 0.55, open: 0.80, rainEnds: 2.55, duration: 3.20 },
 } as const;
 
 /**
@@ -256,13 +259,27 @@ export function vinePose(): Key[] {
       },
     },
     {
-      // Held taut. Almost the same pose, a hair further out: a vine under load pulls the shoulder.
+      // FOLLOW THROUGH. The arm does not stop where the vine left it — it carries past, opens out
+      // and drops, which is what a thrown limb does. Holding the release pose until the recovery
+      // is what made the arm read as a rigid pointer: a throw that ends the instant the projectile
+      // leaves has no weight in it at all.
+      at: BEATS.vine.release + 0.16,
+      pose: {
+        Waist: [0.16, 0.98, -0.03], Spine01: [0.22, 0.97, -0.03], Spine02: [0.30, 0.94, -0.03],
+        L_Clavicle: [0.34, -0.06, -0.94],
+        L_Upperarm: [0.93, -0.22, -0.29],
+        L_Forearm: [0.90, -0.34, 0.27],
+        R_Upperarm: [0.06, -0.76, 0.65], R_Forearm: [0.18, -0.92, 0.35],
+      },
+    },
+    {
+      // Held on the line, the shoulder pulled by the load at the far end.
       at: BEATS.vine.recover,
       pose: {
-        Waist: [0.08, 0.99, -0.04], Spine01: [0.12, 0.99, -0.05], Spine02: [0.17, 0.98, -0.06],
-        L_Clavicle: [0.26, 0.00, -0.96],
-        L_Upperarm: [0.91, -0.10, -0.40],
-        L_Forearm: [0.99, 0.02, -0.10],
+        Waist: [0.10, 0.99, -0.04], Spine01: [0.15, 0.98, -0.05], Spine02: [0.21, 0.97, -0.06],
+        L_Clavicle: [0.28, -0.02, -0.96],
+        L_Upperarm: [0.88, -0.18, -0.44],
+        L_Forearm: [0.96, -0.14, -0.24],
         R_Upperarm: [0.12, -0.74, 0.66], R_Forearm: [0.24, -0.90, 0.35],
       },
     },
@@ -280,142 +297,104 @@ export function vinePose(): Key[] {
  * one that lands with the stun.
  */
 export function logsPose(): Key[] {
-  const raise = (h: number): Pose => ({
-    L_Clavicle: [-0.02, 0.30 + h * 0.35, -0.95],
-    R_Clavicle: [0.02, 0.30 + h * 0.35, 0.94],
-    L_Upperarm: [-0.10 + h * 0.18, 0.55 + h * 0.40, -0.82 + h * 0.20],
-    L_Forearm: [0.16 + h * 0.20, 0.72 + h * 0.30, -0.66 + h * 0.24],
-    R_Upperarm: [-0.10 + h * 0.18, 0.55 + h * 0.40, 0.82 - h * 0.20],
-    R_Forearm: [0.16 + h * 0.20, 0.72 + h * 0.30, 0.66 - h * 0.24],
-    Waist: [-0.06 - h * 0.05, 0.99, -0.05],
-    Spine01: [-0.10 - h * 0.06, 0.99, -0.05],
-    Spine02: [-0.16 - h * 0.08, 0.98, -0.05],
-  });
-  const slam = (power: number): Pose => ({
-    L_Clavicle: [0.12, -0.10, -0.98],
-    R_Clavicle: [0.12, -0.10, 0.98],
-    L_Upperarm: [0.72 + power * 0.12, -0.55 - power * 0.10, -0.42],
-    L_Forearm: [0.86 + power * 0.08, -0.48 - power * 0.08, -0.18],
-    R_Upperarm: [0.72 + power * 0.12, -0.55 - power * 0.10, 0.42],
-    R_Forearm: [0.86 + power * 0.08, -0.48 - power * 0.08, 0.18],
-    Waist: [0.12 + power * 0.06, 0.98, -0.04],
-    Spine01: [0.18 + power * 0.08, 0.97, -0.04],
-    Spine02: [0.26 + power * 0.10, 0.95, -0.04],
+  // Both arms up and open, palms turned outward, and then nothing: the summons happen while he
+  // holds, not because he moves. This replaced a three-beat slam, and the reason is worth keeping —
+  // an arm that pumps up and down every third of a second reads as a character *hitting* something
+  // repeatedly, when what the skill actually does is call wood down from somewhere else. Holding
+  // makes him the source rather than the hammer, and it leaves the arms still enough for the light
+  // coiling around them to be seen at all.
+  const held: Pose = {
+    L_Clavicle: [0.02, 0.62, -0.78],
+    R_Clavicle: [0.06, 0.62, 0.78],
+    L_Upperarm: [0.16, 0.90, -0.41],
+    L_Forearm: [0.20, 0.95, -0.24],
+    R_Upperarm: [0.16, 0.90, 0.41],
+    R_Forearm: [0.20, 0.95, 0.24],
+    Waist: [-0.05, 0.998, -0.03],
+    Spine01: [-0.08, 0.996, -0.03],
+    Spine02: [-0.12, 0.99, -0.03],
+  };
+  // A slow, shallow drift on the hold. Perfectly still is a mannequin; this is small enough that
+  // nobody reads it as a gesture and large enough that the figure is plainly alive.
+  const drift = (k: number): Pose => ({
+    ...held,
+    L_Upperarm: [0.16, 0.90, -0.41 - k * 0.05],
+    L_Forearm: [0.20 + k * 0.04, 0.95, -0.24 - k * 0.05],
+    R_Upperarm: [0.16, 0.90, 0.41 + k * 0.05],
+    R_Forearm: [0.20 + k * 0.04, 0.95, 0.24 + k * 0.05],
+    Spine02: [-0.12 - k * 0.03, 0.99, -0.03],
   });
 
-  const keys: Key[] = [{ at: 0, pose: passivePose(0)[0].pose }];
-  keys.push({ at: 0.22, pose: raise(0.35) });
-  BEATS.logs.slams.forEach((at, i) => {
-    keys.push({ at, pose: slam(i * 0.18) });
-    keys.push({ at: at + 0.16, pose: raise(0.15 + i * 0.08) });
-  });
-  // The big lift, then a HOLD at the top, then a drop that is the fastest motion in the move.
-  //
-  // The first version simply spread the last slam over a longer span, and the sweep caught what
-  // that actually produced: the payoff was the *gentlest* stop in the whole gesture, slower than
-  // the three jabs leading into it, and the two hardest arrests the measurement found were
-  // elsewhere. A climax has to arrive faster than what came before it, so the arm goes up early,
-  // waits at the top — which is also the windup the effects are already charging into — and then
-  // covers the greatest distance of any beat in the shortest time of any beat.
-  keys.push({ at: BEATS.logs.finish - 0.46, pose: raise(1) });
-  keys.push({ at: BEATS.logs.finish - 0.12, pose: raise(1) });
-  keys.push({ at: BEATS.logs.finish, pose: slam(1) });
-  keys.push({ at: BEATS.logs.finish + 0.30, pose: slam(0.2) });
-  keys.push({ at: BEATS.logs.duration, pose: passivePose(0)[0].pose });
-  return keys;
+  return [
+    { at: 0, pose: passivePose(0)[0].pose },
+    { at: BEATS.logs.raised, pose: held },
+    { at: BEATS.logs.raised + 0.55, pose: drift(1) },
+    { at: BEATS.logs.finish - 0.10, pose: drift(-1) },
+    // One commitment at the end: the arms press further up and out as the last of it comes down.
+    {
+      at: BEATS.logs.finish,
+      pose: {
+        ...held,
+        L_Clavicle: [0.02, 0.74, -0.67], R_Clavicle: [0.06, 0.74, 0.67],
+        L_Upperarm: [0.20, 0.96, -0.20], L_Forearm: [0.22, 0.97, -0.10],
+        R_Upperarm: [0.20, 0.96, 0.20], R_Forearm: [0.22, 0.97, 0.10],
+        Spine02: [-0.18, 0.98, -0.03],
+      },
+    },
+    { at: BEATS.logs.finish + 0.45, pose: drift(0) },
+    { at: BEATS.logs.duration, pose: passivePose(0)[0].pose },
+  ];
 }
 
 /**
- * Chiêu cuối — Hạt Giống Thần Mệnh. Root, become the tree, throw, then draw everything in.
+ * Ultimate — Seeds of Destiny. Root, open the canopy, and hold it open while the sky comes down.
  *
- * Four movements, and the shape of the whole thing is the point: he COMMITS. The legs straighten
- * and widen and never move again, the spine goes up, and the arms spend the rest of the move
- * working — three alternating throws out and up, then a wide sweep that closes on his own chest.
- * The last gesture reverses the direction of every one before it, which is what "gom về trung tâm"
- * has to look like from the outside.
+ * The move changed from throwing to RAINING, and the gesture had to change with it. Three
+ * alternating throws said "he is putting each of these somewhere"; a barrage that covers the whole
+ * field is not aimed at anything, so he opens and stays open. The legs straighten and widen and
+ * never move again, the trunk goes up, and the arms sweep out and up into a canopy that holds for
+ * the whole downpour — the shape of a tree letting go of its seeds all at once.
  */
 export function ultimatePose(): Key[] {
-  const branchL: [number, number, number] = [-0.10, 0.86, -0.50];
-  const branchR: [number, number, number] = [-0.10, 0.86, 0.50];
   const rooted: Pose = {
     // Straight, wide and planted: the stance of something that is not going to be moved.
     L_Thigh: [-0.06, -0.97, -0.24], L_Calf: [-0.02, -0.999, -0.04],
     R_Thigh: [-0.06, -0.97, 0.24], R_Calf: [-0.02, -0.999, 0.04],
     Waist: [0, 1, 0], Spine01: [0, 1, 0], Spine02: [0, 1, 0],
   };
-  const throwOut = (side: -1 | 1): Pose => ({
-    [side < 0 ? 'L_Clavicle' : 'R_Clavicle']: [0.10, 0.34, 0.94 * side],
-    [side < 0 ? 'L_Upperarm' : 'R_Upperarm']: [0.62, 0.44, 0.65 * side],
-    [side < 0 ? 'L_Forearm' : 'R_Forearm']: [0.78, 0.56, 0.28 * side],
-  });
-  const gatherIn = (side: -1 | 1): Pose => ({
-    [side < 0 ? 'L_Clavicle' : 'R_Clavicle']: [0.06, 0.16, 0.98 * side],
-    [side < 0 ? 'L_Upperarm' : 'R_Upperarm']: [0.40, -0.20, 0.89 * side],
-    [side < 0 ? 'L_Forearm' : 'R_Forearm']: [0.30, 0.10, -0.95 * side],
+  // The canopy: arms high and thrown wide, forearms turned further out than the upper arms so the
+  // silhouette forks the way a crown does instead of making a V.
+  const canopy = (spread: number): Pose => ({
+    ...rooted,
+    L_Clavicle: [0.02, 0.55 + spread * 0.12, -0.83],
+    R_Clavicle: [0.02, 0.55 + spread * 0.12, 0.83],
+    L_Upperarm: [0.02, 0.72 + spread * 0.10, -0.69 + spread * 0.06],
+    L_Forearm: [0.06, 0.62 + spread * 0.06, -0.78 - spread * 0.04],
+    R_Upperarm: [0.02, 0.72 + spread * 0.10, 0.69 - spread * 0.06],
+    R_Forearm: [0.06, 0.62 + spread * 0.06, 0.78 + spread * 0.04],
   });
 
-  const keys: Key[] = [
+  return [
     { at: 0, pose: passivePose(0)[0].pose },
     {
-      // Sinking to root: knees bend, arms drop, everything gathers before it goes up.
-      at: 0.26,
+      // Sinking to root: knees bend, arms drop and gather in. Everything goes DOWN before it goes
+      // up, or the canopy opens out of nothing.
+      at: 0.24,
       pose: {
         L_Thigh: [-0.14, -0.96, -0.24], L_Calf: [0.18, -0.98, -0.05],
         R_Thigh: [-0.14, -0.96, 0.24], R_Calf: [0.18, -0.98, 0.05],
         Waist: [-0.10, 0.99, 0], Spine01: [-0.14, 0.99, 0], Spine02: [-0.18, 0.98, 0],
-        L_Clavicle: [-0.05, -0.10, -0.99], R_Clavicle: [0.02, -0.10, 0.99],
-        L_Upperarm: [0.16, -0.86, -0.48], L_Forearm: [0.34, -0.92, -0.20],
-        R_Upperarm: [0.16, -0.86, 0.48], R_Forearm: [0.34, -0.92, 0.20],
+        L_Clavicle: [-0.05, -0.14, -0.99], R_Clavicle: [0.02, -0.14, 0.99],
+        L_Upperarm: [0.22, -0.86, -0.46], L_Forearm: [-0.20, -0.66, 0.72],
+        R_Upperarm: [0.22, -0.86, 0.46], R_Forearm: [-0.20, -0.66, -0.72],
       },
     },
-    {
-      // The tree: planted, tall, arms open as branches.
-      at: BEATS.ultimate.rooted,
-      pose: {
-        ...rooted,
-        L_Clavicle: [-0.02, 0.42, -0.91], R_Clavicle: [0.02, 0.42, 0.91],
-        L_Upperarm: branchL, L_Forearm: [0.10, 0.94, -0.32],
-        R_Upperarm: branchR, R_Forearm: [0.10, 0.94, 0.32],
-      },
-    },
+    { at: BEATS.ultimate.rooted, pose: canopy(0) },
+    // Thrown fully open on the frame the rain starts.
+    { at: BEATS.ultimate.open, pose: canopy(1) },
+    // A long, almost imperceptible widening through the downpour: the canopy is under load.
+    { at: (BEATS.ultimate.open + BEATS.ultimate.rainEnds) / 2, pose: canopy(1.35) },
+    { at: BEATS.ultimate.rainEnds, pose: canopy(1.1) },
+    { at: BEATS.ultimate.duration, pose: { ...rooted, ...passivePose(0)[0].pose } },
   ];
-
-  // Three throws, alternating. Each is a scoop across the chest and a fling out and up, and the
-  // arm that is not throwing stays up as a branch — a treant does not drop its guard to throw.
-  BEATS.ultimate.throws.forEach((at, i) => {
-    const side: -1 | 1 = i % 2 === 0 ? -1 : 1;
-    keys.push({
-      at: at - 0.16,
-      pose: {
-        ...rooted,
-        [side < 0 ? 'L_Upperarm' : 'R_Upperarm']: [0.20, 0.10, 0.97 * side],
-        [side < 0 ? 'L_Forearm' : 'R_Forearm']: [-0.30, 0.36, -0.88 * side],
-      },
-    });
-    keys.push({ at, pose: { ...rooted, ...throwOut(side) } });
-  });
-
-  keys.push({
-    // Wide: everything opened out before it closes, so the pull has somewhere to come from.
-    at: BEATS.ultimate.gather - 0.22,
-    pose: {
-      ...rooted,
-      L_Clavicle: [0, 0.30, -0.95], R_Clavicle: [0, 0.30, 0.95],
-      L_Upperarm: [0.10, 0.30, -0.95], L_Forearm: [0.16, 0.44, -0.88],
-      R_Upperarm: [0.10, 0.30, 0.95], R_Forearm: [0.16, 0.44, 0.88],
-    },
-  });
-  keys.push({ at: BEATS.ultimate.gather, pose: { ...rooted, ...gatherIn(-1), ...gatherIn(1) } });
-  keys.push({
-    // The close. Both forearms crossed in over the chest — the stun lands on this frame.
-    at: BEATS.ultimate.stun,
-    pose: {
-      ...rooted,
-      L_Clavicle: [0.10, 0.08, -0.99], R_Clavicle: [0.10, 0.08, 0.99],
-      L_Upperarm: [0.50, -0.30, -0.81], L_Forearm: [0.60, 0.30, 0.74],
-      R_Upperarm: [0.50, -0.30, 0.81], R_Forearm: [0.60, 0.30, -0.74],
-    },
-  });
-  keys.push({ at: BEATS.ultimate.duration, pose: { ...rooted, ...passivePose(0)[0].pose } });
-  return keys;
 }

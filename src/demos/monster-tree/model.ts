@@ -58,12 +58,20 @@ export function createMonsterTree(options: RigOptions = {}): MonsterTreeRig {
  * half of the frame empty. Everything that happens AROUND the character — a ring of copies, a
  * grove opening outward — lost half of itself off the left side before it could be seen.
  *
- * The target is now the measured mid-torso, and the eye keeps the direction it had. Visible width
- * at this distance and fov works out at 2.44 units, which is what caps the copies' ring radius.
+ * The target is the measured mid-torso, pushed 0.42 units along the direction the figure was
+ * measured to FACE. Aimed squarely at him instead, every attack he has ran off the right-hand edge:
+ * he faces azimuth 75 degrees while the camera sits at -4, so "forward" travels across the frame,
+ * and a point 1.3 units ahead of his feet projected to px 642 of a 628-pixel canvas. The vine's
+ * fracture and the far end of the log barrage were both landing outside the shot.
+ *
+ * Leading the subject in the direction of the action is ordinary composition, and here it is also
+ * arithmetic: at 249 px per unit it buys about 105 px of room downrange for 105 px of empty space
+ * behind him. Visible width at this distance and fov is 2.44 units, which is what caps the ring
+ * the copies stand on.
  */
 export const MONSTER_TREE_CAMERA = {
-  position: [-0.22, 1.78, 6.1] as [number, number, number],
-  target: [0.18, 0.95, 0] as [number, number, number],
+  position: [0.19, 1.78, 6.21] as [number, number, number],
+  target: [0.59, 0.95, 0.11] as [number, number, number],
   fov: 32,
 };
 
