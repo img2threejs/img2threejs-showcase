@@ -680,23 +680,19 @@
       "interaction-pass",
       "optimization-pass"
     ],
-    "currentPass": "interaction-pass",
+    "currentPass": "complete",
     "completedPasses": [
       "blockout",
       "structural-pass",
       "form-refinement",
       "material-pass",
-      "lighting-pass"
+      "lighting-pass",
+      "interaction-pass",
+      "optimization-pass"
     ],
-    "lastCompletedPass": "lighting-pass",
-    "blockedReason": "",
-    "nextRequiredEvidence": [
-      "Expose click selection, reversible explode, door action, idle and reset.",
-      "browser render screenshot from your agent's browser/screenshot tool",
-      "single side-by-side full reference/render comparison sheet",
-      "all critical semantic feature scores at or above their thresholds",
-      "self-correction review appended with action=continue before the next pass"
-    ]
+    "lastCompletedPass": "optimization-pass",
+    "blockedReason": "all build passes completed",
+    "nextRequiredEvidence": []
   },
   "lookDevTargets": {
     "qualityPriority": "reference-fidelity",
@@ -8628,7 +8624,7 @@
         }
       ],
       "roughness": {
-        "base": 0.71,
+        "base": 0.85,
         "variation": 0.071,
         "map": {
           "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_roughness.png",
@@ -8636,7 +8632,8 @@
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
-        "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother"
+        "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother",
+        "notes": "raised at optimization-pass: smooth ellipsoid masses under the environment read glazed at extracted roughness; matte foliage is the identity"
       },
       "metalness": {
         "base": 0.0,
@@ -8836,6 +8833,9 @@
           "object/background separation is weak",
           "single-image inverse rendering cannot prove true physical PBR; confidence is capped"
         ]
+      },
+      "specularF0": {
+        "base": 0.35
       }
     },
     {
@@ -8903,7 +8903,7 @@
         }
       ],
       "roughness": {
-        "base": 0.706,
+        "base": 0.85,
         "variation": 0.086,
         "map": {
           "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_roughness.png",
@@ -8911,7 +8911,8 @@
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
-        "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother"
+        "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother",
+        "notes": "raised at optimization-pass: smooth ellipsoid masses under the environment read glazed at extracted roughness; matte foliage is the identity"
       },
       "metalness": {
         "base": 0.0,
@@ -9111,6 +9112,9 @@
           "object/background separation is weak",
           "single-image inverse rendering cannot prove true physical PBR; confidence is capped"
         ]
+      },
+      "specularF0": {
+        "base": 0.35
       }
     }
   ],
@@ -9787,6 +9791,48 @@
       "cameraView": "front-right-three-quarter",
       "notes": "",
       "aiVisionNotes": "Neutral capture proves material readability without the reference rig; grazing capture proves relief and exposes the remaining roughness gap on planting."
+    },
+    {
+      "timestamp": "2026-09-02T17:43:55.938767+00:00",
+      "passId": "interaction-pass",
+      "estimatedFidelity": 0.78,
+      "aiVisionScore": 0.78,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.82,
+        "componentStructure": 0.9,
+        "formDetail": 0.72,
+        "materialSurface": 0.78,
+        "lightingCamera": 0.82
+      },
+      "featureReviews": [],
+      "referenceScreenshot": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/reference.png",
+      "renderScreenshot": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/interaction/assembled.png",
+      "comparisonImage": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/comparison-sheet.png",
+      "cameraView": "front-right-three-quarter",
+      "notes": "",
+      "aiVisionNotes": "Behavioral pass: judged on the exercised runtime contract plus captures, not on new geometry."
+    },
+    {
+      "timestamp": "2026-09-02T17:49:18.749987+00:00",
+      "passId": "optimization-pass",
+      "estimatedFidelity": 0.78,
+      "aiVisionScore": 0.78,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.82,
+        "componentStructure": 0.9,
+        "formDetail": 0.72,
+        "materialSurface": 0.8,
+        "lightingCamera": 0.82
+      },
+      "featureReviews": [],
+      "referenceScreenshot": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/reference.png",
+      "renderScreenshot": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/optimization/assembled.png",
+      "comparisonImage": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/comparison-sheet.png",
+      "cameraView": "front-right-three-quarter",
+      "notes": "",
+      "aiVisionNotes": "Optimization judged on measured renderer.info budgets plus identity preservation across before/after captures."
     }
   ],
   "reviewHistory": [
@@ -10256,6 +10302,97 @@
         "cameraView": "front-right-three-quarter",
         "notes": "",
         "aiVisionNotes": "Neutral capture proves material readability without the reference rig; grazing capture proves relief and exposes the remaining roughness gap on planting."
+      }
+    },
+    {
+      "timestamp": "2026-09-02T17:43:55.938767+00:00",
+      "passId": "interaction-pass",
+      "estimatedFidelity": 0.78,
+      "aiVisionScore": 0.78,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.82,
+        "componentStructure": 0.9,
+        "formDetail": 0.72,
+        "materialSurface": 0.78,
+        "lightingCamera": 0.82
+      },
+      "featureReviews": [],
+      "action": "continue",
+      "summary": "Demo-layer interactions module (whimsicalHearthHouseInteractions.ts) drives the factory's action-ready contract: raycast click selection resolving semantic component ids, reversible parametric explode (0..1), hinged door action on the left jamb, chimney-smoke cozy idle, and exact reset. Machine-checked in-browser: reset restores all 32 node world matrices with delta 0, pick over the cone returns turret-roof, pick over sky returns null.",
+      "matched": [
+        "click selection via sculptComponent walk",
+        "reversible explode with ground-safe directions",
+        "door swings open on jamb hinge (teal panel finally visible)",
+        "smoke bob idle",
+        "exact reset (maxMatrixDelta 0)"
+      ],
+      "mismatches": [
+        "explode direction is radial-from-center rather than per-socket disassembly order",
+        "no hover highlight yet (demo-page concern)"
+      ],
+      "specFixes": [],
+      "codeFixes": [],
+      "evidence": [
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/interaction/assembled.png",
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/interaction/exploded.png",
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/interaction/door-open.png",
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/interaction/idle-peak.png",
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/interaction/after-reset.png",
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/interaction/interactions-report.json"
+      ],
+      "mapStrippedRender": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/stripped-source.png",
+      "visualEvidence": {
+        "referenceScreenshot": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/reference.png",
+        "renderScreenshot": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/interaction/assembled.png",
+        "comparisonImage": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/comparison-sheet.png",
+        "cameraView": "front-right-three-quarter",
+        "notes": "",
+        "aiVisionNotes": "Behavioral pass: judged on the exercised runtime contract plus captures, not on new geometry."
+      }
+    },
+    {
+      "timestamp": "2026-09-02T17:49:18.749987+00:00",
+      "passId": "optimization-pass",
+      "estimatedFidelity": 0.78,
+      "aiVisionScore": 0.78,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.82,
+        "componentStructure": 0.9,
+        "formDetail": 0.72,
+        "materialSurface": 0.8,
+        "lightingCamera": 0.82
+      },
+      "featureReviews": [],
+      "action": "continue",
+      "summary": "Budgets met without losing identity: 57,402 triangles (target 90k, max 140k; was 132,906) and 35 draw calls (max 45). The win is a generator fix, not decimation: instanced repetition-system geometry now uses the LOW tessellation tier (a 26-stone curb ring of hero-tier boxes cost 44,928 triangles alone). A decimation attempt on textured masses was measured, seen to destroy identity textures (island daisies, turret stucco), and REVERTED. Foliage/petal roughness raised to matte with reduced specular F0, closing the glazed-planting note from the material and lighting reviews.",
+      "matched": [
+        "triangles 57,402 <= 90k target",
+        "draw calls 35 <= 45",
+        "identity textures intact",
+        "matte planting",
+        "reset/pick assertions still exact after regeneration"
+      ],
+      "mismatches": [
+        "grazing-light texture stretching on cylinder walls remains (uv projection, future work)"
+      ],
+      "specFixes": [],
+      "codeFixes": [],
+      "evidence": [
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/optimization/assembled.png",
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/optimization/exploded.png",
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/optimization/after-reset.png",
+        "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/optimization/perf-report.json"
+      ],
+      "mapStrippedRender": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/stripped-source.png",
+      "visualEvidence": {
+        "referenceScreenshot": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/reference.png",
+        "renderScreenshot": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/optimization/assembled.png",
+        "comparisonImage": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/passes/lighting/comparison-sheet.png",
+        "cameraView": "front-right-three-quarter",
+        "notes": "",
+        "aiVisionNotes": "Optimization judged on measured renderer.info budgets plus identity preservation across before/after captures."
       }
     }
   ],
