@@ -54,6 +54,15 @@ import {
   createElectricMouseMascotModel,
 } from './electric-mouse-mascot/createElectricMouseMascotModel';
 import {
+  createCartoonCourierHeroLookDevLights,
+  createCartoonCourierHeroModel,
+} from './cartoon-courier/createCartoonCourierHeroModel';
+import { createWhimsicalHearthHouseLookDevLights } from './whimsical-hearth-house/createWhimsicalHearthHouseModel';
+import {
+  createWhimsicalHearthHouseShowcase,
+  makeWhimsicalHearthHouseBackground,
+} from './whimsical-hearth-house/whimsicalHearthHouseShowcase';
+import {
   createGirlCharacterModel,
   createGirlCharacterLookDevLights,
   prewarmGirlCharacter,
@@ -204,6 +213,107 @@ const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
 const authored: DemoEntry[] = [
+  {
+    id: 'cartoon-courier',
+    title: 'Cartoon Courier Explorer',
+    subjectClass: 'character',
+    blurb:
+      'A code-only procedural Three.js reconstruction of an original stylized courier reference: ' +
+      'oversized expressive head, swept clustered hair, layered teal-and-orange travel outfit, ' +
+      'cross-body satchel and oversized boots. The current exhibit follows a gated blockout-to-rig ' +
+      'workflow with named semantic parts and reviewable construction evidence.',
+    referenceImage: `${BASE}references/cartoon-courier/reference.png`,
+    referenceKind: 'image',
+    sourcePath: 'src/demos/cartoon-courier/createCartoonCourierHeroModel.ts',
+    sourceUrl: `${REPO}/src/demos/cartoon-courier/createCartoonCourierHeroModel.ts`,
+    generatedWith: 'img2threejs procedural character pipeline · bespoke pure Three.js refinement',
+    prompt:
+      'Reconstruct the supplied original cartoon courier as an animation-ready procedural Three.js ' +
+      'character. Preserve the 5.2-head stylized proportions, large amber eyes, broad swept brown ' +
+      'hair masses, teal cropped jacket, orange scarf, satchel, gloves and oversized layered boots.',
+    author: 'Codex',
+    authorUrl: 'https://openai.com/codex/',
+    status: 'final',
+    updatedAt: '2026-09-02',
+    cameraPosition: [3.25, 2.15, 8.6],
+    cameraTarget: [0, 1.68, 0],
+    cameraFov: 30,
+    capturePinnedCamera: {
+      front: {
+        position: [2.55, 1.86, 10.15],
+        target: [0, 1.72, 0],
+        fov: 24,
+        near: 0.1,
+        far: 30,
+      },
+      back: {
+        position: [-2.55, 1.86, -10.15],
+        target: [0, 1.72, 0],
+        fov: 24,
+        near: 0.1,
+        far: 30,
+      },
+    },
+    accent: '#d87635',
+    backgroundGradient: { inner: '#f4dfc0', outer: '#8f5b43' },
+    exposure: 0.92,
+    environmentIntensity: 0.76,
+    toneMapping: 'aces',
+    turntable: true,
+    installLights: (scene) => {
+      scene.add(createCartoonCourierHeroLookDevLights());
+    },
+    build: (scene) => {
+      const group = createCartoonCourierHeroModel({
+        castShadow: true,
+        receiveShadow: true,
+      });
+      scene.add(group);
+      return group;
+    },
+  },
+  {
+    id: 'whimsical-hearth-house',
+    title: 'Whimsical Hearth House',
+    subjectClass: 'object',
+    blurb:
+      'An original asymmetrical storybook cottage generated and rebuilt in pure Three.js: ' +
+      'offset terracotta gables, a polygonal turret and finial, brick chimney, timber porch, ' +
+      'arched teal door, layered windows, stone foundation and a planted garden island. ' +
+      'Live details include warm window light, swaying foliage, chimney smoke and an opening door.',
+    referenceImage: `${BASE}references/whimsical-hearth-house/reference.png`,
+    referenceKind: 'image',
+    sourcePath: 'src/demos/whimsical-hearth-house/createWhimsicalHearthHouseModel.ts',
+    sourceUrl: `${REPO}/src/demos/whimsical-hearth-house/createWhimsicalHearthHouseModel.ts`,
+    generatedWith: 'img2threejs full sculpt pipeline (all 7 passes) + TRELLIS dense-evidence massing',
+    prompt:
+      'Reconstruct the supplied original whimsical cottage as a procedural Three.js diorama. ' +
+      'Preserve the offset terracotta roofs, right turret, left chimney, timber porch, teal door, ' +
+      'arched windows, curved path and compact planted garden island.',
+    author: 'Codex',
+    authorUrl: 'https://openai.com/codex/',
+    status: 'final',
+    updatedAt: '2026-08-31',
+    cameraPosition: [11.8, 9.1, 13.8],
+    cameraTarget: [0, 3.2, 0.3],
+    cameraFov: 29,
+    accent: '#c25a25',
+    backgroundGradient: { inner: '#eee5da', outer: '#bda995' },
+    exposure: 0.92,
+    environmentIntensity: 0.72,
+    toneMapping: 'aces',
+    turntable: true,
+    installLights: (scene) => {
+      scene.add(createWhimsicalHearthHouseLookDevLights('reference'));
+    },
+    defaultAnimation: 'cozy-idle',
+    build: (scene) => {
+      scene.background = makeWhimsicalHearthHouseBackground();
+      const group = createWhimsicalHearthHouseShowcase();
+      scene.add(group);
+      return group;
+    },
+  },
   {
     id: 'leesin',
     title: 'Lee Sin \u2014 Game Character',
