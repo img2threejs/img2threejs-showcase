@@ -34,6 +34,20 @@ export interface Key {
   /** Seconds into the move. */
   at: number;
   pose: Pose;
+  /**
+   * Twist, in degrees about the figure's own up axis, per bone.
+   *
+   * This is where a body's power comes from and it was the largest thing missing. Hips drive,
+   * shoulders counter, and the arm is the last link in the chain rather than the whole of it.
+   */
+  turn?: Record<string, number>;
+  /**
+   * Where the hips are, in figure units: +x forward, +y up, +z to the character's right.
+   *
+   * Weight shift and crouch. A figure whose pelvis never moves is a mannequin with articulated
+   * arms, which is exactly what these gestures looked like before this existed.
+   */
+  hips?: [number, number, number];
 }
 
 /** Smoothstep: no corner entering or leaving a key, which is most of what reads as "animated". */
@@ -106,16 +120,96 @@ const BONES = [
   'Waist', 'Spine01', 'Spine02',
   'L_Clavicle', 'L_Upperarm', 'L_Forearm',
   'R_Clavicle', 'R_Upperarm', 'R_Forearm',
+  // NOT the feet. `L_Foot` reaches its toe in 0.039 units, so aiming it swings the whole ankle
+  // through a rotation the skin cannot follow and the foot tears into a flat sheet. A heel lifting
+  // would be worth having and this rig cannot express it.
   'L_Thigh', 'L_Calf', 'R_Thigh', 'R_Calf',
 ];
 
 /** Clear every aim this file can set, so a move handing over cannot leave a limb behind. */
 export function clearPose(rig: MonsterTreeRig): void {
   for (const bone of BONES) rig.aim(bone, null);
+  for (const bone of TURNED) rig.turn(bone, 0);
+  rig.shift(0, 0, 0);
 }
 
 const BLEND_FROM = new THREE.Vector3();
 const BLEND_TO = new THREE.Vector3();
+
+/** Every bone any timeline twists. Iterated per frame, so it is a list and not a scan. */
+const TURNED = ['Hip', 'Waist', 'Spine01', 'Spine02'];
+const DEG = Math.PI / 180;
+
+/** One channel's value at a time, interpolated across the keys that actually set it. */
+function scalarAt(keys: Key[], pick: (k: Key) => number | undefined, time: number): number {
+  let from: Key | null = null;
+  let to: Key | null = null;
+  for (const key of keys) {
+    if (pick(key) === undefined) continue;
+    if (key.at <= time && (!from || key.at > from.at)) from = key;
+    if (key.at >= time && (!to || key.at < to.at)) to = key;
+  }
+  if (!from && !to) return 0;
+  const a = from ?? to!;
+  const b = to ?? from!;
+  const span = b.at - a.at;
+  const k = span > 1e-6 ? ease((time - a.at) / span) : 1;
+  const va = pick(a) ?? 0;
+  const vb = pick(b) ?? 0;
+  return va + (vb - va) * k;
+}
+
+/** The hip offset at a time, or null when no key sets one. */
+function hipsAt(keys: Key[], time: number, out: THREE.Vector3): boolean {
+  if (!keys.some((k) => k.hips)) return false;
+  out.set(
+    scalarAt(keys, (k) => k.hips?.[0], time),
+    scalarAt(keys, (k) => k.hips?.[1], time),
+    scalarAt(keys, (k) => k.hips?.[2], time),
+  );
+  return true;
+}
+
+
+/**
+ * A leg, bent by `deg` MORE than it rests — never less, and with the foot kept under the hip.
+ *
+ * Two things this exists to prevent, both measured rather than guessed.
+ *
+ * The rest leg is already off vertical: the thigh sits about 9 degrees forward and the calf about
+ * 12. Typing leg directions by hand quietly STRAIGHTENED it, and a straighter leg reaches further
+ * down — the foot went 8 cm through the floor at the deepest frame of Vine Lash. Deriving both
+ * segments from the measured rest with a bend that only ever adds makes that impossible.
+ *
+ * And the calf angle is SOLVED, not chosen. Given a thigh of 0.395 tilted forward by `a`, the knee
+ * moves forward by 0.395·sin(a), and the calf of 0.473 has to come back by asin(0.395·sin(a)/0.473)
+ * to put the foot underneath again. Picking the calf angle by eye instead left the foot out in
+ * front and the leg barely shortened, so a crouch that asked for 7 cm of drop got 2 cm of leg and
+ * pushed the difference through the floor.
+ */
+const THIGH_LEN = 0.395;
+const CALF_LEN = 0.473;
+
+function leg(side: -1 | 1, deg: number, lean = 0): Pose {
+  const a = (9 + Math.max(0, deg)) * DEG;
+  const b = Math.asin(Math.min(0.98, (THIGH_LEN * Math.sin(a)) / CALF_LEN));
+  const z = side < 0 ? -0.115 : 0.105;
+  return {
+    [side < 0 ? 'L_Thigh' : 'R_Thigh']: [Math.sin(a), -Math.cos(a), z + lean],
+    [side < 0 ? 'L_Calf' : 'R_Calf']: [-Math.sin(b), -Math.cos(b), z * 0.5],
+  };
+}
+
+/** How far a leg bent by `deg` shortens, so a crouch can never ask for more drop than it has. */
+export function legDrop(deg: number): number {
+  const a = (9 + Math.max(0, deg)) * DEG;
+  const b = Math.asin(Math.min(0.98, (THIGH_LEN * Math.sin(a)) / CALF_LEN));
+  const rest = THIGH_LEN * Math.cos(9 * DEG) + CALF_LEN * Math.cos(12 * DEG);
+  return rest - (THIGH_LEN * Math.cos(a) + CALF_LEN * Math.cos(b));
+}
+
+const HIPS_A = new THREE.Vector3();
+const HIPS_B = new THREE.Vector3();
 
 /**
  * Cross-fade one authored pose into another over `k` (0 = fully the outgoing pose, 1 = the new one).
@@ -151,6 +245,22 @@ export function blendPose(
       rig.aim(bone, null);
     }
   }
+
+  for (const bone of TURNED) {
+    const a = from ? scalarAt(from.keys, (key) => key.turn?.[bone], from.time) : 0;
+    const b = to ? scalarAt(to.keys, (key) => key.turn?.[bone], to.time) : 0;
+    rig.turn(bone, (a + (b - a) * k) * DEG);
+  }
+
+  const hasA = from ? hipsAt(from.keys, from.time, HIPS_A) : false;
+  const hasB = to ? hipsAt(to.keys, to.time, HIPS_B) : false;
+  if (!hasA) HIPS_A.set(0, 0, 0);
+  if (!hasB) HIPS_B.set(0, 0, 0);
+  rig.shift(
+    HIPS_A.x + (HIPS_B.x - HIPS_A.x) * k,
+    HIPS_A.y + (HIPS_B.y - HIPS_A.y) * k,
+    HIPS_A.z + (HIPS_B.z - HIPS_A.z) * k,
+  );
 }
 
 /** One bone's aim direction from a timeline at a time, or null if the timeline never aims it. */
@@ -166,7 +276,6 @@ function sample(keys: Key[], bone: string, time: number, out: THREE.Vector3): TH
   return out;
 }
 
-const UP_SPINE: [number, number, number] = [-0.02, 1, -0.05];
 
 /**
  * When each move's hand stops.
@@ -219,6 +328,11 @@ export function passivePose(time: number): Key[] {
   const lift = slow * 0.05;
   return [{
     at: 0,
+    // The weight drifts from one foot to the other and back, on a slower cycle than the breath and
+    // never in step with it. A stance whose pelvis is nailed down cannot look like it is standing;
+    // it looks like it is mounted.
+    hips: [Math.sin(time * 0.41) * 0.012, -0.006 + Math.sin(time * 0.62) * 0.008, Math.sin(time * 0.29 + 1.1) * 0.026],
+    turn: { Hip: Math.sin(time * 0.29 + 1.1) * 3.5, Spine02: Math.sin(time * 0.47) * 4.5 },
     pose: {
       // A slow sway through the trunk, so the whole figure shifts its weight rather than only
       // waving its arms about on a body that is nailed down.
@@ -229,6 +343,9 @@ export function passivePose(time: number): Key[] {
       L_Clavicle: [-0.05, 0.05 + slow * 0.13, -0.99],
       R_Clavicle: [0.02, 0.05 + Math.sin(time * 0.62 + 1.9) * 0.13, 0.99],
       // Arms down and slightly forward, elbows soft, opening a little on each intake.
+      // One knee softer than the other, and the softer one changes over. Perfect bilateral symmetry
+      // is the single loudest tell that a pose was typed rather than observed.
+      ...leg(-1, 2 + slow * 1.8), ...leg(1, 2 - slow * 1.8),
       L_Upperarm: [0.30 + lift, -0.72 - openL * 0.45, -0.62 + openL],
       L_Forearm: [0.42 + fast * 0.09, -0.87 + openL * 0.34, -0.26 - openL * 0.20],
       R_Upperarm: [0.30 - lift, -0.72 - openR * 0.45, 0.62 - openR],
@@ -247,72 +364,96 @@ export function passivePose(time: number): Key[] {
  */
 export function vinePose(): Key[] {
   return [
+    { at: 0, pose: passivePose(0)[0].pose, turn: { Hip: 0, Spine02: 0 }, hips: [0, 0, 0] },
     {
-      at: 0,
+      // ANTICIPATION. Everything goes the wrong way first: the hips wind away from the target, the
+      // shoulders wind further than the hips, the weight drops back onto the rear foot and the
+      // knees take it. The throwing arm folds tight across the chest — a bent elbow, not a stick
+      // held out behind.
+      //
+      // This is the frame the whole move was missing. Without it a viewer sees an arm swing out of
+      // a body that never agreed to it, which is what "one moving limb on a mannequin" looks like.
+      at: 0.16,
+      turn: { Hip: -9, Waist: -16, Spine01: -20, Spine02: -26 },
+      hips: [-0.045, -0.035, -0.02],
       pose: {
-        Waist: UP_SPINE, Spine01: UP_SPINE, Spine02: [-0.05, 1, -0.08],
-        L_Clavicle: [-0.05, 0.04, -0.99], R_Clavicle: [0.02, 0.04, 0.99],
-        L_Upperarm: [0.24, -0.62, -0.75], L_Forearm: [0.40, -0.80, -0.44],
-        R_Upperarm: [0.28, -0.70, 0.66], R_Forearm: [0.40, -0.86, 0.30],
+        ...leg(-1, 13, -0.03), ...leg(1, 17, 0.02),
+        Waist: [-0.12, 0.99, -0.04], Spine01: [-0.16, 0.98, -0.05], Spine02: [-0.22, 0.96, -0.06],
+        L_Clavicle: [-0.34, 0.14, -0.93],
+        // Shoulder back and low, elbow high, hand drawn in across the chest. The forearm stays on
+        // the NEAR side of the arm's rest direction on purpose: the rest forearm points along the
+        // character's left, and an aim past about 140 degrees from that runs into the antipode
+        // where the minimal rotation has no defined axis. The first version asked for 150 and the
+        // bone flipped 135 degrees in a frame.
+        L_Upperarm: [-0.52, -0.34, -0.78],
+        L_Forearm: [0.34, 0.62, 0.71],
+        R_Clavicle: [0.16, 0.02, 0.99],
+        R_Upperarm: [0.42, -0.62, 0.66], R_Forearm: [0.58, -0.78, 0.24],
       },
     },
     {
-      // Windup: the throwing arm is pulled back and across, the torso winds with it. A throw with
-      // no coil in front of it is a hand appearing in a new place.
-      at: 0.20,
+      // The hips fire FIRST and the hand has not caught up. Three frames of the chain in order —
+      // hips, then chest, then arm — is the whole difference between a throw and a wave.
+      at: 0.27,
+      turn: { Hip: 7, Waist: 6, Spine01: -4, Spine02: -16 },
+      hips: [0.01, -0.03, 0.01],
       pose: {
-        Waist: [-0.10, 0.99, -0.06], Spine01: [-0.14, 0.98, -0.08], Spine02: [-0.20, 0.96, -0.14],
-        L_Clavicle: [-0.30, 0.10, -0.95],
-        L_Upperarm: [-0.42, -0.20, -0.88],
-        L_Forearm: [-0.80, 0.34, -0.49],
-        R_Upperarm: [0.34, -0.66, 0.67], R_Forearm: [0.46, -0.84, 0.28],
+        ...leg(-1, 13, 0.01), ...leg(1, 19, 0.02),
+        L_Clavicle: [-0.10, 0.10, -0.99],
+        L_Upperarm: [0.10, -0.22, -0.97],
+        L_Forearm: [0.62, 0.44, 0.65],
       },
     },
     {
-      // Release. Arm straight out along +X, which is the direction the figure was measured to
-      // face, so the vine and the body agree about where the enemy is.
+      // RELEASE. Hips have turned through, chest has caught them, the arm arrives last and
+      // straightens as it does. Weight is on the front foot and the back heel has come off.
       at: BEATS.vine.release,
+      turn: { Hip: 11, Waist: 24, Spine01: 34, Spine02: 46 },
+      hips: [0.05, -0.015, 0.025],
       pose: {
-        // The whole body goes with it. A throw whose torso stays where it was is an arm gesture:
-        // measured against the resting pose, the first version of this frame moved the tracked
-        // bones 0.223 units on average, most of that the one arm. The shoulder line turns, the
-        // trailing arm swings back as a counterweight, and the spine leads the hand.
-        Waist: [0.30, 0.95, -0.06], Spine01: [0.40, 0.91, -0.08], Spine02: [0.52, 0.84, -0.10],
-        L_Clavicle: [0.34, 0.02, -0.94],
-        L_Upperarm: [0.92, -0.06, -0.39],
+        ...leg(-1, 10, 0.02), ...leg(1, 22, 0.03),
+        Waist: [0.22, 0.97, -0.05], Spine01: [0.30, 0.95, -0.06], Spine02: [0.40, 0.91, -0.08],
+        L_Clavicle: [0.30, 0.04, -0.95],
+        L_Upperarm: [0.90, -0.10, -0.42],
         L_Forearm: [0.99, 0.06, -0.10],
-        R_Clavicle: [-0.22, 0.06, 0.97],
-        R_Upperarm: [-0.30, -0.66, 0.69], R_Forearm: [-0.12, -0.92, 0.37],
+        R_Clavicle: [-0.24, 0.06, 0.97],
+        R_Upperarm: [-0.36, -0.62, 0.70], R_Forearm: [-0.20, -0.90, 0.39],
       },
     },
     {
-      // FOLLOW THROUGH. The arm does not stop where the vine left it — it carries past, opens out
-      // and drops, which is what a thrown limb does. Holding the release pose until the recovery
-      // is what made the arm read as a rigid pointer: a throw that ends the instant the projectile
-      // leaves has no weight in it at all.
-      at: BEATS.vine.release + 0.16,
+      // FOLLOW THROUGH. Nothing stops on the frame it delivered: the hips carry a little further,
+      // the arm crosses down and in, the trailing arm swings up behind as the counterweight.
+      at: BEATS.vine.release + 0.20,
+      turn: { Hip: 13, Waist: 30, Spine01: 42, Spine02: 58 },
+      hips: [0.06, -0.028, 0.03],
       pose: {
-        Waist: [0.26, 0.96, -0.03], Spine01: [0.35, 0.93, -0.03], Spine02: [0.45, 0.88, -0.03],
-        L_Clavicle: [0.34, -0.06, -0.94],
-        L_Upperarm: [0.93, -0.22, -0.29],
-        L_Forearm: [0.90, -0.34, 0.27],
-        R_Upperarm: [0.06, -0.76, 0.65], R_Forearm: [0.18, -0.92, 0.35],
+        ...leg(-1, 13, 0.025), ...leg(1, 24, 0.035),
+        Waist: [0.28, 0.95, -0.04], Spine01: [0.38, 0.92, -0.04], Spine02: [0.50, 0.86, -0.04],
+        L_Clavicle: [0.36, -0.10, -0.93],
+        L_Upperarm: [0.86, -0.34, -0.38],
+        L_Forearm: [0.62, -0.52, 0.58],
+        R_Clavicle: [-0.30, 0.16, 0.94],
+        R_Upperarm: [-0.62, -0.20, 0.75], R_Forearm: [-0.44, -0.30, 0.84],
       },
     },
     {
-      // Held on the line, the shoulder pulled by the load at the far end.
+      // Held on the line, the shoulder pulled by the load at the far end, weight settling back.
       at: BEATS.vine.recover,
+      turn: { Hip: 7, Waist: 16, Spine01: 22, Spine02: 30 },
+      hips: [0.03, -0.018, 0.014],
       pose: {
-        Waist: [0.10, 0.99, -0.04], Spine01: [0.15, 0.98, -0.05], Spine02: [0.21, 0.97, -0.06],
+        ...leg(-1, 11, 0.01), ...leg(1, 15, 0.015),
+        Waist: [0.16, 0.98, -0.05], Spine01: [0.22, 0.97, -0.05], Spine02: [0.30, 0.94, -0.06],
         L_Clavicle: [0.28, -0.02, -0.96],
-        L_Upperarm: [0.88, -0.18, -0.44],
-        L_Forearm: [0.96, -0.14, -0.24],
-        R_Upperarm: [0.12, -0.74, 0.66], R_Forearm: [0.24, -0.90, 0.35],
+        L_Upperarm: [0.84, -0.24, -0.48],
+        L_Forearm: [0.94, -0.20, -0.28],
+        R_Upperarm: [-0.10, -0.72, 0.69], R_Forearm: [0.10, -0.92, 0.38],
       },
     },
-    { at: BEATS.vine.duration, pose: passivePose(0)[0].pose },
+    { at: BEATS.vine.duration, pose: passivePose(0)[0].pose, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
   ];
 }
+
 
 /**
  * Chiêu 2 — Thiên Nhiên Vẫy Gọi. Both arms called up, then driven down and forward, three times,
@@ -342,12 +483,16 @@ export function logsPose(): Key[] {
   // is a contrast that survives the projection; forward-versus-wide is one that only exists in the
   // model. The screen-space check in `tools/score-animation.mjs` exists because of this pose.
   const held: Pose = {
-    L_Clavicle: [0.08, 0.66, -0.75],
-    R_Clavicle: [0.12, 0.66, 0.74],
-    L_Upperarm: [0.10, 0.94, -0.32],
-    L_Forearm: [0.06, 0.99, -0.12],
-    R_Upperarm: [0.10, 0.94, 0.32],
-    R_Forearm: [0.06, 0.99, 0.12],
+    // A V, not two parallel columns. Straight up and narrow put both arms inside the trunk's own
+    // silhouette and the figure read as a post with a glow on it — the gesture existed in the model
+    // and was invisible in the picture. Opening the upper arms and letting the forearms rise more
+    // steeply puts a bend at the elbow, and a bend is what makes a limb read as a limb.
+    L_Clavicle: [0.06, 0.52, -0.85],
+    R_Clavicle: [0.10, 0.52, 0.84],
+    L_Upperarm: [0.06, 0.72, -0.69],
+    L_Forearm: [0.10, 0.96, -0.26],
+    R_Upperarm: [0.06, 0.72, 0.69],
+    R_Forearm: [0.10, 0.96, 0.26],
     Waist: [-0.04, 0.998, -0.03],
     Spine01: [-0.06, 0.997, -0.03],
     Spine02: [-0.09, 0.995, -0.03],
@@ -356,31 +501,60 @@ export function logsPose(): Key[] {
   // nobody reads it as a gesture and large enough that the figure is plainly alive.
   const drift = (k: number): Pose => ({
     ...held,
-    L_Upperarm: [0.10, 0.94, -0.32 - k * 0.06],
-    L_Forearm: [0.06 + k * 0.05, 0.99, -0.12 - k * 0.05],
-    R_Upperarm: [0.10, 0.94, 0.32 + k * 0.06],
-    R_Forearm: [0.06 + k * 0.05, 0.99, 0.12 + k * 0.05],
+    L_Upperarm: [0.06, 0.72, -0.69 - k * 0.05],
+    L_Forearm: [0.10 + k * 0.05, 0.96, -0.26 - k * 0.06],
+    R_Upperarm: [0.06, 0.72, 0.69 + k * 0.05],
+    R_Forearm: [0.10 + k * 0.05, 0.96, 0.26 + k * 0.06],
     Spine02: [-0.09 - k * 0.03, 0.995, -0.03],
   });
 
   return [
-    { at: 0, pose: passivePose(0)[0].pose },
-    { at: BEATS.logs.raised, pose: held },
-    { at: BEATS.logs.raised + 0.55, pose: drift(1) },
-    { at: BEATS.logs.finish - 0.10, pose: drift(-1) },
+    { at: 0, pose: passivePose(0)[0].pose, turn: { Hip: 0, Spine02: 0 }, hips: [0, 0, 0] },
+    {
+      // A sink before the lift. Arms that rise out of a body that did not gather first read as an
+      // elevator; a body that drops, loads the legs and then extends reads as effort.
+      at: BEATS.logs.raised * 0.45,
+      turn: { Hip: -5, Waist: -6, Spine01: -8, Spine02: -10 },
+      hips: [-0.02, -0.045, 0],
+      pose: {
+        ...leg(-1, 19), ...leg(1, 18),
+        Waist: [-0.10, 0.99, -0.03], Spine01: [-0.14, 0.99, -0.03], Spine02: [-0.18, 0.98, -0.03],
+        L_Clavicle: [-0.02, -0.16, -0.99], R_Clavicle: [0.02, -0.16, 0.99],
+        L_Upperarm: [0.10, -0.86, -0.50], L_Forearm: [-0.16, -0.62, -0.77],
+        R_Upperarm: [0.10, -0.86, 0.50], R_Forearm: [-0.16, -0.62, 0.77],
+      },
+    },
+    {
+      at: BEATS.logs.raised,
+      // Up onto the toes of the drive leg, chest opening, a small counter-turn so the two sides do
+      // not arrive together.
+      turn: { Hip: 4, Waist: 5, Spine01: 3, Spine02: -4 },
+      hips: [0.01, 0.010, 0.008],
+      pose: {
+        ...held,
+        ...leg(-1, 5), ...leg(1, 7),
+      },
+    },
+    { at: BEATS.logs.raised + 0.55, pose: drift(1), turn: { Hip: 2, Spine02: 4 }, hips: [0.005, 0.008, -0.012] },
+    { at: BEATS.logs.finish - 0.10, pose: drift(-1), turn: { Hip: -2, Spine02: -5 }, hips: [0, 0.005, 0.012] },
     // One commitment at the end: the arms press further up and out as the last of it comes down.
     {
       at: BEATS.logs.finish,
+      // The commit: knees straighten, hips press up and forward, the chest arches back under the
+      // arms. This is the only frame of the move with any push in it and it has to look like one.
+      turn: { Hip: 3, Waist: 7, Spine01: 6, Spine02: -8 },
+      hips: [0.03, 0.016, 0.006],
       pose: {
         ...held,
-        L_Clavicle: [0.10, 0.78, -0.62], R_Clavicle: [0.14, 0.78, 0.61],
-        L_Upperarm: [0.10, 0.985, -0.14], L_Forearm: [0.04, 0.999, -0.03],
-        R_Upperarm: [0.10, 0.985, 0.14], R_Forearm: [0.04, 0.999, 0.03],
+        ...leg(-1, 4), ...leg(1, 6),
+        L_Clavicle: [0.08, 0.62, -0.78], R_Clavicle: [0.12, 0.62, 0.77],
+        L_Upperarm: [0.08, 0.84, -0.53], L_Forearm: [0.06, 0.995, -0.08],
+        R_Upperarm: [0.08, 0.84, 0.53], R_Forearm: [0.06, 0.995, 0.08],
         Spine02: [-0.14, 0.99, -0.03],
       },
     },
-    { at: BEATS.logs.finish + 0.45, pose: drift(0) },
-    { at: BEATS.logs.duration, pose: passivePose(0)[0].pose },
+    { at: BEATS.logs.finish + 0.45, pose: drift(0), turn: { Hip: 0, Spine02: 0 }, hips: [0, 0.004, 0] },
+    { at: BEATS.logs.duration, pose: passivePose(0)[0].pose, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
   ];
 }
 
@@ -395,44 +569,59 @@ export function logsPose(): Key[] {
  */
 export function ultimatePose(): Key[] {
   const rooted: Pose = {
-    // Straight, wide and planted: the stance of something that is not going to be moved.
-    L_Thigh: [-0.06, -0.97, -0.24], L_Calf: [-0.02, -0.999, -0.04],
-    R_Thigh: [-0.06, -0.97, 0.24], R_Calf: [-0.02, -0.999, 0.04],
+    // Wide and planted, and NOT straight. A leg typed as vertical is longer than the leg at rest,
+    // which drives the foot through the floor — and this move also lengthens the thighs by a tenth
+    // with `rig.stretch`, pushing them further down again. A small held bend absorbs both.
+    ...leg(-1, 4, -0.10), ...leg(1, 4, 0.11),
     Waist: [0, 1, 0], Spine01: [0, 1, 0], Spine02: [0, 1, 0],
   };
   // The canopy: arms high and thrown wide, forearms turned further out than the upper arms so the
   // silhouette forks the way a crown does instead of making a V.
   const canopy = (spread: number): Pose => ({
     ...rooted,
-    L_Clavicle: [-0.16, 0.50 + spread * 0.10, -0.85],
-    R_Clavicle: [-0.16, 0.50 + spread * 0.10, 0.85],
-    L_Upperarm: [-0.22, 0.62 + spread * 0.10, -0.75],
-    L_Forearm: [-0.28, 0.46 + spread * 0.06, -0.84],
-    R_Upperarm: [-0.22, 0.62 + spread * 0.10, 0.75],
-    R_Forearm: [-0.28, 0.46 + spread * 0.06, 0.84],
+    L_Clavicle: [-0.24, 0.42 + spread * 0.10, -0.87],
+    R_Clavicle: [-0.24, 0.42 + spread * 0.10, 0.87],
+    L_Upperarm: [-0.34, 0.54 + spread * 0.10, -0.77],
+    L_Forearm: [-0.42, 0.34 + spread * 0.06, -0.84],
+    R_Upperarm: [-0.34, 0.54 + spread * 0.10, 0.77],
+    R_Forearm: [-0.42, 0.34 + spread * 0.06, 0.84],
   });
 
   return [
-    { at: 0, pose: passivePose(0)[0].pose },
+    { at: 0, pose: passivePose(0)[0].pose, turn: { Hip: 0, Spine02: 0 }, hips: [0, 0, 0] },
     {
       // Sinking to root: knees bend, arms drop and gather in. Everything goes DOWN before it goes
-      // up, or the canopy opens out of nothing.
+      // up, or the canopy opens out of nothing. The deepest crouch in the kit, because this is the
+      // move that commits hardest.
       at: 0.24,
+      turn: { Hip: -6, Waist: -8, Spine01: -10, Spine02: -12 },
+      hips: [-0.03, -0.042, 0],
       pose: {
-        L_Thigh: [-0.14, -0.96, -0.24], L_Calf: [0.18, -0.98, -0.05],
-        R_Thigh: [-0.14, -0.96, 0.24], R_Calf: [0.18, -0.98, 0.05],
+        ...leg(-1, 24, -0.02), ...leg(1, 23, 0.02),
         Waist: [-0.10, 0.99, 0], Spine01: [-0.14, 0.99, 0], Spine02: [-0.18, 0.98, 0],
         L_Clavicle: [-0.05, -0.14, -0.99], R_Clavicle: [0.02, -0.14, 0.99],
         L_Upperarm: [0.22, -0.86, -0.46], L_Forearm: [-0.20, -0.66, 0.72],
         R_Upperarm: [0.22, -0.86, 0.46], R_Forearm: [-0.20, -0.66, -0.72],
       },
     },
-    { at: BEATS.ultimate.rooted, pose: canopy(0) },
-    // Thrown fully open on the frame the rain starts.
-    { at: BEATS.ultimate.open, pose: canopy(1) },
-    // A long, almost imperceptible widening through the downpour: the canopy is under load.
-    { at: (BEATS.ultimate.open + BEATS.ultimate.rainEnds) / 2, pose: canopy(1.35) },
-    { at: BEATS.ultimate.rainEnds, pose: canopy(1.1) },
-    { at: BEATS.ultimate.duration, pose: { ...rooted, ...passivePose(0)[0].pose } },
+    // Driving up out of the crouch, legs straightening under it.
+    { at: BEATS.ultimate.rooted, pose: canopy(0), turn: { Hip: 3, Waist: 4, Spine01: 2, Spine02: -3 }, hips: [0.01, 0.008, 0.006] },
+    // Thrown fully open on the frame the rain starts, at full extension.
+    { at: BEATS.ultimate.open, pose: canopy(1), turn: { Hip: 0, Waist: 2, Spine01: 0, Spine02: -6 }, hips: [0, 0.014, 0] },
+    // A long, almost imperceptible widening through the downpour: the canopy is under load, and
+    // the trunk sways off centre and back the way a loaded tree does.
+    {
+      at: (BEATS.ultimate.open + BEATS.ultimate.rainEnds) / 2,
+      pose: canopy(1.35),
+      turn: { Hip: -2, Waist: -3, Spine01: -2, Spine02: 5 },
+      hips: [0.004, 0.012, -0.014],
+    },
+    { at: BEATS.ultimate.rainEnds, pose: canopy(1.1), turn: { Hip: 2, Waist: 3, Spine01: 2, Spine02: -4 }, hips: [-0.004, 0.010, 0.012] },
+    {
+      at: BEATS.ultimate.duration,
+      pose: { ...rooted, ...passivePose(0)[0].pose },
+      turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 },
+      hips: [0, 0, 0],
+    },
   ];
 }

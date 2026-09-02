@@ -437,7 +437,7 @@ export const SKILLS: Skill[] = [
         at: at - 0.26,
         run: (rig: MonsterTreeRig, vfx: MonsterTreeVfx) => {
           const from = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          vfx.log(from.addScaledVector(facing(rig), 0.50 + i * 0.30), { length: 0.34, fall: 0.26, linger: 2.9 });
+          vfx.log(from.addScaledVector(facing(rig), 0.50 + i * 0.30), { length: 0.26, fall: 0.26, linger: 2.9 });
         },
       })),
       {
@@ -445,7 +445,7 @@ export const SKILLS: Skill[] = [
         run: (rig, vfx) => {
           const from = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
           const at = from.clone().addScaledVector(facing(rig), 1.45);
-          vfx.log(at, { length: 0.56, fall: 0.30, linger: 3.4 });
+          vfx.log(at, { length: 0.40, fall: 0.30, linger: 3.4 });
           vfx.delay(0.30, () => {
             const ground = new THREE.Object3D();
             ground.position.set(at.x, 0, at.z);
@@ -847,6 +847,8 @@ export class SkillRunner {
    */
   private readonly lungeFrom = new THREE.Vector3();
   private lungeK = 1;
+  /** What the outgoing move had stretched, faded out across the hand-over. */
+  private outgoingStretch: Array<[string, number]> = [];
   /** The skill returned to when a one-shot finishes. */
   restingId = 'idle';
 
@@ -931,8 +933,10 @@ export class SkillRunner {
     for (const key of ['grip-l', 'grip-r'] as const) {
       this.vfx.trails[key].strength = skill.trails?.includes(key) ? this.trailStrength : 0;
     }
-    // A skill that lengthened a limb must not hand it over stretched. Cleared on every change
-    // rather than by the skill that set it, so a move interrupted halfway still tidies up.
+    // A skill that lengthened a limb must not hand it over stretched — but it must not SNAP back
+    // either. The outgoing amounts are kept and faded across the hand-over; the incoming move
+    // overwrites whichever bones it stretches itself.
+    this.outgoingStretch = this.rig.stretchSnapshot();
     for (const bone of STRETCHED) this.rig.stretch(bone, 0);
     this.vfx.accent = skill.accent ?? ACCENT.iris;
     return true;
@@ -960,6 +964,16 @@ export class SkillRunner {
       this.lungeK = Math.min(1, this.lungeK + _dt / this.handoverSpan);
       const k = this.lungeK * this.lungeK * (3 - 2 * this.lungeK);
       this.rig.group.position.lerpVectors(this.lungeFrom, HOME, k);
+    }
+
+    // The outgoing stretch, decaying. Applied BEFORE the incoming drive so a move that stretches
+    // the same bone simply wins.
+    if (this.handover < 1 && this.outgoingStretch.length) {
+      const left = 1 - this.handover;
+      for (const [bone, amount] of this.outgoingStretch) this.rig.stretch(bone, amount * left);
+    } else if (this.outgoingStretch.length) {
+      for (const [bone] of this.outgoingStretch) this.rig.stretch(bone, 0);
+      this.outgoingStretch = [];
     }
 
     // The gesture, and the hand-over from whatever was posed before it.

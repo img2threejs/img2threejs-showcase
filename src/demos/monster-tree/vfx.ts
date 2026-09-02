@@ -272,7 +272,12 @@ class SporeField implements Tickable {
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           // Fade with distance so the far side of the field does not read as noise over the figure.
           vFade = clamp(1.0 - (-mv.z - 2.0) / 8.0, 0.15, 1.0);
-          gl_PointSize = size * 320.0 / max(-mv.z, 0.001);
+          // CLAMPED. Point size goes as 1/distance, so a sprite that drifts near the camera grows
+          // without limit: a single spore two thirds of a unit from the lens covered a third of
+          // the frame as a flat green sheet, and in a strip of review frames it read as a piece of
+          // broken geometry rather than as a mote. 90 px is about a tenth of the demo's canvas
+          // height, which is as large as anything atmospheric should ever get.
+          gl_PointSize = min(90.0, size * 320.0 / max(-mv.z, 0.001));
           gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `
@@ -672,7 +677,7 @@ class BurstSlot {
         attribute float size;
         void main() {
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          gl_PointSize = size * 420.0 / max(-mv.z, 0.001);
+          gl_PointSize = min(110.0, size * 420.0 / max(-mv.z, 0.001));
           gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `
@@ -1267,7 +1272,7 @@ class ToxinBloom implements Tickable {
         attribute float size;
         void main() {
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          gl_PointSize = size * 420.0 / max(-mv.z, 0.001);
+          gl_PointSize = min(110.0, size * 420.0 / max(-mv.z, 0.001));
           gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `
@@ -1470,6 +1475,11 @@ interface BranchShape {
   /** How much the shaft swells and pinches at its knots. Higher is rougher, more weathered wood. */
   knot?: number;
   /**
+   * Sides on the swept tube. Seven is enough for a twig and plainly faceted on anything thick:
+   * a called log is the widest wood in the demo and at seven sides it reads as a green crystal.
+   */
+  sides?: number;
+  /**
    * How much narrower the far end is than the base, as a fraction. Defaults to the branch tip
    * ratio, which is right for something still growing and wrong for something that was cut: a log
    * tapered to a quarter of its butt is a wedge, and a wedge lit flat reads as a leaf.
@@ -1566,7 +1576,7 @@ function growBranch(
 
   shape.tips?.push(path[path.length - 1].clone());
 
-  const tube = taperedTube(path, radii, 7, TRUNK_COLOUR);
+  const tube = taperedTube(path, radii, shape.sides ?? 7, TRUNK_COLOUR);
   if (tube) out.push(tube);
 }
 
@@ -1625,7 +1635,7 @@ function canopyPoints(
       void main() {
         vFleck = fract(sin(position.x * 91.7 + position.z * 47.3) * 43758.5453);
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = aSize * uScale / max(0.001, -mv.z);
+        gl_PointSize = min(120.0, aSize * uScale / max(0.001, -mv.z));
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `
@@ -2183,12 +2193,17 @@ class LogSlam implements Tickable {
     // keeps the broken stubs of its side growth without turning it into a shrub.
     // Thick. At 0.13 of its length the log came out as a flat sliver that read as a leaf blade
     // from any angle but square on; a called log has to be a chunk of trunk.
-    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), length, length * 0.19, 1, random, parts, null, {
-      // Barely tapered, so both ends are nearly the same gauge — a length cut out of a trunk, not
-      // a branch that narrows to a tip. With the default branch taper the log came out as a long
-      // wedge, and a wedge lying flat and lit from above reads as a leaf blade from every angle
-      // except square on.
-      steps: 6, wander: 0.06, knot: 0.26, forkScale: 0.14, taper: 0.86,
+    // A LENGTH CUT OUT OF A TRUNK, and every parameter here is chosen against something the branch
+    // defaults get wrong for it:
+    //   depth 0   no forks. A cut log has no side branches on it.
+    //   taper     0.88, so both ends are nearly the same gauge. At the branch default the log came
+    //             out a long wedge, and a wedge lying flat reads as a leaf blade.
+    //   knot      0.06. The knot term is a sine at frequency 11 along the shaft, so at 0.22 over
+    //             nine steps consecutive rings differ by a third of the radius and the log came out
+    //             as a lumpy potato. Right roughness for growing wood, far too much for this.
+    //   sides     14. Seven is plainly faceted on the widest wood in the demo.
+    growBranch(new THREE.Vector3(), new THREE.Vector3(0, 1, 0), length, length * 0.19, 0, random, parts, null, {
+      steps: 7, wander: 0.045, knot: 0.06, taper: 0.88, sides: 14,
     });
     const geometry = mergeGeometries(parts);
     for (const g of parts) g.dispose();
@@ -3183,6 +3198,8 @@ export class MonsterTreeVfx {
   private patch: GrassPatch | null = null;
   private readonly rootMaterial: THREE.MeshStandardMaterial;
   private readonly rootBark: BarkSurface;
+  private readonly logMaterial: THREE.MeshStandardMaterial;
+  private readonly logBark: BarkSurface;
   /** A branch taken off the character's shoulder; every grown thing instances it. */
   private readonly stock: THREE.BufferGeometry | null;
   /**
@@ -3263,6 +3280,24 @@ export class MonsterTreeVfx {
       emissiveIntensity: 0.55,
     });
     this.rootBark = patchBarkSurface(this.rootMaterial);
+
+    /**
+     * Called wood gets its own, dimmer material.
+     *
+     * `rootMaterial` carries a little emissive because a grove stands out where the key barely
+     * reaches and would otherwise come up as black cut-outs. A summoned log lands a metre from the
+     * character, right in the key, so the same emissive makes it a glowing pale cylinder — it read
+     * as plastic rather than as timber. Same bark treatment, a quarter of the self-light.
+     */
+    this.logMaterial = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      color: new THREE.Color(PALETTE.barkMid).convertSRGBToLinear(),
+      roughness: 0.94,
+      metalness: 0,
+      emissive: new THREE.Color(PALETTE.mossDark).convertSRGBToLinear(),
+      emissiveIntensity: 0.13,
+    });
+    this.logBark = patchBarkSurface(this.logMaterial);
 
 
     for (let i = 0; i < 14; i += 1) {
@@ -3607,7 +3642,7 @@ export class MonsterTreeVfx {
       options.fall ?? 0.26,
       options.linger ?? 1.6,
       (Math.random() * 1e9) | 0,
-      this.rootMaterial,
+      this.logMaterial,
       (landed) => {
         this.impact('heavy', landed);
       },
@@ -3959,6 +3994,7 @@ export class MonsterTreeVfx {
     this.sapClock += dt * (0.55 + 0.45 * this.breath);
     this.veins?.setTime(this.sapClock);
     this.rootBark.setTime(this.sapClock);
+    this.logBark.setTime(this.sapClock);
     // The flash decays on its own and rides ON TOP of whatever charge a skill has set, so a hit
     // landing during a cast brightens from where the cast already was instead of resetting it.
     if (this.flashLevel > 0) {

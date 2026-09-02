@@ -360,6 +360,61 @@ measured off the character's iris, so 262.5°, a cold violet. Everything else in
 on the green-through-bark ramp, which is right for a creature made of wood and wrong for the one
 thing on stage that is not the creature.
 
+## The whole body, or it is a mannequin
+
+The first authored gestures moved arms and tilted a spine on top of a near-static resting clip, and
+that is exactly what they looked like: a figure standing perfectly still while one limb swung. A
+strip of frames across a move shows it immediately and a single screenshot never does — which is
+why `mt-strip.mjs` steps the clip with the demo's own loop stopped and tiles the frames.
+
+What was missing was everything below the shoulders. Three channels were added:
+
+- **`rig.turn(bone, radians)`** — twist about the figure's own up axis. Aiming can point a segment
+  somewhere; it cannot twist anything, and hips and shoulders are exactly the case that needs it
+  (`Hip` and `Waist` sit at the same point, so there is no direction between them to aim).
+- **`rig.shift(x, y, z)`** — the hips, for weight transfer and crouch.
+- **`leg(side, bend)`** — a leg derived from the measured rest, bent by a two-bone solve.
+
+The gestures were then rebuilt on animation fundamentals rather than arm positions: anticipation
+that goes the wrong way first, hips firing before the chest and the chest before the hand, weight
+moving onto one foot and off it, a bent elbow, follow-through past the frame that delivered, and
+no bilateral symmetry anywhere.
+
+### Four defects that only came out of measuring the rebuilt version
+
+1. **The hip-shift axes were wrong on all three.** Hip translation is expressed in `Root`'s local
+   frame, where world up is local **Z**. "Forward" was being written into local Z — so asking the
+   figure to step forward pushed it *down*, and the feet went 8 cm through the floor at the deepest
+   frame of a lunge. It read as a leg-bend problem, and no amount of knee work fixed it.
+2. **Typed leg directions quietly straightened the leg.** The rest leg already sits about 9 degrees
+   off vertical at the thigh and 12 at the calf; a leg typed as vertical is *longer* than rest and
+   drives the foot through the floor. `leg()` derives both segments from the measured rest with a
+   bend that can only ever add, and **solves** the calf angle — given a thigh of 0.395 tilted by
+   `a`, the calf of 0.473 must come back by `asin(0.395·sin(a)/0.473)` to put the foot under the
+   hip. Picking that angle by eye left the foot out in front and barely shortened the leg, so a
+   crouch asking for 7 cm of drop got 2 cm of leg and pushed the difference through the ground.
+3. **`setFromUnitVectors` is undefined at the antipode.** The minimal rotation between two opposite
+   directions has no unique axis, so a limb aimed through the far side of its own rest direction
+   *flips*: `L_Forearm` turned **134.8 degrees in one frame** while every other bone moved
+   smoothly. The axis is now chosen deterministically from the bone's rest frame, and the authored
+   poses keep clear of the antipode — which is the real remedy, since no aim is well behaved there.
+4. **The stretch did not cross-fade.** The pose hands over across the clip's own fade window; the
+   bone stretch snapped, dropping the ultimate's trunk from 1.45x to 1 between two frames and
+   taking the hands 0.22 units with it. It now decays across the same window.
+
+Together these took the worst transition discontinuity from 0.227 units to **0.055**.
+
+### And two ugliness fixes that no rubric was ever going to catch
+
+Point size goes as one over distance, so an atmospheric sprite that drifted near the camera grew
+without limit — a single spore covered a third of the frame as a flat green sheet. Every point
+material is now clamped. And a summoned log was built with the *branch* defaults: tapered to a tip
+(a wedge, which lying flat reads as a leaf blade), knotted at the branch's own roughness (a sine at
+frequency 11, which over nine steps made it a lumpy potato), seven-sided (visibly faceted on the
+widest wood in the demo) and carrying the grove's self-lighting (which a log landing a metre from
+the character does not need — it read as glowing plastic). Called wood now has its own material and
+its own profile.
+
 ## The animation is scored, and the score is reproducible
 
 `scripts/score-monster-tree-animation.mjs` drives the real showcase in a browser and prints eleven

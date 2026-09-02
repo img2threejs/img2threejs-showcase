@@ -146,6 +146,13 @@ export interface MonsterTreeRig {
    */
   stretch(bone: string, amount: number): void;
   /**
+   * What every bone is currently stretched by, so a move handing over can fade it out.
+   *
+   * The pose cross-fades and, until this existed, the stretch did not: ending the ultimate dropped
+   * the trunk from 1.45x back to 1 between two frames and took the hands 0.22 units with it.
+   */
+  stretchSnapshot(): Array<[string, number]>;
+  /**
    * Point a bone's segment along a direction, on top of whatever the clip is doing.
    *
    * `direction` is in the FIGURE's own frame — forward +X, up +Y, its left -Z, measured off the
@@ -157,6 +164,23 @@ export interface MonsterTreeRig {
    * bone's rotation on each `update`.
    */
   aim(bone: string, direction: THREE.Vector3 | null, weight?: number): void;
+  /**
+   * Rotate a bone about the figure's own up axis, on top of the clip and on top of any aim.
+   *
+   * Aiming can point a segment somewhere; it cannot TWIST anything, because a segment pointing
+   * along an axis is the same segment whatever its roll. Hips and shoulders are exactly that case
+   * — `Hip` and `Waist` sit at the same point, so there is no direction between them to aim — and
+   * they are also where almost all of a body's power comes from. Without this the figure could
+   * only ever wave its arms at a torso nailed in place.
+   */
+  turn(bone: string, radians: number): void;
+  /**
+   * Move the hips, in the figure's own frame, on top of whatever the clip has them doing.
+   *
+   * Weight shift. A body that strikes moves its centre of mass over one foot and then the other,
+   * and no amount of arm animation substitutes for it.
+   */
+  shift(x: number, y: number, z: number): void;
   /**
    * Re-apply the current aims. Call once per frame, after `update` and before `applyStretch`.
    *
@@ -867,6 +891,14 @@ export function buildMonsterTreeRig(
 
   /** Live aims, and scratch for the pose pass. Allocated once, not per bone per frame. */
   const aims = new Map<string, { dir: THREE.Vector3; weight: number }>();
+  /** Live twists about the figure's up axis, by bone. */
+  const turns = new Map<string, number>();
+  /** Live hip offset in the figure's frame, and what it was before this system moved it. */
+  const hipShift = new THREE.Vector3();
+  let hipBase: THREE.Vector3 | null = null;
+  let hipSet: THREE.Vector3 | null = null;
+  const POSE_TURN = new THREE.Quaternion();
+  const POSE_UP = new THREE.Vector3();
   const worldQ = new Map<string, THREE.Quaternion>();
   /**
    * What each aimed bone's rotation was before this system wrote it, and what it wrote. Same
@@ -882,6 +914,8 @@ export function buildMonsterTreeRig(
   const POSE_AIMED = new THREE.Quaternion();
   const POSE_PARENT_INV = new THREE.Quaternion();
   const POSE_GROUP = new THREE.Quaternion();
+  const POSE_FLIP = new THREE.Quaternion();
+  const POSE_AXIS = new THREE.Vector3();
 
   const applyPose = (): void => {
     // Hand back anything this system wrote last frame, so a weight blends from the CLIP's value
@@ -893,7 +927,30 @@ export function buildMonsterTreeRig(
       const bone = boneByName[name];
       if (bone && record.set.equals(bone.quaternion)) bone.quaternion.copy(record.base);
     }
-    if (!aims.size) return;
+
+    // The hips, same restore-then-write rule as everything else.
+    const hip = boneByName.Hip;
+    if (hip && hipBase && hipSet && hipSet.equals(hip.position)) hip.position.copy(hipBase);
+    if (hip && hipShift.lengthSq() > 1e-12) {
+      hipBase ??= new THREE.Vector3();
+      hipSet ??= new THREE.Vector3();
+      hipBase.copy(hip.position);
+      // Hip translation is expressed in `Root`'s local frame, whose rest quaternion maps a local
+      // (a, b, c) to world (-b, c, -a) — the same frame `holdRootMotion` works in. Reading that
+      // off: world up (+Y) is local +Z, world forward (+X) is local -Y, and world right (+Z) is
+      // local -X.
+      //
+      // Getting this wrong is not subtle and it is not obvious. The first version put "forward"
+      // into local Z, which IS the vertical — so asking the figure to step forward pushed it down
+      // instead, and the feet went 8 cm through the floor at the deepest frame of a lunge. It read
+      // as a leg-bend problem and no amount of knee work fixed it.
+      hip.position.z += hipShift.y;
+      hip.position.y -= hipShift.x;
+      hip.position.x -= hipShift.z;
+      hipSet.copy(hip.position);
+    }
+
+    if (!aims.size && !turns.size) return;
     group.getWorldQuaternion(POSE_GROUP);
     // Seed from the group above the bones, so the walk below is in world space throughout and an
     // aim stays correct while the viewer rotates the figure.
@@ -908,13 +965,54 @@ export function buildMonsterTreeRig(
         POSE_TARGET.copy(aim.dir).applyQuaternion(POSE_GROUP).normalize();
         POSE_PARENT_INV.copy(parentWorld).invert();
         POSE_LOCAL.copy(POSE_TARGET).applyQuaternion(POSE_PARENT_INV).normalize();
-        POSE_SWING.setFromUnitVectors(rest.dir, POSE_LOCAL);
+        // NEAR-ANTIPODAL IS UNDEFINED, and it has to be pinned down rather than left to chance.
+        //
+        // The minimal rotation taking one direction to another has no unique axis when the two are
+        // opposite: every axis perpendicular to them turns one into the other. `setFromUnitVectors`
+        // picks one, and which one it picks changes as the target sweeps past — so a limb aimed
+        // through the far side of its own rest direction FLIPS. Measured on the hand-over from the
+        // ultimate into Vine Lash, `L_Forearm` turned 134.8 degrees in a single frame while every
+        // other bone moved smoothly.
+        //
+        // Choosing the axis from the bone's own rest frame makes it at least deterministic and
+        // stable frame to frame. The authored poses also keep clear of the antipode, which is the
+        // real remedy — no aim can be well behaved there.
+        if (rest.dir.dot(POSE_LOCAL) < -0.995) {
+          POSE_FLIP.copy(rest.quat).invert();
+          POSE_AXIS.set(0, 0, 1).applyQuaternion(POSE_FLIP);
+          POSE_AXIS.addScaledVector(rest.dir, -POSE_AXIS.dot(rest.dir));
+          if (POSE_AXIS.lengthSq() < 1e-8) POSE_AXIS.set(1, 0, 0).addScaledVector(rest.dir, -rest.dir.x);
+          POSE_SWING.setFromAxisAngle(POSE_AXIS.normalize(), Math.PI);
+        } else {
+          POSE_SWING.setFromUnitVectors(rest.dir, POSE_LOCAL);
+        }
         POSE_AIMED.copy(POSE_SWING).multiply(rest.quat);
         const record = poseApplied.get(bone.name);
         if (record) record.base.copy(bone.quaternion);
         if (aim.weight >= 1) bone.quaternion.copy(POSE_AIMED);
         else bone.quaternion.slerp(POSE_AIMED, aim.weight);
         if (record) { record.set.copy(bone.quaternion); record.active = true; }
+      }
+
+      // Twist, after the aim: rotating a segment about its own heading does not move where it
+      // points, so the two compose without fighting.
+      const turn = turns.get(bone.name);
+      if (turn) {
+        let record = poseApplied.get(bone.name);
+        if (!record) {
+          record = { base: new THREE.Quaternion(), set: new THREE.Quaternion(), active: false };
+          poseApplied.set(bone.name, record);
+        }
+        if (!record.active) record.base.copy(bone.quaternion);
+        // The axis is the figure's up, taken into this bone's parent frame so the twist reads the
+        // same however the viewer has spun the turntable.
+        POSE_UP.set(0, 1, 0).applyQuaternion(POSE_GROUP);
+        POSE_PARENT_INV.copy(parentWorld).invert();
+        POSE_UP.applyQuaternion(POSE_PARENT_INV).normalize();
+        POSE_TURN.setFromAxisAngle(POSE_UP, turn);
+        bone.quaternion.premultiply(POSE_TURN);
+        record.set.copy(bone.quaternion);
+        record.active = true;
       }
       let mine = worldQ.get(bone.name);
       if (!mine) { mine = new THREE.Quaternion(); worldQ.set(bone.name, mine); }
@@ -1196,8 +1294,14 @@ export function buildMonsterTreeRig(
       if (held) { held.dir.copy(direction).normalize(); held.weight = weight; }
       else aims.set(bone, { dir: direction.clone().normalize(), weight });
     },
+    turn: (bone: string, radians: number) => {
+      if (Math.abs(radians) < 1e-5) turns.delete(bone);
+      else turns.set(bone, radians);
+    },
+    shift: (x: number, y: number, z: number) => { hipShift.set(x, y, z); },
     applyPose,
     authorClip,
+    stretchSnapshot: () => [...stretches].filter(([, v]) => v !== 0),
     applyStretch: () => applyStretches(),
     stretch: (bone: string, amount: number) => {
       if (amount === 0) stretches.delete(bone);

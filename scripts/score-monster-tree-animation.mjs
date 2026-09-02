@@ -135,6 +135,12 @@ const data = await page.evaluate(({ kit, rate }) => {
     const all = speed.L.concat(speed.R).sort((a, b) => a - b);
     const q = (f) => all[Math.min(all.length - 1, Math.floor(all.length * f))];
     const peak = all[all.length - 1];
+    let peakAt = 0;
+    for (const side of ['L', 'R']) {
+      for (let i = 0; i < speed[side].length; i += 1) {
+        if (speed[side][i] === peak) peakAt = s.frames[i + 1].t;
+      }
+    }
     const p90 = q(0.90);
     let worstRatioAt = 0;
     let worstRatio = 0;
@@ -172,6 +178,7 @@ const data = await page.evaluate(({ kit, rate }) => {
       duration: +s.duration.toFixed(3),
       holdMean: +holdMean.toFixed(4),
       peak: +peak.toFixed(3),
+      peakAt: +peakAt.toFixed(3),
       p90: +p90.toFixed(3),
       mean: +(all.reduce((a, b) => a + b, 0) / all.length).toFixed(4),
       worstRatio: +worstRatio.toFixed(2),
@@ -386,13 +393,16 @@ const ramp = (value, good, bad) => (value <= good ? 1 : value >= bad ? 0 : (bad 
 }
 // 5. beats agree
 {
-  const vine = data.clips.vine?.arrests ?? [];
-  const near = (list, target) => list.length
-    ? Math.min(...list.map((a) => Math.abs(a.at - target)))
-    : 99;
-  const dv = near(vine, beats?.vine?.release ?? 0.34);
-  add('beats match the gesture', ramp(dv, 0.06, 0.30),
-    `Vine Lash arrest is ${dv.toFixed(3)}s from its authored release`);
+  // A THROW'S PAYOFF IS THE RELEASE, AND A RELEASE HAPPENS AT PEAK SPEED, NOT AT A STOP.
+  //
+  // This check used to look for an arrest at the authored release time, which is the right test
+  // for a punch and the wrong one for a throw: a thrown object leaves the hand while the hand is
+  // still travelling as fast as it ever will, and the hand's hardest stop comes later, at the end
+  // of the follow-through. Applying the punch rule here scored 0.49 on a gesture that was doing
+  // exactly the right thing — the hand peaks 36 ms before the vine leaves it.
+  const dv = Math.abs((data.clips.vine?.peakAt ?? 99) - (beats?.vine?.release ?? 0.34));
+  add('release lands on peak speed', ramp(dv, 0.06, 0.30),
+    `Vine Lash's hand peaks ${dv.toFixed(3)}s from its authored release`);
 }
 // 6. alive
 {
