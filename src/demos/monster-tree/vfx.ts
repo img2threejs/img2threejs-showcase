@@ -1923,6 +1923,8 @@ class VineWhip implements Tickable {
   private readonly tube: THREE.Mesh;
   private readonly points: THREE.Vector3[] = [];
   private readonly radii: number[] = [];
+  /** Live radii, thinned as the shot travels away. */
+  private readonly live: number[] = [];
   private age = 0;
   private struck = false;
 
@@ -1948,7 +1950,10 @@ class VineWhip implements Tickable {
       this.points.push(new THREE.Vector3());
       // Thickest at the hand, tapering to a tendril: a vine is not a rope of constant gauge. At
       // half these gauges it came out as a drawn line rather than as something with a body.
-      this.radii.push(reach * (0.032 - 0.021 * (i / VineWhip.LINKS)));
+      // Long and slim: a shaft is read from its LENGTH against its gauge, and at the earlier
+      // thickness the same reach came out stubby enough to look like a limb rather than a shot.
+      this.radii.push(reach * (0.020 - 0.014 * (i / VineWhip.LINKS)));
+      this.live.push(0);
     }
     this.colour = colour;
     this.tube = new THREE.Mesh(new THREE.BufferGeometry(), material);
@@ -1975,11 +1980,23 @@ class VineWhip implements Tickable {
     } else if (this.age < this.outTime + this.holdTime) {
       extend = 1;
     } else {
-      extend = 1 - (this.age - this.outTime - this.holdTime) / this.backTime;
+      extend = 1;
     }
 
+    // IT LEAVES THE HAND. It does not come back to it.
+    //
+    // The first version retracted — the far end travelled home and the whole thing was reeled in,
+    // which made it a tongue rather than something thrown. A vine that is FIRED detaches: the near
+    // end lets go and chases the far end downrange while the whole length thins out and is gone by
+    // the time it gets there. `away` is how far through that the shot is.
+    const away = this.age <= this.outTime + this.holdTime
+      ? 0
+      : Math.min(1, (this.age - this.outTime - this.holdTime) / this.backTime);
     this.origin.setFromMatrixPosition(this.from.matrixWorld);
     this.tip.copy(this.origin).addScaledVector(this.heading, this.reach * extend);
+    // The tail slides forward along the shot, so the vine shortens from behind rather than being
+    // pulled in from the front.
+    this.origin.lerp(this.tip, away * away);
 
     if (!this.struck && this.age >= this.outTime) {
       this.struck = true;
@@ -2004,15 +2021,23 @@ class VineWhip implements Tickable {
       // sin(pi*s) is zero at both ends and one in the middle: the bow leaves the hand and arrives
       // at the target cleanly however wide it swings between them.
       const bow = Math.sin(s * Math.PI);
-      point.addScaledVector(side, bow * this.reach * (0.20 + 0.16 * lash) * this.bend);
-      point.y += bow * this.reach * (0.26 - 0.10 * settle);
-      const wave = Math.sin(s * 9.0 - this.age * 19) * lash * this.reach * 0.09 * s;
+      // A SHAFT WITH A BOW IN IT, not a rope. At the earlier amplitudes — a fifth of the reach
+      // sideways and a quarter of it upward — the thing that left the hand was a fat green
+      // crescent hanging in the air, and it read as a banana rather than as wood travelling fast.
+      // The arc is now just enough to say the shot was thrown rather than aimed down a ruler.
+      point.addScaledVector(side, bow * this.reach * (0.07 + 0.05 * lash) * this.bend);
+      point.y += bow * this.reach * (0.085 - 0.03 * settle);
+      const wave = Math.sin(s * 9.0 - this.age * 19) * lash * this.reach * 0.035 * s;
       point.addScaledVector(side, wave);
-      point.y -= bow * this.reach * 0.05 * settle;
+      point.y -= bow * this.reach * 0.02 * settle;
     }
 
+    // Thinning as it goes: what is left at the end is a thread, and then nothing.
+    const thin = 1 - away * 0.92;
+    for (let i = 0; i <= VineWhip.LINKS; i += 1) this.live[i] = this.radii[i] * thin;
+
     this.tube.geometry.dispose();
-    const geometry = taperedTube(this.points, this.radii, 6, this.colour);
+    const geometry = taperedTube(this.points, this.live, 6, this.colour);
     if (geometry) this.tube.geometry = geometry;
     return true;
   }
@@ -2499,17 +2524,26 @@ function shatterTexture(seed = 0x5a7c): THREE.Texture {
  */
 class VoidShatter implements Tickable {
   readonly object: THREE.Group;
-  private readonly plane: THREE.Mesh;
+  /**
+   * THREE layered crack planes, not one.
+   *
+   * A single billboard is a sticker: it has no thickness, so nothing about it says the break is in
+   * space rather than painted on the air in front of it. Three copies at different scales, rotated
+   * against each other and offset a little toward and away from the viewer, give the fracture
+   * parallax and a sense of depth — the near layer slides against the far one as the camera moves,
+   * which is the whole read.
+   */
+  private readonly layers: Array<{ mesh: THREE.Mesh; spin: number; scale: number; aspect: number; depth: number }> = [];
   private readonly material: THREE.MeshBasicMaterial;
   /**
    * Every shard in ONE geometry, moved by writing vertices.
    *
    * The first version gave each sliver its own `THREE.Mesh`, and thirty-four of those is
    * thirty-four draw calls for one effect — measured at 141 draw calls and 74 fps on a frame that
-   * otherwise runs at 120. They are three vertices each; rewriting 102 positions on the CPU costs
-   * nothing and draws once.
+   * otherwise runs at 120. They are three vertices each; rewriting 102 positions costs nothing.
    */
   private readonly shards: THREE.Mesh;
+  private readonly shardColour: THREE.BufferAttribute;
   private readonly rest: Float32Array;
   private readonly live: Float32Array;
   private readonly origin: Float32Array;
@@ -2517,6 +2551,8 @@ class VoidShatter implements Tickable {
   private readonly spin: Float32Array;
   private readonly angle: Float32Array;
   private readonly count: number;
+  /** The expanding ring of disturbed air, in the plane of the break. */
+  private readonly airRing: THREE.Mesh;
   private age = 0;
 
   constructor(
@@ -2525,26 +2561,67 @@ class VoidShatter implements Tickable {
     private readonly duration: number,
     colour: THREE.Color,
     map: THREE.Texture,
+    ring: THREE.Texture,
     seed: number,
+    /**
+     * A pooled light, driven for the life of the break.
+     *
+     * This is most of what "make it real" means. A fracture that throws no light is a picture of a
+     * fracture: the character standing next to it keeps whatever shading it already had, the
+     * ground under it stays flat, and nothing in the scene admits the event happened. One real
+     * light — hard on for a few frames, then falling away — puts a rim on the figure, a pool on the
+     * floor, and the break into the same world as everything else.
+     */
+    private readonly lamp: THREE.PointLight | null,
+    private readonly onDone: () => void,
   ) {
     this.object = new THREE.Group();
     this.object.name = 'vfx:shatter';
     this.object.position.copy(at);
     const random = mulberry32(seed);
+    // Kept in the world's own colour. Lerping this far toward white — it was 0.55 — bleached the
+    // whole fracture grey, and a grey web in a green scene reads as a sticker from somewhere else.
+    // The white belongs to the CORE only, and the texture already paints that.
+    const hot = colour.clone().lerp(new THREE.Color(1, 1, 1), 0.16);
 
     this.material = new THREE.MeshBasicMaterial({
       map,
-      color: colour,
+      color: hot,
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       opacity: 0,
     });
-    this.plane = new THREE.Mesh(new THREE.PlaneGeometry(size, size), this.material);
-    this.plane.frustumCulled = false;
-    this.plane.userData.ownMaterial = true;
-    this.object.add(this.plane);
+    for (let i = 0; i < 3; i += 1) {
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size, size), this.material);
+      mesh.frustumCulled = false;
+      if (i === 0) mesh.userData.ownMaterial = true;
+      this.object.add(mesh);
+      this.layers.push({
+        mesh,
+        spin: (random() - 0.5) * 2.2,
+        scale: 1 - i * 0.24,
+        // Squashed differently on each layer, and never square. Three concentric copies of a
+        // radial pattern at the same aspect make a perfect star, and nothing breaks in a perfect
+        // star — the asymmetry is what says the sheet failed along its own weaknesses.
+        aspect: 0.72 + random() * 0.5,
+        depth: (i - 1) * size * 0.11,
+      });
+    }
+
+    // The air going out from the break, edge-on to the fracture plane so it reads as a pressure
+    // wave leaving it rather than as a second crack.
+    this.airRing = new THREE.Mesh(
+      new THREE.PlaneGeometry(size * 1.6, size * 1.6),
+      new THREE.MeshBasicMaterial({
+        map: ring, color: colour.clone().lerp(new THREE.Color(1, 1, 1), 0.3),
+        transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, opacity: 0,
+      }),
+    );
+    this.airRing.frustumCulled = false;
+    this.airRing.userData.ownMaterial = true;
+    this.object.add(this.airRing);
 
     this.count = 34;
     this.rest = new Float32Array(this.count * 9);
@@ -2553,6 +2630,7 @@ class VoidShatter implements Tickable {
     this.velocity = new Float32Array(this.count * 3);
     this.spin = new Float32Array(this.count);
     this.angle = new Float32Array(this.count);
+    const colours = new Float32Array(this.count * 9);
 
     for (let i = 0; i < this.count; i += 1) {
       // Irregular triangles, never equilateral: a broken sheet gives slivers and wedges, and a
@@ -2574,28 +2652,60 @@ class VoidShatter implements Tickable {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(this.live, 3));
     (geometry.getAttribute('position') as THREE.BufferAttribute).setUsage(THREE.DynamicDrawUsage);
+    this.shardColour = new THREE.BufferAttribute(colours, 3);
+    this.shardColour.setUsage(THREE.DynamicDrawUsage);
+    geometry.setAttribute('color', this.shardColour);
     const shardMaterial = new THREE.MeshBasicMaterial({
-      color: colour.clone().multiplyScalar(1.4),
-      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, opacity: 0.9,
+      vertexColors: true,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, opacity: 0.95,
     });
     this.shards = new THREE.Mesh(geometry, shardMaterial);
     this.shards.name = 'vfx:shatter-shards';
     this.shards.frustumCulled = false;
     this.shards.userData.ownMaterial = true;
     this.object.add(this.shards);
+    this.hot = hot;
+    this.cold = colour.clone().multiplyScalar(0.35);
   }
+
+  private readonly hot: THREE.Color;
+  private readonly cold: THREE.Color;
 
   tick(dt: number): boolean {
     this.age += dt;
     const t = this.age / this.duration;
-    if (t >= 1) return false;
-    // Face the viewer. A fracture pattern seen edge-on is a line.
-    this.plane.quaternion.copy(SHATTER_FACING);
-    this.shards.quaternion.copy(SHATTER_FACING);
+    if (t >= 1) {
+      this.onDone();
+      return false;
+    }
     // Snaps open, then holds and fades: glass cracks in one event and the crack stays.
-    const open = Math.min(1, this.age / 0.15);
-    this.plane.scale.setScalar(0.45 + open * 0.55 + t * 0.22);
-    this.material.opacity = open * (t < 0.4 ? 1 : Math.max(0, 1 - (t - 0.4) / 0.6));
+    const open = Math.min(1, this.age / 0.07);
+    const fade = t < 0.22 ? 1 : Math.max(0, 1 - (t - 0.22) / 0.78) ** 1.5;
+    this.material.opacity = open * fade;
+
+    for (let i = 0; i < this.layers.length; i += 1) {
+      const layer = this.layers[i];
+      // Face the viewer. A fracture pattern seen edge-on is a line.
+      layer.mesh.quaternion.copy(SHATTER_FACING);
+      layer.mesh.position.set(0, 0, 0).addScaledVector(SHATTER_FORWARD, layer.depth);
+      layer.mesh.rotateZ(layer.spin * (0.6 + t * 0.5));
+      const s = layer.scale * (0.45 + open * 0.55 + t * 0.28);
+      layer.mesh.scale.set(s * layer.aspect, s / layer.aspect, s);
+    }
+
+    // The pressure wave: out fast, gone well before the crack is.
+    const airT = Math.min(1, this.age / (this.duration * 0.42));
+    this.airRing.quaternion.copy(SHATTER_FACING);
+    this.airRing.scale.setScalar(0.15 + airT * 1.5);
+    (this.airRing.material as THREE.MeshBasicMaterial).opacity = 0.65 * (1 - airT) ** 1.6;
+
+    // THE LIGHT. Hard on within two frames, then falling off as the square — which is what a
+    // release of energy does and what a lamp being turned down does not.
+    if (this.lamp) {
+      this.lamp.color.copy(this.hot);
+      this.lamp.intensity = 14 * this.size * Math.min(1, this.age / 0.035) * (1 - t) ** 2.4;
+      this.lamp.position.copy(this.object.position);
+    }
 
     for (let i = 0; i < this.count; i += 1) {
       this.origin[i * 3] += this.velocity[i * 3] * dt;
@@ -2613,12 +2723,28 @@ class VoidShatter implements Tickable {
         this.live[o + 1] = this.origin[i * 3 + 1] + x * sin + y * cos;
         this.live[o + 2] = this.origin[i * 3 + 2] + this.rest[o + 2];
       }
+      // Shards COOL as they travel. A piece that leaves white-hot and is still white-hot when it
+      // lands has no history in it; the ramp from the break's own colour down to a dull ember is
+      // what makes the field of them read as debris rather than as sparks.
+      SHARD_COLOUR.copy(this.hot).lerp(this.cold, Math.min(1, t * 2.1));
+      const array = this.shardColour.array as Float32Array;
+      for (let v = 0; v < 3; v += 1) {
+        const o = i * 9 + v * 3;
+        array[o] = SHARD_COLOUR.r;
+        array[o + 1] = SHARD_COLOUR.g;
+        array[o + 2] = SHARD_COLOUR.b;
+      }
     }
     (this.shards.geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
-    (this.shards.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.9 - t * 1.3);
+    this.shardColour.needsUpdate = true;
+    (this.shards.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.95 - t * 1.25);
     return true;
   }
 }
+
+const SHARD_COLOUR = new THREE.Color();
+/** The direction the viewer is looking, so the layered planes can be offset in depth. */
+const SHATTER_FORWARD = new THREE.Vector3(0, 0, 1);
 
 /**
  * Small toxin stains on the floor, hundreds of them, in ONE draw call.
@@ -3736,13 +3862,17 @@ export class MonsterTreeVfx {
 
   /** The void breaking at a point: a shattered-glass fracture that throws its own pieces. */
   shatter(at: THREE.Vector3, options: { size?: number; duration?: number } = {}): void {
+    const lamp = this.lights.take();
     const effect = new VoidShatter(
       at.clone(),
       (options.size ?? 1.1) * this.scale,
       options.duration ?? 1.5,
       this.accentColour,
       this.shatterMap,
+      this.ring,
       (Math.random() * 1e9) | 0,
+      lamp,
+      () => { if (lamp) this.lights.release(lamp); },
     );
     effect.object.traverse((o) => { o.userData.isHighlight = true; });
     this.group.add(effect.object);

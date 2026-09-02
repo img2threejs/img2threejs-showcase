@@ -360,6 +360,54 @@ measured off the character's iris, so 262.5°, a cold violet. Everything else in
 on the green-through-bark ramp, which is right for a creature made of wood and wrong for the one
 thing on stage that is not the creature.
 
+## Vine Lash: slow up, still, then fast
+
+The move used to lift and throw at the same rate, and a gesture whose windup travels as fast as its
+strike reads as one continuous wave — there is no strike in it. It is now three distinct speeds:
+
+| | |
+|---|---|
+| **0.00 – 0.55 s** | the arm lifts and loads. Slowly. Weight settles onto the back foot first, hips wind away, the elbow comes up behind the shoulder |
+| **0.55 – 0.64 s** | **nothing moves.** A tenth of a second of stillness, and it is what makes the next frame land — an audience shown a body stopping reads whatever follows as fast |
+| **0.64 – 0.73 s** | it fires. Ninety milliseconds, covering more distance than the whole raise did |
+
+The shot leaves only once the arm is up, which is what the beat of stillness is for. And it does
+**not come back**: the first version reeled the vine in, which made it a tongue. A fired shot
+detaches — the near end lets go and chases the far end downrange while the whole length thins out,
+and there is nothing left by the time it arrives.
+
+Measured, the hand's peak speed lands 27 ms from the authored release — a throw releases at maximum
+speed, not at a stop.
+
+### It has to be a shaft, not a rope
+
+At the first amplitudes the fired vine bowed a fifth of its reach sideways and a quarter upward, and
+what left the hand was a fat green crescent hanging in the air: a banana, not wood travelling fast.
+The arc is now just enough to say the shot was thrown rather than aimed down a ruler, and the gauge
+is thin enough that the LENGTH reads.
+
+## The fracture, made real
+
+A crack that throws no light is a picture of a crack. The character standing beside it keeps
+whatever shading it already had, the floor underneath stays flat, and nothing in the scene admits
+the event happened. Four changes:
+
+- **A real light.** One pooled `PointLight`, hard on within two frames and falling off as the
+  square — which is what a release of energy does and what a lamp being turned down does not. It
+  puts a rim on the figure and a pool on the ground.
+- **Depth.** Three crack layers instead of one billboard, at different scales, rotated against each
+  other and offset toward and away from the viewer, each squashed on a different aspect. A single
+  plane is a sticker; three that slide against each other have thickness. And three concentric
+  copies of a radial pattern at the *same* aspect make a perfect star — nothing breaks in a perfect
+  star, so the asymmetry is what says the sheet failed along its own weaknesses.
+- **A pressure wave**, edge-on to the fracture plane, out fast and gone well before the crack is.
+- **Shards that cool.** A piece that leaves white-hot and is still white-hot when it lands has no
+  history in it. They ramp from the break's colour down to a dull ember as they fall.
+
+It also had to stay in the world's own green. Lerping the crack colour 55% toward white bleached
+the whole thing grey, and a grey web in a green scene reads as a sticker from somewhere else — the
+white belongs to the core, which the texture already paints.
+
 ## The whole body, or it is a mannequin
 
 The first authored gestures moved arms and tilted a spine on top of a near-static resting clip, and

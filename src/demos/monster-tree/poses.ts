@@ -286,7 +286,12 @@ function sample(keys: Key[], bone: string, time: number, out: THREE.Vector3): TH
  * vine leaves a hand that is still winding up.
  */
 export const BEATS = {
-  vine: { release: 0.34, recover: 0.95, duration: 1.55 },
+  // SLOW UP, STILL, THEN FAST. `raised` is the frame the arm has finished lifting and `release` is
+  // the frame it fires — the 0.10s between them is a deliberate beat of stillness, and the fire
+  // itself covers more distance in 0.09s than the raise covered in 0.55. Contrast in SPEED is what
+  // makes a strike read as a strike; a gesture that lifts and throws at the same rate reads as one
+  // continuous wave, which is what this move did before.
+  vine: { raised: 0.55, release: 0.64, recover: 1.10, duration: 1.85 },
   // Nature's Call no longer beats time with its arms. They go up, they STAY up, and the wood comes
   // down while they are held there — so these are the moments the summons land, not the moments an
   // arm moves. `raised` is when the hold is reached and the coils are at full strength.
@@ -366,87 +371,97 @@ export function vinePose(): Key[] {
   return [
     { at: 0, pose: passivePose(0)[0].pose, turn: { Hip: 0, Spine02: 0 }, hips: [0, 0, 0] },
     {
-      // ANTICIPATION. Everything goes the wrong way first: the hips wind away from the target, the
-      // shoulders wind further than the hips, the weight drops back onto the rear foot and the
-      // knees take it. The throwing arm folds tight across the chest — a bent elbow, not a stick
-      // held out behind.
-      //
-      // This is the frame the whole move was missing. Without it a viewer sees an arm swing out of
-      // a body that never agreed to it, which is what "one moving limb on a mannequin" looks like.
-      at: 0.16,
-      turn: { Hip: -9, Waist: -16, Spine01: -20, Spine02: -26 },
-      hips: [-0.045, -0.035, -0.02],
+      // The raise begins. Weight settles back onto the rear foot first — a body loads before it
+      // lifts, and the order matters more than the amount.
+      at: 0.22,
+      turn: { Hip: -5, Waist: -8, Spine01: -10, Spine02: -13 },
+      hips: [-0.022, -0.020, -0.010],
       pose: {
-        ...leg(-1, 13, -0.03), ...leg(1, 17, 0.02),
-        Waist: [-0.12, 0.99, -0.04], Spine01: [-0.16, 0.98, -0.05], Spine02: [-0.22, 0.96, -0.06],
-        L_Clavicle: [-0.34, 0.14, -0.93],
-        // Shoulder back and low, elbow high, hand drawn in across the chest. The forearm stays on
-        // the NEAR side of the arm's rest direction on purpose: the rest forearm points along the
-        // character's left, and an aim past about 140 degrees from that runs into the antipode
-        // where the minimal rotation has no defined axis. The first version asked for 150 and the
-        // bone flipped 135 degrees in a frame.
-        L_Upperarm: [-0.52, -0.34, -0.78],
-        L_Forearm: [0.34, 0.62, 0.71],
+        ...leg(-1, 8, -0.02), ...leg(1, 12, 0.015),
+        Waist: [-0.07, 0.997, -0.04], Spine01: [-0.09, 0.995, -0.04], Spine02: [-0.13, 0.99, -0.05],
+        L_Clavicle: [-0.18, 0.10, -0.98],
+        L_Upperarm: [-0.30, -0.50, -0.81],
+        L_Forearm: [0.10, 0.30, -0.95],
+        R_Clavicle: [0.14, 0.02, 0.99],
+        R_Upperarm: [0.36, -0.68, 0.64], R_Forearm: [0.50, -0.82, 0.28],
+      },
+    },
+    {
+      // THE LOADED POSE. Arm all the way up and back, elbow high, hand cocked behind the shoulder;
+      // hips wound away, weight fully on the back foot, knees taking it. Everything is pointing the
+      // wrong way, which is what anticipation is.
+      at: BEATS.vine.raised,
+      turn: { Hip: -11, Waist: -18, Spine01: -23, Spine02: -30 },
+      hips: [-0.045, -0.035, -0.022],
+      pose: {
+        ...leg(-1, 13, -0.03), ...leg(1, 19, 0.02),
+        Waist: [-0.13, 0.99, -0.04], Spine01: [-0.17, 0.98, -0.05], Spine02: [-0.24, 0.96, -0.06],
+        L_Clavicle: [-0.36, 0.22, -0.91],
+        L_Upperarm: [-0.54, -0.16, -0.83],
+        L_Forearm: [0.26, 0.70, 0.66],
         R_Clavicle: [0.16, 0.02, 0.99],
         R_Upperarm: [0.42, -0.62, 0.66], R_Forearm: [0.58, -0.78, 0.24],
       },
     },
     {
-      // The hips fire FIRST and the hand has not caught up. Three frames of the chain in order —
-      // hips, then chest, then arm — is the whole difference between a throw and a wave.
-      at: 0.27,
-      turn: { Hip: 7, Waist: 6, Spine01: -4, Spine02: -16 },
-      hips: [0.01, -0.03, 0.01],
+      // HELD. Same pose, one hair further back. Nothing moves for a tenth of a second and that
+      // stillness is what makes the next frame land — an audience that has been shown a body
+      // stopping reads whatever follows as fast.
+      at: BEATS.vine.release - 0.02,
+      turn: { Hip: -12, Waist: -19, Spine01: -24, Spine02: -32 },
+      hips: [-0.047, -0.036, -0.023],
       pose: {
-        ...leg(-1, 13, 0.01), ...leg(1, 19, 0.02),
-        L_Clavicle: [-0.10, 0.10, -0.99],
-        L_Upperarm: [0.10, -0.22, -0.97],
-        L_Forearm: [0.62, 0.44, 0.65],
+        ...leg(-1, 13, -0.03), ...leg(1, 20, 0.02),
+        Waist: [-0.14, 0.99, -0.04], Spine01: [-0.18, 0.98, -0.05], Spine02: [-0.25, 0.96, -0.06],
+        L_Clavicle: [-0.38, 0.23, -0.90],
+        L_Upperarm: [-0.56, -0.14, -0.82],
+        L_Forearm: [0.24, 0.72, 0.65],
+        R_Upperarm: [0.43, -0.61, 0.66], R_Forearm: [0.59, -0.77, 0.24],
       },
     },
     {
-      // RELEASE. Hips have turned through, chest has caught them, the arm arrives last and
-      // straightens as it does. Weight is on the front foot and the back heel has come off.
-      at: BEATS.vine.release,
-      turn: { Hip: 11, Waist: 24, Spine01: 34, Spine02: 46 },
-      hips: [0.05, -0.015, 0.025],
+      // FIRE. Ninety milliseconds from fully wound to fully extended: the fastest thing in the kit
+      // and the whole reason for the two frames above it. Hips and chest snap through together
+      // here rather than in sequence — a throw this short has no room for a chain.
+      at: BEATS.vine.release + 0.07,
+      turn: { Hip: 14, Waist: 28, Spine01: 38, Spine02: 50 },
+      hips: [0.055, -0.016, 0.028],
       pose: {
         ...leg(-1, 10, 0.02), ...leg(1, 22, 0.03),
-        Waist: [0.22, 0.97, -0.05], Spine01: [0.30, 0.95, -0.06], Spine02: [0.40, 0.91, -0.08],
-        L_Clavicle: [0.30, 0.04, -0.95],
-        L_Upperarm: [0.90, -0.10, -0.42],
+        Waist: [0.24, 0.97, -0.05], Spine01: [0.33, 0.94, -0.06], Spine02: [0.44, 0.89, -0.08],
+        L_Clavicle: [0.32, 0.04, -0.95],
+        L_Upperarm: [0.91, -0.10, -0.40],
         L_Forearm: [0.99, 0.06, -0.10],
-        R_Clavicle: [-0.24, 0.06, 0.97],
-        R_Upperarm: [-0.36, -0.62, 0.70], R_Forearm: [-0.20, -0.90, 0.39],
+        R_Clavicle: [-0.26, 0.06, 0.96],
+        R_Upperarm: [-0.38, -0.60, 0.70], R_Forearm: [-0.22, -0.89, 0.40],
       },
     },
     {
-      // FOLLOW THROUGH. Nothing stops on the frame it delivered: the hips carry a little further,
-      // the arm crosses down and in, the trailing arm swings up behind as the counterweight.
-      at: BEATS.vine.release + 0.20,
-      turn: { Hip: 13, Waist: 30, Spine01: 42, Spine02: 58 },
-      hips: [0.06, -0.028, 0.03],
+      // Follow-through: nothing stops on the frame it delivered.
+      at: BEATS.vine.release + 0.26,
+      turn: { Hip: 16, Waist: 33, Spine01: 44, Spine02: 58 },
+      hips: [0.062, -0.028, 0.032],
       pose: {
         ...leg(-1, 13, 0.025), ...leg(1, 24, 0.035),
-        Waist: [0.28, 0.95, -0.04], Spine01: [0.38, 0.92, -0.04], Spine02: [0.50, 0.86, -0.04],
-        L_Clavicle: [0.36, -0.10, -0.93],
+        Waist: [0.29, 0.95, -0.04], Spine01: [0.39, 0.92, -0.04], Spine02: [0.51, 0.86, -0.04],
+        L_Clavicle: [0.37, -0.10, -0.92],
         L_Upperarm: [0.86, -0.34, -0.38],
-        L_Forearm: [0.62, -0.52, 0.58],
-        R_Clavicle: [-0.30, 0.16, 0.94],
+        L_Forearm: [0.72, -0.50, 0.48],
+        R_Clavicle: [-0.31, 0.16, 0.94],
         R_Upperarm: [-0.62, -0.20, 0.75], R_Forearm: [-0.44, -0.30, 0.84],
       },
     },
     {
-      // Held on the line, the shoulder pulled by the load at the far end, weight settling back.
+      // Settling, weight coming back to centre, arm lowering.
       at: BEATS.vine.recover,
-      turn: { Hip: 7, Waist: 16, Spine01: 22, Spine02: 30 },
-      hips: [0.03, -0.018, 0.014],
+      turn: { Hip: 7, Waist: 15, Spine01: 20, Spine02: 27 },
+      hips: [0.028, -0.018, 0.013],
       pose: {
         ...leg(-1, 11, 0.01), ...leg(1, 15, 0.015),
-        Waist: [0.16, 0.98, -0.05], Spine01: [0.22, 0.97, -0.05], Spine02: [0.30, 0.94, -0.06],
-        L_Clavicle: [0.28, -0.02, -0.96],
-        L_Upperarm: [0.84, -0.24, -0.48],
-        L_Forearm: [0.94, -0.20, -0.28],
+        Waist: [0.15, 0.98, -0.05], Spine01: [0.21, 0.97, -0.05], Spine02: [0.28, 0.95, -0.06],
+        L_Clavicle: [0.24, -0.12, -0.96],
+        L_Upperarm: [0.72, -0.44, -0.53],
+        L_Forearm: [0.80, -0.48, -0.36],
         R_Upperarm: [-0.10, -0.72, 0.69], R_Forearm: [0.10, -0.92, 0.38],
       },
     },
@@ -454,16 +469,6 @@ export function vinePose(): Key[] {
   ];
 }
 
-
-/**
- * Chiêu 2 — Thiên Nhiên Vẫy Gọi. Both arms called up, then driven down and forward, three times,
- * then once more with everything behind it.
- *
- * "Đập liên tục" is a RHYTHM, and a rhythm needs a recovery between the beats or it is one long
- * push. Each slam is followed by a partial lift — not all the way back up, so the barrage keeps
- * moving forward — and the last lift goes higher than any of them because the fourth slam is the
- * one that lands with the stun.
- */
 export function logsPose(): Key[] {
   // Both arms up and open, palms turned outward, and then nothing: the summons happen while he
   // holds, not because he moves. This replaced a three-beat slam, and the reason is worth keeping —

@@ -336,24 +336,30 @@ export const SKILLS: Skill[] = [
     clip: 'authored:vine',
     fade: 0.14,
     loop: false,
-    measured: 'POSED. Wind the arm back across the body, then throw it straight out along +X — the direction the figure was MEASURED to face, off its own eye clusters. The vine leaves at 0.34s, the frame the hand stops, and the arm stays out while there is something on the end of it.',
+    measured: 'POSED, SLOW UP AND FAST OUT. The arm takes 0.55s to lift and load, holds still for a tenth of a second, and then fires in 0.09s — the fastest thing in the kit. The vine leaves only once the arm is up, and it does not come back: it detaches and travels away downrange, thinning to nothing.',
     // The arm lengthens into the throw so the reach peaks exactly as the hand stops.
     drive: (rig, vfx, time) => {
       // Enough to read as "duỗi tay" without the forearm becoming a tentacle: at 0.85 the arm
       // stretched most of a metre and the shoulder pinched away from the body.
-      const reach = swell(time, 0.14, 0.72) * 0.40;
+      // The lengthening belongs to the SHOT, not to the raise. Starting it during the lift made the
+      // arm grow while it was still winding up, which is the one thing that told a viewer the whole
+      // gesture was a single continuous move.
+      const reach = swell(time, BEATS.vine.release - 0.06, BEATS.vine.release + 0.42) * 0.42;
       rig.stretch('L_Forearm', reach);
       rig.stretch('L_Upperarm', reach * 0.55);
-      const build = buildTo(time, BEATS.vine.release, 0.30);
+      // Sap gathers through the whole slow raise, so the still frame before the fire is visibly
+      // loaded rather than just paused.
+      const build = buildTo(time, BEATS.vine.release, 0.52);
       if (build > vfx.charge) vfx.charge = build;
       // The lunge of the empowered form. Bounded and self-returning: it is a step, not a
       // relocation, so the figure is back where the viewer framed it by the time the move ends.
       if (rig.group.userData.empowered) {
-        rig.group.position.copy(HOME).addScaledVector(LUNGE, swell(time, BEATS.vine.release, 1.10) * 0.26);
+        rig.group.position.copy(HOME).addScaledVector(LUNGE, swell(time, BEATS.vine.release, BEATS.vine.recover + 0.3) * 0.26);
       }
     },
     cues: [
-      { at: 0.20, run: (rig, vfx) => vfx.impact('ground', new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld), rig) },
+      // Weight arriving on the back foot as he loads, not a strike — no hold on the clip for it.
+      { at: 0.24, run: (rig, vfx) => vfx.impact('ground', new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld)) },
       {
         at: BEATS.vine.release,
         run: (rig, vfx) => {
@@ -368,17 +374,19 @@ export const SKILLS: Skill[] = [
           LUNGE.copy(heading);
 
           vfx.vine(rig.sockets['grip-l'], heading, {
-            bend: empowered ? 1.15 : 0.85,
+            bend: empowered ? 0.55 : 0.40,
             // Empowered reaches further and holds longer: the same move with more of it.
             // Re-measured against the leading camera: his feet now sit at px 214 of a 628-pixel
             // canvas and a point 1.6 units downrange projects to px 610, so the usable reach grew
             // by about 40%. 0.62 figure heights is 1.18 units, which lands the tip at px 505 and
             // leaves the fracture room to open around it. The bow lifts the middle of the vine
             // well above the straight line, so the path is longer still than the ground it covers.
-            reach: empowered ? 0.62 : 0.52,
-            out: 0.17,
-            hold: empowered ? 0.50 : 0.36,
-            back: 0.28,
+            reach: empowered ? 0.78 : 0.66,
+            // Out FAST — 0.11s to full reach, against a raise that took 0.55 — then barely any
+            // hold, then it detaches and travels away. The move is a shot, not a whip crack.
+            out: 0.11,
+            hold: empowered ? 0.10 : 0.07,
+            back: 0.34,
             onCatch: (at) => {
               // Plain: it holds and it SLOWS — a stain of creeping toxin under whatever it caught,
               // and nothing thrown. Empowered: it catches and it THROWS, so the same instant gets
@@ -391,8 +399,8 @@ export const SKILLS: Skill[] = [
               // the payoff of the move and it has to be seen: at the far end of the reach the
               // ground is already near the bottom-right corner of the frame.
               vfx.shatter(at.clone().setY(Math.max(0.95, at.y)), {
-                size: empowered ? 1.3 : 1.05,
-                duration: empowered ? 1.7 : 1.35,
+                size: empowered ? 0.95 : 0.78,
+                duration: empowered ? 1.05 : 0.85,
               });
               vfx.impact(empowered ? 'heavy' : 'light', at, rig);
               const ground = new THREE.Object3D();

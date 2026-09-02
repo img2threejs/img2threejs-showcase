@@ -144,14 +144,17 @@ const data = await page.evaluate(({ kit, rate }) => {
     const p90 = q(0.90);
     let worstRatioAt = 0;
     let worstRatio = 0;
+    // A TELEPORT IS A FRAME THAT STANDS ALONE — the same definition the transition check uses, and
+    // for the same reason. Judging a frame against the clip's own high quantile punishes a move
+    // for HAVING a fast part: Vine Lash spends 0.55s lifting slowly and 0.09s firing, so the fire
+    // is 5.5x the clip's p90 by construction, and that contrast is the entire point of the move.
+    // A frame that is fast because the frames either side of it are also fast is motion; a frame
+    // that is fast on its own is a jump.
     for (const side of ['L', 'R']) {
-      // Each hand against ITS OWN distribution. Pooling both drags the quantile down with whichever
-      // arm is standing still, and then the working arm looks like a teleport for doing its job:
-      // Vine Lash throws with one hand and holds the other, so pooled it read 5x its own p90.
-      const own = [...speed[side]].sort((x, y) => x - y);
-      const ref = Math.max(0.05, own[Math.floor(own.length * 0.90)]);
-      for (let i = 0; i < speed[side].length; i += 1) {
-        const r = speed[side][i] / ref;
+      const v = speed[side];
+      for (let i = 1; i < v.length - 1; i += 1) {
+        const neighbours = Math.max(0.05, Math.max(v[i - 1], v[i + 1]));
+        const r = v[i] / neighbours;
         if (r > worstRatio) { worstRatio = r; worstRatioAt = s.frames[i + 1].t; }
       }
     }
@@ -367,8 +370,8 @@ const ramp = (value, good, bad) => (value <= good ? 1 : value >= bad ? 0 : (bad 
     if (c.peak > worstPeak) worstPeak = c.peak;
     if (c.worstRatio > worstRatio) { worstRatio = c.worstRatio; who = `${k}@${c.worstRatioAt}s`; }
   }
-  add('no teleports', Math.min(ramp(worstPeak, 12, 30), ramp(worstRatio, 4, 12)),
-    `peak ${worstPeak} H/s, worst frame ${worstRatio}x its clip's p90 (${who})`);
+  add('no teleports', Math.min(ramp(worstPeak, 12, 30), ramp(worstRatio, 1.6, 4)),
+    `peak ${worstPeak} H/s, worst frame ${worstRatio}x its own neighbours (${who})`);
 }
 // 3. no stalls
 {
