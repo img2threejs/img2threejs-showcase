@@ -66,6 +66,11 @@ import {
   createWhimsicalHearthHouseShowcase,
   makeWhimsicalHearthHouseBackground,
 } from './whimsical-hearth-house/whimsicalHearthHouseShowcase';
+import { createLighthouseCoveLookDevLights } from './lighthouse-cove/createLighthouseCoveModel';
+import {
+  createLighthouseCoveShowcase,
+  makeLighthouseCoveBackground,
+} from './lighthouse-cove/lighthouseCoveShowcase';
 import {
   createGirlCharacterModel,
   createGirlCharacterLookDevLights,
@@ -316,6 +321,49 @@ const authored: DemoEntry[] = [
     installLights: (scene) => scene.add(createMarsCatLookDevLights()),
     build: (scene) => {
       const group = createMarsCatModel({ castShadow: true, receiveShadow: true });
+      scene.add(group);
+      return group;
+    },
+  },
+  {
+    id: 'lighthouse-cove',
+    updatedAt: '2026-09-03',
+    title: 'Lighthouse Cove',
+    subjectClass: 'object',
+    blurb:
+      'A storybook lighthouse cove generated from a Codex reference image and rebuilt code-only by ' +
+      'the img2threejs sculpt pipeline: tapered striped tower with gallery railing and glowing lantern, ' +
+      'slate-gabled keeper\'s cottage with a teal door, layered rocky islet with moss, a plank dock ' +
+      'and a moored red rowboat. All eight passes were closed through the locked-sequential gate; ' +
+      'materials are reference palettes rendered procedurally at runtime.',
+    referenceImage: `${BASE}references/lighthouse-cove/reference.png`,
+    referenceKind: 'image',
+    sourcePath: 'src/demos/lighthouse-cove/createLighthouseCoveModel.ts',
+    sourceUrl: `${REPO}/src/demos/lighthouse-cove/createLighthouseCoveModel.ts`,
+    generatedWith: 'Codex ImageGen reference + img2threejs full sculpt pipeline (8 passes)',
+    prompt:
+      'Reconstruct the supplied storybook lighthouse cove as a procedural Three.js diorama: striped ' +
+      'tapered tower, glowing lantern room and red cone, keeper\'s cottage with teal door, rocky islet, ' +
+      'dock, rowboat, barrels and gulls.',
+    author: 'niccomann',
+    authorUrl: 'https://github.com/niccomann',
+    status: 'final',
+    cameraPosition: [9.5, 7.8, 11.5],
+    cameraTarget: [0, 2.6, 0.2],
+    cameraFov: 30,
+    accent: '#c0392b',
+    backgroundGradient: { inner: '#f4ebde', outer: '#c9b49c' },
+    exposure: 1.0,
+    environmentIntensity: 0.7,
+    toneMapping: 'aces',
+    turntable: true,
+    installLights: (scene) => {
+      scene.add(createLighthouseCoveLookDevLights('reference'));
+    },
+    defaultAnimation: 'cove-idle',
+    build: (scene) => {
+      scene.background = makeLighthouseCoveBackground();
+      const group = createLighthouseCoveShowcase();
       scene.add(group);
       return group;
     },
