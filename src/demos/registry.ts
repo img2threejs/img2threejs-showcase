@@ -77,6 +77,8 @@ import {
   createWarriorModel,
   prewarmWarrior,
 } from './warrior/createWarriorModel';
+import { createBoxingManShowcase, createRingsideLights } from './boxing-man/boxingManShowcase';
+import { prewarmBoxingMan } from './boxing-man/createBoxingManModel';
 import {
   createRegretWarriorLookDevLights,
   createRegretWarriorModel,
@@ -202,6 +204,9 @@ export interface DemoEntry {
   capturePinnedCamera?: { front: PinnedCaptureCamera; back: PinnedCaptureCamera };
 }
 
+import { createAbyssLights, createMonsterShowcase } from './monster/monsterShowcase';
+import { prewarmMonster } from './monster/createMonsterModel';
+
 const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
@@ -255,6 +260,111 @@ const authored: DemoEntry[] = [
         textureSize: 1024,
         animate: true,
       });
+      scene.add(group);
+      return group;
+    },
+  },
+  {
+    id: 'monster',
+    updatedAt: '2026-08-27',
+    title: 'Abyss Monster \u2014 Wind-Rending VFX',
+    subjectClass: 'character',
+    blurb:
+      'A code-only measured reconstruction (115,745 triangles in one embedded surface stream) on its '
+      + 'own 41-bone rig with twenty-seven embedded clips, wearing an abyss layer whose every timing '
+      + 'was measured rather than authored: all twenty-seven clips were swept at 400 samples to find '
+      + 'where the claws actually stop at extension, where weight actually meets the ground, and where '
+      + 'the head is driven by a blow the figure takes. An attack tears the air along the arc the limb '
+      + 'ACTUALLY swung through \u2014 the swing axis comes from the shoulder-to-claw radius crossed with '
+      + 'the measured travel \u2014 and the contact FRACTURES the air like a pane of glass: a fresh '
+      + 'spoke-and-ring lattice per impact whose cracks run outward over ~100 ms, white-hot at the '
+      + 'travelling tip, throwing instanced glass that glints as it tumbles. A stomp cracks the floor '
+      + 'the same way. Behind it all, a shear cone, void rings down the strike axis and 50-95 ms of '
+      + 'hitstop. Around the body, 260 wisps orbit eleven bones on per-mote lag '
+      + 'so the cloud strings out behind a lunge, non-additive ash sheds off the shoulders, and the '
+      + 'floor swirls under it. Nothing is fetched: geometry, per-vertex colour and every keyframe are '
+      + 'TypeScript.',
+    referenceImage: `${BASE}references/monster/reference.png`,
+    sourcePath: 'src/demos/monster/abyssVfx.ts',
+    sourceUrl: `${REPO}/src/demos/monster/abyssVfx.ts`,
+    generatedWith: 'img2threejs playground \u00b7 Tripo v3.1-20260211 measurement \u00b7 GLB fast lane \u00b7 measured-event VFX',
+    prompt:
+      'Gi\u00fap t\u00f4i t\u1ea1o 1 nh\u00e2n v\u1eadt high-poly c\u00f3 n\u1eafm \u0111\u1ea5m tay, nh\u00e2n v\u1eadt n\u00e0y l\u00e0 qu\u00e1i v\u1eadt c\u00f3 d\u00e1ng \u0111\u1ee9ng T pose, '
+      + '\u0111\u00e2y l\u00e0 qu\u00e1i v\u1eadt m\u1ea1nh m\u1ebd c\u00f3 c\u01a1 b\u1eafp, \u0111\u00e2y l\u00e0 qu\u00e1i v\u1eadt trong game, v\u00e0 n\u00f3 c\u00f3 xung quanh l\u00e0 c\u00e1c l\u1edbp v\u1ea9y v\u00e0 x\u01b0\u01a1ng, '
+      + '\u0111\u00f4i m\u1eaft \u0111\u00e1ng s\u1ee3 hung d\u1eef, c\u00f3 r\u0103ng nanh v\u00e0 \u0111\u00f4i c\u00e1nh, v\u00e0 kh\u1ed5ng l\u1ed3. background l\u00e0 transparent.',
+    author: 'Ho\u00e0i Nh\u1edb',
+    authorUrl: 'https://github.com/hoainho',
+    tripoUrl: 'https://studio.tripo3d.ai/3d-model/7b81045c-10a9-4322-b329-0412d6f9f165?invite_code=PW9ZEA',
+    status: 'placeholder',
+    /**
+     * Framed on the side the figure actually faces, which is not where the playground's own camera
+     * put it. Sweeping the shoulder line (signed by the ankle-to-toe vector) across every clip in
+     * the action list puts the facing at yaw 91-109 degrees \u2014 +X \u2014 so the download's +Z camera
+     * watched the claws from behind. This is a three-quarter view on that axis, low enough that the
+     * uplight and the floor swirl are both in frame.
+     */
+    cameraPosition: [4.72, 1.42, 2.24],
+    cameraTarget: [0, 0.95, 0],
+    cameraFov: 30,
+    accent: '#9a54ff',
+    backgroundGradient: { inner: '#171128', outer: '#05040a' },
+    exposure: 0.92,
+    environmentIntensity: 0.35,
+    toneMapping: 'aces',
+    // The level of detail lives in its own chunk, so it has to be fetched before build() runs.
+    prewarm: () => prewarmMonster().then(() => undefined),
+    // Uplight, cold moon, crimson rim: lighting for something that should not be lit.
+    installLights: (scene) => scene.add(createAbyssLights()),
+    build: (scene) => {
+      const group = createMonsterShowcase({ castShadow: true, receiveShadow: true });
+      scene.add(group);
+      return group;
+    },
+  },
+  {
+    id: 'boxing-man',
+    updatedAt: '2026-08-27',
+    title: 'Ringside Boxer — Measured-Impact VFX',
+    subjectClass: 'character',
+    blurb:
+      'A code-only measured reconstruction (97,592 triangles in one embedded surface stream) on its own '
+      + '41-bone rig with nineteen embedded clips, wearing an effects layer whose every timing was '
+      + 'measured rather than authored: all nineteen clips were swept at 400 samples to find where the '
+      + 'gloves actually stop at extension, where weight actually meets the canvas, and where the head is '
+      + 'driven by a blow the figure takes. A punch carries a windup charge, an air tear along the travel, '
+      + 'shock rings that expand down the punch axis, sweat spray under real gravity, rosin dust off the '
+      + 'canvas, a spiking impact light and 45-85 ms of hitstop. Nothing is fetched: geometry, per-vertex '
+      + 'colour and every keyframe are TypeScript.',
+    referenceImage: `${BASE}references/boxing-man/reference.jpg`,
+    sourcePath: 'src/demos/boxing-man/boxingVfx.ts',
+    sourceUrl: `${REPO}/src/demos/boxing-man/boxingVfx.ts`,
+    generatedWith: 'img2threejs playground · Tripo v3.1-20260211 measurement · GLB fast lane · measured-event VFX',
+    prompt: 'Full body Boxing character with T pose',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'placeholder',
+    /**
+     * Authored on the side the figure actually faces, which is not where the playground's own
+     * framing put it. Sweeping the shoulder line (signed by the ankle-to-toe vector) across every
+     * clip in the demo puts the facing at yaw 62-105 degrees — +X — so the download's +Z camera
+     * watched the punches from behind. This is a three-quarter view on that axis: the guard reads,
+     * and the cross travels towards the lens rather than away from it.
+     */
+    cameraPosition: [4.35, 1.14, 2.05],
+    cameraTarget: [0, 0.95, 0],
+    cameraFov: 30,
+    accent: '#ff8a34',
+    backgroundGradient: { inner: '#1d1a18', outer: '#08080a' },
+    exposure: 0.95,
+    environmentIntensity: 0.55,
+    toneMapping: 'aces',
+    // The level of detail lives in its own chunk, so it has to be fetched before build() runs.
+    prewarm: () => prewarmBoxingMan().then(() => undefined),
+    // Broadcast ring light: one hard warm key on a truss, a dimmer bank across the ring, two cool
+    // rims to hold the silhouette against black, and rosin haze for the key to catch.
+    installLights: (scene) => scene.add(createRingsideLights()),
+    build: (scene) => {
+      const group = createBoxingManShowcase({ castShadow: true, receiveShadow: true });
       scene.add(group);
       return group;
     },

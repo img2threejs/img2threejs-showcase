@@ -106,7 +106,7 @@ function sponsorDrawer(): string {
     </p>
     <div class="sp-grid">${logos}</div>
     <div class="dr-actions" data-placement="sponsor_support">
-      <a class="btn btn-accent" href="${COFFEE_URL}" target="_blank" rel="noopener noreferrer">${HEART} Buy me a coffee</a>
+      <a class="btn btn-accent" href="${COFFEE_URL}" target="_blank" rel="noopener noreferrer">${HEART} Support on Ko-fi</a>
       <a class="btn" href="${DONATE_URL}" target="_blank" rel="noopener noreferrer">VietQR &middot; MoMo &middot; PayPal</a>
       <a class="btn" href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer">Join the Discord</a>
     </div>
@@ -511,7 +511,7 @@ function aboutDrawer(): string {
       <div><dt class="label">Core tool</dt><dd><a href="${GITHUB_CORE}" target="_blank" rel="noopener noreferrer">${GITHUB_CORE.replace(/^https:\/\//, '')}</a></dd></div>
       <div><dt class="label">This gallery</dt><dd><a href="${GITHUB_SHOWCASE}" target="_blank" rel="noopener noreferrer">${GITHUB_SHOWCASE.replace(/^https:\/\//, '')}</a></dd></div>
       <div><dt class="label">Community</dt><dd><a href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer">discord.gg/8DS8RTyuR</a></dd></div>
-      <div><dt class="label">Payments</dt><dd>buymeacoffee.com/hoainhowors, the donate page on this domain, GitHub Sponsors &mdash; nothing else</dd></div>
+      <div><dt class="label">Payments</dt><dd>ko-fi.com/iamnick, the donate page on this domain, GitHub Sponsors &mdash; nothing else</dd></div>
     </dl>
 
     <h3 class="dr-h3">Contact</h3>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Support img2threejs</title>
-    <meta name="description" content="Support the img2threejs project via MoMo, VietQR, any Vietnamese bank app, or PayPal." />
+    <meta name="description" content="Support the img2threejs project via MoMo, VietQR, any Vietnamese bank app, Ko-fi, or PayPal." />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <style>
       @property --angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
@@ -178,7 +178,7 @@
       /* Now a text button (the hosted badge image was a third-party request). Colours are set
          explicitly: it used to be a white plate holding an image, so with only inherited colour
          the label went invisible against #fff in dark mode. */
-      .bmc {
+      .kofi {
         flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
         padding: .75rem 1rem; border-radius: 12px;
         font-weight: 700; font-size: .95rem; text-decoration: none;
@@ -187,7 +187,16 @@
         box-shadow: 0 10px 26px -10px var(--qr-shadow);
         transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease;
       }
-      .bmc:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -10px var(--qr-shadow); }
+      .kofi:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -10px var(--qr-shadow); }
+
+      /* Smaller than the VietQR code above it: this is the fallback for people who would rather
+         scan than tap a link, not the primary path on this page. */
+      .kofi-qr { margin: 1.3rem auto 0; max-width: 14rem; }
+      .kofi-qr img {
+        width: 100%; display: block; border-radius: 14px;
+        background: #fff; padding: 8px;
+        box-shadow: 0 10px 30px -12px var(--qr-shadow);
+      }
 
       footer { margin-top: 2rem; font-family: var(--mono); font-size: .85rem; color: var(--muted); }
       footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
@@ -235,13 +244,24 @@
           <a class="paypal" href="https://www.paypal.com/paypalme/NguyenHoai545" target="_blank" rel="noopener noreferrer">
             Donate via PayPal
           </a>
-          <!-- Text button, not the hosted badge image. The official <img> is served from
-               cdn.buymeacoffee.com, which made this the one page on the site that issued a
-               third-party request and handed a visitor's IP to a CDN before they had clicked
-               anything. The link still goes to the same place; only the tracking pixel is gone. -->
-          <a class="bmc" href="https://www.buymeacoffee.com/hoainhowors" target="_blank" rel="noopener noreferrer">
-            Buy me a coffee
+          <!-- Text button, not Ko-fi's hosted badge image: the badge would be a second request to
+               storage.ko-fi.com purely to render a label we can draw ourselves. -->
+          <a class="kofi" href="https://ko-fi.com/iamnick" target="_blank" rel="noopener noreferrer">
+            Support on Ko-fi
           </a>
+        </div>
+
+        <!-- The one third-party request on this page. Ko-fi generates this QR against the account,
+             so it cannot be regenerated locally; `no-referrer` keeps the visitor's path off the CDN,
+             and onerror hides the frame rather than leaving a broken box if the CDN is blocked.
+             To make the page request-free again, save the image to public/kofi-qr.png and point
+             src at it. Like the VietQR code above, a scan raises no analytics event: it happens on
+             a phone this page never hears from. -->
+        <div class="kofi-qr">
+          <img src="https://storage.ko-fi.com/cdn/useruploads/O8A625YLSR/qrcode.png?v=635ec747-2db3-4f66-ab06-cca530f75325"
+               alt="Ko-fi donation QR code" loading="lazy" referrerpolicy="no-referrer"
+               onerror="this.closest('.kofi-qr').hidden = true" />
+          <p class="hint">Or scan for Ko-fi &mdash; works with any international card.</p>
         </div>
       </section>
 
@@ -303,7 +323,7 @@
           var href = anchor.getAttribute('href') || '';
           var channel = null;
           if (href.indexOf('paypal.') !== -1) channel = 'paypal';
-          else if (href.indexOf('buymeacoffee.com') !== -1) channel = 'buymeacoffee';
+          else if (href.indexOf('ko-fi.com') !== -1) channel = 'kofi';
           if (!channel) return;
           gtag('event', 'support_click', { channel: channel, placement: 'donate_page' });
         });

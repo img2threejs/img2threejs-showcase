@@ -366,7 +366,7 @@ export function trackSponsorClick(
  * a Vietnamese visitor and an overseas one each actually use.
  */
 export type SupportChannel =
-  | 'buymeacoffee'
+  | 'kofi'
   | 'donate_page'
   | 'paypal'
   | 'momo_vietqr'
@@ -631,7 +631,7 @@ function supportChannelFor(url: string): SupportChannel | null {
   if (/donate\.html(?:[?#]|$)/i.test(url)) return 'donate_page';
   const host = hostOf(url)?.replace(/^www\./, '');
   if (!host) return null;
-  if (host === 'buymeacoffee.com') return 'buymeacoffee';
+  if (host === 'ko-fi.com') return 'kofi';
   if (host === 'paypal.com' || host === 'paypal.me') return 'paypal';
   if (host === 'discord.gg' || host.endsWith('discord.com')) return 'discord';
   if (host === 'github.com' && /\/sponsors\//i.test(url)) return 'github_sponsors';

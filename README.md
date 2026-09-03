@@ -86,6 +86,8 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 
 | Exhibit | Kind | Status | Author |
 | --- | :-: | :-: | --- |
+| [Abyss Monster — Wind-Rending VFX](https://img2threejs.io/#/demo/monster)<br><sub>Every impact fractures the air like glass — cracks run outward from the contact and the fragments glint as they fall. Every timing measured off the rig.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
+| [Ringside Boxer — Measured-Impact VFX](https://img2threejs.io/#/demo/boxing-man)<br><sub>Every impact timing measured off the embedded clips: windup charge, air tear, sweat spray, rosin dust, hitstop.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Mouse Warrior — Rigged Surface Character](https://img2threejs.io/#/demo/warrior)<br><sub>47 Surface&nbsp;Nets regions bound to a human-structured rig, with a code-native attack clip.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Dual-Sword Warrior — TypeScript procedural surfaces](https://img2threejs.io/#/demo/girl-character)<br><sub>Encoded Surface Nets streamed as high / medium / low quality TypeScript modules.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [Low-Poly Humanoid — Rigged Character](https://img2threejs.io/#/demo/low-poly-humanoid)<br><sub>Nine panel-driven actions, from Run and Jump to Roundhouse and Dodge.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
@@ -232,7 +234,7 @@ saved you time, consider supporting continued development:
 
 <div align="center">
 
-<a href="https://www.buymeacoffee.com/hoainhowors" target="_blank" rel="noopener noreferrer"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" alt="Buy Me a Coffee" height="60"></a>
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/O8A625YLSR)
 
 </div>
 

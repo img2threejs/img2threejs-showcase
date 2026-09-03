@@ -28,7 +28,7 @@ export const CHANGELOG_URL = `${GITHUB_CORE}/blob/main/CHANGELOG.md`;
 export const ROADMAP_URL = `${GITHUB_CORE}/blob/main/ROADMAP.md`;
 export const LICENSE_URL = `${GITHUB_CORE}/blob/main/LICENSE`;
 export const DISCORD_URL = 'https://discord.gg/8DS8RTyuR';
-export const COFFEE_URL = 'https://www.buymeacoffee.com/hoainhowors';
+export const COFFEE_URL = 'https://ko-fi.com/iamnick';
 export const DONATE_URL = `${BASE}donate.html`;
 
 export const CONTACT_EMAIL = 'hoainho.work@gmail.com';
