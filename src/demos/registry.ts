@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import type { PinnedCaptureCamera } from '../scene';
 import {
+  createStarshipSuperHeavyLookDevLights,
+  createStarshipSuperHeavyModel,
+} from './starship-super-heavy/createStarshipSuperHeavyModel';
+import {
   createM9DopplerModel,
   createM9DopplerLookDevLights,
   makeM9DopplerBackground,
@@ -98,6 +102,10 @@ import {
   createLeesinModel,
   prewarmLeesin,
 } from './leesin/leesinDemo';
+import {
+  createMarsCatLookDevLights,
+  createMarsCatModel,
+} from './mars-cat/createMarsCatModel';
 
 export interface DemoEntry {
   /** route id, e.g. 'crown-chest' */
@@ -209,6 +217,9 @@ export interface DemoEntry {
   capturePinnedCamera?: { front: PinnedCaptureCamera; back: PinnedCaptureCamera };
 }
 
+import { createAbyssLights, createMonsterShowcase } from './monster/monsterShowcase';
+import { prewarmMonster } from './monster/createMonsterModel';
+
 const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
@@ -273,6 +284,43 @@ const authored: DemoEntry[] = [
     },
   },
   {
+    id: 'mars-cat',
+    updatedAt: '2026-09-02',
+    title: 'Mars Cat — Measured Procedural Surfaces',
+    subjectClass: 'character',
+    blurb:
+      'A code-bundled Surface Nets reconstruction of all 17 measured GLB regions, polished with '
+      + 'measured masks for the eyes, ears, hoodie, shorts and shoes. High, medium and low streams '
+      + 'ship without the reference GLB, binary surface files, texture images or UV atlas.',
+    referenceImage: `${BASE}references/mars-cat.webp`,
+    referenceKind: 'model',
+    sourcePath: 'src/demos/mars-cat/createMarsCatModel.ts',
+    sourceUrl: `${REPO}/src/demos/mars-cat/createMarsCatModel.ts`,
+    generatedWith: 'img2threejs v1.5.1 · measured Surface Nets',
+    prompt:
+      'Reconstruct every multipart GLB surface at its measured per-node cell size and bake declared '
+      + 'material values into code. Use the source model only as a measurement instrument; do not '
+      + 'ship its topology, textures, UV atlas or binary geometry.',
+    author: 'Rigs',
+    authorUrl: 'https://github.com/ClassicsCrypto',
+    status: 'final',
+    cameraPosition: [-1.4901161193847656e-7, 0.5757730114273727, 3.0168617736281305],
+    cameraTarget: [-1.4901161193847656e-7, 0.5757730114273727, -0.08574904501438141],
+    cameraFov: 25,
+    turntable: true,
+    accent: '#159de0',
+    backgroundGradient: { inner: '#263343', outer: '#0a0c11' },
+    exposure: 1,
+    environmentIntensity: 0.85,
+    toneMapping: 'agx',
+    installLights: (scene) => scene.add(createMarsCatLookDevLights()),
+    build: (scene) => {
+      const group = createMarsCatModel({ castShadow: true, receiveShadow: true });
+      scene.add(group);
+      return group;
+    },
+  },
+  {
     id: 'whimsical-hearth-house',
     title: 'Whimsical Hearth House',
     subjectClass: 'object',
@@ -293,7 +341,7 @@ const authored: DemoEntry[] = [
     author: 'Codex',
     authorUrl: 'https://openai.com/codex/',
     status: 'final',
-    updatedAt: '2026-08-31',
+    updatedAt: '2026-09-02',
     cameraPosition: [11.8, 9.1, 13.8],
     cameraTarget: [0, 3.2, 0.3],
     cameraFov: 29,
@@ -310,6 +358,63 @@ const authored: DemoEntry[] = [
     build: (scene) => {
       scene.background = makeWhimsicalHearthHouseBackground();
       const group = createWhimsicalHearthHouseShowcase();
+      scene.add(group);
+      return group;
+    },
+  },
+  {
+    id: 'monster',
+    updatedAt: '2026-08-27',
+    title: 'Abyss Monster \u2014 Wind-Rending VFX',
+    subjectClass: 'character',
+    blurb:
+      'A code-only measured reconstruction (115,745 triangles in one embedded surface stream) on its '
+      + 'own 41-bone rig with twenty-seven embedded clips, wearing an abyss layer whose every timing '
+      + 'was measured rather than authored: all twenty-seven clips were swept at 400 samples to find '
+      + 'where the claws actually stop at extension, where weight actually meets the ground, and where '
+      + 'the head is driven by a blow the figure takes. An attack tears the air along the arc the limb '
+      + 'ACTUALLY swung through \u2014 the swing axis comes from the shoulder-to-claw radius crossed with '
+      + 'the measured travel \u2014 and the contact FRACTURES the air like a pane of glass: a fresh '
+      + 'spoke-and-ring lattice per impact whose cracks run outward over ~100 ms, white-hot at the '
+      + 'travelling tip, throwing instanced glass that glints as it tumbles. A stomp cracks the floor '
+      + 'the same way. Behind it all, a shear cone, void rings down the strike axis and 50-95 ms of '
+      + 'hitstop. Around the body, 260 wisps orbit eleven bones on per-mote lag '
+      + 'so the cloud strings out behind a lunge, non-additive ash sheds off the shoulders, and the '
+      + 'floor swirls under it. Nothing is fetched: geometry, per-vertex colour and every keyframe are '
+      + 'TypeScript.',
+    referenceImage: `${BASE}references/monster/reference.png`,
+    sourcePath: 'src/demos/monster/abyssVfx.ts',
+    sourceUrl: `${REPO}/src/demos/monster/abyssVfx.ts`,
+    generatedWith: 'img2threejs playground \u00b7 Tripo v3.1-20260211 measurement \u00b7 GLB fast lane \u00b7 measured-event VFX',
+    prompt:
+      'Gi\u00fap t\u00f4i t\u1ea1o 1 nh\u00e2n v\u1eadt high-poly c\u00f3 n\u1eafm \u0111\u1ea5m tay, nh\u00e2n v\u1eadt n\u00e0y l\u00e0 qu\u00e1i v\u1eadt c\u00f3 d\u00e1ng \u0111\u1ee9ng T pose, '
+      + '\u0111\u00e2y l\u00e0 qu\u00e1i v\u1eadt m\u1ea1nh m\u1ebd c\u00f3 c\u01a1 b\u1eafp, \u0111\u00e2y l\u00e0 qu\u00e1i v\u1eadt trong game, v\u00e0 n\u00f3 c\u00f3 xung quanh l\u00e0 c\u00e1c l\u1edbp v\u1ea9y v\u00e0 x\u01b0\u01a1ng, '
+      + '\u0111\u00f4i m\u1eaft \u0111\u00e1ng s\u1ee3 hung d\u1eef, c\u00f3 r\u0103ng nanh v\u00e0 \u0111\u00f4i c\u00e1nh, v\u00e0 kh\u1ed5ng l\u1ed3. background l\u00e0 transparent.',
+    author: 'Ho\u00e0i Nh\u1edb',
+    authorUrl: 'https://github.com/hoainho',
+    tripoUrl: 'https://studio.tripo3d.ai/3d-model/7b81045c-10a9-4322-b329-0412d6f9f165?invite_code=PW9ZEA',
+    status: 'placeholder',
+    /**
+     * Framed on the side the figure actually faces, which is not where the playground's own camera
+     * put it. Sweeping the shoulder line (signed by the ankle-to-toe vector) across every clip in
+     * the action list puts the facing at yaw 91-109 degrees \u2014 +X \u2014 so the download's +Z camera
+     * watched the claws from behind. This is a three-quarter view on that axis, low enough that the
+     * uplight and the floor swirl are both in frame.
+     */
+    cameraPosition: [4.72, 1.42, 2.24],
+    cameraTarget: [0, 0.95, 0],
+    cameraFov: 30,
+    accent: '#9a54ff',
+    backgroundGradient: { inner: '#171128', outer: '#05040a' },
+    exposure: 0.92,
+    environmentIntensity: 0.35,
+    toneMapping: 'aces',
+    // The level of detail lives in its own chunk, so it has to be fetched before build() runs.
+    prewarm: () => prewarmMonster().then(() => undefined),
+    // Uplight, cold moon, crimson rim: lighting for something that should not be lit.
+    installLights: (scene) => scene.add(createAbyssLights()),
+    build: (scene) => {
+      const group = createMonsterShowcase({ castShadow: true, receiveShadow: true });
       scene.add(group);
       return group;
     },
@@ -476,6 +581,40 @@ const authored: DemoEntry[] = [
     installLights: (scene) => scene.add(createWarriorLookDevLights()),
     build: (scene) => {
       const group = createWarriorModel({ castShadow: true, receiveShadow: true });
+      scene.add(group);
+      return group;
+    },
+  },
+  {
+    id: 'starship-super-heavy',
+    updatedAt: '2026-09-03',
+    title: 'Starship + Super Heavy',
+    subjectClass: 'object',
+    blurb:
+      'The complete Starship and Super Heavy stack rebuilt entirely from procedural geometry: ' +
+      'brushed stainless shells, a windward field of individually conformed hexagonal heat-shield ' +
+      'tiles, hinged flaps, lattice grid fins, tank-dome structure, and explicit seven- and ' +
+      'thirty-three-engine arrays. Live animation follows a safe three-stage separation route, ' +
+      'presents both vehicles side by side, then returns the upper stage to the stack.',
+    referenceImage: `${BASE}references/starship-super-heavy.webp`,
+    sourcePath: 'src/demos/starship-super-heavy/createStarshipSuperHeavyModel.ts',
+    sourceUrl: `${REPO}/src/demos/starship-super-heavy/createStarshipSuperHeavyModel.ts`,
+    generatedWith: 'img2threejs v1.2.0',
+    author: 'Jinliang Guo',
+    authorUrl: 'https://github.com/too-young-too-naive',
+    status: 'final',
+    cameraPosition: [5.6, 4.2, 14.8],
+    cameraTarget: [0.5, 3.8, 0],
+    cameraFov: 34,
+    accent: '#8da7c7',
+    backgroundGradient: { inner: '#10203a', outer: '#050a13' },
+    exposure: 1.15,
+    environmentIntensity: 0.55,
+    installLights: (scene) => {
+      scene.add(createStarshipSuperHeavyLookDevLights());
+    },
+    build: (scene) => {
+      const group = createStarshipSuperHeavyModel();
       scene.add(group);
       return group;
     },

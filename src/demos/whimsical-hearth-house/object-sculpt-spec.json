@@ -5961,10 +5961,9 @@
         ],
         "samplingNotes": "Reference-derived from foreground pixels; de-lit to reduce baked shadows/highlights.",
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_albedo.png",
           "channel": "albedo",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_albedo.png"
         }
       },
       "colorVariation": {
@@ -6013,10 +6012,9 @@
         "base": 0.727,
         "variation": 0.112,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_roughness.png",
           "channel": "roughness",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_roughness.png"
         },
         "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother"
       },
@@ -6028,14 +6026,12 @@
         "pattern": "reference-derived height-gradient normal map",
         "strength": 0.227,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_normal.png",
           "channel": "normal",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_normal.png"
         },
         "heightSource": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_height.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
@@ -6045,8 +6041,7 @@
         "pattern": "reference-derived height field",
         "amplitude": 0.027,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_height.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         }
@@ -6061,10 +6056,9 @@
         "cavityStrength": 0.38,
         "contactShadowBias": 0.35,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_ao.png",
           "channel": "ao",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_ao.png"
         },
         "notes": "Reference-derived cavity estimate from local height minima; verify against grazing-light screenshot."
       },
@@ -6151,34 +6145,34 @@
         "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
         "maps": {
           "albedo": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_albedo.png",
-            "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_albedo.png",
             "channel": "albedo",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_albedo.png"
           },
           "roughness": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_roughness.png",
-            "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_roughness.png",
             "channel": "roughness",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_roughness.png"
           },
           "height": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_height.png",
-            "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_height.png",
             "channel": "height",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_height.png"
           },
           "normal": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_normal.png",
-            "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_normal.png",
             "channel": "normal",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_normal.png"
           },
           "ao": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_ao.png",
-            "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_ao.png",
             "channel": "ao",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_ao.png"
           }
         },
         "diagnostics": {
@@ -6228,30 +6222,29 @@
       "baseColor": "#DCC99F",
       "color": "#DCC99F",
       "albedo": {
-        "dominant": "#4A2C0F",
+        "dominant": "#E6D6B0",
         "secondary": [
-          "#7E511E",
-          "#311A05",
-          "#C68C4B"
+          "#D4C094",
+          "#F1E4C6",
+          "#BFA77A"
         ],
-        "samplingNotes": "Reference-derived from foreground pixels; de-lit to reduce baked shadows/highlights.",
+        "samplingNotes": "reference local-colour zones authored by review; the narrow extraction crop caught shadowed neighbours",
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_albedo.png",
           "channel": "albedo",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_albedo.png"
         }
       },
       "colorVariation": {
         "palette": [
-          "#4A2C0F",
-          "#7E511E",
-          "#311A05",
-          "#C68C4B",
-          "#A26C32"
+          "#E6D6B0",
+          "#D4C094",
+          "#F1E4C6",
+          "#BFA77A",
+          "#A88F62"
         ],
         "pattern": "reference-derived pixel palette",
-        "amplitude": 0.211,
+        "amplitude": 0.16,
         "heightCorrelation": 0.42
       },
       "textureResolution": 1024,
@@ -6288,10 +6281,9 @@
         "base": 0.686,
         "variation": 0.05,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_roughness.png",
           "channel": "roughness",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_roughness.png"
         },
         "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother"
       },
@@ -6303,14 +6295,12 @@
         "pattern": "reference-derived height-gradient normal map",
         "strength": 0.172,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_normal.png",
           "channel": "normal",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_normal.png"
         },
         "heightSource": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
@@ -6320,8 +6310,7 @@
         "pattern": "reference-derived height field",
         "amplitude": 0.01,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         }
@@ -6336,10 +6325,9 @@
         "cavityStrength": 0.38,
         "contactShadowBias": 0.35,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_ao.png",
           "channel": "ao",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_ao.png"
         },
         "notes": "Reference-derived cavity estimate from local height minima; verify against grazing-light screenshot."
       },
@@ -6520,34 +6508,34 @@
         "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
         "maps": {
           "albedo": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_albedo.png",
-            "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_albedo.png",
             "channel": "albedo",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_albedo.png"
           },
           "roughness": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_roughness.png",
-            "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_roughness.png",
             "channel": "roughness",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_roughness.png"
           },
           "height": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_height.png",
-            "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_height.png",
             "channel": "height",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_height.png"
           },
           "normal": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_normal.png",
-            "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_normal.png",
             "channel": "normal",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_normal.png"
           },
           "ao": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_ao.png",
-            "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_ao.png",
             "channel": "ao",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_ao.png"
           }
         },
         "diagnostics": {
@@ -6605,10 +6593,9 @@
         ],
         "samplingNotes": "Reference-derived from foreground pixels; de-lit to reduce baked shadows/highlights.",
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_albedo.png",
           "channel": "albedo",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_albedo.png"
         }
       },
       "colorVariation": {
@@ -6657,10 +6644,9 @@
         "base": 0.72,
         "variation": 0.149,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_roughness.png",
           "channel": "roughness",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_roughness.png"
         },
         "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother"
       },
@@ -6672,14 +6658,12 @@
         "pattern": "reference-derived height-gradient normal map",
         "strength": 0.248,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_normal.png",
           "channel": "normal",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_normal.png"
         },
         "heightSource": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_height.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
@@ -6689,8 +6673,7 @@
         "pattern": "reference-derived height field",
         "amplitude": 0.035,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_height.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         }
@@ -6705,10 +6688,9 @@
         "cavityStrength": 0.38,
         "contactShadowBias": 0.35,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_ao.png",
           "channel": "ao",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_ao.png"
         },
         "notes": "Reference-derived cavity estimate from local height minima; verify against grazing-light screenshot."
       },
@@ -6821,34 +6803,34 @@
         "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
         "maps": {
           "albedo": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_albedo.png",
-            "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_albedo.png",
             "channel": "albedo",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_albedo.png"
           },
           "roughness": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_roughness.png",
-            "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_roughness.png",
             "channel": "roughness",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_roughness.png"
           },
           "height": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_height.png",
-            "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_height.png",
             "channel": "height",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_height.png"
           },
           "normal": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_normal.png",
-            "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_normal.png",
             "channel": "normal",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_normal.png"
           },
           "ao": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_ao.png",
-            "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_ao.png",
             "channel": "ao",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_ao.png"
           }
         },
         "diagnostics": {
@@ -6906,10 +6888,9 @@
         ],
         "samplingNotes": "Reference-derived from foreground pixels; de-lit to reduce baked shadows/highlights.",
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_albedo.png",
           "channel": "albedo",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_albedo.png"
         }
       },
       "colorVariation": {
@@ -6958,10 +6939,9 @@
         "base": 0.694,
         "variation": 0.061,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_roughness.png",
           "channel": "roughness",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_roughness.png"
         },
         "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother"
       },
@@ -6973,14 +6953,12 @@
         "pattern": "reference-derived height-gradient normal map",
         "strength": 0.201,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_normal.png",
           "channel": "normal",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_normal.png"
         },
         "heightSource": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_height.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
@@ -6990,8 +6968,7 @@
         "pattern": "reference-derived height field",
         "amplitude": 0.017,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_height.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         }
@@ -7006,10 +6983,9 @@
         "cavityStrength": 0.38,
         "contactShadowBias": 0.35,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_ao.png",
           "channel": "ao",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_ao.png"
         },
         "notes": "Reference-derived cavity estimate from local height minima; verify against grazing-light screenshot."
       },
@@ -7105,34 +7081,34 @@
         "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
         "maps": {
           "albedo": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_albedo.png",
-            "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_albedo.png",
             "channel": "albedo",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_albedo.png"
           },
           "roughness": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_roughness.png",
-            "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_roughness.png",
             "channel": "roughness",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_roughness.png"
           },
           "height": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_height.png",
-            "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_height.png",
             "channel": "height",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_height.png"
           },
           "normal": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_normal.png",
-            "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_normal.png",
             "channel": "normal",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_normal.png"
           },
           "ao": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_ao.png",
-            "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_ao.png",
             "channel": "ao",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_ao.png"
           }
         },
         "diagnostics": {
@@ -7190,10 +7166,9 @@
         ],
         "samplingNotes": "Reference-derived from foreground pixels; de-lit to reduce baked shadows/highlights.",
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_albedo.png",
           "channel": "albedo",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_albedo.png"
         }
       },
       "colorVariation": {
@@ -7242,10 +7217,9 @@
         "base": 0.697,
         "variation": 0.076,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_roughness.png",
           "channel": "roughness",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_roughness.png"
         },
         "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother"
       },
@@ -7257,14 +7231,12 @@
         "pattern": "reference-derived height-gradient normal map",
         "strength": 0.206,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_normal.png",
           "channel": "normal",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_normal.png"
         },
         "heightSource": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_height.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
@@ -7274,8 +7246,7 @@
         "pattern": "reference-derived height field",
         "amplitude": 0.019,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_height.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         }
@@ -7290,10 +7261,9 @@
         "cavityStrength": 0.38,
         "contactShadowBias": 0.35,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_ao.png",
           "channel": "ao",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_ao.png"
         },
         "notes": "Reference-derived cavity estimate from local height minima; verify against grazing-light screenshot."
       },
@@ -7380,34 +7350,34 @@
         "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
         "maps": {
           "albedo": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_albedo.png",
-            "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_albedo.png",
             "channel": "albedo",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_albedo.png"
           },
           "roughness": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_roughness.png",
-            "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_roughness.png",
             "channel": "roughness",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_roughness.png"
           },
           "height": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_height.png",
-            "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_height.png",
             "channel": "height",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_height.png"
           },
           "normal": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_normal.png",
-            "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_normal.png",
             "channel": "normal",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_normal.png"
           },
           "ao": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_ao.png",
-            "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_ao.png",
             "channel": "ao",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_ao.png"
           }
         },
         "diagnostics": {
@@ -7466,10 +7436,9 @@
         ],
         "samplingNotes": "Reference-derived from foreground pixels; de-lit to reduce baked shadows/highlights.",
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_albedo.png",
           "channel": "albedo",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_albedo.png"
         }
       },
       "colorVariation": {
@@ -7518,10 +7487,9 @@
         "base": 0.7,
         "variation": 0.059,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_roughness.png",
           "channel": "roughness",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_roughness.png"
         },
         "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother"
       },
@@ -7533,14 +7501,12 @@
         "pattern": "reference-derived height-gradient normal map",
         "strength": 0.192,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_normal.png",
           "channel": "normal",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_normal.png"
         },
         "heightSource": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_height.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
@@ -7550,8 +7516,7 @@
         "pattern": "reference-derived height field",
         "amplitude": 0.014,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_height.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         }
@@ -7566,10 +7531,9 @@
         "cavityStrength": 0.38,
         "contactShadowBias": 0.35,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_ao.png",
           "channel": "ao",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_ao.png"
         },
         "notes": "Reference-derived cavity estimate from local height minima; verify against grazing-light screenshot."
       },
@@ -7656,34 +7620,34 @@
         "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
         "maps": {
           "albedo": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_albedo.png",
-            "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_albedo.png",
             "channel": "albedo",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_albedo.png"
           },
           "roughness": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_roughness.png",
-            "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_roughness.png",
             "channel": "roughness",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_roughness.png"
           },
           "height": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_height.png",
-            "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_height.png",
             "channel": "height",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_height.png"
           },
           "normal": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_normal.png",
-            "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_normal.png",
             "channel": "normal",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_normal.png"
           },
           "ao": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_ao.png",
-            "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_ao.png",
             "channel": "ao",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_ao.png"
           }
         },
         "diagnostics": {
@@ -7741,10 +7705,9 @@
         ],
         "samplingNotes": "Reference-derived from foreground pixels; de-lit to reduce baked shadows/highlights.",
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_albedo.png",
           "channel": "albedo",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_albedo.png"
         }
       },
       "colorVariation": {
@@ -7793,10 +7756,9 @@
         "base": 0.703,
         "variation": 0.081,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_roughness.png",
           "channel": "roughness",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_roughness.png"
         },
         "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother"
       },
@@ -7808,14 +7770,12 @@
         "pattern": "reference-derived height-gradient normal map",
         "strength": 0.204,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_normal.png",
           "channel": "normal",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_normal.png"
         },
         "heightSource": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_height.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
@@ -7825,8 +7785,7 @@
         "pattern": "reference-derived height field",
         "amplitude": 0.018,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_height.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         }
@@ -7841,10 +7800,9 @@
         "cavityStrength": 0.38,
         "contactShadowBias": 0.35,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_ao.png",
           "channel": "ao",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_ao.png"
         },
         "notes": "Reference-derived cavity estimate from local height minima; verify against grazing-light screenshot."
       },
@@ -7931,34 +7889,34 @@
         "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
         "maps": {
           "albedo": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_albedo.png",
-            "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_albedo.png",
             "channel": "albedo",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_albedo.png"
           },
           "roughness": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_roughness.png",
-            "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_roughness.png",
             "channel": "roughness",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_roughness.png"
           },
           "height": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_height.png",
-            "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_height.png",
             "channel": "height",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_height.png"
           },
           "normal": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_normal.png",
-            "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_normal.png",
             "channel": "normal",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_normal.png"
           },
           "ao": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_ao.png",
-            "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_ao.png",
             "channel": "ao",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_ao.png"
           }
         },
         "diagnostics": {
@@ -8016,10 +7974,9 @@
         ],
         "samplingNotes": "Reference-derived from foreground pixels; de-lit to reduce baked shadows/highlights.",
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_albedo.png",
           "channel": "albedo",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_albedo.png"
         }
       },
       "colorVariation": {
@@ -8068,10 +8025,9 @@
         "base": 0.711,
         "variation": 0.078,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_roughness.png",
           "channel": "roughness",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_roughness.png"
         },
         "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother"
       },
@@ -8083,14 +8039,12 @@
         "pattern": "reference-derived height-gradient normal map",
         "strength": 0.206,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_normal.png",
           "channel": "normal",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_normal.png"
         },
         "heightSource": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
@@ -8100,8 +8054,7 @@
         "pattern": "reference-derived height field",
         "amplitude": 0.019,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         }
@@ -8116,10 +8069,9 @@
         "cavityStrength": 0.38,
         "contactShadowBias": 0.35,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_ao.png",
           "channel": "ao",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_ao.png"
         },
         "notes": "Reference-derived cavity estimate from local height minima; verify against grazing-light screenshot."
       },
@@ -8215,34 +8167,34 @@
         "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
         "maps": {
           "albedo": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_albedo.png",
-            "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_albedo.png",
             "channel": "albedo",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_albedo.png"
           },
           "roughness": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_roughness.png",
-            "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_roughness.png",
             "channel": "roughness",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_roughness.png"
           },
           "height": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_height.png",
-            "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_height.png",
             "channel": "height",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_height.png"
           },
           "normal": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_normal.png",
-            "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_normal.png",
             "channel": "normal",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_normal.png"
           },
           "ao": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_ao.png",
-            "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_ao.png",
             "channel": "ao",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_ao.png"
           }
         },
         "diagnostics": {
@@ -8300,10 +8252,9 @@
         ],
         "samplingNotes": "Reference-derived from foreground pixels; de-lit to reduce baked shadows/highlights.",
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_albedo.png",
           "channel": "albedo",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_albedo.png"
         }
       },
       "colorVariation": {
@@ -8352,10 +8303,9 @@
         "base": 0.714,
         "variation": 0.108,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_roughness.png",
           "channel": "roughness",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_roughness.png"
         },
         "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother"
       },
@@ -8367,14 +8317,12 @@
         "pattern": "reference-derived height-gradient normal map",
         "strength": 0.224,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_normal.png",
           "channel": "normal",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_normal.png"
         },
         "heightSource": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_height.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
@@ -8384,8 +8332,7 @@
         "pattern": "reference-derived height field",
         "amplitude": 0.026,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_height.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         }
@@ -8400,10 +8347,9 @@
         "cavityStrength": 0.38,
         "contactShadowBias": 0.35,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_ao.png",
           "channel": "ao",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_ao.png"
         },
         "notes": "Reference-derived cavity estimate from local height minima; verify against grazing-light screenshot."
       },
@@ -8490,34 +8436,34 @@
         "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
         "maps": {
           "albedo": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_albedo.png",
-            "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_albedo.png",
             "channel": "albedo",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_albedo.png"
           },
           "roughness": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_roughness.png",
-            "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_roughness.png",
             "channel": "roughness",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_roughness.png"
           },
           "height": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_height.png",
-            "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_height.png",
             "channel": "height",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_height.png"
           },
           "normal": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_normal.png",
-            "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_normal.png",
             "channel": "normal",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_normal.png"
           },
           "ao": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_ao.png",
-            "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_ao.png",
             "channel": "ao",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_ao.png"
           }
         },
         "diagnostics": {
@@ -8567,30 +8513,29 @@
       "baseColor": "#60773A",
       "color": "#60773A",
       "albedo": {
-        "dominant": "#8C6A3D",
+        "dominant": "#6E8A3A",
         "secondary": [
-          "#6D5125",
-          "#473812",
-          "#222104"
+          "#55702A",
+          "#8AA24C",
+          "#3E5320"
         ],
-        "samplingNotes": "Reference-derived from foreground pixels; de-lit to reduce baked shadows/highlights.",
+        "samplingNotes": "reference local-colour zones authored by review; the narrow extraction crop caught shadowed neighbours",
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_albedo.png",
           "channel": "albedo",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_albedo.png"
         }
       },
       "colorVariation": {
         "palette": [
-          "#8C6A3D",
-          "#6D5125",
-          "#473812",
-          "#222104",
-          "#C3956E"
+          "#6E8A3A",
+          "#55702A",
+          "#8AA24C",
+          "#3E5320",
+          "#A9B86B"
         ],
         "pattern": "reference-derived pixel palette",
-        "amplitude": 0.193,
+        "amplitude": 0.16,
         "heightCorrelation": 0.42
       },
       "textureResolution": 1024,
@@ -8627,10 +8572,9 @@
         "base": 0.85,
         "variation": 0.071,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_roughness.png",
           "channel": "roughness",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_roughness.png"
         },
         "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother",
         "notes": "raised at optimization-pass: smooth ellipsoid masses under the environment read glazed at extracted roughness; matte foliage is the identity"
@@ -8643,14 +8587,12 @@
         "pattern": "reference-derived height-gradient normal map",
         "strength": 0.201,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_normal.png",
           "channel": "normal",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_normal.png"
         },
         "heightSource": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_height.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
@@ -8660,8 +8602,7 @@
         "pattern": "reference-derived height field",
         "amplitude": 0.017,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_height.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         }
@@ -8676,10 +8617,9 @@
         "cavityStrength": 0.38,
         "contactShadowBias": 0.35,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_ao.png",
           "channel": "ao",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_ao.png"
         },
         "notes": "Reference-derived cavity estimate from local height minima; verify against grazing-light screenshot."
       },
@@ -8766,34 +8706,34 @@
         "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
         "maps": {
           "albedo": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_albedo.png",
-            "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_albedo.png",
             "channel": "albedo",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_albedo.png"
           },
           "roughness": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_roughness.png",
-            "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_roughness.png",
             "channel": "roughness",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_roughness.png"
           },
           "height": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_height.png",
-            "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_height.png",
             "channel": "height",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_height.png"
           },
           "normal": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_normal.png",
-            "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_normal.png",
             "channel": "normal",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_normal.png"
           },
           "ao": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_ao.png",
-            "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_ao.png",
             "channel": "ao",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_ao.png"
           }
         },
         "diagnostics": {
@@ -8846,30 +8786,29 @@
       "baseColor": "#F1E7D4",
       "color": "#F1E7D4",
       "albedo": {
-        "dominant": "#3F4905",
+        "dominant": "#F2EFE6",
         "secondary": [
-          "#EDE8CC",
-          "#1D2302",
-          "#666E15"
+          "#E9A7C0",
+          "#F6D65E",
+          "#7F6BB5"
         ],
-        "samplingNotes": "Reference-derived from foreground pixels; de-lit to reduce baked shadows/highlights.",
+        "samplingNotes": "reference local-colour zones authored by review; the narrow extraction crop caught shadowed neighbours",
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_albedo.png",
           "channel": "albedo",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_albedo.png"
         }
       },
       "colorVariation": {
         "palette": [
-          "#3F4905",
-          "#EDE8CC",
-          "#1D2302",
-          "#666E15",
-          "#C5AD62"
+          "#F2EFE6",
+          "#E9A7C0",
+          "#F6D65E",
+          "#7F6BB5",
+          "#6E8A3A"
         ],
         "pattern": "reference-derived pixel palette",
-        "amplitude": 0.35,
+        "amplitude": 0.16,
         "heightCorrelation": 0.42
       },
       "textureResolution": 1024,
@@ -8906,10 +8845,9 @@
         "base": 0.85,
         "variation": 0.086,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_roughness.png",
           "channel": "roughness",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_roughness.png"
         },
         "localResponse": "reference-derived roughness estimate; cavities and textured zones trend rougher, bright highlights trend smoother",
         "notes": "raised at optimization-pass: smooth ellipsoid masses under the environment read glazed at extracted roughness; matte foliage is the identity"
@@ -8922,14 +8860,12 @@
         "pattern": "reference-derived height-gradient normal map",
         "strength": 0.208,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_normal.png",
           "channel": "normal",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_normal.png"
         },
         "heightSource": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_height.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
@@ -8939,8 +8875,7 @@
         "pattern": "reference-derived height field",
         "amplitude": 0.02,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_height.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         }
@@ -8955,10 +8890,9 @@
         "cavityStrength": 0.38,
         "contactShadowBias": 0.35,
         "map": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_ao.png",
           "channel": "ao",
-          "source": "reference-pixel-extraction"
+          "source": "reference-pixel-extraction",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_ao.png"
         },
         "notes": "Reference-derived cavity estimate from local height minima; verify against grazing-light screenshot."
       },
@@ -9045,34 +8979,34 @@
         "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
         "maps": {
           "albedo": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_albedo.png",
-            "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_albedo.png",
             "channel": "albedo",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_albedo.png"
           },
           "roughness": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_roughness.png",
-            "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_roughness.png",
             "channel": "roughness",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_roughness.png"
           },
           "height": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_height.png",
-            "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_height.png",
             "channel": "height",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_height.png"
           },
           "normal": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_normal.png",
-            "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_normal.png",
             "channel": "normal",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_normal.png"
           },
           "ao": {
-            "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_ao.png",
-            "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_ao.png",
             "channel": "ao",
-            "source": "reference-pixel-extraction"
+            "source": "reference-pixel-extraction",
+            "note": "extraction artifact kept outside the showcase (code-only contract); no url means the runtime builds procedural maps from the extracted palette and bands",
+            "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_ao.png"
           }
         },
         "diagnostics": {
@@ -9534,7 +9468,7 @@
           "score": 0.62,
           "threshold": 0.85,
           "passed": false,
-          "notes": "turret and chimney read; gables do not — roof extrudes render at default-profile size"
+          "notes": "turret and chimney read; gables do not \u2014 roof extrudes render at default-profile size"
         }
       ],
       "referenceScreenshot": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/reference.png",
@@ -9653,7 +9587,7 @@
           "score": 0.35,
           "threshold": 0.8,
           "passed": false,
-          "notes": "window-glow was left at the tower foot when the turret pivot moved to its attachment base — real placement defect"
+          "notes": "window-glow was left at the tower foot when the turret pivot moved to its attachment base \u2014 real placement defect"
         },
         {
           "id": "garden-frame",
@@ -9857,7 +9791,7 @@
           "score": 0.62,
           "threshold": 0.85,
           "passed": false,
-          "notes": "turret and chimney read; gables do not — roof extrudes render at default-profile size"
+          "notes": "turret and chimney read; gables do not \u2014 roof extrudes render at default-profile size"
         }
       ],
       "action": "refine-spec",
@@ -10055,7 +9989,7 @@
           "score": 0.35,
           "threshold": 0.8,
           "passed": false,
-          "notes": "window-glow was left at the tower foot when the turret pivot moved to its attachment base — real placement defect"
+          "notes": "window-glow was left at the tower foot when the turret pivot moved to its attachment base \u2014 real placement defect"
         },
         {
           "id": "garden-frame",
@@ -10899,32 +10833,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_height.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -10937,32 +10866,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -10975,32 +10899,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_height.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11013,32 +10932,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_height.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11051,32 +10965,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_height.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11089,32 +10998,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_height.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11127,32 +11031,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11165,32 +11064,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_height.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11203,32 +11097,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_height.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11241,32 +11130,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_height.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11279,32 +11163,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_height.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11317,32 +11196,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_height.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11355,32 +11229,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11393,32 +11262,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_height.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/roof-terracotta/roof-terracotta_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/roof-terracotta/roof-terracotta_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11431,32 +11295,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11469,32 +11328,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_height.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/door-teal/door-teal_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/door-teal/door-teal_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/door-teal/door-teal_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11507,32 +11361,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_height.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/glass-blue/glass-blue_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/glass-blue/glass-blue_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/glass-blue/glass-blue_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11545,32 +11394,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_height.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/window-glow-material/window-glow-material_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/window-glow-material/window-glow-material_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11583,32 +11427,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_height.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/wood-walnut/wood-walnut_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/wood-walnut/wood-walnut_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11621,32 +11460,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/stone-foundation/stone-foundation_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stone-foundation/stone-foundation_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11659,32 +11493,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_height.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/gutter-copper/gutter-copper_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/gutter-copper/gutter-copper_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11697,32 +11526,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_height.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/ground-grass/ground-grass_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/ground-grass/ground-grass_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/ground-grass/ground-grass_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11735,32 +11559,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_height.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/foliage-sage/foliage-sage_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/foliage-sage/foliage-sage_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11773,32 +11592,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_height.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/flower-petal/flower-petal_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/flower-petal/flower-petal_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/flower-petal/flower-petal_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11811,32 +11625,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream/stucco-cream_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11849,32 +11658,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v2/stucco-cream_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v2/stucco-cream_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream-v2/stucco-cream_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v2/stucco-cream_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v2/stucco-cream_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream-v2/stucco-cream_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v2/stucco-cream_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v2/stucco-cream_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream-v2/stucco-cream_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v2/stucco-cream_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v2/stucco-cream_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream-v2/stucco-cream_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v2/stucco-cream_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v2/stucco-cream_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream-v2/stucco-cream_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11887,32 +11691,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v3/stucco-cream_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v3/stucco-cream_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream-v3/stucco-cream_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v3/stucco-cream_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v3/stucco-cream_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream-v3/stucco-cream_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v3/stucco-cream_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v3/stucco-cream_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream-v3/stucco-cream_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v3/stucco-cream_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v3/stucco-cream_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream-v3/stucco-cream_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v3/stucco-cream_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v3/stucco-cream_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream-v3/stucco-cream_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
@@ -11925,32 +11724,27 @@
       "usable": true,
       "maps": {
         "albedo": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_albedo.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_albedo.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_albedo.png",
           "channel": "albedo",
           "source": "reference-pixel-extraction"
         },
         "roughness": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_roughness.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_roughness.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_roughness.png",
           "channel": "roughness",
           "source": "reference-pixel-extraction"
         },
         "height": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_height.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_height.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_height.png",
           "channel": "height",
           "source": "reference-pixel-extraction"
         },
         "normal": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_normal.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_normal.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_normal.png",
           "channel": "normal",
           "source": "reference-pixel-extraction"
         },
         "ao": {
-          "path": "/Users/nicco/.config/superpowers/worktrees/img2threejs-showcase/cartoon-courier/public/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_ao.png",
-          "url": "/references/whimsical-hearth-house/materials/stucco-cream-v4/stucco-cream_ao.png",
+          "path": "/Users/nicco/Desktop/img2threejs-free-assist-artifacts/whimsical-hearth-house/runs/20260831T234449.690726Z-16e8f1d8c0/dense-evidence/materials/stucco-cream/stucco-cream_ao.png",
           "channel": "ao",
           "source": "reference-pixel-extraction"
         }
