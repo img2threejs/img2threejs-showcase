@@ -2,7 +2,7 @@ import type { EncodedModel, EncodedRig } from './meshCodec';
 import { buildMonsterTreeRig, type MonsterTreeRig, type RigOptions } from './rig';
 
 /**
- * Y'bneth — the treant from `public/references/monster-tree.jpg`, built on the img2threejs
+ * Y'bneth — the treant from `public/references/monster-tree/front.jpg`, built on the img2threejs
  * playground export and finished under the `animated-character` profile.
  *
  * ONE level of detail, deliberately. The export ships a single `high` level and no lower one, and

@@ -115,7 +115,8 @@ const impact = (socket: string, options?: { radius?: number; count?: number; spe
     vfx.toxin(rig.sockets[socket], { radius: options?.toxin ?? 0.8 });
     // The creature registers its own hit, and the scene lights up for an instant.
     vfx.flash(0.9);
-    vfx.impactFlash(new THREE.Vector3().setFromMatrixPosition(rig.sockets[socket].matrixWorld), 7, 0.26);
+    IMPACT_AT.setFromMatrixPosition(rig.sockets[socket].matrixWorld);
+    vfx.impactFlash(IMPACT_AT, 7, 0.26);
   };
 
 
@@ -132,13 +133,25 @@ const impact = (socket: string, options?: { radius?: number; count?: number; spe
  * shockwave sent along it goes nowhere, or somewhere random.
  */
 function facing(rig: MonsterTreeRig): THREE.Vector3 {
-  const head = new THREE.Vector3().setFromMatrixPosition(rig.bones.Head.matrixWorld);
-  const left = new THREE.Vector3().setFromMatrixPosition(rig.sockets['eye-l'].matrixWorld);
-  const right = new THREE.Vector3().setFromMatrixPosition(rig.sockets['eye-r'].matrixWorld);
-  const forward = left.add(right).multiplyScalar(0.5).sub(head);
-  forward.y = 0;
-  return forward.lengthSq() > 1e-10 ? forward.normalize() : new THREE.Vector3(1, 0, 0);
+  FACE_HEAD.setFromMatrixPosition(rig.bones.Head.matrixWorld);
+  FACE_LEFT.setFromMatrixPosition(rig.sockets['eye-l'].matrixWorld);
+  FACE_RIGHT.setFromMatrixPosition(rig.sockets['eye-r'].matrixWorld);
+  FACE_FORWARD.copy(FACE_LEFT).add(FACE_RIGHT).multiplyScalar(0.5).sub(FACE_HEAD);
+  FACE_FORWARD.y = 0;
+  return FACE_FORWARD.lengthSq() > 1e-10 ? FACE_FORWARD.normalize() : FACE_FORWARD.set(1, 0, 0);
 }
+
+// Runtime effect coordinates. They are overwritten synchronously by each cue; keeping them here
+// means an impact frame does not create a handful of short-lived vectors for the collector.
+const FACE_HEAD = new THREE.Vector3();
+const FACE_LEFT = new THREE.Vector3();
+const FACE_RIGHT = new THREE.Vector3();
+const FACE_FORWARD = new THREE.Vector3(1, 0, 0);
+const IMPACT_AT = new THREE.Vector3();
+const SKILL_AT = new THREE.Vector3();
+const SKILL_GROUND = new THREE.Vector3();
+const SKILL_CROWN = new THREE.Vector3();
+const SKILL_HIGH = new THREE.Vector3();
 
 /**
  * Each skill's accent, taken from the reference's own measured palette.
@@ -155,11 +168,11 @@ function facing(rig: MonsterTreeRig): THREE.Vector3 {
  *   the fall     bark, drained of green, because the light is going out of the wood
  */
 const ACCENT = {
-  strike: new THREE.Color(PALETTE.eyeCore).convertSRGBToLinear(),
-  iris: new THREE.Color(PALETTE.eyeIris).convertSRGBToLinear(),
-  deep: new THREE.Color(PALETTE.eyeDeep).convertSRGBToLinear().multiplyScalar(2.2),
-  moss: new THREE.Color(PALETTE.mossLight).convertSRGBToLinear(),
-  bark: new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(),
+  strike: new THREE.Color(PALETTE.eyeCore),
+  iris: new THREE.Color(PALETTE.eyeIris),
+  deep: new THREE.Color(PALETTE.eyeDeep).multiplyScalar(2.2),
+  moss: new THREE.Color(PALETTE.mossLight),
+  bark: new THREE.Color(PALETTE.barkLight),
 } as const;
 
 /**
@@ -204,9 +217,9 @@ function impactCues(
       at: loudest.at,
       run: (rig, vfx) => {
         vfx.charge = 0;
-        const at = new THREE.Vector3().setFromMatrixPosition(
+        IMPACT_AT.setFromMatrixPosition(
           (rig.sockets[GRIP_OF[loudest.bone] ?? ''] ?? rig.bones[loudest.bone]).matrixWorld);
-        vfx.impact(options.kind ?? 'heavy', at, rig);
+        vfx.impact(options.kind ?? 'heavy', IMPACT_AT, rig);
       },
     });
   }
@@ -216,12 +229,12 @@ function impactCues(
       cues.push({
         at: e.at,
         run: (rig, vfx) => {
-          const at = new THREE.Vector3().setFromMatrixPosition(
+          IMPACT_AT.setFromMatrixPosition(
             (rig.sockets[GRIP_OF[e.bone] ?? ''] ?? rig.bones[e.bone]).matrixWorld);
           // No `rig`, so no hitstop. A jab in a flurry is 167 ms from the next one and holding
           // the clip on every one of them turns a combo into eight stalls; the payoff below is
           // the hit that stops time, and it can only read that way if the jabs do not.
-          vfx.impact('light', at);
+          vfx.impact('light', IMPACT_AT);
         },
       });
     }
@@ -229,8 +242,8 @@ function impactCues(
       cues.push({
         at: e.at,
         run: (rig, vfx) => {
-          const at = new THREE.Vector3().setFromMatrixPosition(rig.bones[e.bone].matrixWorld);
-          vfx.impact('ground', at, rig);
+          IMPACT_AT.setFromMatrixPosition(rig.bones[e.bone].matrixWorld);
+          vfx.impact('ground', IMPACT_AT, rig);
         },
       });
     }
@@ -289,7 +302,7 @@ export const SKILLS: Skill[] = [
   {
     id: 'passive',
     accent: ACCENT.moss,
-    label: 'Passive · Greatwood Body',
+    label: 'Quietest · Greatwood Body',
     pose: (time) => passivePose(time),
     clip: 'authored:passive',
     fade: 0.45,
@@ -300,7 +313,7 @@ export const SKILLS: Skill[] = [
     // body is the character spending something, and this is the character TAKING something from
     // the ground it is standing on.
     drive: (rig, vfx, time) => {
-      const foot = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+      const foot = SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
       // Armour, breathing. Held well below a skill's release so the passive never reads as a cast
       // about to happen — it is a state, not an event.
       const rooted = vfx.inGrass(foot);
@@ -311,7 +324,7 @@ export const SKILLS: Skill[] = [
       // makes the passive read as a spell being cast rather than as ground he happens to be
       // standing on — and standing on it is the whole condition.
       { at: 0.2, run: (rig, vfx) => {
-        const foot = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+        const foot = SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
         vfx.grass(foot, { radius: 0.9, duration: 20, count: 190 });
       } },
       // Regeneration, on a slow repeating beat for as long as he stands in it. Every draw checks
@@ -320,7 +333,7 @@ export const SKILLS: Skill[] = [
       ...[1.2, 2.6, 4.0, 5.4, 6.8, 8.2, 9.6, 11.0, 12.4, 13.8].map((at) => ({
         at,
         run: (rig: MonsterTreeRig, vfx: MonsterTreeVfx) => {
-          const foot = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+          const foot = SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
           if (!vfx.inGrass(foot)) return;
           vfx.drawUp(foot, { radius: 0.7, count: 46 });
           vfx.flash(0.45);
@@ -331,7 +344,7 @@ export const SKILLS: Skill[] = [
   {
     id: 'vine',
     accent: ACCENT.iris,
-    label: 'Vine Lash',
+    label: 'Loudest · Vine Lash',
     pose: () => vinePose(),
     clip: 'authored:vine',
     fade: 0.14,
@@ -359,13 +372,16 @@ export const SKILLS: Skill[] = [
     },
     cues: [
       // Weight arriving on the back foot as he loads, not a strike — no hold on the clip for it.
-      { at: 0.24, run: (rig, vfx) => vfx.impact('ground', new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld)) },
+      { at: 0.24, run: (rig, vfx) => {
+        SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+        vfx.impact('ground', SKILL_AT);
+      } },
       {
         at: BEATS.vine.release,
         run: (rig, vfx) => {
           vfx.charge = 0;
           const heading = facing(rig);
-          const foot = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+          const foot = SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
           // THE CONDITION, asked of a real object. `vfx.grass` planted a patch with a position and
           // a radius; this is a genuine test against it, so the empowered form only appears when
           // the undergrowth the passive laid down is actually still standing under his feet.
@@ -398,22 +414,22 @@ export const SKILLS: Skill[] = [
               // Lifted to chest height rather than left at the vine's own tip. The fracture is
               // the payoff of the move and it has to be seen: at the far end of the reach the
               // ground is already near the bottom-right corner of the frame.
-              vfx.shatter(at.clone().setY(Math.max(0.85, at.y)), {
+              SKILL_HIGH.copy(at).setY(Math.max(0.85, at.y));
+              vfx.shatter(SKILL_HIGH, {
                 size: empowered ? 0.44 : 0.36,
                 duration: empowered ? 0.82 : 0.70,
               });
               vfx.impact('light', at, rig);
-              const ground = new THREE.Object3D();
-              ground.position.set(at.x, 0, at.z);
-              ground.updateMatrixWorld(true);
-              vfx.roots(ground, { count: empowered ? 7 : 4, spread: 0.22, duration: 0.9 });
-              vfx.cracks(ground, { radius: empowered ? 0.75 : 0.55, duration: 6 });
-              vfx.toxin(ground, { radius: empowered ? 0.82 : 0.62, duration: 7 });
+              SKILL_GROUND.set(at.x, 0, at.z);
+              vfx.roots(SKILL_GROUND, { count: empowered ? 7 : 4, spread: 0.22, duration: 0.9 });
+              vfx.cracks(SKILL_GROUND, { radius: empowered ? 0.75 : 0.55, duration: 6 });
+              vfx.toxin(SKILL_GROUND, { radius: empowered ? 0.82 : 0.62, duration: 7 });
               if (empowered) {
-                vfx.burstAt(at.clone().setY(0.35), {
+                SKILL_HIGH.copy(at).setY(0.35);
+                vfx.burstAt(SKILL_HIGH, {
                   count: 46, speed: 1.7, duration: 0.68, spread: 0.42, gravity: -1.4, lightness: 0.64,
                 });
-                vfx.shockwave(ground, 0.82, 0.65);
+                vfx.shockwave(SKILL_GROUND, 0.82, 0.65);
               }
             },
           });
@@ -424,7 +440,7 @@ export const SKILLS: Skill[] = [
   {
     id: 'natures-call',
     accent: ACCENT.deep,
-    label: "Nature's Call",
+    label: "Ground Contact · Nature's Call",
     pose: () => logsPose(),
     clip: 'authored:logs',
     fade: 0.18,
@@ -447,27 +463,22 @@ export const SKILLS: Skill[] = [
         // visible source and contact point; the former falling props floated in from off-screen.
         at,
         run: (rig: MonsterTreeRig, vfx: MonsterTreeVfx) => {
-          const from = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          const ground = new THREE.Object3D();
-          ground.position.copy(from.addScaledVector(facing(rig), 0.44 + i * 0.30)).setY(0);
-          ground.updateMatrixWorld(true);
-          vfx.roots(ground, { count: 3 + i * 2, spread: 0.11 + i * 0.035, duration: 0.82 + i * 0.08 });
-          vfx.shockwave(ground, 0.32 + i * 0.10, 0.48);
+          SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+          SKILL_GROUND.copy(SKILL_AT).addScaledVector(facing(rig), 0.44 + i * 0.30).setY(0);
+          vfx.roots(SKILL_GROUND, { count: 3 + i * 2, spread: 0.11 + i * 0.035, duration: 0.82 + i * 0.08 });
+          vfx.shockwave(SKILL_GROUND, 0.32 + i * 0.10, 0.48);
         },
       })),
       {
         at: BEATS.logs.finish,
         run: (rig, vfx) => {
-          const from = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          const at = from.clone().addScaledVector(facing(rig), 1.34).setY(0);
-          const ground = new THREE.Object3D();
-          ground.position.copy(at);
-          ground.updateMatrixWorld(true);
+          SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+          SKILL_GROUND.copy(SKILL_AT).addScaledVector(facing(rig), 1.34).setY(0);
           vfx.charge = 0;
-          vfx.runeCircle(ground, 1.0, 1.6);
-          vfx.roots(ground, { count: 7, spread: 0.32, duration: 1.2 });
-          vfx.grove(at, { count: 3, spread: 0.24, duration: 3.1 });
-          vfx.toxin(ground, { radius: 0.78, duration: 7 });
+          vfx.runeCircle(SKILL_GROUND, 1.0, 1.6);
+          vfx.roots(SKILL_GROUND, { count: 7, spread: 0.32, duration: 1.2 });
+          vfx.grove(SKILL_GROUND, { count: 3, spread: 0.24, duration: 3.1 });
+          vfx.toxin(SKILL_GROUND, { radius: 0.78, duration: 7 });
         },
       },
     ],
@@ -502,14 +513,14 @@ export const SKILLS: Skill[] = [
           // that channels a commitment rather than a pose.
           vfx.roots(rig.sockets['foot-l'], { count: 12, spread: 0.40, duration: 3.0 });
           vfx.roots(rig.sockets['foot-r'], { count: 10, spread: 0.36, duration: 3.0 });
-          const foot = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+          const foot = SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
           vfx.grass(foot, { radius: 1.25, duration: 10, count: 340 });
           vfx.runeCircle(rig.sockets['foot-l'], 1.7, 2.8);
         },
       },
       // The crown opens: a canopy pulled out of his own head as the trunk finishes growing.
       { at: BEATS.ultimate.rooted, run: (rig, vfx) => {
-        const crown = new THREE.Vector3().setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
+        const crown = SKILL_CROWN.setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
         vfx.grove(crown, { count: 5, spread: 0.26, duration: 3.6 });
         vfx.burst(rig.sockets['crown'], { count: 90, speed: 0.9, spread: 1, gravity: 0.4, lightness: 0.78 });
       } },
@@ -520,23 +531,38 @@ export const SKILLS: Skill[] = [
         // spread instead of allocating a separate tree for every landing.
         at: BEATS.ultimate.open,
         run: (rig, vfx) => {
-          const foot = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+          const foot = SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
           foot.y = 0;
-          const crown = new THREE.Vector3().setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
+          const crown = SKILL_CROWN.setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
           vfx.vortex(foot, { radius: 0.92, duration: 0.72, count: 72 });
           vfx.seeds(crown, { count: 10, spread: 0.82, flight: 0.58 });
-          vfx.delay(0.20, () => vfx.seeds(crown, { count: 13, spread: 1.15, flight: 0.70 }));
-          vfx.delay(0.44, () => vfx.seeds(crown, { count: 16, spread: 1.55, flight: 0.84 }));
-          vfx.delay(0.78, () => {
-            vfx.grove(foot, { count: 7, spread: 0.62, duration: 3.3 });
-            const ground = new THREE.Object3D();
-            ground.position.copy(foot);
-            ground.updateMatrixWorld(true);
-            vfx.shockwave(ground, 1.05, 0.82);
-          });
-          vfx.impactFlash(new THREE.Vector3().setFromMatrixPosition(rig.sockets['crown'].matrixWorld), 10, 0.4);
+          vfx.impactFlash(crown, 10, 0.4);
           vfx.burst(rig.sockets['crown'], { count: 72, speed: 0.82, duration: 1.0, spread: 0.72, gravity: 0.2 });
           vfx.flash(1.15);
+        },
+      },
+      // Static event-table entries, not runtime timers. They cannot bunch up after a suspended tab,
+      // and they allocate no closure or queue node on the release frame.
+      {
+        at: BEATS.ultimate.open + 0.20,
+        run: (rig, vfx) => {
+          SKILL_CROWN.setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
+          vfx.seeds(SKILL_CROWN, { count: 13, spread: 1.15, flight: 0.70 });
+        },
+      },
+      {
+        at: BEATS.ultimate.open + 0.44,
+        run: (rig, vfx) => {
+          SKILL_CROWN.setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
+          vfx.seeds(SKILL_CROWN, { count: 16, spread: 1.55, flight: 0.84 });
+        },
+      },
+      {
+        at: BEATS.ultimate.open + 0.78,
+        run: (rig, vfx) => {
+          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld).setY(0);
+          vfx.grove(SKILL_GROUND, { count: 7, spread: 0.62, duration: 3.3 });
+          vfx.shockwave(SKILL_GROUND, 1.05, 0.82);
         },
       },
       {

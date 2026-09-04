@@ -70,6 +70,19 @@ await page.evaluate(() => {
   };
 });
 
+const initialVfxResources = await page.evaluate(() => {
+  let objects = 0;
+  const geometries = new Set();
+  const materials = new Set();
+  window.monsterTree.vfx.group.traverse((object) => {
+    objects += 1;
+    if (object.geometry) geometries.add(object.geometry);
+    const owned = Array.isArray(object.material) ? object.material : [object.material];
+    for (const material of owned) if (material) materials.add(material);
+  });
+  return { objects, geometries: geometries.size, materials: materials.size };
+});
+
 const data = await page.evaluate(({ kit, rate }) => {
   const mt = window.monsterTree;
   const H = 1.9;
@@ -344,10 +357,15 @@ const timing = await page.evaluate(async (skills) => {
   for (const s of list) {
     window.monsterTree.runner.play(s);
     const stamps = [];
+    const clipTimes = [];
     await new Promise((resolve) => {
       const started = performance.now();
       const loop = () => {
         stamps.push(performance.now());
+        const clip = window.monsterTree.rig.clips.find((candidate) => (
+          candidate.name === window.monsterTree.runner.current.clip
+        ));
+        clipTimes.push(clip ? window.monsterTree.rig.mixer.existingAction(clip)?.time ?? 0 : 0);
         if (performance.now() - started > 2600) resolve();
         else requestAnimationFrame(loop);
       };
@@ -355,10 +373,13 @@ const timing = await page.evaluate(async (skills) => {
     });
     const d = [];
     for (let i = 1; i < stamps.length; i += 1) d.push(stamps[i] - stamps[i - 1]);
-    d.sort((a, b) => a - b);
+    let worst = 0;
+    for (let i = 1; i < d.length; i += 1) if (d[i] > d[worst]) worst = i;
+    const sorted = [...d].sort((a, b) => a - b);
     out[s] = {
-      p95: +d[Math.floor(d.length * 0.95)].toFixed(1),
-      max: +d[d.length - 1].toFixed(1),
+      p95: +sorted[Math.floor(sorted.length * 0.95)].toFixed(1),
+      max: +d[worst].toFixed(1),
+      maxAt: +clipTimes[worst + 1].toFixed(3),
       over25: d.filter((x) => x > 25).length,
     };
   }
@@ -383,6 +404,15 @@ const effectSpace = await page.evaluate(() => {
   const model = viewer.scene.getObjectByName('monster-tree');
   const { rig, vfx } = window.monsterTree;
   const controller = model.userData.sculptRuntime.animationController;
+  let objectCount = 0;
+  const geometries = new Set();
+  const materials = new Set();
+  vfx.group.traverse((object) => {
+    objectCount += 1;
+    if (object.geometry) geometries.add(object.geometry);
+    const owned = Array.isArray(object.material) ? object.material : [object.material];
+    for (const material of owned) if (material) materials.add(material);
+  });
   return {
     rigInModel: rig.group.parent === model,
     vfxInModel: vfx.group.parent === model,
@@ -390,10 +420,16 @@ const effectSpace = await page.evaluate(() => {
     restingId: window.monsterTree.runner.restingId,
     activeId: controller.active,
     publicActions: controller.actions.map((action) => action.id),
+    objectCount,
+    geometryCount: geometries.size,
+    materialCount: materials.size,
   };
 });
 
 const beats = await page.evaluate(() => window.monsterTree.beats ?? null);
+// CloakBrowser may keep its shared browser process alive between runs. Close the page explicitly
+// so repeated scoring does not leave a live renderer competing with the next timing pass.
+await page.close();
 await browser.close();
 
 // ---------------------------------------------------------------- scoring
@@ -535,6 +571,11 @@ effectSpace.rigInModel && effectSpace.vfxInModel && !effectSpace.vfxNestedInRig
   && effectSpace.restingId === 'passive' && effectSpace.activeId === 'passive'
   ? 'rig and world-space effects share one stable model parent; one-shots return to passive'
   : `rigInModel=${effectSpace.rigInModel}, vfxInModel=${effectSpace.vfxInModel}, nested=${effectSpace.vfxNestedInRig}, rest=${effectSpace.restingId}, active=${effectSpace.activeId}`);
+const stableResources = effectSpace.objectCount === initialVfxResources.objects
+  && effectSpace.geometryCount === initialVfxResources.geometries
+  && effectSpace.materialCount === initialVfxResources.materials;
+add('VFX pools stay allocation-stable', stableResources ? 1 : 0,
+  `objects ${initialVfxResources.objects}->${effectSpace.objectCount}, geometries ${initialVfxResources.geometries}->${effectSpace.geometryCount}, materials ${initialVfxResources.materials}->${effectSpace.materialCount}`);
 // 1. harness itself + determinism placeholder (scored by the caller re-running)
 const publicKitMatches = effectSpace.publicActions.length === KIT.length
   && KIT.every((id, index) => effectSpace.publicActions[index] === id);

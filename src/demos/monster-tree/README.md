@@ -1,6 +1,6 @@
 # Y'bneth — img2threejs `animated-character`, Stage R
 
-A treant rebuilt from `public/references/monster-tree.jpg`, built **on top of** the playground's
+A treant rebuilt from `public/references/monster-tree/front.jpg`, built **on top of** the playground's
 own export rather than re-deriving it. The geometry was already measured; nothing here re-sculpts
 it. What this stage adds is the rig work, the costume separation, the effects and the lighting —
 and a measurement harness for all of it.
@@ -451,7 +451,7 @@ young grove, giving every beat both a source and a contact point.
 ## The animation is scored, and the score is reproducible
 
 `scripts/score-monster-tree-animation.mjs` drives the shared gallery route in a browser and prints
-twelve checks scaled to ten. It steps every public authored clip deterministically — fixed dt
+thirteen checks scaled to ten. It steps every public authored clip deterministically — fixed dt
 through the real mixer, with the pose solved exactly as the frame loop solves it — and separately
 measures live frame timing twice. It exits non-zero below 9.0, so it can gate.
 
@@ -459,7 +459,7 @@ The 2026-09-04 polish run reads:
 
 ```
 0.95  no teleports                    peak 9.069 H/s; worst isolated ratio 1.73x
-1.00  no frame stalls                 worst max 15.6ms; p95 11.4ms; repeated stalls 0
+1.00  no frame stalls                 worst max 17.6ms; p95 15.6ms; repeated stalls 0
 1.00  transitions do not pop          worst ultimate -> vine 0.0432
 1.00  release lands on peak speed     Vine Lash within 0.027s
 1.00  holds are alive                 passive 0.0335 H/s; Nature's Call 0.049 H/s
@@ -469,8 +469,9 @@ The 2026-09-04 polish run reads:
 1.00  nothing left behind             0.02deg; zero scale and position residue
 1.00  clean run                       no console errors
 1.00  VFX follows the animated rig    stable model space; rest = passive
+1.00  VFX pools allocation-stable     objects 262; geometries 220; materials 110
 1.00  harness reports every clip      4/4 public clips
-TOTAL 9.91 / 10
+TOTAL 9.92 / 10
 ```
 
 ### What it caught that no still frame shows
@@ -520,11 +521,11 @@ in the browser — sampling `action.time` against `performance.now()` every fram
 frames throughout a strike **except at the impact frames**, which took 70 ms and 52 ms. A six-to-
 eight frame stall, landing exactly on the beat. Three causes, all found by measurement:
 
-1. **Shader compiles.** A `GroundCracks`, a `ToxinBloom`, a rune circle and a grove each build a
-   `ShaderMaterial` the first time they are spawned, and three compiles its program at the first
-   render that encounters it. Every effect type cost one stall on its own first impact — which is
-   every impact a viewer sees first. Fixed by spawning one of each at a millimetre scale far under
-   the floor on the first frame, with `frustumCulled` off so they are actually submitted.
+1. **Shader compiles.** Every effect pool owns its `ShaderMaterial` from construction, but three
+   still compiles each program on the first render that encounters it. Every effect type therefore
+   cost one stall on its own first impact — which is every impact a viewer sees first. Fixed by
+   rearming one constructor-owned slot per pool at a millimetre scale far under the floor on the
+   first frame, with `frustumCulled` off so it is actually submitted.
 2. **Lights.** Adding a `PointLight` changes the scene's lighting configuration, and three responds
    by marking **every lit material** for recompilation — including the character's own patched bark
    shader. Then the flash expires and it all recompiles again. Fixed by a pool of four permanent
@@ -878,12 +879,18 @@ absolute clock makes the sap pattern jump the instant the rate changes.
 
 ### Pooling
 
-Bursts — the hottest allocation path; every impact kind carries one and a flurry fires three in a
-second — are a fixed pool of fourteen slots, buffers sized for the largest burst ever fired,
-allocated once at construction and **invisible until fired**. When all fourteen are alive the
-oldest is stolen rather than a fifteenth allocated. Starting everything invisible also means the
-viewer's framing pass measures the figure alone, never whichever effect happened to be alive when
-the page settled.
+The complete public effects kit is constructor-owned: roots, groves, grass, vine ribbons, rings,
+runes, cracks, toxin stains, shatters, seed volleys, vortices, impact flashes and fourteen burst
+slots are all allocated before the first frame. Each object exposes `restart()` and returns to an
+invisible parked state when it dies; if a pool is saturated, the oldest slot is restarted rather
+than extending the scene. Vine Lash keeps one fixed tube topology and streams positions and
+normals into its existing attributes instead of disposing and rebuilding geometry on every frame.
+
+This is checked in the browser harness, which sweeps every public action and asserts that the scene
+contains the same **262 constructor-owned VFX objects** before and after the sweep. Starting every
+object invisible also means the viewer's framing pass measures the figure alone, never an effect.
+On the final two-pass run, no action repeated a frame over 25 ms; the worst frame was 17.6 ms and
+the worst p95 was 15.6 ms, both in `ultimate`.
 
 ### One palette, used across its range
 
@@ -1029,6 +1036,6 @@ numbers above are worth quoting.
 - **Hidden sides are generated, not observed.** One photograph cannot confirm the back.
 - **The costume split is a hypothesis.** Symmetric across both arms and confirmed in the render,
   but the export carries no material IDs to check it against.
-- **The clip poses have not been reviewed visually.** Skill names rest on kinematics alone.
-- **No AI-vision likeness review has run.** The spec is still ready to hand to the full img2threejs
-  skill for the judgement passes.
+- **The public action poses and the required quiet / loud / ground-contact frames were reviewed in
+  the live gallery route.** Their cue times still come from measurement; visual review is used for
+  silhouette, hierarchy and palette, not to move an event off its measured frame.

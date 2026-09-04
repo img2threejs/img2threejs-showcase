@@ -6,7 +6,7 @@
  *
  *   1. the decoded surface (64,307 vertices, 115,350 triangles) from `surfaceData.high.ts`
  *   2. the skin binding from `rigData.ts` (each vertex's dominant bone)
- *   3. the reference photograph `public/references/monster-tree.jpg`
+ *   3. the reference photograph `public/references/monster-tree/front.jpg`
  *
  * Positions are in RIG-LOCAL space — the same space the bind-pose vertices live in, before the
  * 1.9899x normalise scale. Anchor them through `sockets` on the built rig, never by hand.

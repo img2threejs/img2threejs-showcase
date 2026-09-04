@@ -1,7 +1,7 @@
 /**
  * Sweep every embedded clip through a real AnimationMixer and measure where things HAPPEN.
  *
- *   node tools/measure-events.mjs [--json]
+ *   node scripts/measure-monster-tree-events.mjs [--json|--emit]
  *
  * Three event kinds, all defined by dynamics rather than by eye:
  *
@@ -16,7 +16,9 @@
  * Everything is normalised to figure heights (H) so the table survives a change of scale.
  */
 import * as THREE from 'three';
-import { mkdirSync } from 'node:fs';
+import * as esbuild from 'esbuild';
+import { mkdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const JSON_OUT = process.argv.includes('--json');
@@ -29,7 +31,23 @@ const DRIVEN_ACCEL = 9.0;         // hip acceleration, in H/s^2, that needs an o
 const LIMBS = ['L_Hand', 'R_Hand', 'L_ToeBase', 'R_ToeBase'];
 const FEET = ['L_ToeBase', 'R_ToeBase'];
 
-const entry = await import(pathToFileURL(process.cwd() + '/tests/.build/measure-entry.mjs').href);
+// Keep this command standalone. The rig audit uses the same entry point, but its bundle is
+// deliberately disposable; relying on that command having run first made event measurement fail
+// in a clean checkout. Build beside node_modules so Node can resolve the external `three` package.
+const bundleDir = 'node_modules/.monster-tree';
+const bundle = join(bundleDir, 'measure-events-entry.mjs');
+mkdirSync(bundleDir, { recursive: true });
+await esbuild.build({
+  entryPoints: ['src/demos/monster-tree/measureEntry.ts'],
+  bundle: true,
+  format: 'esm',
+  platform: 'node',
+  target: 'node20',
+  external: ['three'],
+  outfile: bundle,
+  logLevel: 'warning',
+});
+const entry = await import(pathToFileURL(join(process.cwd(), bundle)).href);
 const { rig: RIG, build } = await entry.loadRig();
 const rig = build();
 const scene = new THREE.Scene();
@@ -165,13 +183,12 @@ for (const clip of rig.clips) {
 }
 
 const out = { figureHeight: round(H), sampleRate: RATE, thresholds: { ARREST_ENTER, ARREST_FALL, PLANT_LOW, DRIVEN_ACCEL }, clips: table };
-mkdirSync('tests/.build', { recursive: true });
 
 if (EMIT) {
   const { writeFileSync, readFileSync } = await import('node:fs');
   const path = 'src/demos/monster-tree/events.ts';
   const src = readFileSync(path, 'utf8');
-  const marker = 'export const CLIP_EVENTS';
+  const marker = 'export const FIGURE_HEIGHT';
   const head = src.slice(0, src.indexOf(marker));
   const tail = src.slice(src.indexOf('/** The events of one clip'));
   const body = table.map((c) => {
@@ -202,3 +219,5 @@ if (EMIT) {
     }
   }
 }
+
+rmSync(bundle, { force: true });

@@ -52,8 +52,8 @@ const ECHO_CORE = new THREE.Color().setHSL(LIFE_HUE, 0.75, 0.22);
 function ghostMaterial(): { material: THREE.MeshStandardMaterial; uniforms: Record<string, THREE.IUniform> } {
   const uniforms: Record<string, THREE.IUniform> = {
     uGhost: { value: 0 },
-    uRim: { value: ECHO_RIM.clone().convertSRGBToLinear() },
-    uCore: { value: ECHO_CORE.clone().convertSRGBToLinear() },
+    uRim: { value: ECHO_RIM.clone() },
+    uCore: { value: ECHO_CORE.clone() },
     uDissolve: { value: 0 },
   };
 

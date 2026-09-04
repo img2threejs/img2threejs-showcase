@@ -201,6 +201,38 @@ interface Tickable {
   tick(dt: number, elapsed: number): boolean;
 }
 
+interface PoolableTickable extends Tickable {
+  alive: boolean;
+  park(): void;
+}
+
+const SCRATCH_WORLD = new THREE.Vector3();
+const SCRATCH_SEED_LAND = new THREE.Vector3();
+const SCRATCH_SEED_BURST = new THREE.Vector3();
+const SCRATCH_CUE_DIRECTION = new THREE.Vector3();
+const SCRATCH_COLD = new THREE.Color();
+const VFX_WHITE = new THREE.Color(1, 1, 1);
+const NOOP_POINT = (_at: THREE.Vector3): void => {};
+const SEED_SOIL_BURST = {
+  count: 7,
+  speed: 0.32,
+  duration: 0.62,
+  spread: 0.42,
+  gravity: -1.15,
+} as const;
+
+type WorldAnchor = THREE.Object3D | THREE.Vector3;
+
+function readWorld(anchor: WorldAnchor, out: THREE.Vector3): THREE.Vector3 {
+  return anchor instanceof THREE.Vector3 ? out.copy(anchor) : out.setFromMatrixPosition(anchor.matrixWorld);
+}
+
+/** First free slot, or the oldest deterministic slot when the pool is saturated. */
+function takePooled<T extends PoolableTickable>(pool: readonly T[]): T {
+  for (let i = 0; i < pool.length; i += 1) if (!pool[i].alive) return pool[i];
+  return pool[0];
+}
+
 /**
  * The spore field: motes of drifting light around the figure, the ambient sign that the thing is
  * alive rather than a dead log. One `THREE.Points`, one draw call, positions advanced on the CPU
@@ -226,7 +258,7 @@ class SporeField implements Tickable {
     this.span = new Float32Array(count);
 
     const warm = lifeColour(0.62);
-    const cool = new THREE.Color(PALETTE.mossLight).convertSRGBToLinear();
+    const cool = new THREE.Color(PALETTE.mossLight);
     for (let i = 0; i < count; i += 1) {
       this.respawn(i, positions, true);
       // Most motes are the character's own green; a minority take the moss tint, so the field
@@ -433,6 +465,10 @@ class Trail implements Tickable {
   private filled = 0;
   private fade = 0;
   private readonly view = new THREE.Vector3(0, 0, 1);
+  private readonly world = new THREE.Vector3();
+  private readonly direction = new THREE.Vector3();
+  private readonly side = new THREE.Vector3();
+  private readonly offset = new THREE.Vector3();
   /** Raised to 1 while the swing is live, then eased back so the ribbon dissolves behind the hand. */
   strength = 0;
 
@@ -470,8 +506,8 @@ class Trail implements Tickable {
     const material = new THREE.ShaderMaterial({
       uniforms: {
         uColour: { value: colour },
-        uEmber: { value: new THREE.Color(PALETTE.eyeCore).convertSRGBToLinear() },
-        uAsh: { value: new THREE.Color(PALETTE.barkDark).convertSRGBToLinear() },
+        uEmber: { value: new THREE.Color(PALETTE.eyeCore) },
+        uAsh: { value: new THREE.Color(PALETTE.barkDark) },
         uTime: { value: 0 },
       },
       vertexShader: `
@@ -557,7 +593,7 @@ class Trail implements Tickable {
       return true;
     }
 
-    const world = new THREE.Vector3().setFromMatrixPosition(this.source.matrixWorld);
+    const world = this.world.setFromMatrixPosition(this.source.matrixWorld);
     if (wasIdle || this.filled === 0) this.restart(world);
     this.object.visible = true;
 
@@ -568,9 +604,9 @@ class Trail implements Tickable {
     const position = this.object.geometry.getAttribute('position') as THREE.BufferAttribute;
     const alpha = this.object.geometry.getAttribute('aAlpha') as THREE.BufferAttribute;
     const n = this.history.length;
-    const dir = new THREE.Vector3();
-    const side = new THREE.Vector3();
-    const offset = new THREE.Vector3();
+    const dir = this.direction;
+    const side = this.side;
+    const offset = this.offset;
 
     for (let i = 0; i < n; i += 1) {
       // Past the filled length every vertex sits on the oldest real sample, so those triangles are
@@ -604,14 +640,21 @@ class Trail implements Tickable {
 class GroundRing implements Tickable {
   readonly object: THREE.Mesh;
   private age = 0;
+  private duration: number;
+  private maxRadius: number;
+  private inward: boolean;
+  alive = true;
 
   constructor(
-    private readonly duration: number,
-    private readonly maxRadius: number,
+    duration: number,
+    maxRadius: number,
     colour: THREE.Color,
     texture: THREE.Texture,
-    private readonly inward = false,
+    inward = false,
   ) {
+    this.duration = duration;
+    this.maxRadius = maxRadius;
+    this.inward = inward;
     const material = new THREE.MeshBasicMaterial({
       map: texture,
       color: colour,
@@ -626,10 +669,32 @@ class GroundRing implements Tickable {
     this.object.renderOrder = 2;
   }
 
+  restart(at: THREE.Vector3, duration: number, maxRadius: number, colour: THREE.Color, inward = false): void {
+    this.age = 0;
+    this.duration = duration;
+    this.maxRadius = maxRadius;
+    this.inward = inward;
+    this.object.position.set(at.x, 0.012, at.z);
+    this.object.scale.setScalar(0.001);
+    (this.object.material as THREE.MeshBasicMaterial).color.copy(colour);
+    (this.object.material as THREE.MeshBasicMaterial).opacity = 0;
+    this.object.visible = true;
+    this.alive = true;
+  }
+
+  park(): void {
+    this.alive = false;
+    this.object.visible = false;
+  }
+
   tick(dt: number): boolean {
+    if (!this.alive) return false;
     this.age += dt;
     const t = this.age / this.duration;
-    if (t >= 1) return false;
+    if (t >= 1) {
+      this.park();
+      return false;
+    }
     // Fast out, slow settle — a shockwave does not expand linearly. An INWARD ring runs the same
     // curve backwards: it converges on the point that was struck, which is the difference between
     // dealing a blow and taking one.
@@ -664,7 +729,16 @@ class BurstSlot {
   private duration = 1;
   private gravity = -1;
   private age = 0;
+  private randomState = 0;
   alive = false;
+
+  /** Mulberry32 as slot state, avoiding a new closure on every impact. */
+  private random(): number {
+    this.randomState = (this.randomState + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(this.randomState ^ (this.randomState >>> 15), 1 | this.randomState);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
 
   constructor(dot: THREE.Texture) {
     const geometry = new THREE.BufferGeometry();
@@ -710,7 +784,7 @@ class BurstSlot {
     cone: number,
     seed: number,
   ): void {
-    const random = mulberry32(seed);
+    this.randomState = seed >>> 0;
     this.count = Math.min(count, BurstSlot.MAX);
     this.duration = duration;
     this.gravity = gravity;
@@ -719,11 +793,11 @@ class BurstSlot {
     const sizes = this.object.geometry.getAttribute('size') as THREE.BufferAttribute;
     for (let i = 0; i < this.count; i += 1) {
       positions.setXYZ(i, origin.x, origin.y, origin.z);
-      const v = speed * (0.35 + random() * 0.65);
+      const v = speed * (0.35 + this.random() * 0.65);
       if (direction) {
-        const cosTheta = 1 - random() * (1 - Math.cos(cone));
+        const cosTheta = 1 - this.random() * (1 - Math.cos(cone));
         const sinTheta = Math.sqrt(Math.max(0, 1 - cosTheta * cosTheta));
-        const phi = random() * Math.PI * 2;
+        const phi = this.random() * Math.PI * 2;
         CONE_LOCAL.set(Math.cos(phi) * sinTheta, Math.sin(phi) * sinTheta, cosTheta);
         CONE_ROT.setFromUnitVectors(CONE_AXIS, direction);
         CONE_LOCAL.applyQuaternion(CONE_ROT).multiplyScalar(v);
@@ -731,14 +805,14 @@ class BurstSlot {
         this.velocity[i * 3 + 1] = CONE_LOCAL.y;
         this.velocity[i * 3 + 2] = CONE_LOCAL.z;
       } else {
-        const theta = random() * Math.PI * 2;
-        const z = random() * 2 - 1;
+        const theta = this.random() * Math.PI * 2;
+        const z = this.random() * 2 - 1;
         const r = Math.sqrt(1 - z * z);
         this.velocity[i * 3] = Math.cos(theta) * r * v;
         this.velocity[i * 3 + 1] = z * v * spread;
         this.velocity[i * 3 + 2] = Math.sin(theta) * r * v;
       }
-      sizes.setX(i, 0.02 + random() * 0.05);
+      sizes.setX(i, 0.02 + this.random() * 0.05);
     }
     positions.needsUpdate = true;
     sizes.needsUpdate = true;
@@ -933,14 +1007,19 @@ class RuneCircle implements Tickable {
   private readonly inner: THREE.Mesh;
   private readonly outer: THREE.Mesh;
   private age = 0;
+  private duration: number;
+  private maxRadius: number;
+  alive = true;
 
   constructor(
-    private readonly duration: number,
-    private readonly maxRadius: number,
+    duration: number,
+    maxRadius: number,
     colour: THREE.Color,
     runeTexture: THREE.Texture,
     ringTexture: THREE.Texture,
   ) {
+    this.duration = duration;
+    this.maxRadius = maxRadius;
     this.object = new THREE.Group();
     this.object.name = 'vfx:rune-circle';
     this.object.rotation.x = -Math.PI / 2;
@@ -966,10 +1045,34 @@ class RuneCircle implements Tickable {
     this.object.add(this.outer, this.inner);
   }
 
+  restart(at: THREE.Vector3, duration: number, maxRadius: number, colour: THREE.Color): void {
+    this.age = 0;
+    this.duration = duration;
+    this.maxRadius = maxRadius;
+    this.object.position.set(at.x, 0.016, at.z);
+    this.outer.rotation.z = 0;
+    this.inner.rotation.z = 0;
+    this.outer.scale.setScalar(0.001);
+    this.inner.scale.setScalar(0.001);
+    (this.outer.material as THREE.MeshBasicMaterial).color.copy(colour);
+    (this.inner.material as THREE.MeshBasicMaterial).color.copy(colour);
+    this.object.visible = true;
+    this.alive = true;
+  }
+
+  park(): void {
+    this.alive = false;
+    this.object.visible = false;
+  }
+
   tick(dt: number): boolean {
+    if (!this.alive) return false;
     this.age += dt;
     const t = this.age / this.duration;
-    if (t >= 1) return false;
+    if (t >= 1) {
+      this.park();
+      return false;
+    }
     // Snap open, then hold and fade — a rune circle is inscribed, not blown outward.
     const open = 1 - (1 - Math.min(t * 2.2, 1)) ** 3;
     const fade = t < 0.35 ? 1 : 1 - (t - 0.35) / 0.65;
@@ -993,17 +1096,27 @@ class RuneCircle implements Tickable {
  */
 class RootEruption implements Tickable {
   readonly object: THREE.Group;
-  private readonly roots: Array<{ mesh: THREE.Mesh; delay: number; full: number }> = [];
+  private readonly roots: Array<{
+    mesh: THREE.Mesh;
+    delay: number;
+    full: number;
+    angle: number;
+    radial: number;
+    enabled: boolean;
+  }> = [];
   private age = 0;
+  private duration: number;
+  alive = true;
 
-  constructor(origin: THREE.Vector3, count: number, spread: number, scale: number, private readonly duration: number, seed: number) {
+  constructor(origin: THREE.Vector3, count: number, spread: number, scale: number, duration: number, seed: number) {
+    this.duration = duration;
     this.object = new THREE.Group();
     this.object.name = 'vfx:root-eruption';
     const random = mulberry32(seed);
     // Bark-dark and unlit-ish: the roots read as silhouette against the glow, which is what keeps
     // the effect from turning into another green blob.
     const material = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(PALETTE.barkDark).convertSRGBToLinear(),
+      color: new THREE.Color(PALETTE.barkDark),
       roughness: 0.95,
       metalness: 0,
       // Barely lit. A root is wet earth and dark wood catching the glow around it, not a neon
@@ -1017,7 +1130,8 @@ class RootEruption implements Tickable {
 
     for (let i = 0; i < count; i += 1) {
       const angle = (i / count) * Math.PI * 2 + random() * 0.7;
-      const dist = spread * (0.35 + random() * 0.6);
+      const radial = 0.35 + random() * 0.6;
+      const dist = spread * radial;
       const full = scale * (0.09 + random() * 0.13);
       // A three-point curve gives the root a natural lean instead of a spike.
       const curve = new THREE.CatmullRomCurve3([
@@ -1036,14 +1150,43 @@ class RootEruption implements Tickable {
       mesh.visible = false;
       mesh.castShadow = true;
       this.object.add(mesh);
-      this.roots.push({ mesh, delay: random() * 0.22, full });
+      this.roots.push({ mesh, delay: random() * 0.22, full, angle, radial, enabled: true });
     }
   }
 
+  /** Re-arm pooled root geometry at a new world point. */
+  restart(origin: THREE.Vector3, count: number, spread: number, duration: number): void {
+    this.age = 0;
+    this.duration = duration;
+    this.alive = true;
+    this.object.visible = true;
+    for (let i = 0; i < this.roots.length; i += 1) {
+      const root = this.roots[i];
+      root.enabled = i < count;
+      root.mesh.visible = false;
+      root.mesh.scale.y = 0.001;
+      root.mesh.position.set(
+        origin.x + Math.cos(root.angle) * spread * root.radial,
+        0,
+        origin.z + Math.sin(root.angle) * spread * root.radial,
+      );
+    }
+  }
+
+  park(): void {
+    this.alive = false;
+    this.object.visible = false;
+  }
+
   tick(dt: number): boolean {
+    if (!this.alive) return false;
     this.age += dt;
-    if (this.age >= this.duration) return false;
+    if (this.age >= this.duration) {
+      this.park();
+      return false;
+    }
     for (const root of this.roots) {
+      if (!root.enabled) continue;
       const local = (this.age - root.delay) / (this.duration - root.delay);
       if (local <= 0) continue;
       root.mesh.visible = true;
@@ -1122,8 +1265,11 @@ class GroundCracks implements Tickable {
   readonly object: THREE.Mesh;
   private readonly material: THREE.ShaderMaterial;
   private age = 0;
+  private duration: number;
+  alive = true;
 
-  constructor(private readonly duration: number, radius: number, hot: THREE.Color, cold: THREE.Color, map: THREE.Texture) {
+  constructor(duration: number, radius: number, hot: THREE.Color, cold: THREE.Color, map: THREE.Texture) {
+    this.duration = duration;
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         uMap: { value: map },
@@ -1158,16 +1304,41 @@ class GroundCracks implements Tickable {
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
     });
-    this.object = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), this.material);
+    this.object = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.material);
     this.object.name = 'vfx:ground-cracks';
     this.object.rotation.x = -Math.PI / 2;
     this.object.renderOrder = 2;
+    this.object.scale.set(radius * 2, radius * 2, 1);
+  }
+
+  restart(at: THREE.Vector3, duration: number, radius: number, hot: THREE.Color, cold: THREE.Color, rotation: number): void {
+    this.age = 0;
+    this.duration = duration;
+    this.material.uniforms.uGrow.value = 0;
+    this.material.uniforms.uHeat.value = 1;
+    this.material.uniforms.uFade.value = 1;
+    (this.material.uniforms.uHot.value as THREE.Color).copy(hot);
+    (this.material.uniforms.uCold.value as THREE.Color).copy(cold);
+    this.object.position.set(at.x, 0.014, at.z);
+    this.object.rotation.z = rotation;
+    this.object.scale.set(radius * 2, radius * 2, 1);
+    this.object.visible = true;
+    this.alive = true;
+  }
+
+  park(): void {
+    this.alive = false;
+    this.object.visible = false;
   }
 
   tick(dt: number): boolean {
+    if (!this.alive) return false;
     this.age += dt;
     const t = this.age / this.duration;
-    if (t >= 1) return false;
+    if (t >= 1) {
+      this.park();
+      return false;
+    }
     const u = this.material.uniforms;
     u.uGrow.value = 1 - (1 - Math.min(1, this.age / 0.35)) ** 3;
     u.uHeat.value = Math.max(0, 1 - this.age / 3.2);
@@ -1191,16 +1362,20 @@ class GroundCracks implements Tickable {
 class ToxinBloom implements Tickable {
   readonly object: THREE.Group;
   private readonly material: THREE.ShaderMaterial;
+  private readonly stain: THREE.Mesh;
   private readonly motes: THREE.Points;
   private readonly velocity: Float32Array;
   private readonly life: Float32Array;
   private readonly span: Float32Array;
   private readonly origin: THREE.Vector3;
-  private readonly reach: number;
+  private reach: number;
   private readonly random: () => number;
   private age = 0;
+  private duration: number;
+  alive = true;
 
-  constructor(origin: THREE.Vector3, private readonly duration: number, radius: number, colour: THREE.Color, dot: THREE.Texture, seed: number) {
+  constructor(origin: THREE.Vector3, duration: number, radius: number, colour: THREE.Color, dot: THREE.Texture, seed: number) {
+    this.duration = duration;
     this.object = new THREE.Group();
     this.object.name = 'vfx:toxin';
     this.origin = origin.clone();
@@ -1247,11 +1422,12 @@ class ToxinBloom implements Tickable {
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
     });
-    const stain = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), this.material);
-    stain.rotation.x = -Math.PI / 2;
-    stain.position.set(origin.x, 0.02, origin.z);
-    stain.renderOrder = 2;
-    this.object.add(stain);
+    this.stain = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.material);
+    this.stain.rotation.x = -Math.PI / 2;
+    this.stain.position.set(origin.x, 0.02, origin.z);
+    this.stain.scale.set(radius * 2, radius * 2, 1);
+    this.stain.renderOrder = 2;
+    this.object.add(this.stain);
 
     const count = 90;
     const positions = new Float32Array(count * 3);
@@ -1291,6 +1467,31 @@ class ToxinBloom implements Tickable {
     this.object.add(this.motes);
   }
 
+  restart(origin: THREE.Vector3, duration: number, radius: number, colour: THREE.Color): void {
+    this.age = 0;
+    this.duration = duration;
+    this.reach = radius;
+    this.origin.copy(origin);
+    this.stain.position.set(origin.x, 0.02, origin.z);
+    this.stain.scale.set(radius * 2, radius * 2, 1);
+    (this.material.uniforms.uColour.value as THREE.Color).copy(colour);
+    this.material.uniforms.uSpread.value = 0;
+    this.material.uniforms.uFade.value = 1;
+    const moteMaterial = this.motes.material as THREE.ShaderMaterial;
+    (moteMaterial.uniforms.uColour.value as THREE.Color).copy(colour);
+    moteMaterial.uniforms.uOpacity.value = 1;
+    const positions = (this.motes.geometry.getAttribute('position') as THREE.BufferAttribute).array as Float32Array;
+    for (let i = 0; i < this.life.length; i += 1) this.spawn(i, positions, true);
+    (this.motes.geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
+    this.object.visible = true;
+    this.alive = true;
+  }
+
+  park(): void {
+    this.alive = false;
+    this.object.visible = false;
+  }
+
   private spawn(i: number, positions: Float32Array, initial: boolean): void {
     const r = this.random;
     const angle = r() * Math.PI * 2;
@@ -1307,9 +1508,13 @@ class ToxinBloom implements Tickable {
   }
 
   tick(dt: number, elapsed: number): boolean {
+    if (!this.alive) return false;
     this.age += dt;
     const t = this.age / this.duration;
-    if (t >= 1) return false;
+    if (t >= 1) {
+      this.park();
+      return false;
+    }
     const u = this.material.uniforms;
     u.uTime.value = elapsed;
     u.uSpread.value = 1 - (1 - Math.min(1, this.age / 2.0)) ** 2.2;
@@ -1452,7 +1657,7 @@ function taperedTube(
 
 
 /** Bark mid, white-balanced the same way the shell's albedo is, for generated trunk segments. */
-const TRUNK_COLOUR = new THREE.Color(PALETTE.barkMid).convertSRGBToLinear().multiply(
+const TRUNK_COLOUR = new THREE.Color(PALETTE.barkMid).multiply(
   new THREE.Color(ALBEDO_WHITE_BALANCE[0], ALBEDO_WHITE_BALANCE[1], ALBEDO_WHITE_BALANCE[2]),
 );
 /**
@@ -1678,20 +1883,31 @@ function canopyPoints(
  */
 class GroveEruption implements Tickable {
   readonly object: THREE.Group;
-  private readonly trees: Array<{ mesh: THREE.Mesh; delay: number; lean: number; rate: number }> = [];
+  private readonly trees: Array<{
+    mesh: THREE.Mesh;
+    delay: number;
+    lean: number;
+    rate: number;
+    angle: number;
+    radial: number;
+    enabled: boolean;
+  }> = [];
   private age = 0;
+  private duration: number;
+  alive = true;
 
   constructor(
     origin: THREE.Vector3,
     count: number,
     spread: number,
     scale: number,
-    private readonly duration: number,
+    duration: number,
     seed: number,
     material: THREE.Material,
     stock: THREE.BufferGeometry | null,
     leaf: THREE.Texture | null = null,
   ) {
+    this.duration = duration;
     this.object = new THREE.Group();
     this.object.name = 'vfx:grove';
     const random = mulberry32(seed);
@@ -1748,15 +1964,47 @@ class GroveEruption implements Tickable {
         lean: (random() - 0.5) * 0.06,
         // Tall wood comes up slower than scrub, which is most of what makes a hero read as heavy.
         rate: hero ? 1.5 : 0.95,
+        angle,
+        radial,
+        enabled: true,
       });
     }
   }
 
+  /** Re-arm a prebuilt grove; only transforms and uniforms change on a cast. */
+  restart(origin: THREE.Vector3, count: number, spread: number, duration: number): void {
+    this.age = 0;
+    this.duration = duration;
+    this.alive = true;
+    this.object.visible = true;
+    for (let i = 0; i < this.trees.length; i += 1) {
+      const tree = this.trees[i];
+      tree.enabled = i < count;
+      tree.mesh.visible = false;
+      tree.mesh.scale.setScalar(0.001);
+      tree.mesh.position.set(
+        origin.x + Math.cos(tree.angle) * spread * tree.radial,
+        0,
+        origin.z + Math.sin(tree.angle) * spread * tree.radial,
+      );
+    }
+  }
+
+  park(): void {
+    this.alive = false;
+    this.object.visible = false;
+  }
+
   tick(dt: number, elapsed: number): boolean {
+    if (!this.alive) return false;
     this.age += dt;
     const t = this.age / this.duration;
-    if (t >= 1) return false;
+    if (t >= 1) {
+      this.park();
+      return false;
+    }
     for (const tree of this.trees) {
+      if (!tree.enabled) continue;
       const local = this.age - tree.delay;
       if (local <= 0) continue;
       tree.mesh.visible = true;
@@ -1792,9 +2040,12 @@ class GrassPatch implements Tickable {
   private age = 0;
   /** Where it is and how far it reaches, so a skill can ask whether the character stands in it. */
   readonly centre: THREE.Vector3;
-  readonly radius: number;
+  radius: number;
+  private duration: number;
+  alive = true;
 
-  constructor(origin: THREE.Vector3, radius: number, count: number, colour: THREE.Color, seed: number, private readonly duration: number) {
+  constructor(origin: THREE.Vector3, radius: number, count: number, colour: THREE.Color, seed: number, duration: number) {
+    this.duration = duration;
     this.centre = origin.clone();
     this.radius = radius;
     const random = mulberry32(seed);
@@ -1884,6 +2135,24 @@ class GrassPatch implements Tickable {
     this.object.userData.ownMaterial = true;
   }
 
+  /** Re-arm the fixed 340-blade buffer at a new place and radius. */
+  restart(origin: THREE.Vector3, radius: number, count: number, duration: number): void {
+    this.age = 0;
+    this.duration = duration;
+    this.radius = radius;
+    this.centre.copy(origin);
+    this.object.position.set(origin.x, 0, origin.z);
+    this.object.scale.setScalar(radius);
+    this.object.geometry.setDrawRange(0, Math.min(count * 3, this.object.geometry.index?.count ?? 0));
+    this.object.visible = true;
+    this.alive = true;
+  }
+
+  park(): void {
+    this.alive = false;
+    this.object.visible = false;
+  }
+
   /** True while the patch is still standing — what Dây Leo asks before it commits to a shape. */
   get standing(): boolean {
     return this.age < this.duration * 0.85;
@@ -1896,8 +2165,12 @@ class GrassPatch implements Tickable {
   }
 
   tick(dt: number, elapsed: number): boolean {
+    if (!this.alive) return false;
     this.age += dt;
-    if (this.age >= this.duration) return false;
+    if (this.age >= this.duration) {
+      this.park();
+      return false;
+    }
     this.material.uniforms.uTime.value = elapsed;
     const t = this.age / this.duration;
     // Up over the first second, down over the last fifth.
@@ -1922,24 +2195,47 @@ class VineWhip implements Tickable {
   readonly object: THREE.Group;
   private readonly tube: THREE.Mesh;
   private readonly points: THREE.Vector3[] = [];
+  /** Parallel-transport frames, allocated once with the tube rather than once per rendered frame. */
+  private readonly tangents: THREE.Vector3[] = [];
   private readonly radii: number[] = [];
   /** Live radii, thinned as the shot travels away. */
   private readonly live: number[] = [];
+  private readonly frameNormal = new THREE.Vector3();
+  private readonly frameBinormal = new THREE.Vector3();
+  private readonly frameOut = new THREE.Vector3();
+  private readonly frameSeed = new THREE.Vector3();
+  private readonly frameRotation = new THREE.Quaternion();
+  private readonly side = new THREE.Vector3();
   private age = 0;
   private struck = false;
+  alive = true;
+  private from: THREE.Object3D;
+  private reach: number;
+  private outTime: number;
+  private holdTime: number;
+  private backTime: number;
+  private bend: number;
+  private onCatch: (at: THREE.Vector3) => void;
 
   constructor(
-    private readonly from: THREE.Object3D,
+    from: THREE.Object3D,
     direction: THREE.Vector3,
-    private readonly reach: number,
-    private readonly outTime: number,
-    private readonly holdTime: number,
-    private readonly backTime: number,
+    reach: number,
+    outTime: number,
+    holdTime: number,
+    backTime: number,
     colour: THREE.Color,
     material: THREE.Material,
-    private readonly bend: number,
-    private readonly onCatch: (at: THREE.Vector3) => void,
+    bend: number,
+    onCatch: (at: THREE.Vector3) => void,
   ) {
+    this.from = from;
+    this.reach = reach;
+    this.outTime = outTime;
+    this.holdTime = holdTime;
+    this.backTime = backTime;
+    this.bend = bend;
+    this.onCatch = onCatch;
     this.object = new THREE.Group();
     this.object.name = 'vfx:vine';
     this.heading.copy(direction).setY(0);
@@ -1948,6 +2244,7 @@ class VineWhip implements Tickable {
 
     for (let i = 0; i <= VineWhip.LINKS; i += 1) {
       this.points.push(new THREE.Vector3());
+      this.tangents.push(new THREE.Vector3(1, 0, 0));
       // Thickest at the hand, tapering to a tendril: a vine is not a rope of constant gauge. At
       // half these gauges it came out as a drawn line rather than as something with a body.
       // Long and slim: a shaft is read from its LENGTH against its gauge, and at the earlier
@@ -1956,22 +2253,73 @@ class VineWhip implements Tickable {
       this.live.push(0);
     }
     this.colour = colour;
-    this.tube = new THREE.Mesh(new THREE.BufferGeometry(), material);
+    // The first frame owns the one and only tube allocation. Earlier code disposed and rebuilt a
+    // complete BufferGeometry on every tick; the measured result was a repeatable 51.8 ms stall
+    // inside Vine Lash. A changing curve only requires changing its vertex attributes, not its
+    // topology, so the ring/index layout is fixed and the positions are streamed in place.
+    const geometry = taperedTube(this.points, this.live, VineWhip.RADIAL_SEGMENTS, this.colour)
+      ?? new THREE.BufferGeometry();
+    (geometry.getAttribute('position') as THREE.BufferAttribute | undefined)?.setUsage(THREE.DynamicDrawUsage);
+    (geometry.getAttribute('normal') as THREE.BufferAttribute | undefined)?.setUsage(THREE.DynamicDrawUsage);
+    (geometry.getAttribute('aGrain') as THREE.BufferAttribute | undefined)?.setUsage(THREE.DynamicDrawUsage);
+    this.tube = new THREE.Mesh(geometry, material);
     this.tube.name = 'vfx:vine-body';
     this.tube.frustumCulled = false;
     this.object.add(this.tube);
   }
 
   private static readonly LINKS = 22;
+  private static readonly RADIAL_SEGMENTS = 6;
   private readonly heading = new THREE.Vector3();
   private readonly colour: THREE.Color;
   private readonly origin = new THREE.Vector3();
   private readonly tip = new THREE.Vector3();
+  /** Stable callback payload: `onCatch` consumes it synchronously, so no impact-frame clone. */
+  private readonly catchPoint = new THREE.Vector3();
+
+  restart(
+    from: THREE.Object3D,
+    direction: THREE.Vector3,
+    reach: number,
+    outTime: number,
+    holdTime: number,
+    backTime: number,
+    bend: number,
+    onCatch: (at: THREE.Vector3) => void,
+  ): void {
+    this.from = from;
+    this.reach = reach;
+    this.outTime = outTime;
+    this.holdTime = holdTime;
+    this.backTime = backTime;
+    this.bend = bend;
+    this.onCatch = onCatch;
+    this.heading.copy(direction).setY(0);
+    if (this.heading.lengthSq() < 1e-8) this.heading.set(1, 0, 0);
+    this.heading.normalize();
+    for (let i = 0; i <= VineWhip.LINKS; i += 1) {
+      this.radii[i] = reach * (0.020 - 0.014 * (i / VineWhip.LINKS));
+      this.live[i] = 0;
+    }
+    this.age = 0;
+    this.struck = false;
+    this.alive = true;
+    this.object.visible = true;
+  }
+
+  park(): void {
+    this.alive = false;
+    this.object.visible = false;
+  }
 
   tick(dt: number): boolean {
+    if (!this.alive) return false;
     this.age += dt;
     const total = this.outTime + this.holdTime + this.backTime;
-    if (this.age >= total) return false;
+    if (this.age >= total) {
+      this.park();
+      return false;
+    }
 
     let extend: number;
     if (this.age < this.outTime) {
@@ -2000,7 +2348,7 @@ class VineWhip implements Tickable {
 
     if (!this.struck && this.age >= this.outTime) {
       this.struck = true;
-      this.onCatch(this.tip.clone());
+      this.onCatch(this.catchPoint.copy(this.tip));
     }
 
     // THE ARC. A vine is not a beam and it is not a taut cable: it is thrown, so it bows out to
@@ -2013,7 +2361,7 @@ class VineWhip implements Tickable {
     // gone once it has taken hold. The bow gives it shape; the wave gives it life.
     const lash = this.age < this.outTime ? 1 - this.age / this.outTime : 0;
     const settle = 1 - lash;
-    const side = new THREE.Vector3(-this.heading.z, 0, this.heading.x);
+    this.side.set(-this.heading.z, 0, this.heading.x);
     for (let i = 0; i <= VineWhip.LINKS; i += 1) {
       const s = i / VineWhip.LINKS;
       const point = this.points[i];
@@ -2025,10 +2373,10 @@ class VineWhip implements Tickable {
       // sideways and a quarter of it upward — the thing that left the hand was a fat green
       // crescent hanging in the air, and it read as a banana rather than as wood travelling fast.
       // The arc is now just enough to say the shot was thrown rather than aimed down a ruler.
-      point.addScaledVector(side, bow * this.reach * (0.07 + 0.05 * lash) * this.bend);
+      point.addScaledVector(this.side, bow * this.reach * (0.07 + 0.05 * lash) * this.bend);
       point.y += bow * this.reach * (0.085 - 0.03 * settle);
       const wave = Math.sin(s * 9.0 - this.age * 19) * lash * this.reach * 0.035 * s;
-      point.addScaledVector(side, wave);
+      point.addScaledVector(this.side, wave);
       point.y -= bow * this.reach * 0.02 * settle;
     }
 
@@ -2036,10 +2384,59 @@ class VineWhip implements Tickable {
     const thin = 1 - away * 0.92;
     for (let i = 0; i <= VineWhip.LINKS; i += 1) this.live[i] = this.radii[i] * thin;
 
-    this.tube.geometry.dispose();
-    const geometry = taperedTube(this.points, this.live, 6, this.colour);
-    if (geometry) this.tube.geometry = geometry;
+    this.updateTube();
     return true;
+  }
+
+  /** Rewrite a fixed tube buffer around the live curve; no objects or typed arrays are created. */
+  private updateTube(): void {
+    const geometry = this.tube.geometry;
+    const position = geometry.getAttribute('position') as THREE.BufferAttribute;
+    const normalAttribute = geometry.getAttribute('normal') as THREE.BufferAttribute;
+    const grain = geometry.getAttribute('aGrain') as THREE.BufferAttribute;
+    const n = this.points.length;
+
+    for (let i = 0; i < n; i += 1) {
+      const a = this.points[Math.max(0, i - 1)];
+      const b = this.points[Math.min(n - 1, i + 1)];
+      const tangent = this.tangents[i].subVectors(b, a);
+      if (tangent.lengthSq() < 1e-12) tangent.set(0, 1, 0);
+      tangent.normalize();
+    }
+
+    this.frameSeed.set(Math.abs(this.tangents[0].y) > 0.9 ? 1 : 0,
+      Math.abs(this.tangents[0].y) > 0.9 ? 0 : 1, 0);
+    this.frameNormal.crossVectors(this.tangents[0], this.frameSeed).normalize();
+    if (this.frameNormal.lengthSq() < 1e-8) this.frameNormal.set(1, 0, 0);
+
+    for (let i = 0; i < n; i += 1) {
+      if (i > 0) {
+        this.frameRotation.setFromUnitVectors(this.tangents[i - 1], this.tangents[i]);
+        this.frameNormal.applyQuaternion(this.frameRotation).normalize();
+        this.frameNormal.addScaledVector(
+          this.tangents[i],
+          -this.frameNormal.dot(this.tangents[i]),
+        ).normalize();
+      }
+      this.frameBinormal.crossVectors(this.tangents[i], this.frameNormal).normalize();
+      for (let s = 0; s < VineWhip.RADIAL_SEGMENTS; s += 1) {
+        const angle = (s / VineWhip.RADIAL_SEGMENTS) * Math.PI * 2;
+        this.frameOut.copy(this.frameNormal).multiplyScalar(Math.cos(angle))
+          .addScaledVector(this.frameBinormal, Math.sin(angle));
+        const vertex = i * VineWhip.RADIAL_SEGMENTS + s;
+        position.setXYZ(
+          vertex,
+          this.points[i].x + this.frameOut.x * this.live[i],
+          this.points[i].y + this.frameOut.y * this.live[i],
+          this.points[i].z + this.frameOut.z * this.live[i],
+        );
+        normalAttribute.setXYZ(vertex, this.frameOut.x, this.frameOut.y, this.frameOut.z);
+        grain.setXYZ(vertex, this.tangents[i].x, this.tangents[i].y, this.tangents[i].z);
+      }
+    }
+    position.needsUpdate = true;
+    normalAttribute.needsUpdate = true;
+    grain.needsUpdate = true;
   }
 }
 
@@ -2285,24 +2682,34 @@ class SeedVolley implements Tickable {
   readonly object: THREE.Points;
   private readonly velocity: Float32Array;
   private readonly landAt: Float32Array;
-  private readonly landed: boolean[];
+  private readonly landed: Uint8Array;
+  private readonly random: () => number;
+  private count: number;
+  private flight: number;
+  private onLand: (at: THREE.Vector3, ordinal: number) => void;
+  private landedCount = 0;
   private age = 0;
+  alive = true;
 
   constructor(
     origin: THREE.Vector3,
     count: number,
     spread: number,
-    private readonly flight: number,
+    flight: number,
     colour: THREE.Color,
     dot: THREE.Texture,
     seed: number,
-    private readonly onLand: (at: THREE.Vector3) => void,
+    onLand: (at: THREE.Vector3, ordinal: number) => void,
   ) {
-    const random = mulberry32(seed);
+    this.count = count;
+    this.flight = flight;
+    this.onLand = onLand;
+    this.random = mulberry32(seed);
+    const random = this.random;
     const positions = new Float32Array(count * 3);
     this.velocity = new Float32Array(count * 3);
     this.landAt = new Float32Array(count * 3);
-    this.landed = new Array(count).fill(false);
+    this.landed = new Uint8Array(count);
 
     for (let i = 0; i < count; i += 1) {
       const angle = (i / count) * Math.PI * 2 + random() * 0.5;
@@ -2340,12 +2747,50 @@ class SeedVolley implements Tickable {
     this.object.userData.ownMaterial = true;
   }
 
+  restart(origin: THREE.Vector3, count: number, spread: number, flight: number, colour: THREE.Color): void {
+    this.age = 0;
+    this.landedCount = 0;
+    this.count = Math.min(count, this.landed.length);
+    this.flight = flight;
+    this.landed.fill(1);
+    const positions = (this.object.geometry.getAttribute('position') as THREE.BufferAttribute).array as Float32Array;
+    const random = this.random;
+    for (let i = 0; i < this.count; i += 1) {
+      this.landed[i] = 0;
+      const angle = (i / this.count) * Math.PI * 2 + random() * 0.5;
+      const dist = spread * (0.45 + random() * 0.55);
+      const lx = origin.x + Math.cos(angle) * dist;
+      const lz = origin.z + Math.sin(angle) * dist;
+      positions[i * 3] = origin.x;
+      positions[i * 3 + 1] = origin.y;
+      positions[i * 3 + 2] = origin.z;
+      this.landAt[i * 3] = lx;
+      this.landAt[i * 3 + 1] = 0;
+      this.landAt[i * 3 + 2] = lz;
+      this.velocity[i * 3] = (lx - origin.x) / flight;
+      this.velocity[i * 3 + 1] = (0 - origin.y) / flight + 4.5 * flight;
+      this.velocity[i * 3 + 2] = (lz - origin.z) / flight;
+    }
+    this.object.geometry.setDrawRange(0, this.count);
+    (this.object.material as THREE.PointsMaterial).color.copy(colour);
+    (this.object.material as THREE.PointsMaterial).size = spread * 0.075;
+    (this.object.geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
+    this.object.visible = true;
+    this.alive = true;
+  }
+
+  park(): void {
+    this.alive = false;
+    this.object.visible = false;
+  }
+
   tick(dt: number): boolean {
+    if (!this.alive) return false;
     this.age += dt;
     const positions = this.object.geometry.getAttribute('position') as THREE.BufferAttribute;
     const array = positions.array as Float32Array;
     let alive = false;
-    for (let i = 0; i < this.landed.length; i += 1) {
+    for (let i = 0; i < this.count; i += 1) {
       if (this.landed[i]) continue;
       alive = true;
       this.velocity[i * 3 + 1] -= 9.0 * dt;
@@ -2353,12 +2798,15 @@ class SeedVolley implements Tickable {
       array[i * 3 + 1] += this.velocity[i * 3 + 1] * dt;
       array[i * 3 + 2] += this.velocity[i * 3 + 2] * dt;
       if (array[i * 3 + 1] <= 0.01 || this.age > this.flight * 1.6) {
-        this.landed[i] = true;
+        this.landed[i] = 1;
         array[i * 3 + 1] = -50;
-        this.onLand(new THREE.Vector3(this.landAt[i * 3], 0, this.landAt[i * 3 + 2]));
+        SCRATCH_SEED_LAND.set(this.landAt[i * 3], 0, this.landAt[i * 3 + 2]);
+        this.landedCount += 1;
+        this.onLand(SCRATCH_SEED_LAND, this.landedCount);
       }
     }
     positions.needsUpdate = true;
+    if (!alive) this.park();
     return alive;
   }
 }
@@ -2378,18 +2826,29 @@ class Vortex implements Tickable {
   private readonly radius: Float32Array;
   private readonly rate: Float32Array;
   private readonly height: Float32Array;
+  private readonly centre: THREE.Vector3;
+  private readonly random: () => number;
+  private count: number;
+  private reach: number;
+  private duration: number;
   private age = 0;
+  alive = true;
 
   constructor(
-    private readonly centre: THREE.Vector3,
+    centre: THREE.Vector3,
     count: number,
-    private readonly reach: number,
-    private readonly duration: number,
+    reach: number,
+    duration: number,
     colour: THREE.Color,
     dot: THREE.Texture,
     seed: number,
   ) {
-    const random = mulberry32(seed);
+    this.centre = centre.clone();
+    this.count = count;
+    this.reach = reach;
+    this.duration = duration;
+    this.random = mulberry32(seed);
+    const random = this.random;
     const positions = new Float32Array(count * 3);
     this.angle = new Float32Array(count);
     this.radius = new Float32Array(count);
@@ -2413,13 +2872,42 @@ class Vortex implements Tickable {
     this.object.userData.ownMaterial = true;
   }
 
+  restart(centre: THREE.Vector3, count: number, reach: number, duration: number, colour: THREE.Color): void {
+    this.age = 0;
+    this.centre.copy(centre);
+    this.count = Math.min(count, this.angle.length);
+    this.reach = reach;
+    this.duration = duration;
+    for (let i = 0; i < this.count; i += 1) {
+      this.angle[i] = this.random() * Math.PI * 2;
+      this.radius[i] = reach * (0.35 + this.random() * 0.65);
+      this.rate[i] = 0.5 + this.random() * 0.8;
+      this.height[i] = this.random() * reach * 0.35;
+    }
+    this.object.geometry.setDrawRange(0, this.count);
+    (this.object.material as THREE.PointsMaterial).color.copy(colour);
+    (this.object.material as THREE.PointsMaterial).size = reach * 0.055;
+    (this.object.material as THREE.PointsMaterial).opacity = 1;
+    this.object.visible = true;
+    this.alive = true;
+  }
+
+  park(): void {
+    this.alive = false;
+    this.object.visible = false;
+  }
+
   tick(dt: number): boolean {
+    if (!this.alive) return false;
     this.age += dt;
-    if (this.age >= this.duration) return false;
+    if (this.age >= this.duration) {
+      this.park();
+      return false;
+    }
     const t = this.age / this.duration;
     const positions = this.object.geometry.getAttribute('position') as THREE.BufferAttribute;
     const array = positions.array as Float32Array;
-    for (let i = 0; i < this.angle.length; i += 1) {
+    for (let i = 0; i < this.count; i += 1) {
       // Winds faster as it closes, which is what conservation of angular momentum looks like and
       // what stops the last half of the pull going slack.
       const closing = Math.max(0.06, 1 - t);
@@ -2548,17 +3036,24 @@ class VoidShatter implements Tickable {
   private readonly live: Float32Array;
   private readonly origin: Float32Array;
   private readonly velocity: Float32Array;
+  private readonly initialVelocity: Float32Array;
   private readonly spin: Float32Array;
   private readonly angle: Float32Array;
   private readonly count: number;
   /** The expanding ring of disturbed air, in the plane of the break. */
   private readonly airRing: THREE.Mesh;
   private age = 0;
+  private readonly baseSize: number;
+  private displaySize: number;
+  private duration: number;
+  private lamp: THREE.PointLight | null;
+  private readonly lights: LightPool | null;
+  alive = true;
 
   constructor(
     at: THREE.Vector3,
-    private readonly size: number,
-    private readonly duration: number,
+    size: number,
+    duration: number,
     colour: THREE.Color,
     map: THREE.Texture,
     ring: THREE.Texture,
@@ -2572,9 +3067,14 @@ class VoidShatter implements Tickable {
      * light — hard on for a few frames, then falling away — puts a rim on the figure, a pool on the
      * floor, and the break into the same world as everything else.
      */
-    private readonly lamp: THREE.PointLight | null,
-    private readonly onDone: () => void,
+    lamp: THREE.PointLight | null,
+    lights: LightPool | null,
   ) {
+    this.baseSize = size;
+    this.displaySize = size;
+    this.duration = duration;
+    this.lamp = lamp;
+    this.lights = lights;
     this.object = new THREE.Group();
     this.object.name = 'vfx:shatter';
     this.object.position.copy(at);
@@ -2628,6 +3128,7 @@ class VoidShatter implements Tickable {
     this.live = new Float32Array(this.count * 9);
     this.origin = new Float32Array(this.count * 3);
     this.velocity = new Float32Array(this.count * 3);
+    this.initialVelocity = new Float32Array(this.count * 3);
     this.spin = new Float32Array(this.count);
     this.angle = new Float32Array(this.count);
     const colours = new Float32Array(this.count * 9);
@@ -2648,6 +3149,7 @@ class VoidShatter implements Tickable {
       this.velocity.set([Math.cos(a) * speed, Math.sin(a) * speed, (random() - 0.5) * speed * 0.8], i * 3);
       this.spin[i] = (random() - 0.5) * 14;
     }
+    this.initialVelocity.set(this.velocity);
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(this.live, 3));
@@ -2671,11 +3173,41 @@ class VoidShatter implements Tickable {
   private readonly hot: THREE.Color;
   private readonly cold: THREE.Color;
 
+  restart(at: THREE.Vector3, size: number, duration: number, colour: THREE.Color, lamp: THREE.PointLight | null): void {
+    if (this.alive && this.lamp && this.lights) this.lights.release(this.lamp);
+    this.age = 0;
+    this.displaySize = size;
+    this.duration = duration;
+    this.lamp = lamp;
+    this.object.position.copy(at);
+    this.object.scale.setScalar(size / this.baseSize);
+    this.origin.fill(0);
+    this.angle.fill(0);
+    this.velocity.set(this.initialVelocity);
+    this.live.fill(0);
+    this.hot.copy(colour).lerp(VFX_WHITE, 0.16);
+    this.cold.copy(colour).multiplyScalar(0.35);
+    this.material.color.copy(this.hot);
+    (this.airRing.material as THREE.MeshBasicMaterial).color.copy(colour).lerp(VFX_WHITE, 0.3);
+    this.material.opacity = 0;
+    (this.airRing.material as THREE.MeshBasicMaterial).opacity = 0;
+    this.object.visible = true;
+    this.alive = true;
+  }
+
+  park(): void {
+    if (this.lamp && this.lights) this.lights.release(this.lamp);
+    this.lamp = null;
+    this.alive = false;
+    this.object.visible = false;
+  }
+
   tick(dt: number): boolean {
+    if (!this.alive) return false;
     this.age += dt;
     const t = this.age / this.duration;
     if (t >= 1) {
-      this.onDone();
+      this.park();
       return false;
     }
     // Snaps open, then holds and fades: glass cracks in one event and the crack stays.
@@ -2703,7 +3235,7 @@ class VoidShatter implements Tickable {
     // release of energy does and what a lamp being turned down does not.
     if (this.lamp) {
       this.lamp.color.copy(this.hot);
-      this.lamp.intensity = 8 * this.size * Math.min(1, this.age / 0.035) * (1 - t) ** 2.4;
+      this.lamp.intensity = 8 * this.displaySize * Math.min(1, this.age / 0.035) * (1 - t) ** 2.4;
       this.lamp.position.copy(this.object.position);
     }
 
@@ -2711,7 +3243,7 @@ class VoidShatter implements Tickable {
       this.origin[i * 3] += this.velocity[i * 3] * dt;
       this.origin[i * 3 + 1] += this.velocity[i * 3 + 1] * dt;
       this.origin[i * 3 + 2] += this.velocity[i * 3 + 2] * dt;
-      this.velocity[i * 3 + 1] -= this.size * 1.5 * dt;
+      this.velocity[i * 3 + 1] -= this.baseSize * 1.5 * dt;
       this.angle[i] += this.spin[i] * dt;
       const cos = Math.cos(this.angle[i]);
       const sin = Math.sin(this.angle[i]);
@@ -2953,18 +3485,24 @@ const BOLT_AT = new THREE.Vector3();
 class ArmCoil implements Tickable {
   readonly object: THREE.Mesh;
   private readonly points: THREE.Vector3[] = [];
+  private readonly tangents: THREE.Vector3[] = [];
   private readonly radii: number[] = [];
   private readonly from = new THREE.Vector3();
   private readonly to = new THREE.Vector3();
   private readonly axis = new THREE.Vector3();
   private readonly sideA = new THREE.Vector3();
   private readonly sideB = new THREE.Vector3();
-  private readonly colour: THREE.Color;
+  private readonly frameNormal = new THREE.Vector3();
+  private readonly frameBinormal = new THREE.Vector3();
+  private readonly frameOut = new THREE.Vector3();
+  private readonly frameSeed = new THREE.Vector3();
+  private readonly frameRotation = new THREE.Quaternion();
   private phase = 0;
   /** 0..1, driven by the skill: the coil fades in as the arms come up and out as they drop. */
   strength = 0;
 
   private static readonly LINKS = 44;
+  private static readonly RADIAL_SEGMENTS = 5;
 
   constructor(
     private readonly start: THREE.Object3D,
@@ -2975,17 +3513,23 @@ class ArmCoil implements Tickable {
   ) {
     for (let i = 0; i <= ArmCoil.LINKS; i += 1) {
       this.points.push(new THREE.Vector3());
+      this.tangents.push(new THREE.Vector3(0, 1, 0));
       // Thin at both ends, full through the middle, so the coil enters and leaves the limb rather
       // than being cut off square at the wrist.
       const s = i / ArmCoil.LINKS;
       this.radii.push(girth * Math.sin(s * Math.PI) ** 0.6);
     }
-    this.colour = colour;
-    this.object = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({
+    const geometry = taperedTube(this.points, this.radii, ArmCoil.RADIAL_SEGMENTS, colour)
+      ?? new THREE.BufferGeometry();
+    (geometry.getAttribute('position') as THREE.BufferAttribute | undefined)?.setUsage(THREE.DynamicDrawUsage);
+    (geometry.getAttribute('normal') as THREE.BufferAttribute | undefined)?.setUsage(THREE.DynamicDrawUsage);
+    (geometry.getAttribute('aGrain') as THREE.BufferAttribute | undefined)?.setUsage(THREE.DynamicDrawUsage);
+    this.object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
       color: colour, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
     }));
     this.object.name = 'vfx:arm-coil';
     this.object.frustumCulled = false;
+    this.object.visible = false;
     this.object.userData.isHighlight = true;
     this.object.userData.ownMaterial = true;
   }
@@ -3023,10 +3567,59 @@ class ArmCoil implements Tickable {
         .addScaledVector(this.sideA, Math.cos(angle) * swell)
         .addScaledVector(this.sideB, Math.sin(angle) * swell);
     }
-    this.object.geometry.dispose();
-    const geometry = taperedTube(this.points, this.radii, 5, this.colour);
-    if (geometry) this.object.geometry = geometry;
+    this.updateTube();
     return true;
+  }
+
+  /** Rewrite the constructor-owned tube attributes; the coil never replaces its geometry. */
+  private updateTube(): void {
+    const geometry = this.object.geometry;
+    const position = geometry.getAttribute('position') as THREE.BufferAttribute;
+    const normalAttribute = geometry.getAttribute('normal') as THREE.BufferAttribute;
+    const grain = geometry.getAttribute('aGrain') as THREE.BufferAttribute;
+    const n = this.points.length;
+
+    for (let i = 0; i < n; i += 1) {
+      const a = this.points[Math.max(0, i - 1)];
+      const b = this.points[Math.min(n - 1, i + 1)];
+      const tangent = this.tangents[i].subVectors(b, a);
+      if (tangent.lengthSq() < 1e-12) tangent.set(0, 1, 0);
+      tangent.normalize();
+    }
+
+    this.frameSeed.set(Math.abs(this.tangents[0].y) > 0.9 ? 1 : 0,
+      Math.abs(this.tangents[0].y) > 0.9 ? 0 : 1, 0);
+    this.frameNormal.crossVectors(this.tangents[0], this.frameSeed).normalize();
+    if (this.frameNormal.lengthSq() < 1e-8) this.frameNormal.set(1, 0, 0);
+
+    for (let i = 0; i < n; i += 1) {
+      if (i > 0) {
+        this.frameRotation.setFromUnitVectors(this.tangents[i - 1], this.tangents[i]);
+        this.frameNormal.applyQuaternion(this.frameRotation).normalize();
+        this.frameNormal.addScaledVector(
+          this.tangents[i],
+          -this.frameNormal.dot(this.tangents[i]),
+        ).normalize();
+      }
+      this.frameBinormal.crossVectors(this.tangents[i], this.frameNormal).normalize();
+      for (let s = 0; s < ArmCoil.RADIAL_SEGMENTS; s += 1) {
+        const angle = (s / ArmCoil.RADIAL_SEGMENTS) * Math.PI * 2;
+        this.frameOut.copy(this.frameNormal).multiplyScalar(Math.cos(angle))
+          .addScaledVector(this.frameBinormal, Math.sin(angle));
+        const vertex = i * ArmCoil.RADIAL_SEGMENTS + s;
+        position.setXYZ(
+          vertex,
+          this.points[i].x + this.frameOut.x * this.radii[i],
+          this.points[i].y + this.frameOut.y * this.radii[i],
+          this.points[i].z + this.frameOut.z * this.radii[i],
+        );
+        normalAttribute.setXYZ(vertex, this.frameOut.x, this.frameOut.y, this.frameOut.z);
+        grain.setXYZ(vertex, this.tangents[i].x, this.tangents[i].y, this.tangents[i].z);
+      }
+    }
+    position.needsUpdate = true;
+    normalAttribute.needsUpdate = true;
+    grain.needsUpdate = true;
   }
 }
 
@@ -3266,6 +3859,41 @@ class LightPool {
   }
 }
 
+/** A light pulse with fixed storage; it borrows one permanent scene light and returns it. */
+class ImpactFlashSlot {
+  alive = false;
+  private light: THREE.PointLight | null = null;
+  private age = 0;
+  private life = 0.28;
+  private strength = 6;
+
+  constructor(private readonly lights: LightPool) {}
+
+  restart(light: THREE.PointLight, at: THREE.Vector3, colour: THREE.Color, strength: number, life: number): void {
+    if (this.light) this.lights.release(this.light);
+    this.light = light;
+    this.age = 0;
+    this.life = life;
+    this.strength = strength;
+    light.color.copy(colour);
+    light.position.copy(at);
+    light.intensity = strength;
+    this.alive = true;
+  }
+
+  tick(dt: number): void {
+    if (!this.alive || !this.light) return;
+    this.age += dt;
+    if (this.age >= this.life) {
+      this.lights.release(this.light);
+      this.light = null;
+      this.alive = false;
+      return;
+    }
+    this.light.intensity = this.strength * (1 - this.age / this.life) ** 2.2;
+  }
+}
+
 /** Give back everything an expired effect owns: its geometry, and any material it made itself. */
 function disposeTree(root: THREE.Object3D): void {
   root.traverse((o) => {
@@ -3285,6 +3913,7 @@ function disposeTree(root: THREE.Object3D): void {
  */
 export class MonsterTreeVfx {
   readonly group = new THREE.Group();
+  private readonly prewarmAnchor = new THREE.Object3D();
   readonly eyes: EyeGlow;
   readonly core: CoreGlow;
   readonly trails: Record<'grip-l' | 'grip-r', Trail>;
@@ -3315,7 +3944,20 @@ export class MonsterTreeVfx {
    * flight peaks at nine live bursts — with headroom, and fires drop the oldest rather than
    * allocating a fifteenth. */
   private readonly burstPool: BurstSlot[] = [];
+  /** Geometry-heavy effects are permanent scene residents; a cast only re-arms a slot. */
+  private readonly rootPool: RootEruption[] = [];
+  private readonly grovePool: GroveEruption[] = [];
+  private readonly grassPool: GrassPatch[] = [];
+  private readonly vinePool: VineWhip[] = [];
+  private readonly ringPool: GroundRing[] = [];
+  private readonly runePool: RuneCircle[] = [];
+  private readonly crackPool: GroundCracks[] = [];
+  private readonly toxinPool: ToxinBloom[] = [];
+  private readonly shatterPool: VoidShatter[] = [];
+  private readonly seedPool: SeedVolley[] = [];
+  private readonly vortexPool: Vortex[] = [];
   private readonly lights: LightPool;
+  private readonly flashPool: ImpactFlashSlot[] = [];
   private readonly splats: ToxinSplats;
   private readonly coilL: ArmCoil;
   private readonly coilR: ArmCoil;
@@ -3375,6 +4017,14 @@ export class MonsterTreeVfx {
   private sapClock = 0;
   /** Whether the one-off shader prewarm has run. See `prewarm`. */
   private warmed = false;
+  /** One constructor-time callback shared by every seed slot. */
+  private readonly onSeedLand = (landed: THREE.Vector3, ordinal: number): void => {
+    this.splats.add(landed, this.scale * (0.045 + (ordinal % 3) * 0.008));
+    if (ordinal % 3 === 0) {
+      SCRATCH_SEED_BURST.copy(landed).setY(0.04);
+      this.fireBurst(SCRATCH_SEED_BURST, SEED_SOIL_BURST);
+    }
+  };
 
   constructor(rig: {
     group: THREE.Object3D;
@@ -3385,6 +4035,8 @@ export class MonsterTreeVfx {
   }, bounds: THREE.Box3) {
     this.stock = rig.branchStock ?? null;
     this.group.name = 'monster-tree-vfx';
+    this.prewarmAnchor.position.set(0, -60, 0);
+    this.prewarmAnchor.updateMatrixWorld(true);
     this.scale = bounds.getSize(new THREE.Vector3()).y;
 
     // Grain, relief, cavity, moss and sap, all on the shell's own material. Patched rather than
@@ -3395,14 +4047,14 @@ export class MonsterTreeVfx {
 
     this.rootMaterial = new THREE.MeshStandardMaterial({
       vertexColors: true,
-      color: new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(),
+      color: new THREE.Color(PALETTE.barkLight),
       roughness: 0.9,
       metalness: 0,
       // A little light of its own. Grown wood stands away from the figure, out where the key
       // barely reaches and the ground bounces almost nothing, so on albedo alone a grove comes up
       // as black cut-outs — the shape is there and none of it reads. This is the same sap that is
       // already running through the character, just enough of it to describe the trunks.
-      emissive: new THREE.Color(PALETTE.mossDark).convertSRGBToLinear(),
+      emissive: new THREE.Color(PALETTE.mossDark),
       emissiveIntensity: 0.40,
     });
     this.rootBark = patchBarkSurface(this.rootMaterial);
@@ -3417,13 +4069,72 @@ export class MonsterTreeVfx {
      */
     this.logMaterial = new THREE.MeshStandardMaterial({
       vertexColors: true,
-      color: new THREE.Color(PALETTE.barkMid).convertSRGBToLinear(),
+      color: new THREE.Color(PALETTE.barkMid),
       roughness: 0.94,
       metalness: 0,
-      emissive: new THREE.Color(PALETTE.mossDark).convertSRGBToLinear(),
+      emissive: new THREE.Color(PALETTE.mossDark),
       emissiveIntensity: 0.13,
     });
     this.logBark = patchBarkSurface(this.logMaterial);
+
+
+    // Build the expensive geometry before the first frame. Eight root slots cover the three-call
+    // ground wave plus both rooted feet with headroom; three groves cover interrupted casts; two
+    // grass patches let a fading old patch coexist with the next passive. Every object is parented
+    // now and parked invisible, so neither framing nor an impact frame can discover new geometry.
+    const poolOrigin = new THREE.Vector3(0, -60, 0);
+    for (let i = 0; i < 8; i += 1) {
+      const roots = new RootEruption(poolOrigin, 12, this.scale * 0.4, this.scale, 0.2, 0x7100 + i);
+      roots.park();
+      this.rootPool.push(roots);
+      this.group.add(roots.object);
+    }
+    for (let i = 0; i < 3; i += 1) {
+      const grove = new GroveEruption(
+        poolOrigin, 7, this.scale * 0.62, this.scale, 0.2, 0x6700 + i,
+        this.rootMaterial, this.stock, this.leaf,
+      );
+      grove.park();
+      this.grovePool.push(grove);
+      this.group.add(grove.object);
+    }
+    for (let i = 0; i < 2; i += 1) {
+      const grass = new GrassPatch(poolOrigin, 1, 340, lifeColour(0.13, 0.85), 0x6a00 + i, 0.2);
+      grass.park();
+      this.grassPool.push(grass);
+      this.group.add(grass.object);
+    }
+    for (let i = 0; i < 2; i += 1) {
+      const vine = new VineWhip(
+        rig.sockets['grip-l'], poolOrigin, this.scale, 0.1, 0.1, 0.1,
+        lifeColour(0.34, 1), this.rootMaterial, 1, NOOP_POINT,
+      );
+      vine.park();
+      this.vinePool.push(vine);
+      this.group.add(vine.object);
+    }
+    for (let i = 0; i < 12; i += 1) {
+      const ring = new GroundRing(0.2, 0.01, lifeColour(0.55, 1), this.ring);
+      ring.park();
+      this.ringPool.push(ring);
+      this.group.add(ring.object);
+    }
+    for (let i = 0; i < 3; i += 1) {
+      const runes = new RuneCircle(0.2, 0.01, lifeColour(0.55, 1), this.runes, this.ring);
+      runes.park();
+      this.runePool.push(runes);
+      this.group.add(runes.object);
+    }
+    for (let i = 0; i < MAX_LINGERING; i += 1) {
+      const cracks = new GroundCracks(0.2, 0.01, lifeColour(0.55, 1), lifeColour(0.12, 0.5), this.cracksMap);
+      cracks.park();
+      this.crackPool.push(cracks);
+      this.group.add(cracks.object);
+      const toxin = new ToxinBloom(poolOrigin, 0.2, 0.01, lifeColour(0.20, 0.7), this.dot, 0x7400 + i);
+      toxin.park();
+      this.toxinPool.push(toxin);
+      this.group.add(toxin.object);
+    }
 
 
     for (let i = 0; i < 14; i += 1) {
@@ -3456,11 +4167,38 @@ export class MonsterTreeVfx {
     // alive at once — and every one of them is in the scene from the first frame.
     this.lights = new LightPool(4, this.scale * 2.2);
     this.group.add(this.lights.object);
+    for (let i = 0; i < 4; i += 1) this.flashPool.push(new ImpactFlashSlot(this.lights));
+    for (let i = 0; i < 2; i += 1) {
+      const shatter = new VoidShatter(
+        poolOrigin, 1, 0.2, lifeColour(0.55, 1), this.shatterMap, this.ring,
+        0x5a70 + i, null, this.lights,
+      );
+      shatter.park();
+      this.shatterPool.push(shatter);
+      this.group.add(shatter.object);
+    }
 
     // 420 stains covers the densest rain the ultimate throws with room to spare, and the ring
     // buffer means a longer one costs nothing more.
     this.splats = new ToxinSplats(420, lifeColour(0.30, 1), 6.5);
     this.group.add(this.splats.object);
+    for (let i = 0; i < 3; i += 1) {
+      const seeds = new SeedVolley(
+        poolOrigin, 16, this.scale, 0.8, lifeColour(0.55, 1), this.dot,
+        0x5eed + i, this.onSeedLand,
+      );
+      seeds.park();
+      this.seedPool.push(seeds);
+      this.group.add(seeds.object);
+    }
+    for (let i = 0; i < 2; i += 1) {
+      const vortex = new Vortex(
+        poolOrigin, 140, this.scale, 0.8, lifeColour(0.55, 1), this.dot, 0x7070 + i,
+      );
+      vortex.park();
+      this.vortexPool.push(vortex);
+      this.group.add(vortex.object);
+    }
 
     // Shoulder to hand, not neck to hand. Anchored at the CLAVICLE the line ran from beside the
     // head, so with the arms raised the helix wound around the torso rather than around the arm.
@@ -3536,35 +4274,32 @@ export class MonsterTreeVfx {
    * Cracks torn open under a socket. Ten seconds by default: they open instantly, cool over a few
    * seconds, and only fade at the very end.
    */
-  cracks(at: THREE.Object3D, options: { radius?: number; duration?: number } = {}): void {
-    const effect = new GroundCracks(
+  cracks(at: WorldAnchor, options: { radius?: number; duration?: number } = {}): void {
+    const effect = takePooled(this.crackPool);
+    readWorld(at, SCRATCH_WORLD);
+    effect.restart(
+      SCRATCH_WORLD,
       options.duration ?? 10,
       (options.radius ?? 0.9) * this.scale * 0.6,
       this.accentColour,
-      this.accentColour.clone().multiplyScalar(0.18),
-      this.cracksMap,
+      SCRATCH_COLD.copy(this.accentColour).multiplyScalar(0.18),
+      Math.random() * Math.PI * 2,
     );
-    const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
-    effect.object.position.set(world.x, 0.014, world.z);
-    effect.object.rotation.z = Math.random() * Math.PI * 2;
-    this.addLingering(effect);
   }
 
   /** A toxin stain that creeps outward from a socket and gives off spores as it seethes. */
-  toxin(at: THREE.Object3D, options: { radius?: number; duration?: number } = {}): void {
-    const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
-    const effect = new ToxinBloom(
-      world,
+  toxin(at: WorldAnchor, options: { radius?: number; duration?: number } = {}): void {
+    readWorld(at, SCRATCH_WORLD);
+    const effect = takePooled(this.toxinPool);
+    effect.restart(
+      SCRATCH_WORLD,
       options.duration ?? 10,
       (options.radius ?? 1.0) * this.scale * 0.55,
       // The skill's accent, held down to a low acid value so it stays contamination rather than
       // becoming another light source. Tinting it per skill is what stops every move leaving the
       // same puddle behind it.
-      this.accentColour.clone().multiplyScalar(0.42),
-      this.dot,
-      (Math.random() * 1e9) | 0,
+      SCRATCH_COLD.copy(this.accentColour).multiplyScalar(0.42),
     );
-    this.addLingering(effect);
   }
 
   /**
@@ -3574,18 +4309,13 @@ export class MonsterTreeVfx {
    * happens somewhere the character is not.
    */
   grove(at: THREE.Vector3, options: { count?: number; spread?: number; duration?: number } = {}): void {
-    const effect = new GroveEruption(
+    const effect = takePooled(this.grovePool);
+    effect.restart(
       at,
       options.count ?? 7,
       (options.spread ?? 0.5) * this.scale,
-      this.scale,
       options.duration ?? 10,
-      (Math.random() * 1e9) | 0,
-      this.rootMaterial,
-      this.stock,
-      this.leaf,
     );
-    this.addLingering(effect);
   }
 
   /**
@@ -3695,18 +4425,10 @@ export class MonsterTreeVfx {
    * its empowered one.
    */
   grass(at: THREE.Vector3, options: { radius?: number; duration?: number; count?: number } = {}): void {
-    const patch = new GrassPatch(
-      new THREE.Vector3(at.x, 0, at.z),
-      (options.radius ?? 0.9) * this.scale * 0.5,
-      options.count ?? 260,
-      lifeColour(0.13, 0.85),
-      (Math.random() * 1e9) | 0,
-      options.duration ?? 12,
-    );
+    const patch = takePooled(this.grassPool);
+    patch.restart(at, (options.radius ?? 0.9) * this.scale * 0.5,
+      options.count ?? 260, options.duration ?? 12);
     this.patch = patch;
-    patch.object.userData.isHighlight = true;
-    this.group.add(patch.object);
-    this.transient.push(patch);
   }
 
   /** Whether a point stands in living undergrowth. The passive's condition, asked by the kit. */
@@ -3722,7 +4444,8 @@ export class MonsterTreeVfx {
    * the ground it is standing on is the character taking something. The passive is the second one.
    */
   drawUp(at: THREE.Vector3, options: { radius?: number; count?: number } = {}): void {
-    this.burstAt(new THREE.Vector3(at.x, 0.02, at.z), {
+    SCRATCH_WORLD.set(at.x, 0.02, at.z);
+    this.burstAt(SCRATCH_WORLD, {
       count: options.count ?? 40,
       speed: (options.radius ?? 0.55) * 0.5,
       duration: 1.5,
@@ -3743,21 +4466,17 @@ export class MonsterTreeVfx {
     reach?: number; out?: number; hold?: number; back?: number; bend?: number;
     onCatch?: (at: THREE.Vector3) => void;
   } = {}): void {
-    const whip = new VineWhip(
+    const whip = takePooled(this.vinePool);
+    whip.restart(
       from,
       direction,
       (options.reach ?? 1.1) * this.scale,
       options.out ?? 0.16,
       options.hold ?? 0.30,
       options.back ?? 0.22,
-      lifeColour(0.34, 1),
-      this.rootMaterial,
       options.bend ?? 1,
-      (at) => options.onCatch?.(at),
+      options.onCatch ?? NOOP_POINT,
     );
-    whip.object.traverse((o) => { o.userData.isHighlight = true; });
-    this.group.add(whip.object);
-    this.transient.push(whip);
   }
 
   /** A log called down onto a world point. `onLand` is the frame it arrives, not when it started. */
@@ -3780,54 +4499,32 @@ export class MonsterTreeVfx {
 
   /** A volley of seeds thrown outward from a point, each marking the soil where it lands. */
   seeds(from: THREE.Vector3, options: { count?: number; spread?: number; flight?: number } = {}): void {
-    let landedCount = 0;
-    const volley = new SeedVolley(
-      from.clone(),
+    const volley = takePooled(this.seedPool);
+    volley.restart(
+      from,
       options.count ?? 9,
       (options.spread ?? 1.2) * this.scale * 0.5,
       options.flight ?? 0.55,
       this.accentColour,
-      this.dot,
-      (Math.random() * 1e9) | 0,
-      (landed) => {
-        // A landing marks the soil; the skill raises one shared grove after the whole spread has
-        // arrived. Spawning a two-tree grove per seed allocated dozens of materials and made the
-        // ultimate stall while also burying the character behind foliage.
-        landedCount += 1;
-        this.splats.add(landed, this.scale * (0.045 + (landedCount % 3) * 0.008));
-        if (landedCount % 3 === 0) {
-          this.burstAt(landed.clone().setY(0.04), {
-            count: 7, speed: 0.32, duration: 0.62, spread: 0.42, gravity: -1.15,
-          });
-        }
-      },
     );
-    volley.object.userData.isHighlight = true;
-    this.group.add(volley.object);
-    this.transient.push(volley);
   }
 
   /** Everything loose dragged in toward a point and wound up there. */
   vortex(at: THREE.Vector3, options: { radius?: number; duration?: number; count?: number } = {}): void {
-    const pull = new Vortex(
-      new THREE.Vector3(at.x, 0, at.z),
+    const pull = takePooled(this.vortexPool);
+    SCRATCH_WORLD.set(at.x, 0, at.z);
+    pull.restart(
+      SCRATCH_WORLD,
       options.count ?? 140,
       (options.radius ?? 1.6) * this.scale * 0.5,
       options.duration ?? 1.6,
       this.accentColour,
-      this.dot,
-      (Math.random() * 1e9) | 0,
     );
-    pull.object.userData.isHighlight = true;
-    this.group.add(pull.object);
-    this.transient.push(pull);
     // The ring that says which way it is going. `inward` is the same converging ring a blow taken
     // uses, and it means the same thing here: the motion is toward the middle.
-    const ring = new GroundRing((options.duration ?? 1.6) * 0.55, (options.radius ?? 1.6) * this.scale * 0.6, this.accentColour, this.ring, true);
-    ring.object.position.set(at.x, 0.013, at.z);
-    ring.object.userData.isHighlight = true;
-    this.group.add(ring.object);
-    this.transient.push(ring);
+    const ring = takePooled(this.ringPool);
+    ring.restart(at, (options.duration ?? 1.6) * 0.55,
+      (options.radius ?? 1.6) * this.scale * 0.6, this.accentColour, true);
   }
 
   /**
@@ -3869,20 +4566,14 @@ export class MonsterTreeVfx {
   /** The void breaking at a point: a shattered-glass fracture that throws its own pieces. */
   shatter(at: THREE.Vector3, options: { size?: number; duration?: number } = {}): void {
     const lamp = this.lights.take();
-    const effect = new VoidShatter(
-      at.clone(),
+    const effect = takePooled(this.shatterPool);
+    effect.restart(
+      at,
       (options.size ?? 1.1) * this.scale,
       options.duration ?? 1.5,
       this.accentColour,
-      this.shatterMap,
-      this.ring,
-      (Math.random() * 1e9) | 0,
       lamp,
-      () => { if (lamp) this.lights.release(lamp); },
     );
-    effect.object.traverse((o) => { o.userData.isHighlight = true; });
-    this.group.add(effect.object);
-    this.transient.push(effect);
   }
 
   /** Light winding around both arms, 0..1. Driven every frame while a skill holds them up. */
@@ -3909,14 +4600,13 @@ export class MonsterTreeVfx {
     this.flash(spec.veinFlash);
 
     if (spec.ring) {
-      const ring = new GroundRing(spec.ring.life, spec.ring.radius * this.scale * 0.6, this.accentColour, this.ring, spec.ring.inward);
-      ring.object.position.set(at.x, 0.012, at.z);
-      ring.object.userData.isHighlight = true;
-      this.group.add(ring.object);
-      this.transient.push(ring);
+      const ring = takePooled(this.ringPool);
+      ring.restart(at, spec.ring.life, spec.ring.radius * this.scale * 0.6,
+        this.accentColour, spec.ring.inward);
     }
 
-    this.burstAt(at.clone().setY(Math.max(at.y, 0.05)), {
+    SCRATCH_WORLD.copy(at).setY(Math.max(at.y, 0.05));
+    this.burstAt(SCRATCH_WORLD, {
       count: spec.debris.count,
       speed: spec.debris.speed,
       duration: spec.debris.life,
@@ -3926,26 +4616,23 @@ export class MonsterTreeVfx {
 
     if (spec.flash) this.impactFlash(at, spec.flash.light, spec.flash.life);
     if (spec.cracks > 0) {
-      const ground = new THREE.Object3D();
-      ground.position.set(at.x, 0, at.z);
-      ground.updateMatrixWorld(true);
-      this.cracks(ground, { radius: spec.cracks });
+      SCRATCH_WORLD.set(at.x, 0, at.z);
+      this.cracks(SCRATCH_WORLD, { radius: spec.cracks });
     }
     if (spec.roots > 0) {
-      const ground = new THREE.Object3D();
-      ground.position.set(at.x, 0, at.z);
-      ground.updateMatrixWorld(true);
-      this.roots(ground, { count: spec.roots, spread: 0.3, duration: 1.1 });
+      SCRATCH_WORLD.set(at.x, 0, at.z);
+      this.roots(SCRATCH_WORLD, { count: spec.roots, spread: 0.3, duration: 1.1 });
     }
     if (spec.dust) {
-      this.burstAt(at.clone().setY(0.04), { count: 46, speed: 0.28, duration: 2.1, spread: 0.16, gravity: -0.12 });
+      SCRATCH_WORLD.copy(at).setY(0.04);
+      this.burstAt(SCRATCH_WORLD, { count: 46, speed: 0.28, duration: 2.1, spread: 0.16, gravity: -0.12 });
     }
   }
 
   /** A blow the character TAKES, at a bone: debris off the body, ring converging on it. */
   struck(bone: THREE.Object3D): void {
-    const at = new THREE.Vector3().setFromMatrixPosition(bone.matrixWorld);
-    this.impact('taken', at);
+    SCRATCH_WORLD.setFromMatrixPosition(bone.matrixWorld);
+    this.impact('taken', SCRATCH_WORLD);
   }
 
   /** Tint every impact effect spawned from now on. Set per skill; reset when the skill changes. */
@@ -3975,64 +4662,46 @@ export class MonsterTreeVfx {
     // adds nothing a viewer can separate, and the alternative — making one — is the recompile the
     // pool exists to avoid.
     if (!light) return;
-    light.color.copy(this.accentColour);
-    light.position.copy(at);
-    let age = 0;
-    this.transient.push({
-      object: new THREE.Object3D(),
-      tick: (dt) => {
-        age += dt;
-        if (age >= life) {
-          this.lights.release(light);
-          return false;
-        }
-        // Snap on, fall off fast — a flash that eases in is a lamp being turned up.
-        light.intensity = strength * (1 - age / life) ** 2.2;
-        return true;
-      },
-    });
+    let slot = this.flashPool[0];
+    for (let i = 0; i < this.flashPool.length; i += 1) {
+      if (!this.flashPool[i].alive) {
+        slot = this.flashPool[i];
+        break;
+      }
+    }
+    slot.restart(light, at, this.accentColour, strength, life);
   }
 
   /** A rune circle inscribed on the ground under a socket — for anything deliberate. */
-  runeCircle(at: THREE.Object3D, radius = 1.2, duration = 1.5): void {
-    const circle = new RuneCircle(duration, radius * this.scale * 0.62, this.accentColour, this.runes, this.ring);
-    const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
-    circle.object.position.set(world.x, 0.016, world.z);
-    circle.object.traverse((o) => { o.userData.isHighlight = true; });
-    this.group.add(circle.object);
-    this.transient.push(circle);
+  runeCircle(at: WorldAnchor, radius = 1.2, duration = 1.5): void {
+    const circle = takePooled(this.runePool);
+    readWorld(at, SCRATCH_WORLD);
+    circle.restart(SCRATCH_WORLD, duration, radius * this.scale * 0.62, this.accentColour);
   }
 
   /** Roots torn up out of the ground around a socket. */
-  roots(at: THREE.Object3D, options: { count?: number; spread?: number; duration?: number } = {}): void {
-    const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
-    const eruption = new RootEruption(
-      world,
+  roots(at: WorldAnchor, options: { count?: number; spread?: number; duration?: number } = {}): void {
+    const eruption = takePooled(this.rootPool);
+    readWorld(at, SCRATCH_WORLD);
+    eruption.restart(
+      SCRATCH_WORLD,
       options.count ?? 8,
       (options.spread ?? 0.30) * this.scale,
-      this.scale,
       options.duration ?? 1.1,
-      (Math.random() * 1e9) | 0,
     );
-    eruption.object.traverse((o) => { o.userData.isHighlight = true; });
-    this.group.add(eruption.object);
-    this.transient.push(eruption);
   }
 
   /** A shockwave on the ground, centred under a socket rather than at a guessed origin. */
-  shockwave(at: THREE.Object3D, radius = 1.1, duration = 0.85): void {
-    const ring = new GroundRing(duration, radius * this.scale * 0.6, this.accentColour, this.ring);
-    const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
-    ring.object.position.set(world.x, 0.012, world.z);
-    this.group.add(ring.object);
-    ring.object.userData.isHighlight = true;
-    this.transient.push(ring);
+  shockwave(at: WorldAnchor, radius = 1.1, duration = 0.85): void {
+    const ring = takePooled(this.ringPool);
+    readWorld(at, SCRATCH_WORLD);
+    ring.restart(SCRATCH_WORLD, duration, radius * this.scale * 0.6, this.accentColour);
   }
 
   /** A puff of motes at a socket. `spread` < 1 flattens it toward the ground. */
   burst(at: THREE.Object3D, options: { count?: number; speed?: number; duration?: number; spread?: number; gravity?: number; lightness?: number } = {}): void {
-    const world = new THREE.Vector3().setFromMatrixPosition(at.matrixWorld);
-    this.fireBurst(world, options);
+    SCRATCH_WORLD.setFromMatrixPosition(at.matrixWorld);
+    this.fireBurst(SCRATCH_WORLD, options);
   }
 
   /**
@@ -4060,40 +4729,36 @@ export class MonsterTreeVfx {
    * This is the fix for the largest discontinuity measured in the whole demo, and it was not the
    * hitstop. Instrumenting the clip playhead in the browser showed frames of 8 ms throughout a
    * strike except at the two impact frames, which took 70 ms and 52 ms — a six-to-eight frame
-   * stall landing exactly on the beat. The cause is that a `GroundCracks`, a `ToxinBloom`, a rune
-   * circle and a grove each build a `ShaderMaterial` the first time they are spawned, and three
-   * compiles its program at the first render that encounters it. Every effect type therefore cost
-   * one stall, on its own first impact — which is every impact a viewer sees first.
+   * stall landing exactly on the beat. Every effect pool owns its `ShaderMaterial` from
+   * construction, but three still compiles each program on the first render that encounters it.
+   * Every effect type therefore cost one stall on its own first impact — which is every impact a
+   * viewer sees first.
    *
-   * So one of each is spawned here, at a millimetre scale far under the floor, and killed after a
-   * few frames. `frustumCulled` is off on purpose: a culled object is never submitted and never
-   * compiles, which would defeat the entire point of placing them out of shot. The programs are
-   * cached by shader source, so every later spawn of the same effect reuses them.
+   * So one constructor-owned slot from every pool is rearmed here, at a millimetre scale far under
+   * the floor, then parked again. `frustumCulled` is off on purpose: a culled object is never
+   * submitted and never compiles, which would defeat the entire point of placing it out of shot.
+   * The programs are cached by shader source, so every later cue reuses them.
    */
   private prewarm(): void {
-    const below = new THREE.Object3D();
-    below.position.set(0, -60, 0);
-    below.scale.setScalar(0.001);
-    below.updateMatrixWorld(true);
+    // Re-arm only constructor-owned pools. This method runs after the framing pass and exists to
+    // put each shader through one real draw; it must never manufacture a disposable warm-up prop.
+    SCRATCH_WORLD.set(0, -60, 0);
     const before = this.transient.length;
-    this.cracks(below, { radius: 0.01, duration: 0.2 });
-    this.toxin(below, { radius: 0.01, duration: 0.2 });
-    this.runeCircle(below, 0.01, 0.2);
-    this.roots(below, { count: 1, spread: 0.01, duration: 0.2 });
-    this.grove(new THREE.Vector3(0, -60, 0), { count: 1, spread: 0.01, duration: 0.2 });
-    this.shockwave(below, 0.01, 0.2);
-    this.hurlSpear(below, new THREE.Vector3(0, -1, 0), { length: 0.01, distance: 0.01, flightTime: 0.1, linger: 0.1 });
-    this.burstAt(new THREE.Vector3(0, -60, 0), { count: 4, duration: 0.2, speed: 0.01 });
-    // Y'bneth's own kit. Each of these builds a ShaderMaterial or a PointsMaterial of its own the
-    // first time it runs, and every one of them would otherwise have cost a stall on the beat it
-    // was first cued on.
-    this.grass(new THREE.Vector3(0, -60, 0), { radius: 0.01, duration: 0.2, count: 4 });
-    this.vine(below, new THREE.Vector3(0, -1, 0), { reach: 0.01, out: 0.05, hold: 0.05, back: 0.05 });
-    this.log(new THREE.Vector3(0, -60, 0), { length: 0.01, fall: 0.05, linger: 0.1 });
-    this.seeds(new THREE.Vector3(0, -60, 0), { count: 3, spread: 0.01, flight: 0.1 });
-    this.vortex(new THREE.Vector3(0, -60, 0), { radius: 0.01, duration: 0.2, count: 6 });
-    this.boltRain(new THREE.Vector3(0, -60, 0), { count: 4, radius: 0.01, window: 0.05, height: 0.02, splat: 0.001 });
-    this.shatter(new THREE.Vector3(0, -60, 0), { size: 0.01, duration: 0.2 });
+    this.cracks(SCRATCH_WORLD, { radius: 0.01, duration: 0.2 });
+    this.toxin(SCRATCH_WORLD, { radius: 0.01, duration: 0.2 });
+    this.runeCircle(SCRATCH_WORLD, 0.01, 0.2);
+    this.roots(SCRATCH_WORLD, { count: 1, spread: 0.01, duration: 0.2 });
+    this.grove(SCRATCH_WORLD, { count: 1, spread: 0.01, duration: 0.2 });
+    this.shockwave(SCRATCH_WORLD, 0.01, 0.2);
+    this.burstAt(SCRATCH_WORLD, { count: 4, duration: 0.2, speed: 0.01 });
+    // Y'bneth's own kit. These pooled objects have distinct ShaderMaterials or PointsMaterials,
+    // and each would otherwise compile on the first visible beat it was cued on.
+    this.grass(SCRATCH_WORLD, { radius: 0.01, duration: 0.2, count: 4 });
+    SCRATCH_CUE_DIRECTION.set(0, -1, 0);
+    this.vine(this.prewarmAnchor, SCRATCH_CUE_DIRECTION, { reach: 0.01, out: 0.05, hold: 0.05, back: 0.05 });
+    this.seeds(SCRATCH_WORLD, { count: 3, spread: 0.01, flight: 0.1 });
+    this.vortex(SCRATCH_WORLD, { radius: 0.01, duration: 0.2, count: 6 });
+    this.shatter(SCRATCH_WORLD, { size: 0.01, duration: 0.2 });
     // The prewarm patch must not be mistaken for real undergrowth by `inGrass`, or the very first
     // Dây Leo would come out empowered because of a patch 60 units under the floor.
     this.patch = null;
@@ -4145,11 +4810,23 @@ export class MonsterTreeVfx {
     this.eyes.tick(dt, this.elapsed);
     this.core.tick(dt, this.elapsed);
     for (const slot of this.burstPool) slot.tick(dt);
+    for (const flash of this.flashPool) flash.tick(dt);
     this.splats.tick(dt);
     this.coilL.tick(dt);
     this.coilR.tick(dt);
     this.trails['grip-l'].tick(dt, this.elapsed);
     this.trails['grip-r'].tick(dt, this.elapsed);
+    for (const roots of this.rootPool) roots.tick(dt);
+    for (const grove of this.grovePool) grove.tick(dt, this.elapsed);
+    for (const grass of this.grassPool) grass.tick(dt, this.elapsed);
+    for (const vine of this.vinePool) vine.tick(dt);
+    for (const ring of this.ringPool) ring.tick(dt);
+    for (const runes of this.runePool) runes.tick(dt);
+    for (const cracks of this.crackPool) cracks.tick(dt);
+    for (const toxin of this.toxinPool) toxin.tick(dt, this.elapsed);
+    for (const shatter of this.shatterPool) shatter.tick(dt);
+    for (const seeds of this.seedPool) seeds.tick(dt);
+    for (const vortex of this.vortexPool) vortex.tick(dt);
     for (let i = this.transient.length - 1; i >= 0; i -= 1) {
       if (!this.transient[i].tick(dt, this.elapsed)) {
         this.group.remove(this.transient[i].object);
@@ -4164,6 +4841,19 @@ export class MonsterTreeVfx {
 
   /** How many transient effects are alive — surfaced in the showcase HUD. */
   get liveEffects(): number {
-    return this.transient.length;
+    let pooled = 0;
+    for (const roots of this.rootPool) if (roots.alive) pooled += 1;
+    for (const grove of this.grovePool) if (grove.alive) pooled += 1;
+    for (const grass of this.grassPool) if (grass.alive) pooled += 1;
+    for (const vine of this.vinePool) if (vine.alive) pooled += 1;
+    for (const ring of this.ringPool) if (ring.alive) pooled += 1;
+    for (const runes of this.runePool) if (runes.alive) pooled += 1;
+    for (const cracks of this.crackPool) if (cracks.alive) pooled += 1;
+    for (const toxin of this.toxinPool) if (toxin.alive) pooled += 1;
+    for (const shatter of this.shatterPool) if (shatter.alive) pooled += 1;
+    for (const seeds of this.seedPool) if (seeds.alive) pooled += 1;
+    for (const vortex of this.vortexPool) if (vortex.alive) pooled += 1;
+    for (const flash of this.flashPool) if (flash.alive) pooled += 1;
+    return this.transient.length + pooled;
   }
 }

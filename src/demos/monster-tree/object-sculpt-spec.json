@@ -543,7 +543,8 @@
       "widening ground-root pulses culminating in a young grove",
       "three widening living-seed volleys feeding one shared young grove"
     ],
-    "colourSource": "primary emissive channels use LIFE_HUE = 82.5 degrees measured from the iris; skill accents and bark/moss/leather tones use the measured reference palette"
+    "colourSource": "primary emissive channels use LIFE_HUE = 82.5 degrees measured from the iris; skill accents and bark/moss/leather tones use the measured reference palette",
+    "pooling": "all public action effects are constructor-owned and restartable; the browser sweep holds at 262 objects, 220 geometries and 110 materials before and after all four actions"
   },
   "reviewHistory": [
     {
@@ -563,7 +564,7 @@
       "clipsUnevaluated": [],
       "maxRigidStrain": 0,
       "maxSeamGap": 0.05338,
-      "evidence": "node tools/measure-rig.mjs --json"
+      "evidence": "node scripts/measure-monster-tree-rig.mjs --json"
     },
     {
       "passId": "pr-60-animation-vfx-polish-2026-09-04",
@@ -578,6 +579,21 @@
         "visualKeyframes": "reviewed"
       },
       "evidence": "npm run build; node scripts/measure-monster-tree-rig.mjs; node scripts/score-monster-tree-animation.mjs --json"
+    },
+    {
+      "passId": "pr-60-subject-vfx-pooling-2026-09-04",
+      "action": "continue",
+      "summary": "Made the measured event sweep standalone, regenerated all 16 embedded clips at 240 Hz, pooled the complete public effects kit, streamed Vine Lash geometry in place, removed impact-frame scratch allocation, corrected double sRGB conversion and reviewed quiet, loud and ground-contact frames in the shared viewer.",
+      "gates": {
+        "build": "pass",
+        "rigMeasurement": "pass: 41 bones, 64307 vertices, 16 clips",
+        "eventSweep": "pass: 16 clips, 364 events, H=1.9, 240 Hz",
+        "animationScore": "9.92/10",
+        "frameStalls": "0 repeated over-25ms frames on final two-pass run",
+        "vfxResources": "pass: objects 262->262, geometries 220->220, materials 110->110",
+        "visualKeyframes": "quietest, loudest and ground contact reviewed"
+      },
+      "evidence": "node scripts/measure-monster-tree-events.mjs --emit; node scripts/measure-monster-tree-rig.mjs --json; node scripts/score-monster-tree-animation.mjs; npm run build"
     }
   ]
 }

@@ -43,7 +43,7 @@ export function createMonsterTreeLights(figureHeight = 1.9): THREE.Group {
   group.name = 'monster-tree-lights';
   const h = figureHeight;
 
-  const key = new THREE.DirectionalLight(new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(), 6.4);
+  const key = new THREE.DirectionalLight(new THREE.Color(PALETTE.barkLight), 6.4);
   key.name = 'key';
   key.position.set(h * 1.15, h * 1.30, h * 0.85);
   key.castShadow = true;
@@ -59,7 +59,7 @@ export function createMonsterTreeLights(figureHeight = 1.9): THREE.Group {
   key.shadow.camera.far = h * 6;
   group.add(key, key.target);
 
-  const fill = new THREE.DirectionalLight(new THREE.Color(PALETTE.studioAmbient).convertSRGBToLinear(), 2.5);
+  const fill = new THREE.DirectionalLight(new THREE.Color(PALETTE.studioAmbient), 2.5);
   fill.name = 'fill';
   fill.position.set(-h * 1.0, h * 0.75, -h * 0.55);
   group.add(fill, fill.target);
@@ -70,14 +70,14 @@ export function createMonsterTreeLights(figureHeight = 1.9): THREE.Group {
   rim.position.set(-h * 0.55, h * 0.42, -h * 1.25);
   group.add(rim, rim.target);
 
-  const bounce = new THREE.DirectionalLight(new THREE.Color(PALETTE.barkMid).convertSRGBToLinear(), 0.75);
+  const bounce = new THREE.DirectionalLight(new THREE.Color(PALETTE.barkMid), 0.75);
   bounce.name = 'bounce';
   bounce.position.set(0, -h * 0.6, h * 0.5);
   group.add(bounce, bounce.target);
 
   // A hemisphere pair rather than an ambient: sky takes the rim's green, ground takes the bark's
   // dark, so ambient fill still has a direction to it.
-  const sky = new THREE.HemisphereLight(new THREE.Color(PALETTE.studioAmbient).convertSRGBToLinear(), new THREE.Color(PALETTE.barkMid).convertSRGBToLinear(), 0.72);
+  const sky = new THREE.HemisphereLight(new THREE.Color(PALETTE.studioAmbient), new THREE.Color(PALETTE.barkMid), 0.72);
   sky.name = 'hemi';
   group.add(sky);
 
@@ -138,7 +138,7 @@ export function createGround(figureHeight = 1.9): THREE.Mesh {
       // Far darker than the bark it is tinted from. A horizontal plane faces straight up into the
       // green hemisphere and takes the green rim at a grazing angle, so anything near the bark's
       // own #231f12 pools into a lit lawn under the figure.
-      color: new THREE.Color(PALETTE.barkDark).convertSRGBToLinear().multiplyScalar(0.10),
+      color: new THREE.Color(PALETTE.barkDark).multiplyScalar(0.10),
       roughness: 1,
       metalness: 0,
       alphaMap,

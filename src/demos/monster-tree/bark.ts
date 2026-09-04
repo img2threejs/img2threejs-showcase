@@ -144,8 +144,10 @@ export function patchBarkSurface(material: THREE.MeshStandardMaterial): BarkSurf
     uCavityStrength: { value: 1 },
     uVeinColour: { value: hue(0.5, 0.95) },
     uCoreColour: { value: hue(0.72, 0.75) },
-    uMossColour: { value: new THREE.Color(PALETTE.mossDark).convertSRGBToLinear() },
-    uCavityColour: { value: new THREE.Color(PALETTE.barkDark).convertSRGBToLinear() },
+    // Hex input is converted from sRGB into three's linear working space by Color itself. Calling
+    // convertSRGBToLinear() here a second time crushes these measured colours toward black.
+    uMossColour: { value: new THREE.Color(PALETTE.mossDark) },
+    uCavityColour: { value: new THREE.Color(PALETTE.barkDark) },
   };
   let injected = false;
 
