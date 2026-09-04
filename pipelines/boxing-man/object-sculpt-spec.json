@@ -1,0 +1,355 @@
+{
+  "targetName": "ironman",
+  "targetId": "ironman",
+  "schemaVersion": "1.5.1-playground-glb-fastlane",
+  "terminologyProfile": "core_3d",
+  "sourceImage": "full-body-boxing-character-with-.png",
+  "suitability": {
+    "status": "accepted",
+    "route": "glb-fast-lane",
+    "note": "A generated GLB carries measured bounds and surfaces, so the single-image intake steps that recover structure from one photo are not applicable here."
+  },
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryDomain": "character",
+      "subjectClass": "character",
+      "source": "user"
+    },
+    "complexity": "moderate",
+    "partCount": 1,
+    "triangleBudget": "source"
+  },
+  "qualityContract": {
+    "qualityBar": "measured-surface",
+    "exactnessTier": "measured",
+    "definitionOfDone": [
+      "Every part in the download renders from embedded data with no runtime asset fetch.",
+      "Part identity is labelled as a hypothesis until a render review confirms it.",
+      "Colour, roughness and metalness are measured from the source, not invented."
+    ],
+    "notDone": [
+      "AI-vision review against the reference (the skill's stage 4) has not run in the browser.",
+      "No authored animation beyond the idle motion; pivots exist, clips do not.",
+      "Hidden sides are whatever the generator hallucinated; a single photo cannot confirm them."
+    ]
+  },
+  "coordinateFrame": {
+    "front": "subject faces -z (toward the default camera)",
+    "up": "+y; feet at y = 0 after normalisation",
+    "scaleReference": "figure height 1.9 model units (source generator: Tripo auto-rig)"
+  },
+  "viewEvidence": [
+    {
+      "id": "glb-node:0",
+      "view": "glb-baseline",
+      "observations": [
+        "world AABB min [-0.189673,0,-0.945414] max [0.189673,1.9,0.945414]",
+        "height fraction range [0,1]",
+        "partHypothesis \"body-shell\" by measured-world-bounds",
+        "centre at 50% of figure height in band \"thigh\"; lateral 0.00 (midline); depth 0.00 (centre); 100.0% of figure volume"
+      ],
+      "confidence": 0.2
+    }
+  ],
+  "componentTree": [
+    {
+      "id": "root",
+      "name": "ironman (root)",
+      "level": "macro",
+      "role": "body",
+      "importance": 1,
+      "confidence": 0.9,
+      "primitive": "measured-surface-group",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Root pivot for the whole figure; children are measured surface parts.",
+      "parent": null,
+      "dimensions": {
+        "width": 0.199656,
+        "height": 1,
+        "depth": 0.995173,
+        "units": "relative",
+        "confidence": 0.9
+      },
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "fidelityTier": "measured-surface",
+      "evidenceRefs": [
+        "glb-baseline"
+      ]
+    },
+    {
+      "id": "body-shell",
+      "name": "body shell",
+      "level": "macro",
+      "role": "body",
+      "importance": 0.2,
+      "confidence": 0.2,
+      "primitive": "measured-surface",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Measured triangle surface of GLB node 0, 97,592 triangles after intake. Identity \"body-shell\" is a bounds hypothesis.",
+      "geometryDescriptor": {
+        "topologyIntent": "embedded measured surface (quantised positions, oct normals, sampled vertex colours)",
+        "edgeTreatment": {
+          "type": "source",
+          "bevelRadius": 0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "none — colour is per vertex",
+        "normalStrategy": "source vertex normals, 16-bit octahedral"
+      },
+      "parent": "root",
+      "attachment": {
+        "to": "root",
+        "socket": "body-shell-pivot",
+        "kind": "pivot-at-bounds-centre"
+      },
+      "dimensions": {
+        "width": 0.199656,
+        "height": 1,
+        "depth": 0.995173,
+        "units": "relative",
+        "confidence": 0.9
+      },
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "material": "body-shell-material",
+      "joints": [
+        {
+          "id": "body-shell-pivot",
+          "type": "free",
+          "note": "group.userData.pivots[id] — rotate/translate without rebuilding geometry"
+        }
+      ],
+      "localFeatures": [],
+      "evidenceRefs": [
+        "glb-node:0"
+      ],
+      "details": [
+        {
+          "id": "body-shell-provenance",
+          "description": "partHypothesis \"body-shell\" at confidence 0.20 from measured-world-bounds: centre at 50% of figure height in band \"thigh\"; lateral 0.00 (midline); depth 0.00 (centre); 100.0% of figure volume — ambiguity: spans footwear / lower-leg / knee / thigh / hip-waist / torso / shoulder-neck / head; spans most of the figure height (shell or body, not a limb)"
+        }
+      ],
+      "fidelityTier": "measured-surface"
+    }
+  ],
+  "materials": [
+    {
+      "id": "body-shell-material",
+      "name": "body shell surface",
+      "type": "standard",
+      "shaderModel": "MeshStandardMaterial / PBR, vertex-coloured",
+      "baseColor": "#FFFFFF",
+      "color": "#FFFFFF",
+      "albedo": {
+        "dominant": "#FFFFFF",
+        "samplingNotes": "per-vertex colour sampled from the source albedo texture at each vertex UV; the factor above is the multiplier, not the colour"
+      },
+      "roughness": {
+        "value": 0.5216,
+        "source": "median of the source metallic-roughness texture over this part"
+      },
+      "metalness": {
+        "value": 0.0235,
+        "source": "median of the source metallic-roughness texture over this part"
+      },
+      "normal": "source had a normal map; NOT carried (vertex normals only)",
+      "doubleSided": false,
+      "alphaMode": "OPAQUE",
+      "emissive": "#000000",
+      "notes": "Measured from the generated GLB, not authored. Refine by observation against the reference."
+    }
+  ],
+  "buildPasses": [
+    {
+      "id": "blockout",
+      "goal": "Proportions and part layout from the measured GLB bounds.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "completed-by-measurement",
+      "evidence": [
+        "playground intake log"
+      ]
+    },
+    {
+      "id": "structural-pass",
+      "goal": "Part surfaces carried as measured geometry with locked seams.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "completed-by-measurement",
+      "evidence": [
+        "playground intake log"
+      ]
+    },
+    {
+      "id": "material-pass",
+      "goal": "Per-vertex albedo and per-part roughness/metalness medians from the source.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "completed-by-measurement",
+      "evidence": [
+        "playground intake log"
+      ]
+    },
+    {
+      "id": "interaction-pass",
+      "goal": "Pivots per part exist; authored motion, sockets and destruction groups are still to do.",
+      "componentRefs": [
+        "root",
+        "body-shell"
+      ],
+      "status": "pending-authoring",
+      "evidence": []
+    }
+  ],
+  "glbBaseline": {
+    "status": "hypothesis-requires-render-confirmation",
+    "source": {
+      "sha256": "",
+      "bytes": 5684480,
+      "generator": "Tripo auto-rig",
+      "nodes": 41,
+      "meshes": 1,
+      "triangles": 97592,
+      "vertices": 52829,
+      "textured": false,
+      "skinned": true
+    },
+    "namesUsedAsEvidence": false,
+    "nodeCount": 1,
+    "intakeSteps": [
+      "skeleton: 41 bones, root \"Root\"",
+      "clips: preset:jump (1.80s), preset:run (1.03s), preset:walk (1.90s), preset:biped:box_01 (1.80s), preset:biped:box_02 (2.27s)",
+      "figure 0.38 x 1.90 x 1.89 after normalisation"
+    ],
+    "note": "Surfaces are the GLB's measured triangles, quantised and embedded as code; the GLB itself is not shipped or fetched. Part names are bounds hypotheses."
+  },
+  "pipelineRouting": {
+    "version": 1,
+    "track": "character-glb-fast-lane",
+    "source": "playground",
+    "status": "resolved",
+    "classification": {
+      "kind": "character",
+      "confidence": 1,
+      "provider": "playground"
+    }
+  },
+  "animationAnchors": [
+    "root group supports whole-object translation, rotation, scale and visibility",
+    "group.userData.pivots[<part-id>] is a pivot group at each part's bounds centre",
+    "group.userData.update(elapsedSeconds) drives the built-in idle motion"
+  ],
+  "risks": [
+    {
+      "id": "hypothesis-labels",
+      "severity": "medium",
+      "note": "Part names come from bounds bands; a boot can be called a knee pad. Confirm in the viewer before publishing."
+    },
+    {
+      "id": "generator-hidden-sides",
+      "severity": "medium",
+      "note": "Back and underside geometry is generated, not observed."
+    },
+    {
+      "id": "vertex-colour-resolution",
+      "severity": "low",
+      "note": "Colour resolution equals vertex density; decimation lowers both."
+    }
+  ],
+  "provenance": {
+    "generatedAt": "2026-08-27 12:52:54 UTC",
+    "playgroundVersion": "0.1.0",
+    "sourceImage": {
+      "kind": "generated",
+      "filename": "full-body-boxing-character-with-.png",
+      "prompt": "Full body Boxing character with T pose",
+      "editPrompt": null,
+      "imageModel": "gemini_3_pro_image_preview",
+      "tripoImageTaskId": "de7f5e0b-97f2-4d93-bacc-1326a083c166"
+    },
+    "provider": "tripo",
+    "animation": {
+      "rigTaskId": "c9bb4a3b-64d0-43a9-b412-5bf75f047e4e",
+      "retargetTaskId": "1bd76f2d-dd13-451c-82d7-c274afb88d2c",
+      "rigType": "biped",
+      "spec": "tripo",
+      "clips": [
+        "preset:jump",
+        "preset:run",
+        "preset:walk",
+        "preset:biped:box_01",
+        "preset:biped:box_02",
+        "preset:biped:box_03",
+        "preset:biped:defeat_02",
+        "preset:biped:front_kick_01",
+        "preset:biped:front_kick_02",
+        "preset:biped:hit_to_body_01",
+        "preset:biped:wave_goodbye_01",
+        "preset:biped:lift_heavy",
+        "preset:biped:warm_up",
+        "preset:biped:dance_01",
+        "preset:biped:dance_02",
+        "preset:biped:dance_03",
+        "preset:biped:dance_04",
+        "preset:biped:dance_05",
+        "preset:biped:dance_06"
+      ]
+    },
+    "tripo": {
+      "modelTaskId": "40ccfe41-46ff-4158-8833-86cdf9ede717",
+      "modelVersion": "v3.1-20260211",
+      "textureQuality": "detailed",
+      "faceLimit": 100000,
+      "segmentationTaskId": "571846b7-23c6-4424-bccc-c241439e3bf4",
+      "segmentationVersion": "v2.0-20260430",
+      "segmentationGranularity": "detailed",
+      "assetUrl": null,
+      "views": [
+        "front"
+      ]
+    }
+  },
+  "performanceBudget": {
+    "triangles": 97592,
+    "parts": 1,
+    "drawCalls": 1
+  }
+}

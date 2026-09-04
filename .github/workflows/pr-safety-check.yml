@@ -10,7 +10,7 @@ permissions:
 jobs:
   check:
     # ci-workflows v1.0.0-initial
-    uses: img2threejs/ci-workflows/.github/workflows/node-quality.yml@66e4071913652d7ce9e0ad66709a5e4e66497e0d
+    uses: img2threejs/ci-workflows/.github/workflows/node-quality.yml@4b7a0612d2c52815792124a18ae3f9032a4f0a88
     with:
       node-version: "20"
       checkout-fetch-depth: "0"
