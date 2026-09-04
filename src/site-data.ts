@@ -115,8 +115,29 @@ export interface SponsorEntry {
  * Logo sponsors, in the order they should render. Stacked as cards rather than looped as a
  * marquee: at this length a slider just reads as stuck, and each entry carries prose a logo strip
  * has nowhere to put.
+ *
+ * The newest sponsor is intentionally placed first: the carousel is the project's primary
+ * acknowledgement surface, and the most recent partnership is the one that funded the work that
+ * is shipping now.
  */
 export const SPONSORS: SponsorEntry[] = [
+  {
+    id: 'MiniMax',
+    name: 'MiniMax',
+    url: 'https://platform.minimax.io/subscribe/token-plan',
+    logo: `${BASE}sponsors/minimax-logomark.svg`,
+    blurb:
+      'A global AI foundation model company founded in early 2022 with the mission ' +
+      '"Intelligence with Everyone." Multimodal foundation models spanning text, audio, image, ' +
+      'video and music — frontier code and agent capability with ultra-long context — and a ' +
+      'product family that includes MiniMax Code, MiniMax Design, MiniMax Audio and Talkie, plus ' +
+      'a token-plan API platform for developers and enterprises.',
+    pairing:
+      'The publisher of the model is the one whose token plan gates how much verification the ' +
+      'loop can afford. Sponsorship from the model publisher keeps img2threejs reruns possible ' +
+      'without each contributor paying retail for the same multimodal family the gates call into.',
+    cta: 'Open the token plan',
+  },
   {
     id: 'atlas-cloud',
     name: 'Atlas Cloud',
