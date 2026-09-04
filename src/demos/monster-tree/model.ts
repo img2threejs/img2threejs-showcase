@@ -38,40 +38,16 @@ export function createMonsterTree(options: RigOptions = {}): MonsterTreeRig {
 }
 
 /**
- * Framing that fits the figure AND the ground it throws across.
+ * Review framing for both the gesture and its consequence.
  *
- * The camera is deliberately off the character's own forward axis. The figure faces +X, and the
- * earlier framing sat at +X too — which put the face nicely on camera and sent every projectile
- * straight at the lens. Measured on the default view, a spear thrown 1.4 units landed at screen
- * (1020, 910) on a 1080x900 canvas: past the right edge and below the bottom, so the impact, the
- * cracks and the toxin all happened where nobody was looking.
- *
- * Viewing from +Z instead puts the character's forward axis ACROSS the frame, left to right, so a
- * throw travels through the shot and lands inside it. The face is still readable at three-quarter.
- */
-/**
- * The review viewpoint, aimed at the figure rather than beside it.
- *
- * The target was at x = 0.95. The figure's Hip is at x = 0.18 and its foot at 0.12, so the camera
- * was pointed three quarters of a unit to the character's right: projected on the showcase's own
- * 628-pixel canvas the Hip landed at px 117, jammed against the left edge with the whole right
- * half of the frame empty. Everything that happens AROUND the character — a ring of copies, a
- * grove opening outward — lost half of itself off the left side before it could be seen.
- *
- * The target is the measured mid-torso, pushed 0.42 units along the direction the figure was
- * measured to FACE. Aimed squarely at him instead, every attack he has ran off the right-hand edge:
- * he faces azimuth 75 degrees while the camera sits at -4, so "forward" travels across the frame,
- * and a point 1.3 units ahead of his feet projected to px 642 of a 628-pixel canvas. The vine's
- * fracture and the far end of the log barrage were both landing outside the shot.
- *
- * Leading the subject in the direction of the action is ordinary composition, and here it is also
- * arithmetic: at 249 px per unit it buys about 105 px of room downrange for 105 px of empty space
- * behind him. Visible width at this distance and fov is 2.44 units, which is what caps the ring
- * the copies stand on.
+ * Y'bneth faces +X. Most of the camera offset stays on +Z so Vine Lash travels across the shot;
+ * the smaller +X component separates the raised arms in Nature's Call. The target leads the
+ * measured torso slightly downrange, leaving room for the catch point and the young grove without
+ * pushing the figure behind the details panel.
  */
 export const MONSTER_TREE_CAMERA = {
-  position: [0.19, 1.78, 6.21] as [number, number, number],
-  target: [0.59, 0.95, 0.11] as [number, number, number],
+  position: [1.8, 1.72, 5.8] as [number, number, number],
+  target: [0.52, 0.98, 0.03] as [number, number, number],
   fov: 32,
 };
 

@@ -287,8 +287,8 @@ export function patchBarkSurface(material: THREE.MeshStandardMaterial): BarkSurf
           float strength = vein * rise * breath * (0.15 + uBarkCharge * 2.1);
 
           vec3 sap = mix(uVeinColour, uCoreColour, clamp(strength * 0.9, 0.0, 1.0));
-          totalEmissiveRadiance += sap * strength * 0.55 * uVeinStrength;
-          totalEmissiveRadiance += uVeinColour * uBarkCharge * 0.055 * rise;
+          totalEmissiveRadiance += sap * strength * 0.40 * uVeinStrength;
+          totalEmissiveRadiance += uVeinColour * uBarkCharge * 0.038 * rise;
         }`);
 
     injected = shader.fragmentShader.includes('totalEmissiveRadiance += sap')

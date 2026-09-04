@@ -312,7 +312,7 @@ export const SKILLS: Skill[] = [
       // standing on — and standing on it is the whole condition.
       { at: 0.2, run: (rig, vfx) => {
         const foot = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-        vfx.grass(foot, { radius: 1.15, duration: 20, count: 320 });
+        vfx.grass(foot, { radius: 0.9, duration: 20, count: 190 });
       } },
       // Regeneration, on a slow repeating beat for as long as he stands in it. Every draw checks
       // the patch first, so the passive stops the moment the undergrowth is gone — the condition
@@ -398,20 +398,22 @@ export const SKILLS: Skill[] = [
               // Lifted to chest height rather than left at the vine's own tip. The fracture is
               // the payoff of the move and it has to be seen: at the far end of the reach the
               // ground is already near the bottom-right corner of the frame.
-              vfx.shatter(at.clone().setY(Math.max(0.95, at.y)), {
-                size: empowered ? 0.95 : 0.78,
-                duration: empowered ? 1.05 : 0.85,
+              vfx.shatter(at.clone().setY(Math.max(0.85, at.y)), {
+                size: empowered ? 0.44 : 0.36,
+                duration: empowered ? 0.82 : 0.70,
               });
-              vfx.impact(empowered ? 'heavy' : 'light', at, rig);
+              vfx.impact('light', at, rig);
               const ground = new THREE.Object3D();
               ground.position.set(at.x, 0, at.z);
               ground.updateMatrixWorld(true);
-              vfx.toxin(ground, { radius: empowered ? 1.15 : 0.85, duration: 9 });
+              vfx.roots(ground, { count: empowered ? 7 : 4, spread: 0.22, duration: 0.9 });
+              vfx.cracks(ground, { radius: empowered ? 0.75 : 0.55, duration: 6 });
+              vfx.toxin(ground, { radius: empowered ? 0.82 : 0.62, duration: 7 });
               if (empowered) {
                 vfx.burstAt(at.clone().setY(0.35), {
-                  count: 70, speed: 2.1, duration: 0.8, spread: 0.5, gravity: -1.4, lightness: 0.7,
+                  count: 46, speed: 1.7, duration: 0.68, spread: 0.42, gravity: -1.4, lightness: 0.64,
                 });
-                vfx.shockwave(ground, 1.25, 0.8);
+                vfx.shockwave(ground, 0.82, 0.65);
               }
             },
           });
@@ -427,7 +429,7 @@ export const SKILLS: Skill[] = [
     clip: 'authored:logs',
     fade: 0.18,
     loop: false,
-    measured: 'POSED as a HOLD. Both arms go up by 0.42s and stay there, light winding around them, while wood comes down in front of him at 0.62, 0.95 and 1.28 and once more at 1.70. He is the source, not the hammer.',
+    measured: 'POSED as a HOLD. Both arms rise by 0.42s and stay there while a widening root wave answers from the ground at 0.62, 0.95 and 1.28, then opens into a young grove at 1.70. He is the source, not the hammer.',
     drive: (_rig, vfx, time) => {
       // The coils fade in as the arms arrive and out as they drop, so the light belongs to the
       // hold rather than being switched on beside it.
@@ -441,28 +443,31 @@ export const SKILLS: Skill[] = [
     },
     cues: [
       ...BEATS.logs.calls.map((at, i) => ({
-        // Each call goes out 0.26s before the wood lands, because that is how long it falls.
-        at: at - 0.26,
+        // A root answer moves outward from the caster one beat at a time. Grounded growth has a
+        // visible source and contact point; the former falling props floated in from off-screen.
+        at,
         run: (rig: MonsterTreeRig, vfx: MonsterTreeVfx) => {
           const from = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          vfx.log(from.addScaledVector(facing(rig), 0.50 + i * 0.30), { length: 0.26, fall: 0.26, linger: 2.9 });
+          const ground = new THREE.Object3D();
+          ground.position.copy(from.addScaledVector(facing(rig), 0.44 + i * 0.30)).setY(0);
+          ground.updateMatrixWorld(true);
+          vfx.roots(ground, { count: 3 + i * 2, spread: 0.11 + i * 0.035, duration: 0.82 + i * 0.08 });
+          vfx.shockwave(ground, 0.32 + i * 0.10, 0.48);
         },
       })),
       {
-        at: BEATS.logs.finish - 0.30,
+        at: BEATS.logs.finish,
         run: (rig, vfx) => {
           const from = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          const at = from.clone().addScaledVector(facing(rig), 1.45);
-          vfx.log(at, { length: 0.40, fall: 0.30, linger: 3.4 });
-          vfx.delay(0.30, () => {
-            const ground = new THREE.Object3D();
-            ground.position.set(at.x, 0, at.z);
-            ground.updateMatrixWorld(true);
-            vfx.charge = 0;
-            vfx.runeCircle(ground, 1.35, 1.9);
-            vfx.roots(ground, { count: 11, spread: 0.42, duration: 1.3 });
-            vfx.toxin(ground, { radius: 1.25, duration: 9 });
-          });
+          const at = from.clone().addScaledVector(facing(rig), 1.34).setY(0);
+          const ground = new THREE.Object3D();
+          ground.position.copy(at);
+          ground.updateMatrixWorld(true);
+          vfx.charge = 0;
+          vfx.runeCircle(ground, 1.0, 1.6);
+          vfx.roots(ground, { count: 7, spread: 0.32, duration: 1.2 });
+          vfx.grove(at, { count: 3, spread: 0.24, duration: 3.1 });
+          vfx.toxin(ground, { radius: 0.78, duration: 7 });
         },
       },
     ],
@@ -509,23 +514,29 @@ export const SKILLS: Skill[] = [
         vfx.burst(rig.sockets['crown'], { count: 90, speed: 0.9, spread: 1, gravity: 0.4, lightness: 0.78 });
       } },
       {
-        // THE RAIN. Three overlapping volleys rather than one, at widening radii, so the barrage
-        // opens outward and keeps arriving instead of falling as a single sheet. 620 bolts across
-        // 1.9 seconds, and every one leaves a stain through the shared splat pool.
-        //
-        // The radii deliberately reach past the frame. "As wide as possible" only reads as wide if
-        // some of it falls off the edges of the shot: rain that stops neatly inside the viewport
-        // reads as a circle of rain, which is a much smaller idea. Measured, the canvas holds
-        // about 1.2 units either side of the figure, and the outer volley is at 2.6.
+        // THE RELEASE. Three widening seed volleys leave the crown and arc back into the ground.
+        // The former full-screen bolt rain obscured the pose and had no visible source; this keeps
+        // every projectile connected to the character, then lets one young grove answer the whole
+        // spread instead of allocating a separate tree for every landing.
         at: BEATS.ultimate.open,
         run: (rig, vfx) => {
           const foot = new THREE.Vector3().setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
           foot.y = 0;
-          vfx.boltRain(foot, { count: 190, radius: 0.75, window: 1.55, height: 1.7, splat: 0.12 });
-          vfx.delay(0.22, () => vfx.boltRain(foot, { count: 220, radius: 1.30, window: 1.45, height: 1.9, splat: 0.14 }));
-          vfx.delay(0.48, () => vfx.boltRain(foot, { count: 210, radius: 2.60, window: 1.30, height: 2.2, splat: 0.15 }));
+          const crown = new THREE.Vector3().setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
+          vfx.vortex(foot, { radius: 0.92, duration: 0.72, count: 72 });
+          vfx.seeds(crown, { count: 10, spread: 0.82, flight: 0.58 });
+          vfx.delay(0.20, () => vfx.seeds(crown, { count: 13, spread: 1.15, flight: 0.70 }));
+          vfx.delay(0.44, () => vfx.seeds(crown, { count: 16, spread: 1.55, flight: 0.84 }));
+          vfx.delay(0.78, () => {
+            vfx.grove(foot, { count: 7, spread: 0.62, duration: 3.3 });
+            const ground = new THREE.Object3D();
+            ground.position.copy(foot);
+            ground.updateMatrixWorld(true);
+            vfx.shockwave(ground, 1.05, 0.82);
+          });
           vfx.impactFlash(new THREE.Vector3().setFromMatrixPosition(rig.sockets['crown'].matrixWorld), 10, 0.4);
-          vfx.flash(1.5);
+          vfx.burst(rig.sockets['crown'], { count: 72, speed: 0.82, duration: 1.0, spread: 0.72, gravity: 0.2 });
+          vfx.flash(1.15);
         },
       },
       {
@@ -533,7 +544,7 @@ export const SKILLS: Skill[] = [
         run: (rig, vfx) => {
           vfx.charge = 0;
           vfx.coils = 0;
-          vfx.toxin(rig.sockets['foot-l'], { radius: 1.7, duration: 10 });
+          vfx.toxin(rig.sockets['foot-l'], { radius: 1.15, duration: 8 });
         },
       },
     ],
@@ -858,7 +869,7 @@ export class SkillRunner {
   /** What the outgoing move had stretched, faded out across the hand-over. */
   private outgoingStretch: Array<[string, number]> = [];
   /** The skill returned to when a one-shot finishes. */
-  restingId = 'idle';
+  restingId: string;
 
   constructor(
     private readonly rig: MonsterTreeRig,
@@ -866,6 +877,7 @@ export class SkillRunner {
     startId = 'idle',
   ) {
     this.active = SKILL_BY_ID[startId];
+    this.restingId = startId;
     // The figure's resting place, captured before any move can have shifted it. Dây Leo steps
     // forward and steps back, and a move that is interrupted halfway through its step has to hand
     // the figure back where it found it rather than leaving it a quarter of a unit downrange.
@@ -908,10 +920,10 @@ export class SkillRunner {
     // outright — there is nothing to fade.
     this.outgoing = this.activePose;
     this.handoverSpan = Math.max(0.08, skill.fade);
-    // ALWAYS from zero, even with nothing to fade out of. Coming from idle — which has no authored
+    // ALWAYS from zero, even with nothing to fade out of. Coming from a clip with no authored
     // gesture at all — the incoming pose was previously applied at full weight on its first frame,
     // so the arms snapped into the new stance in one step: measured at 0.28 units of hand jump on
-    // idle -> Vine Lash. With no outgoing pose the blend is simply the incoming one fading in
+    // clip -> Vine Lash. With no outgoing pose the blend is simply the incoming one fading in
     // against the clip underneath, which is the third case `blendPose` already handles.
     this.handover = 0;
     if (!this.outgoing && !skill.pose) clearPose(this.rig);

@@ -3,8 +3,11 @@ import { createBackdrop, createMonsterTreeLights } from './lighting';
 import { COSTUME_PIECES, SOCKETS } from './measured';
 import type { EncodedModel, EncodedRig } from './meshCodec';
 import { buildMonsterTreeRig, type MonsterTreeRig, type RigOptions } from './rig';
+import { BEATS } from './poses';
 import { SKILLS, SkillRunner } from './skills';
 import { MonsterTreeVfx } from './vfx';
+
+const SHOWCASE_ACTION_IDS = new Set(['passive', 'vine', 'natures-call', 'ultimate']);
 
 /**
  * Monster Tree — a rigged treant rebuilt from one photograph.
@@ -99,9 +102,15 @@ function populate(group: THREE.Group, options: RigOptions): void {
   const bounds = new THREE.Box3().setFromObject(rig.group);
 
   const vfx = new MonsterTreeVfx(rig, bounds);
-  rig.group.add(vfx.group);
+  // Effects and the rig are siblings. The rig may lunge during Vine Lash; parenting world-space
+  // trails and impact decals under that moving group applied the lunge twice and then dragged the
+  // landed effect home during recovery. Sibling ownership keeps socket-following effects attached
+  // through their sampled matrices while world impacts stay where they landed.
+  group.add(vfx.group);
 
-  const runner = new SkillRunner(rig, vfx, 'idle');
+  // The shipped biped idle lifts and twists limbs like a human performer. Greatwood Body is the
+  // authored treant stance, so it is both the public rest state and the hand-back target.
+  const runner = new SkillRunner(rig, vfx, 'passive');
 
   const listeners = new Set<(active: string) => void>();
   const announce = (): void => {
@@ -109,7 +118,9 @@ function populate(group: THREE.Group, options: RigOptions): void {
   };
 
   const animationController: MonsterTreeAnimationController = {
-    actions: SKILLS.map((s) => ({ id: s.id, label: s.label, loop: s.loop })),
+    actions: SKILLS
+      .filter((skill) => SHOWCASE_ACTION_IDS.has(skill.id))
+      .map((skill) => ({ id: skill.id, label: skill.label, loop: skill.loop })),
     get active() {
       return runner.current.id;
     },
@@ -117,7 +128,7 @@ function populate(group: THREE.Group, options: RigOptions): void {
       if (runner.play(name)) announce();
     },
     stop: () => {
-      if (runner.play('idle')) announce();
+      if (runner.play('passive')) announce();
     },
     subscribe: (listener) => {
       listeners.add(listener);
@@ -138,7 +149,8 @@ function populate(group: THREE.Group, options: RigOptions): void {
     rig.applyStretch();    // ...and the stretch must follow, exactly once, or it lands a frame
                            // late — and twice would square the factor
     vfx.update(step);
-    // A one-shot skill hands itself back to idle when its clip ends; the panel has to hear that.
+    // A one-shot skill hands itself back to Greatwood Body when its clip ends; the panel has to
+    // hear that state change.
     if (runner.current.id !== announced) {
       announced = runner.current.id;
       announce();
@@ -147,6 +159,8 @@ function populate(group: THREE.Group, options: RigOptions): void {
 
   group.userData.sculptRuntime = {
     animationController,
+    /** Deterministic browser harness access; no second render loop or duplicate runtime state. */
+    diagnostics: { rig, runner, vfx, beats: BEATS },
     /** Named, selectable pieces — the shell plus the four rigid costume meshes. */
     parts: [
       { id: 'bark-shell', label: 'bark shell', kind: 'skinned', triangles: (rig.shell.geometry.index?.count ?? 0) / 3 },

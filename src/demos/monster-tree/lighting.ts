@@ -34,7 +34,7 @@ import { lifeColour } from './vfx';
  * bounce, hemisphere, environment — held low. Raising the ambient lifts the backdrop and the floor
  * at the same rate as the figure, so the whole frame gets brighter and nothing gains attention.
  * Keeping them down lets the character and the light streams be the only things above the floor
- * of the image. They are high — the key sits at 7.0 — because the measured bark albedo is
+ * of the image. They are high — the key sits at 6.4 — because the measured bark albedo is
  * only #4b3e2b, about 0.06 in linear. Lighting this figure at the intensities a mid-grey subject
  * wants leaves it a silhouette.
  */
@@ -43,7 +43,7 @@ export function createMonsterTreeLights(figureHeight = 1.9): THREE.Group {
   group.name = 'monster-tree-lights';
   const h = figureHeight;
 
-  const key = new THREE.DirectionalLight(new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(), 9.0);
+  const key = new THREE.DirectionalLight(new THREE.Color(PALETTE.barkLight).convertSRGBToLinear(), 6.4);
   key.name = 'key';
   key.position.set(h * 1.15, h * 1.30, h * 0.85);
   key.castShadow = true;
@@ -59,25 +59,25 @@ export function createMonsterTreeLights(figureHeight = 1.9): THREE.Group {
   key.shadow.camera.far = h * 6;
   group.add(key, key.target);
 
-  const fill = new THREE.DirectionalLight(new THREE.Color(PALETTE.studioAmbient).convertSRGBToLinear(), 2.1);
+  const fill = new THREE.DirectionalLight(new THREE.Color(PALETTE.studioAmbient).convertSRGBToLinear(), 2.5);
   fill.name = 'fill';
   fill.position.set(-h * 1.0, h * 0.75, -h * 0.55);
   group.add(fill, fill.target);
 
   // Behind and low, so it catches the branch crown and the outer edge of every limb.
-  const rim = new THREE.DirectionalLight(lifeColour(0.5, 0.95), 2.3);
+  const rim = new THREE.DirectionalLight(lifeColour(0.46, 0.88), 1.35);
   rim.name = 'rim';
   rim.position.set(-h * 0.55, h * 0.42, -h * 1.25);
   group.add(rim, rim.target);
 
-  const bounce = new THREE.DirectionalLight(new THREE.Color(PALETTE.barkMid).convertSRGBToLinear(), 1.0);
+  const bounce = new THREE.DirectionalLight(new THREE.Color(PALETTE.barkMid).convertSRGBToLinear(), 0.75);
   bounce.name = 'bounce';
   bounce.position.set(0, -h * 0.6, h * 0.5);
   group.add(bounce, bounce.target);
 
   // A hemisphere pair rather than an ambient: sky takes the rim's green, ground takes the bark's
   // dark, so ambient fill still has a direction to it.
-  const sky = new THREE.HemisphereLight(new THREE.Color(PALETTE.studioAmbient).convertSRGBToLinear(), new THREE.Color(PALETTE.barkMid).convertSRGBToLinear(), 1.0);
+  const sky = new THREE.HemisphereLight(new THREE.Color(PALETTE.studioAmbient).convertSRGBToLinear(), new THREE.Color(PALETTE.barkMid).convertSRGBToLinear(), 0.72);
   sky.name = 'hemi';
   group.add(sky);
 

@@ -243,9 +243,9 @@ class SporeField implements Tickable {
     const kind = new Float32Array(count);
     const spin = new Float32Array(count);
     for (let i = 0; i < count; i += 1) {
-      kind[i] = this.random() < 0.34 ? 1 : 0;
+      kind[i] = this.random() < 0.18 ? 1 : 0;
       spin[i] = (this.random() - 0.5) * 2.4;
-      if (kind[i] > 0.5) sizes[i] *= 2.1;   // a leaf has to be bigger than a spark to read at all
+      if (kind[i] > 0.5) sizes[i] *= 1.35;
     }
 
     const geometry = new THREE.BufferGeometry();
@@ -275,9 +275,9 @@ class SporeField implements Tickable {
           // CLAMPED. Point size goes as 1/distance, so a sprite that drifts near the camera grows
           // without limit: a single spore two thirds of a unit from the lens covered a third of
           // the frame as a flat green sheet, and in a strip of review frames it read as a piece of
-          // broken geometry rather than as a mote. 90 px is about a tenth of the demo's canvas
-          // height, which is as large as anything atmospheric should ever get.
-          gl_PointSize = min(90.0, size * 320.0 / max(-mv.z, 0.001));
+          // broken geometry rather than as a mote. Ambient particles top out below 30 px so they
+          // cannot cover a hand or read as foliage welded across the character.
+          gl_PointSize = min(28.0, size * 260.0 / max(-mv.z, 0.001));
           gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `
@@ -873,11 +873,11 @@ class Wisps implements Tickable {
         map: texture,
         color: lifeColour(hot ? 0.62 : 0.44, 1),
         transparent: true,
-        opacity: 0.9,
+        opacity: 0.72,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
       }));
-      sprite.scale.setScalar(this.height * (hot ? 0.030 : 0.021));
+      sprite.scale.setScalar(this.height * (hot ? 0.021 : 0.015));
       node.add(sprite);
       this.sprites.push(sprite);
 
@@ -885,7 +885,7 @@ class Wisps implements Tickable {
       // tail, so any real width turns a fast-moving orbit into a paper dart. Length matters just
       // as much: at 14 segments the orbit outruns the taper and the tail draws as a straight
       // bright scratch across the frame rather than a comet falling off behind the head.
-      const trail = new Trail(node, 8, this.height * 0.0032, lifeColour(0.40, 1));
+      const trail = new Trail(node, 7, this.height * 0.0022, lifeColour(0.36, 0.92));
       trail.strength = 1;
       this.object.add(trail.object);
       this.trails.push(trail);
@@ -896,7 +896,7 @@ class Wisps implements Tickable {
 
     // One shared light for the whole swarm. Seven point lights would each cost a forward-render
     // pass over every lit fragment; one that rides the brightest wisp reads the same on screen.
-    this.light = new THREE.PointLight(lifeColour(0.5, 1), 0.9, this.height * 0.9, 2);
+    this.light = new THREE.PointLight(lifeColour(0.46, 0.9), 0.55, this.height * 0.72, 2);
     this.object.add(this.light);
   }
 
@@ -911,11 +911,11 @@ class Wisps implements Tickable {
         this.centre.z + Math.sin(t * 0.91) * r,
       );
       const flicker = 0.75 + 0.25 * Math.sin(elapsed * 3.1 + this.phase[i] * 2.0);
-      this.sprites[i].material.opacity = flicker * (0.7 + this.gather * 0.5);
+      this.sprites[i].material.opacity = flicker * (0.52 + this.gather * 0.38);
     }
     for (const trail of this.trails) trail.tick(dt, elapsed);
     this.light.position.copy(this.nodes[0].position);
-    this.light.intensity = 1.4 + this.gather * 3.0;
+    this.light.intensity = 0.65 + this.gather * 1.5;
     return true;
   }
 }
@@ -1622,8 +1622,8 @@ function canopyPoints(
   const material = new THREE.ShaderMaterial({
     uniforms: {
       uMap: { value: leaf },
-      uColour: { value: lifeColour(0.34, 0.95) },
-      uOpacity: { value: 0.62 },
+      uColour: { value: lifeColour(0.28, 0.72) },
+      uOpacity: { value: 0.50 },
       // Point size is `aSize * uScale / distance`, in pixels. At 320 a leaf on a tree five units
       // away came out six pixels across and the crown read as a dusting of specks on a bare pole.
       uScale: { value: 900 },
@@ -1648,7 +1648,7 @@ function canopyPoints(
         if (tex.a < 0.04) discard;
         // A leaf is not one green. Fleck the cluster across a small range so the crown has depth
         // instead of reading as one flat card.
-        vec3 tint = uColour * (0.55 + vFleck * 0.95);
+        vec3 tint = uColour * (0.50 + vFleck * 0.68);
         gl_FragColor = vec4(tint * tex.a, tex.a * uOpacity);
       }`,
     transparent: true,
@@ -2681,7 +2681,7 @@ class VoidShatter implements Tickable {
     // Snaps open, then holds and fades: glass cracks in one event and the crack stays.
     const open = Math.min(1, this.age / 0.07);
     const fade = t < 0.22 ? 1 : Math.max(0, 1 - (t - 0.22) / 0.78) ** 1.5;
-    this.material.opacity = open * fade;
+    this.material.opacity = 0.68 * open * fade;
 
     for (let i = 0; i < this.layers.length; i += 1) {
       const layer = this.layers[i];
@@ -2697,13 +2697,13 @@ class VoidShatter implements Tickable {
     const airT = Math.min(1, this.age / (this.duration * 0.42));
     this.airRing.quaternion.copy(SHATTER_FACING);
     this.airRing.scale.setScalar(0.15 + airT * 1.5);
-    (this.airRing.material as THREE.MeshBasicMaterial).opacity = 0.65 * (1 - airT) ** 1.6;
+    (this.airRing.material as THREE.MeshBasicMaterial).opacity = 0.34 * (1 - airT) ** 1.6;
 
     // THE LIGHT. Hard on within two frames, then falling off as the square — which is what a
     // release of energy does and what a lamp being turned down does not.
     if (this.lamp) {
       this.lamp.color.copy(this.hot);
-      this.lamp.intensity = 14 * this.size * Math.min(1, this.age / 0.035) * (1 - t) ** 2.4;
+      this.lamp.intensity = 8 * this.size * Math.min(1, this.age / 0.035) * (1 - t) ** 2.4;
       this.lamp.position.copy(this.object.position);
     }
 
@@ -2737,7 +2737,7 @@ class VoidShatter implements Tickable {
     }
     (this.shards.geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
     this.shardColour.needsUpdate = true;
-    (this.shards.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.95 - t * 1.25);
+    (this.shards.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.72 - t * 1.05);
     return true;
   }
 }
@@ -3403,7 +3403,7 @@ export class MonsterTreeVfx {
       // as black cut-outs — the shape is there and none of it reads. This is the same sap that is
       // already running through the character, just enough of it to describe the trunks.
       emissive: new THREE.Color(PALETTE.mossDark).convertSRGBToLinear(),
-      emissiveIntensity: 0.55,
+      emissiveIntensity: 0.40,
     });
     this.rootBark = patchBarkSurface(this.rootMaterial);
 
@@ -3432,7 +3432,7 @@ export class MonsterTreeVfx {
       this.group.add(slot.object);
     }
 
-    this.spores = new SporeField(bounds, 460, this.dot, this.leaf);
+    this.spores = new SporeField(bounds, 240, this.dot, this.leaf);
     // The spore field is drawn every frame from the moment the demo starts, which makes it the
     // cheapest place to learn where the viewer is. `onBeforeRender` is called by three on every
     // object it draws, with the camera; a billboard that has to face the viewer — the void
@@ -3443,13 +3443,13 @@ export class MonsterTreeVfx {
     };
     this.group.add(this.spores.object);
 
-    this.wisps = new Wisps(bounds, 9, this.dot);
+    this.wisps = new Wisps(bounds, 5, this.dot);
     this.group.add(this.wisps.object);
 
     this.mist = new GroundMist(this.scale * 1.7, lifeColour(0.15, 0.55));
     this.group.add(this.mist.object);
 
-    this.shafts = new LightShafts(5, this.scale, lifeColour(0.52, 0.34), 0x5a71);
+    this.shafts = new LightShafts(3, this.scale, lifeColour(0.48, 0.28), 0x5a71);
     this.group.add(this.shafts.object);
 
     // Four covers the worst measured overlap — a flurry's three light flashes and a spear's lamp
@@ -3778,8 +3778,9 @@ export class MonsterTreeVfx {
     this.transient.push(slam);
   }
 
-  /** A volley of seeds thrown outward from a point, each sprouting where it lands. */
+  /** A volley of seeds thrown outward from a point, each marking the soil where it lands. */
   seeds(from: THREE.Vector3, options: { count?: number; spread?: number; flight?: number } = {}): void {
+    let landedCount = 0;
     const volley = new SeedVolley(
       from.clone(),
       options.count ?? 9,
@@ -3789,11 +3790,16 @@ export class MonsterTreeVfx {
       this.dot,
       (Math.random() * 1e9) | 0,
       (landed) => {
-        // A seed lands and something grows. Two trunks rather than one, and small: nine of these
-        // per volley across three volleys is twenty-seven sprouts, and they have to read as a
-        // field coming up rather than as a forest burying the frame.
-        this.grove(landed, { count: 2, spread: 0.12, duration: 6 });
-        this.burstAt(landed.clone().setY(0.05), { count: 10, speed: 0.4, duration: 0.7, spread: 0.5, gravity: -1.2 });
+        // A landing marks the soil; the skill raises one shared grove after the whole spread has
+        // arrived. Spawning a two-tree grove per seed allocated dozens of materials and made the
+        // ultimate stall while also burying the character behind foliage.
+        landedCount += 1;
+        this.splats.add(landed, this.scale * (0.045 + (landedCount % 3) * 0.008));
+        if (landedCount % 3 === 0) {
+          this.burstAt(landed.clone().setY(0.04), {
+            count: 7, speed: 0.32, duration: 0.62, spread: 0.42, gravity: -1.15,
+          });
+        }
       },
     );
     volley.object.userData.isHighlight = true;

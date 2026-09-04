@@ -1,7 +1,7 @@
 /**
  * Score the authored animation, out of ten, from a running browser.
  *
- *   node tools/score-animation.mjs [--url http://127.0.0.1:5347/showcase.html] [--json]
+ *   node scripts/score-monster-tree-animation.mjs [--url=http://127.0.0.1:5347/#/demo/monster-tree] [--json]
  *
  * WHY THIS EXISTS. "The animation looks good" is an opinion and it is not reviewable. Every check
  * below reads a number out of the real showcase — the real skinned rig, the real AnimationMixer,
@@ -13,8 +13,8 @@
  * An earlier version of this harness sampled from its own rAF and divided by near-zero frame
  * deltas, which reported hand speeds of 51,000 H/s on motion that was in fact smooth.
  *
- * Ten checks, one point each. Partial credit is on a stated curve so the score moves as the work
- * improves rather than flipping between 0 and 1.
+ * Each check is worth one point and the total is scaled to ten. Partial credit is on a stated
+ * curve so the score moves as the work improves rather than flipping between 0 and 1.
  */
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -34,7 +34,7 @@ const entry = manifest.exports?.['.']?.import ?? manifest.main;
 const { launch } = await import(pathToFileURL(join(DRIVER, entry)).href);
 
 const URL = process.argv.find((a) => a.startsWith('--url='))?.slice(6)
-  ?? 'http://127.0.0.1:5347/showcase.html';
+  ?? 'http://127.0.0.1:5347/#/demo/monster-tree';
 const JSON_OUT = process.argv.includes('--json');
 const KIT = ['passive', 'vine', 'natures-call', 'ultimate'];
 const RATE = 240;
@@ -46,8 +46,29 @@ const consoleErrors = [];
 page.on('pageerror', (e) => consoleErrors.push(String(e.message)));
 page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
 await page.goto(URL, { waitUntil: 'load', timeout: 180000 });
-await page.waitForFunction(() => document.getElementById('status')?.hidden, { timeout: 240000 });
+await page.waitForFunction(
+  () => {
+    const viewer = window.__IMG2THREEJS_VIEWER__;
+    const model = viewer?.scene?.getObjectByName('monster-tree');
+    return window.__IMG2THREEJS_READY__ === true
+      && Boolean(model?.userData?.sculptRuntime?.diagnostics);
+  },
+  null,
+  { timeout: 240000 },
+);
 await page.waitForTimeout(2500);
+
+// The standalone page that originally owned this harness was removed when the demo joined the
+// shared viewer. Rebuild the same read-only inspection handle from the viewer/runtime contracts so
+// the scorer measures the live exhibit instead of carrying a second animation loop in production.
+await page.evaluate(() => {
+  const viewer = window.__IMG2THREEJS_VIEWER__;
+  const model = viewer.scene.getObjectByName('monster-tree');
+  window.monsterTree = {
+    ...model.userData.sculptRuntime.diagnostics,
+    camera: viewer.camera,
+  };
+});
 
 const data = await page.evaluate(({ kit, rate }) => {
   const mt = window.monsterTree;
@@ -61,7 +82,7 @@ const data = await page.evaluate(({ kit, rate }) => {
     return [e[12], e[13], e[14]];
   };
   const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
-  const canvas = document.querySelector('#stage canvas');
+  const canvas = document.querySelector('#demo-canvas-mount canvas, canvas');
   const V3 = mt.camera.position.constructor;
   const px = ([x, y, z]) => {
     const v = new V3(x, y, z).project(mt.camera);
@@ -78,7 +99,7 @@ const data = await page.evaluate(({ kit, rate }) => {
     // than the animation — on the passive, whose own motion is tiny, the ramp read as a 5x spike.
     //
     // Pinning matters: settling by advancing real time ran the one-shot clips off their own ends,
-    // the runner handed back to idle, and the sweep then measured idle for every skill. It scored
+    // the runner handed back to its rest loop, and the sweep then measured rest for every skill. It scored
     // beautifully on speed and reported every payoff pose as indistinguishable, which is what
     // measuring the wrong thing looks like when the wrong thing happens to be very smooth.
     for (let i = 0; i < 90; i += 1) {
@@ -120,7 +141,7 @@ const data = await page.evaluate(({ kit, rate }) => {
 
   // The resting pose, for the "is this move readable" comparison.
   {
-    const s = sweep('idle');
+    const s = sweep('passive');
     out.restPose = s.frames[Math.floor(s.frames.length / 2)].pose;
     out.restScreen = s.frames[Math.floor(s.frames.length / 2)].screen;
   }
@@ -218,7 +239,7 @@ const data = await page.evaluate(({ kit, rate }) => {
 
   // Transitions: play A, jump to B, and watch the hands across the switch under a REAL delta.
   const pairs = [];
-  for (const a of [...kit, 'idle']) for (const b of [...kit, 'idle']) if (a !== b) pairs.push([a, b]);
+  for (const a of kit) for (const b of kit) if (a !== b) pairs.push([a, b]);
   for (const [a, b] of pairs) {
     mt.runner.play(a);
     for (let i = 0; i < 40; i += 1) {
@@ -252,26 +273,26 @@ const data = await page.evaluate(({ kit, rate }) => {
     out.transitions.push({ from: a, to: b, jump: +Math.max(0, worst).toFixed(4), frame: worstAt });
   }
 
-  // Residue: after a kit skill hands back to idle, does anything stay behind?
+  // Residue: after a kit skill hands back to the authored passive loop, does anything stay behind?
   {
     /**
-     * Read every comparison at the SAME idle playhead.
+     * Read every comparison at the SAME passive playhead.
      *
-     * Idle is a 15.4-second clip. Comparing "idle reached from a clean start" against "idle reached
-     * after a skill" without pinning the time compares two different frames of the same animation,
+     * Passive is a long loop. Comparing "passive reached from a clean start" against "passive
+     * reached after a skill" without pinning the time compares two different frames of the loop,
      * and reports the difference between them as residue: 2.48 degrees on a bone nothing had left
      * behind at all.
      */
-    const IDLE_AT = 4.0;
-    const settleIdle = () => {
+    const REST_AT = 4.0;
+    const settleRest = () => {
       for (let i = 0; i < 120; i += 1) { mt.rig.update(1 / 60); mt.runner.update(1 / 60); mt.rig.applyPose(); mt.rig.applyStretch(); }
       const clip = mt.rig.clips.find((c) => c.name === mt.runner.current.clip);
       const action = mt.rig.mixer.existingAction(clip);
-      if (action) { action.time = IDLE_AT; mt.rig.mixer.update(0); mt.runner.update(1 / 60); mt.rig.applyPose(); mt.rig.applyStretch(); }
+      if (action) { action.time = REST_AT; mt.rig.mixer.update(0); mt.runner.update(1 / 60); mt.rig.applyPose(); mt.rig.applyStretch(); }
       mt.rig.group.updateMatrixWorld(true);
     };
-    mt.runner.play('idle');
-    settleIdle();
+    mt.runner.play('passive');
+    settleRest();
     const clean = {};
     for (const b of AIMED) clean[b] = mt.rig.bones[b].quaternion.toArray();
     const cleanScale = mt.rig.bones.L_Forearm.scale.y;
@@ -284,8 +305,8 @@ const data = await page.evaluate(({ kit, rate }) => {
     for (const skill of kit) {
       mt.runner.play(skill);
       for (let i = 0; i < 260; i += 1) { mt.rig.update(1 / 60); mt.runner.update(1 / 60); mt.rig.applyPose(); mt.rig.applyStretch(); }
-      mt.runner.play('idle');
-      settleIdle();
+      mt.runner.play('passive');
+      settleRest();
       for (const b of AIMED) {
         const q = mt.rig.bones[b].quaternion.toArray();
         const dot = Math.abs(q[0] * clean[b][0] + q[1] * clean[b][1] + q[2] * clean[b][2] + q[3] * clean[b][3]);
@@ -301,7 +322,7 @@ const data = await page.evaluate(({ kit, rate }) => {
     };
   }
 
-  mt.runner.play('idle');
+  mt.runner.play('passive');
   return out;
 }, { kit: KIT, rate: RATE });
 
@@ -341,7 +362,7 @@ const timing = await page.evaluate(async (skills) => {
       over25: d.filter((x) => x > 25).length,
     };
   }
-  window.monsterTree.runner.play('idle');
+  window.monsterTree.runner.play('passive');
   return out;
   };
   const a = await pass(skills);
@@ -352,8 +373,25 @@ const timing = await page.evaluate(async (skills) => {
     merged[s].repeated = Math.min(a[s].over25, b[s].over25);
   }
   return merged;
-}, ['passive', 'vine', 'natures-call', 'ultimate', 'echoes', 'grove', 'idle',
-  'strike', 'combo', 'uppercut', 'kick', 'stomp', 'ignite', 'fall']);
+}, ['passive', 'vine', 'natures-call', 'ultimate']);
+
+// Effects consume world-space socket positions. The rig and VFX therefore have to be siblings in
+// the model: nesting VFX under the moving rig applies the lunge transform twice, so a vine begins
+// at the hand but its fracture, roots and stain slide away from the point where it landed.
+const effectSpace = await page.evaluate(() => {
+  const viewer = window.__IMG2THREEJS_VIEWER__;
+  const model = viewer.scene.getObjectByName('monster-tree');
+  const { rig, vfx } = window.monsterTree;
+  const controller = model.userData.sculptRuntime.animationController;
+  return {
+    rigInModel: rig.group.parent === model,
+    vfxInModel: vfx.group.parent === model,
+    vfxNestedInRig: vfx.group.parent === rig.group,
+    restingId: window.monsterTree.runner.restingId,
+    activeId: controller.active,
+    publicActions: controller.actions.map((action) => action.id),
+  };
+});
 
 const beats = await page.evaluate(() => window.monsterTree.beats ?? null);
 await browser.close();
@@ -490,9 +528,18 @@ const ramp = (value, good, bad) => (value <= good ? 1 : value >= bad ? 0 : (bad 
 // 10. clean run
 add('clean run', consoleErrors.length ? 0 : 1,
   consoleErrors.length ? consoleErrors.slice(0, 3).join(' | ') : 'no console errors');
+// 10b. effect attachment space
+add('VFX follows the animated rig', effectSpace.rigInModel && effectSpace.vfxInModel
+  && !effectSpace.vfxNestedInRig && effectSpace.restingId === 'passive' && effectSpace.activeId === 'passive' ? 1 : 0,
+effectSpace.rigInModel && effectSpace.vfxInModel && !effectSpace.vfxNestedInRig
+  && effectSpace.restingId === 'passive' && effectSpace.activeId === 'passive'
+  ? 'rig and world-space effects share one stable model parent; one-shots return to passive'
+  : `rigInModel=${effectSpace.rigInModel}, vfxInModel=${effectSpace.vfxInModel}, nested=${effectSpace.vfxNestedInRig}, rest=${effectSpace.restingId}, active=${effectSpace.activeId}`);
 // 1. harness itself + determinism placeholder (scored by the caller re-running)
-add('harness reports every clip', Object.keys(data.clips).length === KIT.length ? 1 : 0,
-  `${Object.keys(data.clips).length}/${KIT.length} kit clips swept`);
+const publicKitMatches = effectSpace.publicActions.length === KIT.length
+  && KIT.every((id, index) => effectSpace.publicActions[index] === id);
+add('harness reports every clip', Object.keys(data.clips).length === KIT.length && publicKitMatches ? 1 : 0,
+  `${Object.keys(data.clips).length}/${KIT.length} public clips swept; actions=${effectSpace.publicActions.join(',')}`);
 
 // Scaled to ten however many checks there are, so adding a check does not inflate the score. The
 // screen-space check was added after the rubric was written and it would otherwise have taken the
@@ -501,7 +548,7 @@ const raw = checks.reduce((s, c) => s + c.score, 0);
 const total = (raw / checks.length) * 10;
 
 if (JSON_OUT) {
-  console.log(JSON.stringify({ total: +total.toFixed(2), raw: +raw.toFixed(2), checks: checks.length, breakdown: checks, clips: data.clips, timing, residue: data.residue }, null, 2));
+  console.log(JSON.stringify({ total: +total.toFixed(2), raw: +raw.toFixed(2), checks: checks.length, breakdown: checks, clips: data.clips, timing, residue: data.residue, effectSpace }, null, 2));
 } else {
   console.log('\nY’bneth animation score\n');
   for (const c of checks) {

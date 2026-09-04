@@ -25,12 +25,12 @@
     "definitionOfDone": [
       "Every part in the download renders from embedded data with no runtime asset fetch.",
       "Part identity is labelled as a hypothesis until a render review confirms it.",
-      "Colour, roughness and metalness are measured from the source, not invented."
+      "Colour, roughness and metalness are measured from the source, not invented.",
+      "Four character-native authored actions are visually reviewed and scored in the shared viewer."
     ],
     "notDone": [
-      "AI-vision review against the reference (the skill's stage 4) has not run in the browser.",
-      "No authored animation beyond the idle motion; pivots exist, clips do not.",
-      "Hidden sides are whatever the generator hallucinated; a single photo cannot confirm them."
+      "Hidden sides are whatever the generator hallucinated; a single photo cannot confirm them.",
+      "The twelve generic biped clips are retained as rig evidence but are not presented as authored character moves."
     ]
   },
   "coordinateFrame": {
@@ -277,7 +277,9 @@
   "animationAnchors": [
     "root group supports whole-object translation, rotation, scale and visibility",
     "group.userData.pivots[<part-id>] is a pivot group at each part's bounds centre",
-    "group.userData.update(elapsedSeconds) drives the built-in idle motion"
+    "group.userData.sculptRuntime.animationController exposes passive, vine, natures-call and ultimate",
+    "one-shot authored actions return to passive; generic biped clips remain rig evidence only",
+    "rig and VFX are siblings under the model because effects consume world-space socket positions"
   ],
   "risks": [
     {
@@ -536,9 +538,12 @@
       "palm trails (ribbon strip, ShaderMaterial)",
       "ground shockwave (additive ring)",
       "chest core (additive sphere + PointLight)",
-      "impact burst (Points)"
+      "impact burst (Points)",
+      "hand-following vine with a restrained air fracture at its catch point",
+      "widening ground-root pulses culminating in a young grove",
+      "three widening living-seed volleys feeding one shared young grove"
     ],
-    "colourSource": "every emissive channel is setHSL off LIFE_HUE = 82.5 degrees, the hue measured off the character's iris in the reference; bark/moss/leather tints are measured hexes"
+    "colourSource": "primary emissive channels use LIFE_HUE = 82.5 degrees measured from the iris; skill accents and bark/moss/leather tones use the measured reference palette"
   },
   "reviewHistory": [
     {
@@ -559,6 +564,20 @@
       "maxRigidStrain": 0,
       "maxSeamGap": 0.05338,
       "evidence": "node tools/measure-rig.mjs --json"
+    },
+    {
+      "passId": "pr-60-animation-vfx-polish-2026-09-04",
+      "action": "continue",
+      "summary": "Curated four character-native actions, made passive the true rest state, moved world-space VFX beside the moving rig, replaced full-screen bolt rain with sourced living-seed volleys, rebuilt Nature's Call as a grounded root wave, reduced ambient overdraw and reviewed keyframes in the shared viewer.",
+      "gates": {
+        "build": "pass",
+        "rigMeasurement": "pass",
+        "animationScore": "9.91/10",
+        "frameStalls": "0 repeated over-25ms frames",
+        "vfxModelSpace": "pass",
+        "visualKeyframes": "reviewed"
+      },
+      "evidence": "npm run build; node scripts/measure-monster-tree-rig.mjs; node scripts/score-monster-tree-animation.mjs --json"
     }
   ]
 }

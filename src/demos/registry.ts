@@ -235,12 +235,11 @@ const authored: DemoEntry[] = [
       + 'his own animation. The rig ships sixteen generic biped clips and not one of them is a treant '
       + 'throwing a vine, so the four moves are posed bone by bone through an aim solver over a trimmed '
       + 'resting clip: Greatwood Body plants real undergrowth and draws sap up out of it, Vine Lash arcs '
-      + 'a vine downrange and cracks the air open where it lands, Nature\u2019s Call holds both arms up with '
-      + 'light winding around them while wood comes down in front of him, and Seeds of Destiny roots him, '
-      + 'opens a canopy and rains six hundred bolts across the field, every one staining the ground where '
-      + 'it hits. Five afterimage copies \u2014 real skinned meshes, each with its own skeleton \u2014 land their '
-      + 'blows on five measured beats. Every effect shader and every light is built at load, so no impact '
-      + 'costs a stalled frame.',
+      + 'a vine downrange and cracks the air open where it lands, Nature\u2019s Call holds both arms up while '
+      + 'a widening root wave answers from the ground and opens into a young grove, and Seeds of Destiny '
+      + 'roots him, opens a canopy and releases widening volleys of living seeds that mark the ground '
+      + 'before a young grove erupts. The generic biped clips remain measurable rig evidence but are no '
+      + 'longer presented as character moves.',
     referenceImage: `${BASE}references/monster-tree/front.jpg`,
     sourcePath: 'src/demos/monster-tree/createMonsterTreeModel.ts',
     sourceUrl: `${REPO}/src/demos/monster-tree/createMonsterTreeModel.ts`,
@@ -253,17 +252,17 @@ const authored: DemoEntry[] = [
     author: 'Hoài Nhớ',
     authorUrl: 'https://github.com/hoainho',
     status: 'final',
-    updatedAt: '2026-09-01',
-    cameraPosition: [0.19, 1.78, 6.21],
-    cameraTarget: [0.59, 0.95, 0.11],
+    updatedAt: '2026-09-04',
+    cameraPosition: [1.8, 1.72, 5.8],
+    cameraTarget: [0.52, 0.98, 0.03],
     cameraFov: 32,
     accent: '#9ede4a',
     backgroundGradient: { inner: '#141610', outer: '#030403' },
-    exposure: 1.18,
-    environmentIntensity: 0.42,
+    exposure: 0.98,
+    environmentIntensity: 0.52,
     toneMapping: 'aces',
     prewarm: prewarmMonsterTree,
-    defaultAnimation: 'idle',
+    defaultAnimation: 'passive',
     installLights: (scene) => {
       scene.add(createMonsterTreeLookDevLights());
       scene.environment = makeMonsterTreeBackground();

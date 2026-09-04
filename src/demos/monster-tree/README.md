@@ -5,7 +5,7 @@ own export rather than re-deriving it. The geometry was already measured; nothin
 it. What this stage adds is the rig work, the costume separation, the effects and the lighting —
 and a measurement harness for all of it.
 
-Open it with `npm run build && npm run preview`, then `/showcase.html`.
+Open it with `npm run build && npm run preview`, then `/#/demo/monster-tree`.
 Run the numbers with `node scripts/measure-monster-tree-rig.mjs` (add `--json` for the machine-readable form).
 
 ---
@@ -238,7 +238,7 @@ That table is a gate, not decoration. It caught three defects that looked fine i
 `PropertyMixer.apply` writes to the scene graph **only when the value it accumulated differs from
 the snapshot it took**. Every scale track in this rig is a constant 1, so for scale the mixer
 decides nothing changed and never writes at all — and a stretch that *multiplies* the live value is
-therefore never reset. Measured on the authored log barrage, `L_Forearm.scale.y` reached
+therefore never reset. Measured on the former authored falling-prop test, `L_Forearm.scale.y` reached
 **106,195** inside 2.3 seconds and threw the hand hundreds of units out of the world. It had
 survived this long only because the shipped presets vary their scale enough to keep the mixer
 writing. Stretches now restore what they applied and rewrite each bone once from the clip's own
@@ -265,46 +265,35 @@ event table below for where the beats come from.
 |---|---|---|
 | **Passive · Greatwood Body** | `authored:passive` | plants real undergrowth and draws sap up out of it into the chest on a slow repeating beat, hardening the bark as it arrives. No inscribed circle: a rune ring is something *drawn*, which makes a passive read as a spell being cast rather than as ground he happens to be standing on |
 | **Vine Lash** | `authored:vine` | winds the arm back across the body, throws it out along +X, and the vine **arcs** downrange — bowed to one side and lifted through the middle, so its path is a third longer than the ground it covers — cracking the air open where it lands. Standing in his own undergrowth it reaches further, holds longer, knocks back, and he steps forward along it |
-| **Nature's Call** | `authored:logs` | both arms go up by 0.42 s and **stay** there, light winding around them, while wood comes down in front of him at 0.62, 0.95 and 1.28 and once more at 1.70 |
-| **Ultimate · Seeds of Destiny** | `authored:ultimate` | sinks, roots, grows the trunk, throws the canopy open at 0.80 s and holds it open while **620 bolts** rain across the field in three widening volleys, each one staining the ground where it lands |
+| **Nature's Call** | `authored:logs` | both arms go up by 0.42 s and **stay** there while three widening root pulses answer from the ground and open into a young grove at 1.70 s |
+| **Ultimate · Seeds of Destiny** | `authored:ultimate` | sinks, roots, grows the trunk, opens the canopy at 0.80 s, then releases three widening volleys of **39 living seeds**; the shared landing wave raises one young grove instead of hiding him behind hundreds of streaks |
 
 ### The vine breaks the air, and the bow is what keeps it in frame
 
-The far end of Vine Lash does not simply land — it puts a fracture through the air itself, a sheet
-of glass failing at a point and throwing its pieces out. It is the one effect in the demo that is
-not made of wood, sap or earth, and it is deliberately the payoff of the move that reaches furthest
-from him. The crack is a billboard (a fracture pattern seen edge-on is a line), it snaps to full
-size in 0.15 s because glass does not crack gradually, and the shards are 34 real triangles in a
-single geometry — the first version gave each its own mesh and measured 141 draw calls at 74 fps on
-a frame that otherwise runs at 120.
+The far end of Vine Lash does not simply land — it puts a restrained fracture through the air and
+throws small shards from the catch point. It is the one effect in the demo that is not made of
+wood, sap or earth, so its brightness is capped: the crack must punctuate the vine rather than
+cover the character. The billboard and its 34 shards share two geometries instead of creating one
+mesh per fragment.
 
 The vine bows because a thrown vine bows, and because the bow is also what buys the reach: it lifts
 the middle of the path well above the straight line to the target, so a long throw stays inside the
 frame instead of running off the edge of it.
 
-### The rain is wider than the shot on purpose
+### The ultimate grows outward from the character
 
-620 bolts in three overlapping volleys at widening radii, so the barrage opens outward and keeps
-arriving instead of falling as one sheet. The outer volley reaches 2.6 units against a frame that
-holds about 1.6 — "as wide as possible" only reads as wide if some of it falls off the edges, since
-rain that stops neatly inside the viewport reads as a *circle* of rain, which is a much smaller
-idea.
-
-Each bolt is a `LineSegments` pair, not a sprite: a round sprite falling fast reads as a bubble,
-while a short segment lying along its own velocity reads as something moving, and the tail is tied
-to the bolt's speed so the streaks lengthen as they accelerate. Every landing stamps a stain
-through one shared `InstancedMesh` — several hundred `ToxinBloom`s would be several hundred shader
-compiles on the beat, which is the exact stall the prewarm pass exists to prevent.
+The former 620-bolt full-screen rain had no readable source, obscured the held pose and produced
+repeated frame stalls. Seeds of Destiny now throws 10, 13 and 16 seeds from the crown on widening
+ballistic arcs. Each landing marks the soil through one shared `InstancedMesh`; every third seed
+adds a small soil burst, then one seven-tree grove rises from the shared landing wave. The effect
+therefore has a clear chain — crown, seed, soil, grove — and remains attached to what Y'bneth does.
 
 ### The camera leads the action
 
-Every attack he has travels the way he faces, and he faces azimuth 75° while the camera sits at
-−4° — so "forward" runs *across* the frame. Aimed squarely at him, a point 1.3 units downrange
-projected to px 642 of a 628-pixel canvas and the vine's fracture and the far end of the barrage
-were both landing outside the shot. The target is now pushed 0.42 units along his measured facing:
-his feet sit at px 214, 1.6 units downrange lands at px 610, and the usable reach grew by about
-40%. Leading the subject in the direction of the action is ordinary composition; here it is also
-arithmetic.
+Y'bneth faces +X. The review camera stays mostly on +Z with a shallow +X offset, so his forward
+effects travel across the frame while both raised arms remain separable. The target leads the
+mid-torso slightly downrange; Vine Lash's catch point remains visible at the right of the body
+instead of landing behind the details panel or projecting directly over his chest.
 
 ### The passive is a real condition, not a mime
 
@@ -314,19 +303,17 @@ position, a radius and a lifetime: the passive plants it, and Dây Leo asks `vfx
 before it decides which form to play. The two skills genuinely interact — play the passive, then
 Vine Lash, and you get the empowered version; play Vine Lash cold and you get the plain one.
 
-### Everything forward is capped at a measured reach
+### Public actions stay character-native
 
-The figure faces azimuth 75° while the showcase camera sits at −4°, so "forward" runs *across* the
-frame and off the right edge fast. Projected on the demo's own 628-pixel canvas, a point 1.0 unit
-ahead of his feet lands at px 565 and one at 1.3 units lands at px 642 — outside the canvas. The
-first log barrage stepped out to 1.66 units and every log of it fell where nobody could see it. The
-barrage, the vine and the grove stands are all capped against that measurement.
+The downloaded rig still carries 16 clips, but twelve generic biped clips are retained only as
+binding and retarget evidence. The gallery controller exposes the four authored treant actions
+above, defaults to Greatwood Body, and returns one-shot skills to that same passive loop. Human
+boxing, kicking and dancing clips are not presented as Y'bneth's moves.
 
-The camera itself was aimed beside the character rather than at it: the target sat at x = 0.95
-while the Hip is at x = 0.18, which put the figure at px 117 of 628 with the whole right half of
-the frame empty. It is now aimed at the measured mid-torso.
+## Archived rig experiment: Phân Thân
 
-## Phân Thân — five copies, each at its own frame
+The following section documents an earlier stress test retained in source; it is not exposed in
+the gallery action menu.
 
 Five real `THREE.SkinnedMesh` copies over the character's own 101,466-triangle geometry, each with
 its **own skeleton** and its own `AnimationMixer`. Only the bones are duplicated; the vertex buffer
@@ -456,35 +443,34 @@ Together these took the worst transition discontinuity from 0.227 units to **0.0
 
 Point size goes as one over distance, so an atmospheric sprite that drifted near the camera grew
 without limit — a single spore covered a third of the frame as a flat green sheet. Every point
-material is now clamped. And a summoned log was built with the *branch* defaults: tapered to a tip
-(a wedge, which lying flat reads as a leaf blade), knotted at the branch's own roughness (a sine at
-frequency 11, which over nine steps made it a lumpy potato), seven-sided (visibly faceted on the
-widest wood in the demo) and carrying the grove's self-lighting (which a log landing a metre from
-the character does not need — it read as glowing plastic). Called wood now has its own material and
-its own profile.
+material is now clamped below 30 pixels. Nature's Call had a more fundamental visual problem:
+objects falling in from off-screen read as floating props however carefully their wood profile was
+tuned. The public move now grows a grounded root wave outward from the caster and culminates in one
+young grove, giving every beat both a source and a contact point.
 
 ## The animation is scored, and the score is reproducible
 
-`scripts/score-monster-tree-animation.mjs` drives the real showcase in a browser and prints eleven
-checks scaled to ten. It steps every authored clip deterministically — fixed dt through the real
-mixer, the pose solved exactly as the frame loop solves it — so a result never depends on what the
-render loop happened to do that second. It exits non-zero below 9.0, so it can gate.
+`scripts/score-monster-tree-animation.mjs` drives the shared gallery route in a browser and prints
+twelve checks scaled to ten. It steps every public authored clip deterministically — fixed dt
+through the real mixer, with the pose solved exactly as the frame loop solves it — and separately
+measures live frame timing twice. It exits non-zero below 9.0, so it can gate.
 
-Three consecutive runs on an unchanged build: **9.98, 9.98, 9.98**. The run that matters reads:
+The 2026-09-04 polish run reads:
 
 ```
-1.00  no teleports          peak 8.467 H/s, worst frame 3.03x its own hand's p90
-1.00  no frame stalls       worst max 14.8ms, worst p95 11.4ms, stalls in both passes: 0
-1.00  transitions do not pop worst 0.096 units (ultimate -> idle)
-1.00  beats match the gesture Vine Lash's arrest is 0.002s from its authored release
-1.00  holds are alive       passive 0.030 H/s, Nature's Call hold window 0.040 H/s
-1.00  feet stay planted     planted toe rises to 0.061, lowest toe -0.004
-1.00  payoffs distinct      weakest 0.293 from rest; closest pair 0.141 apart
-1.00  gestures survive the projection  weakest on screen 2.00x the resting spread
-1.00  nothing left behind   worst bone 0.02 degrees, no scale or position residue
-1.00  clean run             no console errors
-1.00  harness reports every clip
-TOTAL 10.00 / 10
+0.95  no teleports                    peak 9.069 H/s; worst isolated ratio 1.73x
+1.00  no frame stalls                 worst max 15.6ms; p95 11.4ms; repeated stalls 0
+1.00  transitions do not pop          worst ultimate -> vine 0.0432
+1.00  release lands on peak speed     Vine Lash within 0.027s
+1.00  holds are alive                 passive 0.0335 H/s; Nature's Call 0.049 H/s
+1.00  feet stay planted               highest toe 0.028; lowest -0.005
+0.95  payoffs readable and distinct   weakest from rest 0.237; closest pair 0.135
+1.00  gestures survive projection     weakest 1.92x the resting spread
+1.00  nothing left behind             0.02deg; zero scale and position residue
+1.00  clean run                       no console errors
+1.00  VFX follows the animated rig    stable model space; rest = passive
+1.00  harness reports every clip      4/4 public clips
+TOTAL 9.91 / 10
 ```
 
 ### What it caught that no still frame shows
@@ -522,6 +508,11 @@ dimensional displacement cannot see that. There is now a screen-space check meas
 pixels on the demo's own canvas, and the total is normalised to ten so that adding a check cannot
 inflate the score.
 
+The attachment-space check covers the matching runtime failure: effects read socket `matrixWorld`
+positions, so nesting them under the moving rig transformed those positions twice during Vine
+Lash. The scorer now fails unless the rig and world-space VFX share one stable model parent and
+one-shots return to the authored passive loop.
+
 ## Seamlessness: the stalls were not the hitstop
 
 The demo felt like it stuttered, and the obvious suspect was wrong. Instrumenting the clip playhead
@@ -541,8 +532,8 @@ eight frame stall, landing exactly on the beat. Three causes, all found by measu
 3. **Skeletons.** A skeleton uploads its bone texture on the first frame it is rendered. Warming one
    copy of the chorus left the other four to upload theirs on the frame of the split.
 
-Measured after: all fourteen skills run at a median 8.3 ms with a worst frame of 25.4 ms on the
-heaviest move, and **not one frame over 25 ms anywhere else**.
+Measured after the 2026-09-04 pass: the four public actions report a worst live frame of 15.6 ms,
+a worst p95 of 11.4 ms, and **zero stalls over 25 ms repeated across both timing passes**.
 
 Two more discontinuities came out of the same pass:
 
@@ -665,12 +656,12 @@ are painted into a `<canvas>` at build time; nothing is fetched.
 | effect | what it is | why |
 |---|---|---|
 | **sap veins** | `MeshStandardMaterial` patched through `onBeforeCompile`, fbm value noise thresholded to thin ridges, added to `totalEmissiveRadiance` | the character glows from *inside the wood*. The one effect that changes what the figure **is** rather than what is around it |
-| **spirit wisps** | 6 sprites on Lissajous orbits, each with a short additive tail, one shared `PointLight` | they hold station around the figure — the difference between atmosphere and *presence* |
+| **spirit wisps** | 5 sprites on Lissajous orbits, each with a short additive tail, one shared `PointLight` | they hold station around the figure — the difference between atmosphere and *presence* |
 | **rune circles** | two counter-rotating glyph rings, painted once into a canvas | a ring says "impact"; a ring with turning script in it says the impact was **called for** |
 | **root eruption** | `TubeGeometry` along bent `CatmullRomCurve3`, staggered rise-and-sink | the only real geometry in the set — a shockwave you can see the far side of is what makes a stomp move earth |
-| **canopy shafts** | 5 soft additive slabs, drifting on separate phases | puts the figure under a broken forest roof instead of on a backdrop |
+| **canopy shafts** | 3 soft additive slabs, drifting on separate phases | puts the figure under a broken forest roof instead of on a backdrop |
 | **ground mist** | one plane, alpha from two scrolling noise fields | one field alone reads as a sliding texture; two curl |
-| **spore field** | 340 `THREE.Points`, seeded PRNG, one draw call | ambient life |
+| **spore field** | 240 `THREE.Points`, seeded PRNG, one draw call | ambient life without masking the silhouette |
 | **eye glow** | two additive sprites + a short-range `PointLight` | picks out the brow ridge rather than lighting the whole head |
 | **palm trails** | ribbon strip, per-vertex alpha via `ShaderMaterial` | the swing arc |
 | **impact bursts** | `THREE.Points` with gravity | the hit |
@@ -688,11 +679,11 @@ are painted into a `<canvas>` at build time; nothing is fetched.
   rose — a tube at zero height is a bright plate lying on the floor — so each one is now hidden
   until its own delay elapses.
 
-### Three moves the rig does not contain
+### Archived procedural experiments (not public actions)
 
-The 16 shipped clips are a generic biped library — boxing, kicks, dances, a death. None of them is
-a *tree* doing anything. Rather than settle for renaming them, three moves drive the skeleton
-procedurally on top of a clip:
+The 16 shipped clips are a generic biped library — boxing, kicks, dances, a death. Earlier R&D
+experiments drove three extra moves procedurally on top of them. They remain documented as rig and
+stretch evidence, but the gallery does not present them as Y'bneth's authored kit:
 
 | move | clip under it | what is added |
 |---|---|---|
