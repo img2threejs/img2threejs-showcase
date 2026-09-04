@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ALBEDO_WHITE_BALANCE, LIFE_HUE, LIFE_SATURATION, PALETTE } from './measured';
 import { patchBarkSurface, type BarkSurface } from './bark';
+import { TreantSignatureVfx } from './signatureVfx';
 
 /**
  * Effects for the monster-tree showcase.
@@ -863,7 +864,7 @@ class CoreGlow implements Tickable {
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
-    this.object = new THREE.Mesh(new THREE.SphereGeometry(0.09 * scale, 20, 14), material);
+    this.object = new THREE.Mesh(new THREE.SphereGeometry(0.030 * scale, 16, 10), material);
     this.object.name = 'vfx:chest-core';
     this.object.userData.isHighlight = true;
     anchor.add(this.object);
@@ -875,7 +876,7 @@ class CoreGlow implements Tickable {
   tick(_dt: number, elapsed: number): boolean {
     const pulse = 0.82 + Math.sin(elapsed * 9) * 0.18;
     const k = this.charge * pulse;
-    (this.object.material as THREE.MeshBasicMaterial).opacity = Math.min(1, k * 0.9);
+    (this.object.material as THREE.MeshBasicMaterial).opacity = Math.min(0.46, k * 0.42);
     // COUNTER the parent's world scale. The glow hangs off the chest socket, which hangs off
     // Spine02, and two things multiply into it there: the rig's 1.99x normalise scale, and any
     // bone stretch a skill has applied. Hạt Giống Thần Mệnh lengthens Waist, Spine01 and Spine02
@@ -885,13 +886,13 @@ class CoreGlow implements Tickable {
     const parent = this.object.parent;
     if (parent) parent.getWorldScale(CORE_SCALE);
     else CORE_SCALE.set(1, 1, 1);
-    const size = 0.6 + k * 0.8;
+    const size = 0.72 + k * 0.46;
     this.object.scale.set(
       size / Math.max(1e-4, CORE_SCALE.x),
       size / Math.max(1e-4, CORE_SCALE.y),
       size / Math.max(1e-4, CORE_SCALE.z),
     );
-    this.light.intensity = k * 3.2;
+    this.light.intensity = k * 1.35;
     return true;
   }
 }
@@ -3913,6 +3914,8 @@ function disposeTree(root: THREE.Object3D): void {
  */
 export class MonsterTreeVfx {
   readonly group = new THREE.Group();
+  /** The rebuilt, subject-specific public action layer. */
+  readonly signature: TreantSignatureVfx;
   private readonly prewarmAnchor = new THREE.Object3D();
   readonly eyes: EyeGlow;
   readonly core: CoreGlow;
@@ -4038,6 +4041,8 @@ export class MonsterTreeVfx {
     this.prewarmAnchor.position.set(0, -60, 0);
     this.prewarmAnchor.updateMatrixWorld(true);
     this.scale = bounds.getSize(new THREE.Vector3()).y;
+    this.signature = new TreantSignatureVfx(rig, this.scale);
+    this.group.add(this.signature.group);
 
     // Grain, relief, cavity, moss and sap, all on the shell's own material. Patched rather than
     // replaced so it keeps three's skinning and PBR lighting; `veins.injected` reports whether the
@@ -4814,6 +4819,7 @@ export class MonsterTreeVfx {
     this.splats.tick(dt);
     this.coilL.tick(dt);
     this.coilR.tick(dt);
+    this.signature.update(dt, this.elapsed);
     this.trails['grip-l'].tick(dt, this.elapsed);
     this.trails['grip-r'].tick(dt, this.elapsed);
     for (const roots of this.rootPool) roots.tick(dt);
@@ -4854,6 +4860,6 @@ export class MonsterTreeVfx {
     for (const seeds of this.seedPool) if (seeds.alive) pooled += 1;
     for (const vortex of this.vortexPool) if (vortex.alive) pooled += 1;
     for (const flash of this.flashPool) if (flash.alive) pooled += 1;
-    return this.transient.length + pooled;
+    return this.transient.length + pooled + this.signature.liveEffects;
   }
 }

@@ -40,14 +40,14 @@ export function createMonsterTree(options: RigOptions = {}): MonsterTreeRig {
 /**
  * Review framing for both the gesture and its consequence.
  *
- * Y'bneth faces +X. Most of the camera offset stays on +Z so Vine Lash travels across the shot;
- * the smaller +X component separates the raised arms in Nature's Call. The target leads the
- * measured torso slightly downrange, leaving room for the catch point and the young grove without
- * pushing the figure behind the details panel.
+ * Y'bneth faces +X. Equal +X/+Z weight gives a true three-quarter front: the two hands separate in
+ * Rootbreaker, the trunk bend remains readable, and Heartwood Lash travels across the open side of
+ * the shot. The target leads the torso slightly downrange without pushing the figure behind the
+ * details panel.
  */
 export const MONSTER_TREE_CAMERA = {
-  position: [1.8, 1.72, 5.8] as [number, number, number],
-  target: [0.52, 0.98, 0.03] as [number, number, number],
+  position: [4.4, 1.76, 4.4] as [number, number, number],
+  target: [0.48, 0.96, 0.02] as [number, number, number],
   fov: 32,
 };
 

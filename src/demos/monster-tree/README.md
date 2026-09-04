@@ -179,10 +179,10 @@ clips exactly as retargeted.
 ## The kit's animation is authored, not borrowed
 
 The rig ships sixteen clips from Tripo's generic biped library — boxing rounds, front kicks, six
-dances. They are real motion and they are measured honestly elsewhere in this demo, but none of
-them is the motion of a treant throwing a vine, calling wood down, or rooting itself into the
-ground. `box_01` under Dây Leo is a boxer's jab with a vine drawn on it, and no amount of effect
-work fixes a body doing the wrong thing.
+dances. They are real motion and measured honestly elsewhere in this demo, but none is the motion
+of a treant bending into a branch strike, dropping its full trunk weight into the earth, or opening
+an antler canopy. A human jab with green particles is still a human jab; effects cannot fix a body
+doing the wrong thing.
 
 So the kit's four moves are **posed** (`poses.ts`). Each is a timeline of aim directions, one per
 bone, solved onto the skeleton by `rig.aim` / `rig.applyPose`. Underneath, the body still plays a
@@ -212,10 +212,10 @@ They are then measured back, with the same method, to check the gesture does wha
 
 | move | peak hand | what the sweep finds |
 |---|---|---|
-| Greatwood Body | 0.04 H/s | nothing — three incommensurable oscillators and no beat at all |
-| Vine Lash | 7.5 H/s | an arrest at **0.333 s**, the frame `BEATS.vine.release` says the vine leaves |
-| Nature's Call | 10.8 H/s | arrests through the flurry, and one at **1.517 s** — `BEATS.logs.finish` |
-| Seeds of Destiny | 4.9 H/s | one arrest; the rest is a channel, which is what it is meant to be |
+| Greatwood Body | 0.063 H/s | no event spike; mean body motion is 0.0335 H/s |
+| Heartwood Lash | 8.359 H/s | hand speed peaks at **0.787 s**, 0.067 s after release and before the 0.860 s arrest |
+| Rootbreaker | 11.808 H/s | two-hand descent peaks at **0.838 s** and arrests on the authored 0.900 s ground contact |
+| Crown of First Seeds | 3.103 H/s | a controlled channel whose largest motion is the trunk growth at 0.400 s |
 
 That table is a gate, not decoration. It caught three defects that looked fine in a still frame:
 
@@ -224,10 +224,9 @@ That table is a gate, not decoration. It caught three defects that looked fine i
    forearm from pointing left to pointing right in a fifth of a second; lerped, that measured a
    hand speed of **60.7 H/s** — twelve times the fastest hand in any shipped clip — as a two-frame
    spike that read as the arm teleporting.
-2. **The payoff slam was the gentlest motion in its own move.** Spreading the last slam over a
-   longer span made it slower than the three jabs leading into it. The arm now goes up early, holds
-   at the top — which is the windup the effects are already charging into — and covers the greatest
-   distance in the shortest time.
+2. **The old ground move never touched the ground.** It raised both arms and held them while roots
+   appeared elsewhere. Rootbreaker now holds overhead, drops both hands with the trunk and knees,
+   and schedules the root crest from the 0.900 s contact.
 3. **The passive was a statue.** Aiming at full weight replaces the clip's own hand motion, and the
    first stance swept 0.01 H/s where `standing_relax` itself manages 0.103 — ten times stiller than
    the quietest thing in the library. Blending at partial weight looked like the fix and is not
@@ -257,51 +256,43 @@ collected first, and each affected bone is written exactly once.
 
 ## Y'bneth's kit
 
-The character is **Y'bneth**, and the four moves at the top of the panel are his own kit rather
-than invented ones. Each is mapped onto the clip whose measured dynamics actually fit it — see the
-event table below for where the beats come from.
+The character is **Y'bneth**. The four moves at the top of the panel are authored for his mass and
+silhouette; the embedded clips remain measurement and binding evidence rather than public actions.
 
 | | clip | what it does |
 |---|---|---|
-| **Passive · Greatwood Body** | `authored:passive` | plants real undergrowth and draws sap up out of it into the chest on a slow repeating beat, hardening the bark as it arrives. No inscribed circle: a rune ring is something *drawn*, which makes a passive read as a spell being cast rather than as ground he happens to be standing on |
-| **Vine Lash** | `authored:vine` | winds the arm back across the body, throws it out along +X, and the vine **arcs** downrange — bowed to one side and lifted through the middle, so its path is a third longer than the ground it covers — cracking the air open where it lands. Standing in his own undergrowth it reaches further, holds longer, knocks back, and he steps forward along it |
-| **Nature's Call** | `authored:logs` | both arms go up by 0.42 s and **stay** there while three widening root pulses answer from the ground and open into a young grove at 1.70 s |
-| **Ultimate · Seeds of Destiny** | `authored:ultimate` | sinks, roots, grows the trunk, opens the canopy at 0.80 s, then releases three widening volleys of **39 living seeds**; the shared landing wave raises one young grove instead of hiding him behind hundreds of streaks |
+| **Quietest · Greatwood Body** | `authored:passive` | asymmetrical branch sway over the measured resting base, with sparse sap motes circulating from the visible roots to the heart; no combat ring or repeated burst |
+| **Loudest · Heartwood Lash** | `authored:vine` | bends the whole trunk away, holds the loaded curve, then crosses into a hand-bound bark branch with a visible sap spine and living side growth; it arrests in directional splinters and 65 ms of hitstop |
+| **Ground Contact · Rootbreaker** | `authored:logs` | opens wide, locks both hands overhead, then drops hands, trunk and knees into one 0.900 s contact; a travelling wedge of raised roots and fractures carries the force away with two scheduled aftershocks |
+| **Ultimate · Crown of First Seeds** | `authored:ultimate` | roots and lengthens the body, then opens a broken-arc canopy above the antlers; warm leather-palette seeds orbit the crown before the stored force returns through the roots |
 
-### The vine breaks the air, and the bow is what keeps it in frame
+### The lash is a living branch, not a beam
 
-The far end of Vine Lash does not simply land — it puts a restrained fracture through the air and
-throws small shards from the catch point. It is the one effect in the demo that is not made of
-wood, sap or earth, so its brightness is capped: the crack must punctuate the vine rather than
-cover the character. The billboard and its 34 shards share two geometries instead of creating one
-mesh per fragment.
-
-The vine bows because a thrown vine bows, and because the bow is also what buys the reach: it lifts
-the middle of the path well above the straight line to the target, so a long throw stays inside the
-frame instead of running off the edge of it.
+Thirty preallocated branch sections form a shallow curve from the animated hand. Their radius
+tapers toward the end, ten smaller twigs break the tube silhouette, and a narrow iris-coloured core
+reads as sap under bark. Both endpoints update from the same hand and stage direction every frame,
+so the branch remains attached while the arrest pose moves. The catch point uses one incomplete
+compression arc, a warm resin core and directional wood splinters — no white portal at the hand.
 
 ### The ultimate grows outward from the character
 
-The former 620-bolt full-screen rain had no readable source, obscured the held pose and produced
-repeated frame stalls. Seeds of Destiny now throws 10, 13 and 16 seeds from the crown on widening
-ballistic arcs. Each landing marks the soil through one shared `InstancedMesh`; every third seed
-adds a small soil burst, then one seven-tree grove rises from the shared landing wave. The effect
-therefore has a clear chain — crown, seed, soil, grove — and remains attached to what Y'bneth does.
+The former full-screen rain had no readable source and obscured the held pose. Crown of First Seeds
+now keeps twenty-four small, warm seeds inside three rotating broken arcs above the antlers. The
+face stays clear, the one contrasting colour comes from the reference's leather, and the final beat
+returns downward as a root crest rather than spawning unrelated scenery.
 
 ### The camera leads the action
 
-Y'bneth faces +X. The review camera stays mostly on +Z with a shallow +X offset, so his forward
-effects travel across the frame while both raised arms remain separable. The target leads the
-mid-torso slightly downrange; Vine Lash's catch point remains visible at the right of the body
-instead of landing behind the details panel or projecting directly over his chest.
+Y'bneth faces +X. The review camera uses equal +X/+Z weight for a true three-quarter front: both
+hands separate during Rootbreaker and the trunk bend stays readable. The target leads mid-torso
+slightly downrange, leaving the right half of the shot for the complete lash and arrest crown.
 
-### The passive is a real condition, not a mime
+### The passive is circulation, not a spell cast
 
-Y'bneth's passive reads the ground he is standing on, and Vine Lash changes shape depending on
-the same thing. A showcase has no map to read, so the grass was made a **real object** with a
-position, a radius and a lifetime: the passive plants it, and Dây Leo asks `vfx.inGrass(foot)`
-before it decides which form to play. The two skills genuinely interact — play the passive, then
-Vine Lash, and you get the empowered version; play Vine Lash cold and you get the plain one.
+Greatwood Body uses the quietest measured motion budget in the demo. Root lines barely breathe at
+the feet while forty-eight pooled sap motes rise toward the live chest socket at slightly different
+rates. It follows the body continuously but never presents a ring, lawn or periodic detonation that
+would make a resting treant look as if it were repeatedly casting.
 
 ### Public actions stay character-native
 
@@ -347,53 +338,34 @@ measured off the character's iris, so 262.5°, a cold violet. Everything else in
 on the green-through-bark ramp, which is right for a creature made of wood and wrong for the one
 thing on stage that is not the creature.
 
-## Vine Lash: slow up, still, then fast
+## Heartwood Lash: bend, hold, release, arrest
 
-The move used to lift and throw at the same rate, and a gesture whose windup travels as fast as its
-strike reads as one continuous wave — there is no strike in it. It is now three distinct speeds:
+The move is built around the instant motion stops, with four distinct phases:
 
 | | |
 |---|---|
-| **0.00 – 0.55 s** | the arm lifts and loads. Slowly. Weight settles onto the back foot first, hips wind away, the elbow comes up behind the shoulder |
-| **0.55 – 0.64 s** | **nothing moves.** A tenth of a second of stillness, and it is what makes the next frame land — an audience shown a body stopping reads whatever follows as fast |
-| **0.64 – 0.73 s** | it fires. Ninety milliseconds, covering more distance than the whole raise did |
+| **0.00 – 0.58 s** | the pelvis withdraws, trunk bends into a reverse curve and the free arm opens the silhouette |
+| **0.58 – 0.72 s** | the loaded body holds while sap fragments travel shoulder-to-hand; this scheduled lead is the windup a live deceleration test cannot know about |
+| **0.72 – 0.86 s** | hand and heartwood branch extend together; measured hand speed peaks at 0.787 s |
+| **0.86 s** | the body crosses into its full stop, the branch arrests, directional splinters fire and the mixer holds for 65 ms |
 
-The shot leaves only once the arm is up, which is what the beat of stillness is for. And it does
-**not come back**: the first version reeled the vine in, which made it a tongue. A fired shot
-detaches — the near end lets go and chases the far end downrange while the whole length thins out,
-and there is nothing left by the time it arrives.
+The branch stays anchored to the hand through the short post-arrest hold, then dissolves from its
+tail while the pose follows through and recovers. Measured, release lands 67 ms from peak hand
+speed; the stop is separately scheduled at full extension.
 
-Measured, the hand's peak speed lands 27 ms from the authored release — a throw releases at maximum
-speed, not at a stop.
+### It has to be bark, not a smooth rope
 
-### It has to be a shaft, not a rope
+The main section is nearly round so its thirty joins do not form a saw-tooth edge, while taper is
+applied along the full length. Small alternating twigs supply the irregular silhouette of living
+wood; the arc is shallow enough that direction and speed remain dominant.
 
-At the first amplitudes the fired vine bowed a fifth of its reach sideways and a quarter upward, and
-what left the hand was a fat green crescent hanging in the air: a banana, not wood travelling fast.
-The arc is now just enough to say the shot was thrown rather than aimed down a ruler, and the gauge
-is thin enough that the LENGTH reads.
+## The arrest, made directional
 
-## The fracture, made real
-
-A crack that throws no light is a picture of a crack. The character standing beside it keeps
-whatever shading it already had, the floor underneath stays flat, and nothing in the scene admits
-the event happened. Four changes:
-
-- **A real light.** One pooled `PointLight`, hard on within two frames and falling off as the
-  square — which is what a release of energy does and what a lamp being turned down does not. It
-  puts a rim on the figure and a pool on the ground.
-- **Depth.** Three crack layers instead of one billboard, at different scales, rotated against each
-  other and offset toward and away from the viewer, each squashed on a different aspect. A single
-  plane is a sticker; three that slide against each other have thickness. And three concentric
-  copies of a radial pattern at the *same* aspect make a perfect star — nothing breaks in a perfect
-  star, so the asymmetry is what says the sheet failed along its own weaknesses.
-- **A pressure wave**, edge-on to the fracture plane, out fast and gone well before the crack is.
-- **Shards that cool.** A piece that leaves white-hot and is still white-hot when it lands has no
-  history in it. They ramp from the break's colour down to a dull ember as they fall.
-
-It also had to stay in the world's own green. Lerping the crack colour 55% toward white bleached
-the whole thing grey, and a grey web in a green scene reads as a sticker from somewhere else — the
-white belongs to the core, which the texture already paints.
+Contact is a fan oriented by the incoming branch, not a radial kit effect played at an arbitrary
+point. Bark splinters inherit a forward component, spread across the arrest plane, and fall away as
+their sap cores cool. One broken arc compresses normal to the strike; two more pool slots remain
+parked rather than stacking into a portal. The tiny centre is warm exposed resin from the measured
+leather band, not a white flash that competes with the character's eyes.
 
 ## The whole body, or it is a mannequin
 
@@ -443,10 +415,9 @@ Together these took the worst transition discontinuity from 0.227 units to **0.0
 
 Point size goes as one over distance, so an atmospheric sprite that drifted near the camera grew
 without limit — a single spore covered a third of the frame as a flat green sheet. Every point
-material is now clamped below 30 pixels. Nature's Call had a more fundamental visual problem:
-objects falling in from off-screen read as floating props however carefully their wood profile was
-tuned. The public move now grows a grounded root wave outward from the caster and culminates in one
-young grove, giving every beat both a source and a contact point.
+material is now clamped below 30 pixels. Rootbreaker had a more fundamental visual problem: a flat
+translucent wedge turned the ground wave into a polygon. The public move now lets raised bark roots
+and branching fissures alone describe the travelling crest.
 
 ## The animation is scored, and the score is reproducible
 
@@ -458,20 +429,20 @@ measures live frame timing twice. It exits non-zero below 9.0, so it can gate.
 The 2026-09-04 polish run reads:
 
 ```
-0.95  no teleports                    peak 9.069 H/s; worst isolated ratio 1.73x
-1.00  no frame stalls                 worst max 17.6ms; p95 15.6ms; repeated stalls 0
-1.00  transitions do not pop          worst ultimate -> vine 0.0432
-1.00  release lands on peak speed     Vine Lash within 0.027s
-1.00  holds are alive                 passive 0.0335 H/s; Nature's Call 0.049 H/s
-1.00  feet stay planted               highest toe 0.028; lowest -0.005
-0.95  payoffs readable and distinct   weakest from rest 0.237; closest pair 0.135
-1.00  gestures survive projection     weakest 1.92x the resting spread
+1.00  no teleports                    peak 11.808 H/s; worst frame 1.32x its neighbours
+0.99  no frame stalls                 worst max 23.8ms; p95 20.1ms; repeated stalls 0
+1.00  transitions do not pop          worst natures-call -> ultimate 0.031
+0.97  release lands on peak speed     Heartwood Lash within 0.067s
+1.00  holds are alive                 passive 0.0335 H/s; Rootbreaker hold 0.0401 H/s
+0.97  feet stay planted               highest toe 0.031; lowest -0.013
+1.00  payoffs readable and distinct   weakest from rest 0.451; closest pair 0.401
+1.00  gestures survive projection     weakest 1.39x the resting spread
 1.00  nothing left behind             0.02deg; zero scale and position residue
 1.00  clean run                       no console errors
 1.00  VFX follows the animated rig    stable model space; rest = passive
-1.00  VFX pools allocation-stable     objects 262; geometries 220; materials 110
+1.00  VFX pools allocation-stable     objects 338; geometries 238; materials 169
 1.00  harness reports every clip      4/4 public clips
-TOTAL 9.92 / 10
+TOTAL 9.95 / 10
 ```
 
 ### What it caught that no still frame shows
@@ -479,7 +450,7 @@ TOTAL 9.92 / 10
 - **Ending the ultimate moved a hand 1.10 units in a single frame.** The clip cross-fades; the
   authored pose did not, so the whole gesture snapped back to the resting animation between two
   frames. A gesture is now handed over across the same window the clip fades in.
-- **Leaving an empowered Vine Lash snapped the figure home**, 0.35 units — the body, not the arm.
+- **Leaving the former empowered lash snapped the figure home**, 0.35 units — the body, not the arm.
 - **Arriving from idle applied the incoming pose at full weight on frame one**, 0.28 units.
 - **A partial-weight aim was a lie.** `PropertyMixer.apply` skips writing a track whose value never
   changes, so a weighted slerp read its own previous output and converged to full weight inside two
@@ -492,8 +463,8 @@ Five of the eleven checks were measuring the wrong thing before they measured an
 that is worth writing down because a bad gate is more dangerous than no gate:
 
 - *Distinct from rest* was failing the passive for being a resting stance.
-- *Alive* averaged Nature's Call's whole clip, including the raise it is not about.
-- *Pop* took the largest single-frame jump, punishing Vine Lash for having a fast throw. A pop is a
+- *Alive* averaged the old ground move's whole clip, including the raise it is not about.
+- *Pop* took the largest single-frame jump, punishing the lash for having a fast throw. A pop is a
   frame that stands **alone** — the excess over its own neighbours.
 - The teleport ratio pooled both hands, so the working arm looked like a teleport beside the still
   one.
@@ -503,14 +474,14 @@ that is worth writing down because a bad gate is more dangerous than no gate:
 
 ### And the check the rubric was missing
 
-A Nature's Call pose scored **1.00 for distinctness while the render showed an unreadable smear** —
+A former two-hand pose scored **1.00 for distinctness while the render showed an unreadable smear** —
 both arms raised along the axis the camera looks down, foreshortened flat over the chest. Three
 dimensional displacement cannot see that. There is now a screen-space check measuring the pose in
 pixels on the demo's own canvas, and the total is normalised to ten so that adding a check cannot
 inflate the score.
 
 The attachment-space check covers the matching runtime failure: effects read socket `matrixWorld`
-positions, so nesting them under the moving rig transformed those positions twice during Vine
+positions, so nesting them under the moving rig transformed those positions twice during the
 Lash. The scorer now fails unless the rig and world-space VFX share one stable model parent and
 one-shots return to the authored passive loop.
 
@@ -533,8 +504,8 @@ eight frame stall, landing exactly on the beat. Three causes, all found by measu
 3. **Skeletons.** A skeleton uploads its bone texture on the first frame it is rendered. Warming one
    copy of the chorus left the other four to upload theirs on the frame of the split.
 
-Measured after the 2026-09-04 pass: the four public actions report a worst live frame of 15.6 ms,
-a worst p95 of 11.4 ms, and **zero stalls over 25 ms repeated across both timing passes**.
+Measured after the final 2026-09-04 pass: the four public actions report a worst live frame of
+23.8 ms, a worst p95 of 20.1 ms, and **zero stalls over 25 ms repeated across both timing passes**.
 
 Two more discontinuities came out of the same pass:
 
@@ -648,24 +619,20 @@ nor tangents — this mesh has neither. Two things were learned the expensive wa
 Anisotropy is 4:1, not 10:1. Ten to one is corduroy: the fibres align so exactly that any real bump
 turns the chest into zebra stripes.
 
-## VFX — all hand-written
+## Signature VFX — all hand-written
 
 The img2threejs skill has **no particle subsystem, no trail subsystem and no shader library**.
 Every effect here was written for this demo, in plain three, with **no dependency added**. Textures
 are painted into a `<canvas>` at build time; nothing is fetched.
 
-| effect | what it is | why |
+| public layer | what it is | why |
 |---|---|---|
-| **sap veins** | `MeshStandardMaterial` patched through `onBeforeCompile`, fbm value noise thresholded to thin ridges, added to `totalEmissiveRadiance` | the character glows from *inside the wood*. The one effect that changes what the figure **is** rather than what is around it |
-| **spirit wisps** | 5 sprites on Lissajous orbits, each with a short additive tail, one shared `PointLight` | they hold station around the figure — the difference between atmosphere and *presence* |
-| **rune circles** | two counter-rotating glyph rings, painted once into a canvas | a ring says "impact"; a ring with turning script in it says the impact was **called for** |
-| **root eruption** | `TubeGeometry` along bent `CatmullRomCurve3`, staggered rise-and-sink | the only real geometry in the set — a shockwave you can see the far side of is what makes a stomp move earth |
-| **canopy shafts** | 3 soft additive slabs, drifting on separate phases | puts the figure under a broken forest roof instead of on a backdrop |
-| **ground mist** | one plane, alpha from two scrolling noise fields | one field alone reads as a sliding texture; two curl |
-| **spore field** | 240 `THREE.Points`, seeded PRNG, one draw call | ambient life without masking the silhouette |
-| **eye glow** | two additive sprites + a short-range `PointLight` | picks out the brow ridge rather than lighting the whole head |
-| **palm trails** | ribbon strip, per-vertex alpha via `ShaderMaterial` | the swing arc |
-| **impact bursts** | `THREE.Points` with gravity | the hit |
+| **root breath** | line roots plus 48 pooled sap motes, attached between feet and chest | a quiet circulation that follows the resting clip instead of repeatedly casting |
+| **hand gather** | 40 pooled fragments travelling shoulder-to-hand | scheduled anticipation, visible before the strike exists |
+| **heartwood lash** | 30 tapered bark sections, 10 side twigs and a narrow sap spine | a living branch that stays attached to the animated hand |
+| **arrest crown** | directional bark/sap splinters, one broken arc and a warm resin core | describes the instant motion stops without forming a white portal |
+| **root crest** | 42 staggered raised roots plus 30 branching ground segments | carries the two-hand contact away from the body as a travelling force |
+| **first-seed canopy** | 24 warm seeds inside three rotating broken arcs above the antlers | holds a readable source and one contrasting accent without hiding the face |
 
 ### Three things that were wrong first, and what they cost
 
@@ -837,60 +804,59 @@ test — is what lets a **windup** exist: the sap starts gathering 0.2–0.4 s b
 because the table knows the strike is coming, and nothing watching live motion knows any such
 thing.
 
-The table corrected both hero moves. Deep Root Surge's old climax was hand-timed at 0.40 s — a
+In the archived experiments, the table corrected both hero moves. Deep Root Surge's old climax was hand-timed at 0.40 s — a
 frame with no event in it at all; the sweep found the real one at **1.800 s, where both hands
 arrest on the same frame and R_Hand posts a deceleration of 366.5 H/s², the loudest stop in the
 entire clip library**. The move is now a measured flurry (0.667, 0.833, 1.000 — each a light hit)
-building to that double-hand slam. Impaling Bough's spear now leaves at box_01's measured arrest
+building to that double-hand slam. Impaling Bough's spear left at box_01's measured arrest
 at extension (0.467 s), one frame after the measured foot plant at 0.375 s.
+
+## Current scheduled VFX runtime
 
 ### Hitstop
 
-On every impact the clip itself is held nearly still for 35–95 ms (`rig.hitstop`), scaled on the
+On every public impact the clip itself is held nearly still for 65–85 ms (`rig.hitstop`), scaled on the
 mixer's own delta so the effects, the ambient drift and the camera keep running while the body
 stops. This is most of the felt difference between effects happening *near* the character and the
 character *hitting something*. The strongest hold wins, so a light hit landing inside a heavy
 one's hold cannot shorten it.
 
-### The impact vocabulary
+### The public impact vocabulary
 
-Four kinds that differ in **motion first, colour second** — a light hit that is only a paler heavy
-hit is still a heavy hit:
+The public kit differs in **motion first, colour second**:
 
-| kind | ring | debris | hold | ground |
-|---|---|---|---|---|
-| light | out fast, gone in 0.3 s | flat radial fling, barely falls | 35 ms | untouched |
-| heavy | keeps expanding after the sound would stop | thrown in an arc, falls under 2.6 G | 95 ms | cracks |
-| ground | wide and low — weight spreads along the floor | dust climbs slowly, not thrown | 80 ms | cracks + roots |
-| taken | **converges inward** | comes off the **body** | 70 ms | — |
+| kind | motion | debris | hitstop |
+|---|---|---|---|
+| lash arrest | one broken arc normal to the branch | splinters fan in the incoming direction | 65 ms |
+| ground contact | no ring; a crest travels away along the floor | roots rise by row while fissures branch ahead | 85 ms |
+| canopy release | broken arcs rotate above the antlers | warm seeds orbit, then force returns through roots | 85 ms on the return |
+| taken | compression turns **inward** | bark comes off the **body**, never the hand | owned by the receiving clip |
 
-`taken` fires automatically from measured `driven` events, and has **no flash at the hand**,
-because nothing was swung.
+`taken` is reserved for measured external-force events and has **no flash at the hand**, because
+nothing was swung.
 
 ### Continuous layers are calibrated per clip
 
-The clip set spans handPeak 0.134 H/s (`fire`) to 5.231 (`box_02`) — a factor of 39. One global
-threshold either smears the fast clips or leaves the slow ones bare, so trails, ember shedding and
-the sap's breathing each read their own clip's measured budget: trails scale with hand speed,
-embers shed in proportion, and the breath is strongest on `standing_relax` (bodyMean 0.006), where
-it carries the whole sense of life, and nearly flat during a dance, where breathing on top of the
-body's own motion reads as flicker. The breath clock is *integrated*, not scaled — multiplying the
-absolute clock makes the sap pattern jump the instant the rate changes.
+The embedded clip sweep spans handPeak 0.134 H/s (`fire`) to 5.231 (`box_02`) — a factor of 39 — and
+the public authored set is wider still. One global trail threshold would smear Heartwood Lash and
+leave Greatwood Body bare, so the quiet action owns its sparse root circulation, windups own their
+shoulder-to-hand gather, and the fast actions do not carry a persistent ribbon. Their clocks are
+continuous; changing action strength changes amplitude rather than jumping particle phase.
 
 ### Pooling
 
-The complete public effects kit is constructor-owned: roots, groves, grass, vine ribbons, rings,
-runes, cracks, toxin stains, shatters, seed volleys, vortices, impact flashes and fourteen burst
-slots are all allocated before the first frame. Each object exposes `restart()` and returns to an
-invisible parked state when it dies; if a pool is saturated, the oldest slot is restarted rather
-than extending the scene. Vine Lash keeps one fixed tube topology and streams positions and
-normals into its existing attributes instead of disposing and rebuilding geometry on every frame.
+The complete public effects kit is constructor-owned: two lash slots, six arrest crowns, four root
+waves, root breath, canopy, hand gather, light flashes and burst slots all exist before the first
+frame. Each transient exposes `restart()` and returns to an invisible parked state; if a pool is
+saturated, its oldest slot restarts rather than extending the scene. Heartwood Lash streams its
+preallocated instance matrices in place instead of creating or disposing geometry during play.
 
 This is checked in the browser harness, which sweeps every public action and asserts that the scene
-contains the same **262 constructor-owned VFX objects** before and after the sweep. Starting every
+contains the same **338 objects, 238 geometries and 169 materials** before and after the sweep.
+Starting every
 object invisible also means the viewer's framing pass measures the figure alone, never an effect.
-On the final two-pass run, no action repeated a frame over 25 ms; the worst frame was 17.6 ms and
-the worst p95 was 15.6 ms, both in `ultimate`.
+On the final two-pass run, no action repeated a frame over 25 ms; the worst frame was 23.8 ms and
+the worst p95 was 20.1 ms, both in `natures-call`.
 
 ### One palette, used across its range
 
@@ -906,10 +872,10 @@ assignment follows what a move *does*:
 
 | | accent | why |
 |---|---|---|
-| strikes, the cast | near-white core | the flash of contact, and sap being spent |
-| kick, stomp | moss | what is being torn out of the ground |
-| surge, grove | deep green | wood coming up from under it |
-| thrown spear, the fall | bark | drained of green; the light going out |
+| heartwood body and lash | iris green | living sap beneath bark |
+| root crest and fissures | deep green + bark | weight moving through soil and wood |
+| arrest core and crown seeds | warm leather | exposed resin; the one contrast accent |
+| eye and tiny highlight | near-white core | kept small so it cannot become a generic white blast |
 
 **Impacts land on the creature too.** A hit spikes its own sap veins for a moment and drops a short
 bright light at the point of contact. Without that, every effect happened in front of a figure that
@@ -923,9 +889,9 @@ they **turn as they fall**. A point sprite has no orientation of its own, so the
 coordinate is rotated in the fragment shader and the blade flattens edge-on periodically, which is
 what makes a leaf tumble rather than sit pinned to the screen like a decal.
 
-### Damage that outlives the blow
+### Archived damage experiment
 
-Every impact leaves cracks and a toxin stain that run for **ten seconds** — roughly six times the
+The hidden generic-clip experiments leave cracks and a toxin stain for **ten seconds** — roughly six times the
 life of anything else in the set. That difference is the point: the burst and the shockwave are the
 moment of contact and are gone inside a second, so without a long tail each attack resets the stage
 to clean ground and nothing the character does appears to cost anything. With it, by the third blow

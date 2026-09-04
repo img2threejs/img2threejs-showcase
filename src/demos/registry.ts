@@ -232,29 +232,31 @@ const authored: DemoEntry[] = [
     subjectClass: 'character',
     blurb:
       'A treant rebuilt from one photograph as code-only geometry, then given Y\u2019bneth\u2019s own kit \u2014 and '
-      + 'his own animation. The rig ships sixteen generic biped clips and not one of them is a treant '
-      + 'throwing a vine, so the four moves are posed bone by bone through an aim solver over a trimmed '
-      + 'resting clip: Greatwood Body plants real undergrowth and draws sap up out of it, Vine Lash arcs '
-      + 'a vine downrange and cracks the air open where it lands, Nature\u2019s Call holds both arms up while '
-      + 'a widening root wave answers from the ground and opens into a young grove, and Seeds of Destiny '
-      + 'roots him, opens a canopy and releases widening volleys of living seeds that mark the ground '
-      + 'before a young grove erupts. The generic biped clips remain measurable rig evidence but are no '
-      + 'longer presented as character moves.',
+      + 'his own animation. The rig ships sixteen generic biped clips and not one reads like a treant, so '
+      + 'the four public moves are authored bone by bone over the measured resting base. Greatwood Body '
+      + 'breathes sap from root to heart. Heartwood Lash bends the whole trunk before a bark-and-sap branch '
+      + 'grows from the hand and arrests in a crown of resin and splinters. Rootbreaker lifts both arms, '
+      + 'drops the tree\u2019s full weight into the ground and drives two scheduled root aftershocks away from '
+      + 'the hands. Crown of First Seeds opens above the antlers in the reference\u2019s warm leather accent, '
+      + 'then returns its stored force through the roots. The generic clips remain measurable rig evidence '
+      + 'but are no longer presented as character moves.',
     referenceImage: `${BASE}references/monster-tree/front.jpg`,
     sourcePath: 'src/demos/monster-tree/createMonsterTreeModel.ts',
     sourceUrl: `${REPO}/src/demos/monster-tree/createMonsterTreeModel.ts`,
-    generatedWith: 'img2threejs v1.5.2 \u00b7 GLB fast lane \u00b7 animated-character stage R',
+    generatedWith: 'img2threejs v1.5.2 \u00b7 GLB fast lane \u00b7 authored animation \u00b7 pooled signature VFX',
     prompt:
-      'Take the playground export as measured and build on it: verify the rig by measurement rather than '
-      + 'assertion, separate the costume so animation cannot stretch it, and give the character his own '
-      + 'named kit \u2014 passive, two actives and an ultimate \u2014 with every effect anchored to a real bone and '
-      + 'cued off measured clip dynamics rather than by eye.',
+      'Build the missing effects layer from the subject: sweep the embedded rig with AnimationMixer, '
+      + 'normalise events to figure height, author a tree-weight passive, lash, ground contact and ultimate, '
+      + 'schedule every windup and arrest from the event table, add clip hitstop, keep effects attached to '
+      + 'measured sockets, and allocate every runtime pool before the first frame.',
     author: 'Hoài Nhớ',
     authorUrl: 'https://github.com/hoainho',
     status: 'final',
     updatedAt: '2026-09-04',
-    cameraPosition: [1.8, 1.72, 5.8],
-    cameraTarget: [0.52, 0.98, 0.03],
+    // A true three-quarter front. The former +Z-heavy camera presented the animation almost in
+    // profile, overlapping a two-hand slam and foreshortening the crown into the torso.
+    cameraPosition: [4.4, 1.76, 4.4],
+    cameraTarget: [0.48, 0.96, 0.02],
     cameraFov: 32,
     accent: '#9ede4a',
     backgroundGradient: { inner: '#141610', outer: '#030403' },

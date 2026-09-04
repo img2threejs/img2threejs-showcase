@@ -180,7 +180,7 @@ const data = await page.evaluate(({ kit, rate }) => {
     let worstRatio = 0;
     // A TELEPORT IS A FRAME THAT STANDS ALONE — the same definition the transition check uses, and
     // for the same reason. Judging a frame against the clip's own high quantile punishes a move
-    // for HAVING a fast part: Vine Lash spends 0.55s lifting slowly and 0.09s firing, so the fire
+    // for HAVING a fast part: Heartwood Lash spends 0.58s loading and 0.14s releasing, so the fire
     // is 5.5x the clip's p90 by construction, and that contrast is the entire point of the move.
     // A frame that is fast because the frames either side of it are also fast is motion; a frame
     // that is fast on its own is a jump.
@@ -479,17 +479,17 @@ const ramp = (value, good, bad) => (value <= good ? 1 : value >= bad ? 0 : (bad 
   // exactly the right thing — the hand peaks 36 ms before the vine leaves it.
   const dv = Math.abs((data.clips.vine?.peakAt ?? 99) - (beats?.vine?.release ?? 0.34));
   add('release lands on peak speed', ramp(dv, 0.06, 0.30),
-    `Vine Lash's hand peaks ${dv.toFixed(3)}s from its authored release`);
+    `Heartwood Lash's hand peaks ${dv.toFixed(3)}s from its authored release`);
 }
 // 6. alive
 {
   const p = data.clips.passive?.mean ?? 0;
-  // The hold, not the whole clip. Nature's Call spends its first 0.42s raising both arms, and
+  // The hold, not the whole clip. Rootbreaker spends its first 0.52s raising both arms, and
   // averaging that in reports the raise rather than the thing the criterion is about.
   const n = data.clips['natures-call']?.holdMean ?? 0;
   const inBand = (v, lo, hi) => (v >= lo && v <= hi ? 1 : v < lo ? v / lo : ramp(v, hi, hi * 3));
   add('holds are alive', Math.min(inBand(p, 0.03, 0.35), inBand(n, 0.02, 0.5)),
-    `passive mean ${p} H/s, Nature's Call hold-window mean ${n} H/s`);
+    `passive mean ${p} H/s, Rootbreaker hold-window mean ${n} H/s`);
 }
 // 7. feet
 {

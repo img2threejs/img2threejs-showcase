@@ -121,32 +121,35 @@ const impact = (socket: string, options?: { radius?: number; count?: number; spe
 
 
 /**
- * The direction the character is FACING, flattened to the ground, in world space.
+ * The character's stage-facing, flattened to the ground, in world space.
  *
- * Measured, and rotation-safe: it is the midpoint of the two eye sockets minus the head bone. The
- * eyes were found as the green-dominant vertex clusters on the head and sit forward of the head
- * centroid, so that vector is the face's normal however the figure is turned — including under the
- * viewer's turntable, which a hard-coded +X would not survive.
- *
- * Effects that travel need this rather than the arm's heading. A downward punch has the forearm
- * pointing at the floor, so its horizontal component is near zero and essentially arbitrary; a
- * shockwave sent along it goes nowhere, or somewhere random.
+ * The decoded bind geometry establishes +X as forward. Deriving forward from the live eye sockets
+ * looked more sophisticated but was wrong for a full-body gesture: the head and spine deliberately
+ * counter-rotate during the lash, turning the socket vector backwards on the release frame and
+ * firing the branch through the torso. Transforming the measured bind-frame axis by the root keeps
+ * a viewer turntable valid without letting an acting choice redefine where the stage is.
  */
 function facing(rig: MonsterTreeRig): THREE.Vector3 {
-  FACE_HEAD.setFromMatrixPosition(rig.bones.Head.matrixWorld);
-  FACE_LEFT.setFromMatrixPosition(rig.sockets['eye-l'].matrixWorld);
-  FACE_RIGHT.setFromMatrixPosition(rig.sockets['eye-r'].matrixWorld);
-  FACE_FORWARD.copy(FACE_LEFT).add(FACE_RIGHT).multiplyScalar(0.5).sub(FACE_HEAD);
+  FACE_FORWARD.set(1, 0, 0).transformDirection(rig.group.matrixWorld);
   FACE_FORWARD.y = 0;
   return FACE_FORWARD.lengthSq() > 1e-10 ? FACE_FORWARD.normalize() : FACE_FORWARD.set(1, 0, 0);
 }
 
+/**
+ * Heartwood Lash crosses forward and toward the character's left instead of disappearing into
+ * camera depth. The vector is authored in the measured character frame (+X forward, -Z left),
+ * then transformed by the root so orbiting the figure still rotates the entire action together.
+ */
+function lashDirection(rig: MonsterTreeRig): THREE.Vector3 {
+  LASH_FORWARD.set(0.72, 0, -0.694).transformDirection(rig.group.matrixWorld);
+  LASH_FORWARD.y = 0;
+  return LASH_FORWARD.normalize();
+}
+
 // Runtime effect coordinates. They are overwritten synchronously by each cue; keeping them here
 // means an impact frame does not create a handful of short-lived vectors for the collector.
-const FACE_HEAD = new THREE.Vector3();
-const FACE_LEFT = new THREE.Vector3();
-const FACE_RIGHT = new THREE.Vector3();
 const FACE_FORWARD = new THREE.Vector3(1, 0, 0);
+const LASH_FORWARD = new THREE.Vector3(0.72, 0, -0.694);
 const IMPACT_AT = new THREE.Vector3();
 const SKILL_AT = new THREE.Vector3();
 const SKILL_GROUND = new THREE.Vector3();
@@ -173,6 +176,7 @@ const ACCENT = {
   deep: new THREE.Color(PALETTE.eyeDeep).multiplyScalar(2.2),
   moss: new THREE.Color(PALETTE.mossLight),
   bark: new THREE.Color(PALETTE.barkLight),
+  seed: new THREE.Color(PALETTE.leatherLight).multiplyScalar(1.65),
 } as const;
 
 /**
@@ -276,14 +280,14 @@ const GRIP_OF: Record<string, string> = {
 /** Every bone any skill lengthens, so a change of move can reset all of them. */
 const STRETCHED = [
   'L_Forearm', 'L_Upperarm', 'R_Forearm', 'R_Upperarm',
-  // Hạt Giống Thần Mệnh grows the trunk itself, so the spine and the legs are stretched too.
+  // Crown of First Seeds grows the trunk itself, so the spine and the legs are stretched too.
   'Spine01', 'Spine02', 'Waist', 'L_Thigh', 'R_Thigh',
 ] as const;
 
 /**
  * Where the figure stands and which way its lunge goes.
  *
- * Dây Leo's empowered form steps forward along the vine it just caught. The step is bounded to a
+ * Heartwood Lash steps forward along the branch it grows. The step is bounded to a
  * quarter of a unit and eased back to `HOME` inside the same move, so the character finishes where
  * the viewer framed it — a move that leaves the figure somewhere else has moved the subject of the
  * shot, which is not a thing an attack is allowed to do in a fixed-camera showcase.
@@ -307,131 +311,65 @@ export const SKILLS: Skill[] = [
     clip: 'authored:passive',
     fade: 0.45,
     loop: true,
-    measured: 'POSED, not borrowed. The body plays a trimmed standing_relax — the quietest clip in the library, bodyMean 0.006 H/s, not one measured event — and the arms are aimed on top of it: low and open, palms turned down over the undergrowth he is drawing out of.',
-    // Undergrowth comes up under him and he draws out of it: sap climbs from the floor into the
-    // chest, and the bark hardens as it arrives. The direction matters — an effect leaving the
-    // body is the character spending something, and this is the character TAKING something from
-    // the ground it is standing on.
-    drive: (rig, vfx, time) => {
-      const foot = SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-      // Armour, breathing. Held well below a skill's release so the passive never reads as a cast
-      // about to happen — it is a state, not an event.
-      const rooted = vfx.inGrass(foot);
-      vfx.charge = rooted ? 0.14 + Math.sin(time * 1.5) * 0.05 : 0.04;
+    measured: 'AUTHORED from the quietest embedded source clip. The 15.38s standing_relax base measures bodyMean 0.006 H/s with no event spikes; asymmetric branch sway and a sparse root-to-heart sap circulation add life without turning the rest state into a spell cast.',
+    drive: (_rig, vfx, time) => {
+      // The quiet action is continuous rather than a sequence of repeated particle bursts. Sap
+      // rises from the visible root footprint into the chest, breathing at a deliberately
+      // incommensurate rate from the hips and crown.
+      vfx.signature.passiveStrength = 0.58 + Math.sin(time * 0.73) * 0.08;
+      vfx.charge = 0.055 + Math.sin(time * 1.1) * 0.018;
     },
-    cues: [
-      // Undergrowth and nothing else. No inscribed circle: a rune ring is something DRAWN, which
-      // makes the passive read as a spell being cast rather than as ground he happens to be
-      // standing on — and standing on it is the whole condition.
-      { at: 0.2, run: (rig, vfx) => {
-        const foot = SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-        vfx.grass(foot, { radius: 0.9, duration: 20, count: 190 });
-      } },
-      // Regeneration, on a slow repeating beat for as long as he stands in it. Every draw checks
-      // the patch first, so the passive stops the moment the undergrowth is gone — the condition
-      // is real, not decorative.
-      ...[1.2, 2.6, 4.0, 5.4, 6.8, 8.2, 9.6, 11.0, 12.4, 13.8].map((at) => ({
-        at,
-        run: (rig: MonsterTreeRig, vfx: MonsterTreeVfx) => {
-          const foot = SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          if (!vfx.inGrass(foot)) return;
-          vfx.drawUp(foot, { radius: 0.7, count: 46 });
-          vfx.flash(0.45);
-        },
-      })),
-    ],
+    cues: [],
   },
   {
     id: 'vine',
     accent: ACCENT.iris,
-    label: 'Loudest · Vine Lash',
+    label: 'Loudest · Heartwood Lash',
     pose: () => vinePose(),
     clip: 'authored:vine',
     fade: 0.14,
     loop: false,
-    measured: 'POSED, SLOW UP AND FAST OUT. The arm takes 0.55s to lift and load, holds still for a tenth of a second, and then fires in 0.09s — the fastest thing in the kit. The vine leaves only once the arm is up, and it does not come back: it detaches and travels away downrange, thinning to nothing.',
-    // The arm lengthens into the throw so the reach peaks exactly as the hand stops.
+    measured: 'AUTHORED as bend → hold → release → arrest. The whole tree winds away for 0.58s, holds loaded until 0.72s, and crosses to a full-body stop at 0.86s. A fixed bark-and-sap branch reaches its target on that same arrest frame; 65ms of hitstop belongs to the stop, not the travel.',
     drive: (rig, vfx, time) => {
-      // Enough to read as "duỗi tay" without the forearm becoming a tentacle: at 0.85 the arm
-      // stretched most of a metre and the shoulder pinched away from the body.
-      // The lengthening belongs to the SHOT, not to the raise. Starting it during the lift made the
-      // arm grow while it was still winding up, which is the one thing that told a viewer the whole
-      // gesture was a single continuous move.
-      const reach = swell(time, BEATS.vine.release - 0.06, BEATS.vine.release + 0.42) * 0.42;
+      const reach = swell(time, BEATS.vine.release, BEATS.vine.recover + 0.18) * 0.32;
       rig.stretch('L_Forearm', reach);
-      rig.stretch('L_Upperarm', reach * 0.55);
-      // Sap gathers through the whole slow raise, so the still frame before the fire is visibly
-      // loaded rather than just paused.
-      const build = buildTo(time, BEATS.vine.release, 0.52);
-      if (build > vfx.charge) vfx.charge = build;
-      // The lunge of the empowered form. Bounded and self-returning: it is a step, not a
-      // relocation, so the figure is back where the viewer framed it by the time the move ends.
-      if (rig.group.userData.empowered) {
-        rig.group.position.copy(HOME).addScaledVector(LUNGE, swell(time, BEATS.vine.release, BEATS.vine.recover + 0.3) * 0.26);
-      }
+      rig.stretch('L_Upperarm', reach * 0.42);
+      const build = buildTo(time, BEATS.vine.release, 0.60);
+      if (build * 0.32 > vfx.charge) vfx.charge = build * 0.32;
+      vfx.signature.gather(build, 0);
+      // Every cast commits its root mass. The translation is small compared with the hip shift but
+      // gives the branch a visible forward origin; it eases home before the one-shot ends.
+      LUNGE.copy(facing(rig));
+      rig.group.position.copy(HOME).addScaledVector(
+        LUNGE,
+        swell(time, BEATS.vine.release, BEATS.vine.recover + 0.28) * 0.16,
+      );
     },
     cues: [
-      // Weight arriving on the back foot as he loads, not a strike — no hold on the clip for it.
-      { at: 0.24, run: (rig, vfx) => {
-        SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-        vfx.impact('ground', SKILL_AT);
-      } },
       {
         at: BEATS.vine.release,
         run: (rig, vfx) => {
           vfx.charge = 0;
-          const heading = facing(rig);
-          const foot = SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          // THE CONDITION, asked of a real object. `vfx.grass` planted a patch with a position and
-          // a radius; this is a genuine test against it, so the empowered form only appears when
-          // the undergrowth the passive laid down is actually still standing under his feet.
-          const empowered = vfx.inGrass(foot);
-          rig.group.userData.empowered = empowered;
-          LUNGE.copy(heading);
-
-          vfx.vine(rig.sockets['grip-l'], heading, {
-            bend: empowered ? 0.55 : 0.40,
-            // Empowered reaches further and holds longer: the same move with more of it.
-            // Re-measured against the leading camera: his feet now sit at px 214 of a 628-pixel
-            // canvas and a point 1.6 units downrange projects to px 610, so the usable reach grew
-            // by about 40%. 0.62 figure heights is 1.18 units, which lands the tip at px 505 and
-            // leaves the fracture room to open around it. The bow lifts the middle of the vine
-            // well above the straight line, so the path is longer still than the ground it covers.
-            reach: empowered ? 0.78 : 0.66,
-            // Out FAST — 0.11s to full reach, against a raise that took 0.55 — then barely any
-            // hold, then it detaches and travels away. The move is a shot, not a whip crack.
-            out: 0.11,
-            hold: empowered ? 0.10 : 0.07,
-            back: 0.34,
-            onCatch: (at) => {
-              // Plain: it holds and it SLOWS — a stain of creeping toxin under whatever it caught,
-              // and nothing thrown. Empowered: it catches and it THROWS, so the same instant gets
-              // a knockback burst driven along the heading and the ground fails under it.
-              // THE VOID BREAKING. The far end does not just land — it puts a fracture through
-              // the air itself, a sheet of glass failing at a point and throwing its pieces out.
-              // This is the one effect in the demo that is not made of wood, sap or earth, and it
-              // is deliberately the payoff of the move that reaches furthest away from him.
-              // Lifted to chest height rather than left at the vine's own tip. The fracture is
-              // the payoff of the move and it has to be seen: at the far end of the reach the
-              // ground is already near the bottom-right corner of the frame.
-              SKILL_HIGH.copy(at).setY(Math.max(0.85, at.y));
-              vfx.shatter(SKILL_HIGH, {
-                size: empowered ? 0.44 : 0.36,
-                duration: empowered ? 0.82 : 0.70,
-              });
-              vfx.impact('light', at, rig);
-              SKILL_GROUND.set(at.x, 0, at.z);
-              vfx.roots(SKILL_GROUND, { count: empowered ? 7 : 4, spread: 0.22, duration: 0.9 });
-              vfx.cracks(SKILL_GROUND, { radius: empowered ? 0.75 : 0.55, duration: 6 });
-              vfx.toxin(SKILL_GROUND, { radius: empowered ? 0.82 : 0.62, duration: 7 });
-              if (empowered) {
-                SKILL_HIGH.copy(at).setY(0.35);
-                vfx.burstAt(SKILL_HIGH, {
-                  count: 46, speed: 1.7, duration: 0.68, spread: 0.42, gravity: -1.4, lightness: 0.64,
-                });
-                vfx.shockwave(SKILL_GROUND, 0.82, 0.65);
-              }
-            },
+          const heading = lashDirection(rig);
+          vfx.signature.castLash(
+            rig.sockets['grip-l'],
+            heading,
+            0.38,
+            BEATS.vine.arrest - BEATS.vine.release,
+          );
+          vfx.burst(rig.sockets['grip-l'], {
+            count: 20, speed: 0.42, duration: 0.58, spread: 0.7, gravity: -0.45, lightness: 0.78,
+          });
+        },
+      },
+      {
+        at: BEATS.vine.arrest,
+        run: (rig, vfx) => {
+          const at = vfx.signature.arrestLash(rig, 1.0);
+          vfx.impactFlash(at, 8, 0.24);
+          vfx.flash(0.58);
+          vfx.burstAt(at, {
+            count: 92, speed: 1.65, duration: 0.72, spread: 0.76, gravity: -1.1, lightness: 0.82,
           });
         },
       },
@@ -440,58 +378,59 @@ export const SKILLS: Skill[] = [
   {
     id: 'natures-call',
     accent: ACCENT.deep,
-    label: "Ground Contact · Nature's Call",
+    label: "Ground Contact · Rootbreaker",
     pose: () => logsPose(),
     clip: 'authored:logs',
     fade: 0.18,
     loop: false,
-    measured: 'POSED as a HOLD. Both arms rise by 0.42s and stay there while a widening root wave answers from the ground at 0.62, 0.95 and 1.28, then opens into a young grove at 1.70. He is the source, not the hammer.',
+    measured: 'AUTHORED as a two-hand ground arrest. The body sinks and sweeps wide, locks overhead at 0.52s, holds, then hands, trunk and knees meet the earth together at 0.90s. A wedge of roots inherits the hand-to-ground force vector; two smaller waves are scheduled at 1.08s and 1.28s.',
     drive: (_rig, vfx, time) => {
-      // The coils fade in as the arms arrive and out as they drop, so the light belongs to the
-      // hold rather than being switched on beside it.
       const up = Math.min(1, Math.max(0, (time - 0.14) / (BEATS.logs.raised - 0.14)));
-      const down = time > BEATS.logs.finish + 0.45
-        ? Math.max(0, 1 - (time - BEATS.logs.finish - 0.45) / 0.5)
-        : 1;
-      vfx.coils = up * down;
-      const build = buildTo(time, BEATS.logs.finish, 0.5);
-      if (build > vfx.charge) vfx.charge = Math.max(build, up * down * 0.35);
+      const down = time < BEATS.logs.contact ? 1 : Math.max(0, 1 - (time - BEATS.logs.contact) / 0.16);
+      vfx.signature.gather(up * down, up * down);
+      const build = buildTo(time, BEATS.logs.contact, 0.58);
+      const surfaceCharge = Math.max(build * 0.34, up * down * 0.14);
+      if (surfaceCharge > vfx.charge) vfx.charge = surfaceCharge;
     },
     cues: [
+      {
+        at: BEATS.logs.contact,
+        run: (rig, vfx) => {
+          SKILL_AT.setFromMatrixPosition(rig.sockets['grip-l'].matrixWorld);
+          SKILL_GROUND.setFromMatrixPosition(rig.sockets['grip-r'].matrixWorld).add(SKILL_AT).multiplyScalar(0.5);
+          SKILL_GROUND.y = 0;
+          vfx.charge = 0;
+          const heading = facing(rig);
+          vfx.signature.groundContact(SKILL_GROUND, heading, rig, 1.18);
+          SKILL_HIGH.copy(SKILL_GROUND).setY(0.08);
+          vfx.impactFlash(SKILL_HIGH, 10, 0.30);
+          vfx.flash(0.72);
+          vfx.burstAt(SKILL_HIGH, {
+            count: 120, speed: 1.25, duration: 1.05, spread: 0.28, gravity: -1.9, lightness: 0.68,
+          });
+        },
+      },
       ...BEATS.logs.calls.map((at, i) => ({
-        // A root answer moves outward from the caster one beat at a time. Grounded growth has a
-        // visible source and contact point; the former falling props floated in from off-screen.
         at,
         run: (rig: MonsterTreeRig, vfx: MonsterTreeVfx) => {
           SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          SKILL_GROUND.copy(SKILL_AT).addScaledVector(facing(rig), 0.44 + i * 0.30).setY(0);
-          vfx.roots(SKILL_GROUND, { count: 3 + i * 2, spread: 0.11 + i * 0.035, duration: 0.82 + i * 0.08 });
-          vfx.shockwave(SKILL_GROUND, 0.32 + i * 0.10, 0.48);
+          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld).add(SKILL_AT).multiplyScalar(0.5);
+          const heading = facing(rig);
+          SKILL_GROUND.addScaledVector(heading, 0.18 + i * 0.24).setY(0);
+          vfx.signature.aftershock(SKILL_GROUND, heading, 0.72 - i * 0.12);
         },
       })),
-      {
-        at: BEATS.logs.finish,
-        run: (rig, vfx) => {
-          SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          SKILL_GROUND.copy(SKILL_AT).addScaledVector(facing(rig), 1.34).setY(0);
-          vfx.charge = 0;
-          vfx.runeCircle(SKILL_GROUND, 1.0, 1.6);
-          vfx.roots(SKILL_GROUND, { count: 7, spread: 0.32, duration: 1.2 });
-          vfx.grove(SKILL_GROUND, { count: 3, spread: 0.24, duration: 3.1 });
-          vfx.toxin(SKILL_GROUND, { radius: 0.78, duration: 7 });
-        },
-      },
     ],
   },
   {
     id: 'ultimate',
-    accent: ACCENT.iris,
-    label: 'Ultimate · Seeds of Destiny',
+    accent: ACCENT.seed,
+    label: 'Ultimate · Crown of First Seeds',
     pose: () => ultimatePose(),
     clip: 'authored:ultimate',
     fade: 0.26,
     loop: false,
-    measured: 'POSED as a CHANNEL. He sinks, roots — legs straight and wide and never moving again — the trunk grows, and the canopy is thrown open at 0.80s and held open for the whole downpour. A barrage that covers the field is not aimed at anything, so he opens and stays open.',
+    measured: 'AUTHORED as a rooted canopy channel. The body sinks before growing through the spine, opens at 0.80s, and holds the silhouette while warm leather-toned seeds orbit a pale sap crown. Three volleys widen on fixed table beats before the stored force returns through the roots.',
     drive: (rig, vfx, time) => {
       const grow = Math.min(1, time / BEATS.ultimate.rooted)
         * (time > BEATS.ultimate.rainEnds ? Math.max(0, 1 - (time - BEATS.ultimate.rainEnds) / 0.5) : 1);
@@ -503,46 +442,37 @@ export const SKILLS: Skill[] = [
       rig.stretch('Spine02', grow * 0.12);
       rig.stretch('L_Thigh', grow * 0.10);
       rig.stretch('R_Thigh', grow * 0.10);
-      vfx.charge = Math.max(vfx.charge, grow * 0.40);
+      vfx.charge = Math.max(vfx.charge, grow * 0.22);
+      vfx.signature.canopyStrength = grow;
+      vfx.signature.gather(grow * 0.24, grow * 0.24);
     },
     cues: [
       {
         at: 0.0,
         run: (rig, vfx) => {
-          // Roots take the feet: he is planted for the duration, which is what makes an ultimate
-          // that channels a commitment rather than a pose.
-          vfx.roots(rig.sockets['foot-l'], { count: 12, spread: 0.40, duration: 3.0 });
-          vfx.roots(rig.sockets['foot-r'], { count: 10, spread: 0.36, duration: 3.0 });
-          const foot = SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          vfx.grass(foot, { radius: 1.25, duration: 10, count: 340 });
-          vfx.runeCircle(rig.sockets['foot-l'], 1.7, 2.8);
+          SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld).add(SKILL_AT).multiplyScalar(0.5).setY(0);
+          SKILL_HIGH.copy(facing(rig));
+          vfx.signature.aftershock(SKILL_GROUND, SKILL_HIGH, 0.68);
+          SKILL_HIGH.multiplyScalar(-1);
+          vfx.signature.aftershock(SKILL_GROUND, SKILL_HIGH, 0.54);
         },
       },
-      // The crown opens: a canopy pulled out of his own head as the trunk finishes growing.
       { at: BEATS.ultimate.rooted, run: (rig, vfx) => {
-        const crown = SKILL_CROWN.setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
-        vfx.grove(crown, { count: 5, spread: 0.26, duration: 3.6 });
-        vfx.burst(rig.sockets['crown'], { count: 90, speed: 0.9, spread: 1, gravity: 0.4, lightness: 0.78 });
+        vfx.burst(rig.sockets['crown'], {
+          count: 72, speed: 0.65, spread: 1, duration: 1.1, gravity: 0.28, lightness: 0.78,
+        });
       } },
       {
-        // THE RELEASE. Three widening seed volleys leave the crown and arc back into the ground.
-        // The former full-screen bolt rain obscured the pose and had no visible source; this keeps
-        // every projectile connected to the character, then lets one young grove answer the whole
-        // spread instead of allocating a separate tree for every landing.
         at: BEATS.ultimate.open,
         run: (rig, vfx) => {
-          const foot = SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          foot.y = 0;
           const crown = SKILL_CROWN.setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
-          vfx.vortex(foot, { radius: 0.92, duration: 0.72, count: 72 });
+          vfx.signature.releaseCanopy(crown);
           vfx.seeds(crown, { count: 10, spread: 0.82, flight: 0.58 });
-          vfx.impactFlash(crown, 10, 0.4);
-          vfx.burst(rig.sockets['crown'], { count: 72, speed: 0.82, duration: 1.0, spread: 0.72, gravity: 0.2 });
+          vfx.impactFlash(crown, 11, 0.36);
           vfx.flash(1.15);
         },
       },
-      // Static event-table entries, not runtime timers. They cannot bunch up after a suspended tab,
-      // and they allocate no closure or queue node on the release frame.
       {
         at: BEATS.ultimate.open + 0.20,
         run: (rig, vfx) => {
@@ -560,17 +490,17 @@ export const SKILLS: Skill[] = [
       {
         at: BEATS.ultimate.open + 0.78,
         run: (rig, vfx) => {
-          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld).setY(0);
-          vfx.grove(SKILL_GROUND, { count: 7, spread: 0.62, duration: 3.3 });
-          vfx.shockwave(SKILL_GROUND, 1.05, 0.82);
+          SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld).add(SKILL_AT).multiplyScalar(0.5).setY(0);
+          vfx.signature.groundContact(SKILL_GROUND, facing(rig), rig, 0.96);
         },
       },
       {
         at: BEATS.ultimate.rainEnds,
-        run: (rig, vfx) => {
+        run: (_rig, vfx) => {
           vfx.charge = 0;
           vfx.coils = 0;
-          vfx.toxin(rig.sockets['foot-l'], { radius: 1.15, duration: 8 });
+          vfx.signature.canopyStrength = 0;
         },
       },
     ],
@@ -885,7 +815,7 @@ export class SkillRunner {
   /**
    * Where the figure was standing when the last change happened, and how far it has walked back.
    *
-   * Vine Lash's empowered form steps forward. Snapping the figure back to `HOME` on the frame the
+   * Heartwood Lash steps forward. Snapping the figure back to `HOME` on the frame the
    * next move starts moves the whole subject of the shot between two frames — measured at 0.35
    * units of hand jump, and it is the body that moved, not the arm. It eases back over the same
    * window everything else hands over in.
@@ -904,7 +834,7 @@ export class SkillRunner {
   ) {
     this.active = SKILL_BY_ID[startId];
     this.restingId = startId;
-    // The figure's resting place, captured before any move can have shifted it. Dây Leo steps
+    // The figure's resting place, captured before any move can have shifted it. Heartwood Lash steps
     // forward and steps back, and a move that is interrupted halfway through its step has to hand
     // the figure back where it found it rather than leaving it a quarter of a unit downrange.
     HOME.copy(rig.group.position);
@@ -949,14 +879,17 @@ export class SkillRunner {
     // ALWAYS from zero, even with nothing to fade out of. Coming from a clip with no authored
     // gesture at all — the incoming pose was previously applied at full weight on its first frame,
     // so the arms snapped into the new stance in one step: measured at 0.28 units of hand jump on
-    // clip -> Vine Lash. With no outgoing pose the blend is simply the incoming one fading in
+    // clip -> Heartwood Lash. With no outgoing pose the blend is simply the incoming one fading in
     // against the clip underneath, which is the third case `blendPose` already handles.
     this.handover = 0;
     if (!this.outgoing && !skill.pose) clearPose(this.rig);
     // Continuous layers a skill turned ON have to be turned off by the CHANGE, not by the skill
     // that set them — a move interrupted halfway never reaches its own cleanup. The coils outlived
-    // Nature's Call this way and were still winding around the arms during the ultimate.
+    // the former ground cast this way and were still winding around the arms during the ultimate.
     this.vfx.coils = 0;
+    this.vfx.signature.passiveStrength = 0;
+    this.vfx.signature.canopyStrength = 0;
+    this.vfx.signature.gather(0, 0);
     this.lungeFrom.copy(this.rig.group.position);
     this.lungeK = this.lungeFrom.distanceToSquared(HOME) > 1e-8 ? 0 : 1;
     this.rig.group.userData.empowered = false;

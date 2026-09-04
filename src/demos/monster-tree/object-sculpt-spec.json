@@ -535,16 +535,15 @@
     "effects": [
       "spore field (Points, seeded PRNG)",
       "eye glow (Sprite + PointLight)",
-      "palm trails (ribbon strip, ShaderMaterial)",
-      "ground shockwave (additive ring)",
-      "chest core (additive sphere + PointLight)",
-      "impact burst (Points)",
-      "hand-following vine with a restrained air fracture at its catch point",
-      "widening ground-root pulses culminating in a young grove",
-      "three widening living-seed volleys feeding one shared young grove"
+      "quiet root-to-heart sap circulation calibrated to the resting clip",
+      "hand-bound heartwood lash with a tapered sap spine and living side growth",
+      "directional arrest crown made from bark splinters, resin core and one broken compression arc",
+      "two-hand ground contact with a travelling wedge of raised roots and branching fractures",
+      "above-antler canopy with warm leather-palette seeds and broken sap arcs",
+      "scheduled 65ms lash hitstop and 85ms ground-contact hitstop"
     ],
-    "colourSource": "primary emissive channels use LIFE_HUE = 82.5 degrees measured from the iris; skill accents and bark/moss/leather tones use the measured reference palette",
-    "pooling": "all public action effects are constructor-owned and restartable; the browser sweep holds at 262 objects, 220 geometries and 110 materials before and after all four actions"
+    "colourSource": "sap uses the measured iris ramp, grown structure uses measured bark, and warm exposed resin/seeds use the reference leather band as the single contrast accent",
+    "pooling": "all public action effects are constructor-owned, invisible before first use and restartable; the browser sweep holds at 338 objects, 238 geometries and 169 materials before and after all four actions"
   },
   "reviewHistory": [
     {
@@ -594,6 +593,22 @@
         "visualKeyframes": "quietest, loudest and ground contact reviewed"
       },
       "evidence": "node scripts/measure-monster-tree-events.mjs --emit; node scripts/measure-monster-tree-rig.mjs --json; node scripts/score-monster-tree-animation.mjs; npm run build"
+    },
+    {
+      "passId": "pr-60-signature-action-rebuild-2026-09-04",
+      "action": "continue",
+      "summary": "Reauthored all four public actions around tree-like weight and rebuilt their effects as one subject-specific vocabulary: circulating sap, a hand-grown heartwood lash, directional arrest splinters, propagating root crests and a warm-seed canopy.",
+      "gates": {
+        "typecheck": "pass",
+        "productionBuild": "pass",
+        "rigMeasurement": "pass: 41 bones, 64307 vertices, 16 clips",
+        "animationScore": "9.95/10 across 13 checks",
+        "frameStalls": "0 repeated over-25ms frames",
+        "releaseTiming": "hand peak 0.067s from authored release",
+        "vfxResources": "pass: objects 338->338, geometries 238->238, materials 169->169",
+        "visualKeyframes": "quietest, lash windup/travel/arrest, ground windup/contact and ultimate reviewed"
+      },
+      "evidence": "npx tsc --noEmit; npm run build; node scripts/measure-monster-tree-rig.mjs --json; node scripts/score-monster-tree-animation.mjs --json; browser keyframe captures"
     }
   ]
 }
