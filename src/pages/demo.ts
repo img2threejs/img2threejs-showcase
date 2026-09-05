@@ -1,9 +1,20 @@
 import * as THREE from 'three';
+import '../export.css';
 import { getDemo } from '../demos/registry';
 import { Viewer, type PartInfo } from '../scene';
 import { navigate } from '../router';
 import { brand, extractVersion, escapeAttr, GITHUB_CORE as GITHUB_URL } from '../site-data';
 import { createLoader, whenViewerReady } from '../loader';
+import {
+  EXPORT_FORMATS,
+  exportAllFormatsZip,
+  exportModel,
+  exportModelsFor,
+  saveBlob,
+  type ExportFormat,
+  type ExportModelScope,
+  type ExportReport,
+} from '../exporters';
 import {
   resetExhibitOnceKeys,
   trackAnimationPlay,
@@ -136,6 +147,50 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
               <div class="part-card" id="part-card" hidden></div>
               <div class="parts-scroll"><ul class="parts-list" id="parts-list"></ul></div>
               <p class="parts-prov" id="parts-prov" hidden></p>
+            </section>
+            <section class="demo-export" id="demo-export" aria-labelledby="demo-export-title">
+              <div class="demo-export-head">
+                <div>
+                  <span class="parts-title" id="demo-export-title">Export a 3D Asset</span>
+                  <span class="demo-export-subtitle">From Stage</span>
+                </div>
+                <output class="demo-export-status" id="demo-export-status" data-state="ready">Ready</output>
+              </div>
+              <div class="demo-export-scope" id="demo-export-scope" hidden>
+                <label for="demo-export-scope-select">Export scope</label>
+                <select id="demo-export-scope-select" aria-describedby="demo-export-scope-note"></select>
+                <p id="demo-export-scope-note">Choose the complete assembly or one independently declared model.</p>
+              </div>
+              <div class="demo-export-formats" id="demo-export-formats">
+                ${EXPORT_FORMATS.map(({ format, label, note, keeps, limits }) => `
+                  <div class="demo-export-format-row" data-export-row="${format}">
+                    <button class="demo-export-format" type="button" data-export-format="${format}">
+                      <span class="demo-export-label">${label}</span>
+                      <span class="demo-export-note">${note}</span>
+                      <span class="demo-export-arrow" aria-hidden="true">&darr;</span>
+                    </button>
+                    <button class="demo-export-info" type="button" data-export-info="${format}"
+                            aria-label="What ${label} export includes"
+                            aria-describedby="demo-export-tooltip-${format}" aria-expanded="false">i</button>
+                    <div class="demo-export-tooltip" id="demo-export-tooltip-${format}" role="tooltip">
+                      <strong>${label} portability</strong>
+                      <p><span>Keeps</span>${keeps}</p>
+                      <p><span>Limits</span>${limits}</p>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+              <button class="demo-export-all" id="demo-export-all" type="button">
+                <span>
+                  <strong>Export all formats</strong>
+                  <small>Current scope · 6 validated assets + manifest</small>
+                </span>
+                <span class="demo-export-zip" aria-hidden="true">.ZIP &darr;</span>
+              </button>
+              <div class="demo-export-report" id="demo-export-report" hidden>
+                <p id="demo-export-summary"></p>
+                <ul id="demo-export-warnings"></ul>
+              </div>
             </section>
             <div class="demo-links">
               <button class="btn btn-explode" id="demo-explode" type="button" aria-pressed="false" hidden>
@@ -391,6 +446,304 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   }
 
   viewer.setExplodeRoot(model);
+  // --- validated asset export -----------------------------------------------------------
+  // Every format goes through one serializer and one validation path. The test hook returns only
+  // the JSON report (never the potentially huge Blob), so browser QA can exercise the exact same
+  // operation as a visitor without intercepting or retaining downloads.
+  const exportButtons = [...mount.querySelectorAll<HTMLButtonElement>('[data-export-format]')];
+  const exportStatus = mount.querySelector<HTMLOutputElement>('#demo-export-status');
+  const exportReport = mount.querySelector<HTMLElement>('#demo-export-report');
+  const exportSummary = mount.querySelector<HTMLElement>('#demo-export-summary');
+  const exportWarnings = mount.querySelector<HTMLUListElement>('#demo-export-warnings');
+  const exportScope = mount.querySelector<HTMLElement>('#demo-export-scope');
+  const exportScopeSelect = mount.querySelector<HTMLSelectElement>('#demo-export-scope-select');
+  const exportScopeNote = mount.querySelector<HTMLElement>('#demo-export-scope-note');
+  const exportAllButton = mount.querySelector<HTMLButtonElement>('#demo-export-all');
+  const exportAllNote = exportAllButton?.querySelector<HTMLElement>('small');
+  const exportInfoButtons = [...mount.querySelectorAll<HTMLButtonElement>('[data-export-info]')];
+  const exportButtonCleanups: Array<() => void> = [];
+  const exportReady: Promise<unknown> = demo.prewarm
+    ? demo.prewarm().catch(() => undefined)
+    : Promise.resolve();
+  let declaredExportModels: ExportModelScope[] = [];
+  let exportBusy = false;
+
+  const readableBytes = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+  const showExportReport = (report: ExportReport): void => {
+    if (!exportReport || !exportSummary || !exportWarnings) return;
+    const materialFormat = report.format === 'glb' || report.format === 'gltf' || report.format === 'usdz';
+    const vertexColourFormat = report.format === 'glb' || report.format === 'gltf' || report.format === 'ply';
+    const facts = [
+      `${report.triangleCount.toLocaleString()} triangles`,
+      `${report.meshCount.toLocaleString()} mesh nodes`,
+      `${report.namedPartCount.toLocaleString()} named parts`,
+      materialFormat
+        ? report.portableMaterialCount === report.materialCount
+          ? `${report.materialCount.toLocaleString()} materials`
+          : `${report.portableMaterialCount.toLocaleString()}/${report.materialCount.toLocaleString()} portable materials`
+        : null,
+      materialFormat
+        ? report.portableTextureCount === report.textureCount
+          ? `${report.textureCount.toLocaleString()} image textures`
+          : `${report.portableTextureCount.toLocaleString()}/${report.textureCount.toLocaleString()} portable textures`
+        : null,
+      vertexColourFormat && report.vertexColourMeshCount
+        ? `${report.vertexColourMeshCount.toLocaleString()} vertex-colour meshes`
+        : null,
+      report.skinnedMeshCount ? `${report.jointCount.toLocaleString()} joints` : null,
+      report.sourceAnimationCount
+        ? `${report.animationCount}/${report.sourceAnimationCount} clips`
+        : null,
+      report.instanceCount ? `${report.instanceCount.toLocaleString()} instances` : null,
+      report.roundTripValidated ? 'round-trip passed' : null,
+      readableBytes(report.bytes),
+    ].filter((fact): fact is string => !!fact);
+    exportSummary.textContent = facts.join(' · ');
+    exportWarnings.replaceChildren();
+    for (const warning of report.warnings) {
+      const item = document.createElement('li');
+      item.textContent = warning;
+      exportWarnings.appendChild(item);
+    }
+    exportWarnings.hidden = report.warnings.length === 0;
+    exportReport.hidden = false;
+  };
+
+  const showExportError = (error: unknown, context: string): void => {
+    const message = error instanceof Error ? error.message : String(error);
+    if (exportSummary && exportReport && exportWarnings) {
+      exportSummary.textContent = message;
+      exportWarnings.replaceChildren();
+      exportWarnings.hidden = true;
+      exportReport.hidden = false;
+    }
+    if (exportStatus) {
+      exportStatus.value = 'Export blocked';
+      exportStatus.dataset.state = 'error';
+    }
+    console.error(`[export:${demo.id}:${context}]`, error);
+  };
+
+  const scopeForId = (scopeId = exportScopeSelect?.value ?? 'all'): ExportModelScope | undefined => (
+    scopeId === 'all' ? undefined : declaredExportModels.find((scope) => scope.id === scopeId)
+  );
+  const currentScope = (): { id: string; label: string; root?: THREE.Object3D } => {
+    const selected = scopeForId();
+    return selected ?? {
+      id: 'all',
+      label: declaredExportModels.length > 1
+        ? `All models (${declaredExportModels.length})`
+        : 'Complete showcase assembly',
+    };
+  };
+  const syncExportScopes = (): void => {
+    const previous = exportScopeSelect?.value ?? 'all';
+    declaredExportModels = exportModelsFor(model);
+    const multiple = declaredExportModels.length > 1;
+    if (!exportScope || !exportScopeSelect) return;
+    exportScope.hidden = !multiple;
+    exportScopeSelect.replaceChildren();
+    const all = document.createElement('option');
+    all.value = 'all';
+    all.textContent = `All models (${declaredExportModels.length})`;
+    exportScopeSelect.appendChild(all);
+    for (const scope of declaredExportModels) {
+      const option = document.createElement('option');
+      option.value = scope.id;
+      option.textContent = scope.label;
+      exportScopeSelect.appendChild(option);
+    }
+    exportScopeSelect.value = multiple && (previous === 'all' || scopeForId(previous)) ? previous : 'all';
+    if (exportScopeNote) {
+      exportScopeNote.textContent = multiple
+        ? `${declaredExportModels.length} independent models declared. Parts inside each model stay together.`
+        : 'The complete showcase assembly will be exported.';
+    }
+    if (exportAllNote) exportAllNote.textContent = 'Current scope · 6 validated assets + manifest';
+  };
+  syncExportScopes();
+  void exportReady.then(syncExportScopes);
+
+  const createExport = async (format: ExportFormat, scopeId?: string) => {
+    await exportReady;
+    syncExportScopes();
+    const selected = scopeForId(scopeId);
+    return exportModel(
+      model,
+      format,
+      (snapshot) => viewer.withAssetExportState(snapshot),
+      selected?.root,
+    );
+  };
+  const exportForQa = async (format: ExportFormat, scopeId = 'all'): Promise<ExportReport> => {
+    if (!EXPORT_FORMATS.some((entry) => entry.format === format)) {
+      throw new Error(`Unsupported export format: ${String(format)}`);
+    }
+    const report = (await createExport(format, scopeId)).report;
+    (window as unknown as Record<string, unknown>).__IMG2THREEJS_LAST_EXPORT_REPORT__ = report;
+    return report;
+  };
+  (window as unknown as Record<string, unknown>).__IMG2THREEJS_EXPORT__ = exportForQa;
+
+  const setExportBusy = (busy: boolean): void => {
+    exportBusy = busy;
+    for (const candidate of exportButtons) candidate.disabled = busy;
+    if (exportAllButton) exportAllButton.disabled = busy;
+    if (exportScopeSelect) exportScopeSelect.disabled = busy;
+  };
+  const showBundleReport = (
+    reports: ExportReport[],
+    bytes: number,
+    scopeLabel: string,
+  ): void => {
+    if (!exportReport || !exportSummary || !exportWarnings) return;
+    const warnings = [...new Set(reports.flatMap((report) => report.warnings))];
+    exportSummary.textContent = `${scopeLabel} · ${reports.length} formats · manifest.json · ${readableBytes(bytes)}`;
+    exportWarnings.replaceChildren();
+    for (const warning of warnings) {
+      const item = document.createElement('li');
+      item.textContent = warning;
+      exportWarnings.appendChild(item);
+    }
+    exportWarnings.hidden = warnings.length === 0;
+    exportReport.hidden = false;
+  };
+
+  const closeExportTooltips = (except?: HTMLElement): void => {
+    for (const row of mount.querySelectorAll<HTMLElement>('[data-export-row]')) {
+      if (row === except) continue;
+      row.classList.remove('is-info-open');
+      row.querySelector<HTMLButtonElement>('[data-export-info]')?.setAttribute('aria-expanded', 'false');
+    }
+  };
+  for (const button of exportInfoButtons) {
+    const onInfo = (event: MouseEvent): void => {
+      event.stopPropagation();
+      const row = button.closest<HTMLElement>('[data-export-row]');
+      if (!row) return;
+      const open = !row.classList.contains('is-info-open');
+      closeExportTooltips(row);
+      row.classList.toggle('is-info-open', open);
+      button.setAttribute('aria-expanded', String(open));
+    };
+    button.addEventListener('click', onInfo);
+    exportButtonCleanups.push(() => button.removeEventListener('click', onInfo));
+  }
+  const onExportOutsideClick = (event: MouseEvent): void => {
+    if (!(event.target as HTMLElement).closest('.demo-export-tooltip, [data-export-info]')) {
+      closeExportTooltips();
+    }
+  };
+  const onExportEscape = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape') return;
+    closeExportTooltips();
+    exportInfoButtons.find((button) => button.matches(':focus'))?.focus();
+  };
+  mount.addEventListener('click', onExportOutsideClick);
+  mount.addEventListener('keydown', onExportEscape);
+  exportButtonCleanups.push(() => mount.removeEventListener('click', onExportOutsideClick));
+  exportButtonCleanups.push(() => mount.removeEventListener('keydown', onExportEscape));
+
+  if (exportScopeSelect) {
+    const onScopeChange = (): void => {
+      const scope = currentScope();
+      if (exportStatus) {
+        exportStatus.value = scope.id === 'all' ? 'All models selected' : `${scope.label} selected`;
+        exportStatus.dataset.state = 'ready';
+      }
+      exportReport?.setAttribute('hidden', '');
+    };
+    exportScopeSelect.addEventListener('change', onScopeChange);
+    exportButtonCleanups.push(() => exportScopeSelect.removeEventListener('change', onScopeChange));
+  }
+
+  if (!capture) {
+    for (const button of exportButtons) {
+      const format = button.dataset.exportFormat as ExportFormat;
+      const onExport = async (): Promise<void> => {
+        if (exportBusy) return;
+        setExportBusy(true);
+        button.classList.add('is-exporting');
+        exportReport?.setAttribute('hidden', '');
+        const scope = currentScope();
+        if (exportStatus) {
+          exportStatus.value = `Validating ${format.toUpperCase()}`;
+          exportStatus.dataset.state = 'busy';
+        }
+        try {
+          const artifact = await createExport(format, scope.id);
+          (window as unknown as Record<string, unknown>).__IMG2THREEJS_LAST_EXPORT_REPORT__ = artifact.report;
+          showExportReport(artifact.report);
+          const filename = scope.id === 'all'
+            ? `${demo.id}.${artifact.filenameExtension}`
+            : `${demo.id}--${scope.id}.${artifact.filenameExtension}`;
+          saveBlob(artifact.blob, filename);
+          if (exportStatus) {
+            exportStatus.value = artifact.report.warnings.length ? 'Validated with limits' : 'Validated';
+            exportStatus.dataset.state = artifact.report.warnings.length ? 'warning' : 'success';
+          }
+        } catch (error) {
+          showExportError(error, format);
+        } finally {
+          setExportBusy(false);
+          button.classList.remove('is-exporting');
+        }
+      };
+      button.addEventListener('click', onExport);
+      exportButtonCleanups.push(() => button.removeEventListener('click', onExport));
+    }
+
+    if (exportAllButton) {
+      const onExportAll = async (): Promise<void> => {
+        if (exportBusy) return;
+        setExportBusy(true);
+        exportAllButton.classList.add('is-exporting');
+        exportReport?.setAttribute('hidden', '');
+        await exportReady;
+        syncExportScopes();
+        const scope = currentScope();
+        try {
+          const bundle = await exportAllFormatsZip(model, {
+            assetId: demo.id,
+            scopeId: scope.id,
+            scopeLabel: scope.label,
+            selectedRoot: scope.root,
+            snapshot: (snapshot) => viewer.withAssetExportState(snapshot),
+            onProgress: ({ label, index, total }) => {
+              if (exportStatus) {
+                exportStatus.value = `${label} ${index}/${total}`;
+                exportStatus.dataset.state = 'busy';
+              }
+            },
+          });
+          (window as unknown as Record<string, unknown>).__IMG2THREEJS_LAST_EXPORT_BUNDLE__ = {
+            bytes: bundle.blob.size,
+            filename: bundle.filename,
+            files: bundle.files,
+            reports: bundle.reports,
+          };
+          showBundleReport(bundle.reports, bundle.blob.size, scope.label);
+          saveBlob(bundle.blob, bundle.filename);
+          const hasWarnings = bundle.reports.some((report) => report.warnings.length > 0);
+          if (exportStatus) {
+            exportStatus.value = hasWarnings ? 'Bundle validated with limits' : 'Bundle validated';
+            exportStatus.dataset.state = hasWarnings ? 'warning' : 'success';
+          }
+        } catch (error) {
+          showExportError(error, 'zip');
+        } finally {
+          exportAllButton.classList.remove('is-exporting');
+          setExportBusy(false);
+        }
+      };
+      exportAllButton.addEventListener('click', onExportAll);
+      exportButtonCleanups.push(() => exportAllButton.removeEventListener('click', onExportAll));
+    }
+  }
   // QA capture scripts may place a diagnostic camera on a named socket. This
   // is not part of the demo UI or model geometry; it exposes only the existing
   // viewer instance to the local evidence harness.
@@ -819,6 +1172,12 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     mount.removeEventListener('click', onPanelLinkClick);
     mountedAnimationController?.stop();
     unsubscribeAnimation?.();
+    if ((window as unknown as Record<string, unknown>).__IMG2THREEJS_EXPORT__ === exportForQa) {
+      delete (window as unknown as Record<string, unknown>).__IMG2THREEJS_EXPORT__;
+      delete (window as unknown as Record<string, unknown>).__IMG2THREEJS_LAST_EXPORT_REPORT__;
+      delete (window as unknown as Record<string, unknown>).__IMG2THREEJS_LAST_EXPORT_BUNDLE__;
+    }
+    for (const cleanup of exportButtonCleanups) cleanup();
     for (const cleanup of animationButtonCleanups) cleanup();
     viewer.dispose();
   };

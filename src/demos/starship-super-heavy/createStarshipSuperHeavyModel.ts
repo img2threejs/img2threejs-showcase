@@ -225,6 +225,12 @@ export function createStarshipSuperHeavyModel(
 
   const modeledShipHeight=27.9+originalShipBodyHeight*(axialLengthScale-1);
   root.userData.sculptRuntime={nodes:{root,booster,ship,engineGroup,shipEngines,heatShieldTiles},sockets:{stageSeparation:{position:[0,38.1*axialLengthScale,0]},payload:{position:[0,38.1*axialLengthScale+26.7+originalShipBodyHeight*(axialLengthScale-1),0]}},colliders:[{id:'booster',type:'cylinder',radius:3.25,height:38.8*axialLengthScale},{id:'ship',type:'compound',height:modeledShipHeight}],dimensions:{sourceMeters:{starship:52.1,superHeavy:72.3},boosterAxialScale:axialLengthScale,shipBodyAxialScale:axialLengthScale,shipFairingAxialScale:1,modeledUnits:{starship:modeledShipHeight,superHeavy:38.8*axialLengthScale}},repetitionSystems:{heatShieldTiles:{count:heatShieldTiles.count,type:'hex-instanced'},boosterEngines:{count:boosterEnginePositions.length,uniformScale:boosterEngineScale,layout:'reference-fitted',visibleReferenceCenters:32,inferredCenters:1,positions:boosterEnginePositions},shipEngines:{count:7,center:1,outerRing:6,outerRingRadius:1.58,positions:starshipEnginePositions}},destructionGroups:{booster:'superHeavy',upperStage:'starship'}};
+  // Export roots are explicit: the exporter must not mistake flaps, engines or tile groups for
+  // separate models. Each root owns the full geometry needed for a useful standalone DCC import.
+  root.userData.exportModels = [
+    { id: 'super-heavy', label: 'Super Heavy booster', root: booster },
+    { id: 'starship', label: 'Starship upper stage', root: ship },
+  ];
   const stackedShipPosition = ship.position.clone();
   const raisedShipPosition = new THREE.Vector3(0, 49.8, 0);
   const acrossShipPosition = new THREE.Vector3(12, 49.8, 0);

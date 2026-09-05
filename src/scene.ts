@@ -398,6 +398,43 @@ export class Viewer {
     this.explodeParts = null; // recomputed lazily on first explode
   }
 
+  /**
+   * Run a synchronous asset snapshot against the authored assembly.
+   *
+   * Inspector highlights, isolation, explode offsets and the rig-debug material are viewer tools, not
+   * asset data. They are removed only for the duration of the clone and restored before the browser can
+   * render another frame. Bone transforms are deliberately left alone so static formats bake the pose
+   * the visitor is actually looking at.
+   */
+  withAssetExportState<T>(snapshot: () => T): T {
+    const rigWasOn = this.rigOn;
+    if (rigWasOn) this.setRigView(false);
+
+    const hidden = this.hiddenByIsolate.map((mesh) => ({ mesh, visible: mesh.visible }));
+    for (const item of hidden) item.mesh.visible = true;
+
+    const selected = this.selection;
+    this.clearHighlight();
+
+    const exploded = (this.explodeParts ?? []).map((part) => ({
+      object: part.object,
+      position: part.object.position.clone(),
+      rest: part.rest,
+    }));
+    for (const part of exploded) part.object.position.copy(part.rest);
+    this.explodeRoot?.updateMatrixWorld(true);
+
+    try {
+      return snapshot();
+    } finally {
+      for (const part of exploded) part.object.position.copy(part.position);
+      for (const item of hidden) item.mesh.visible = item.visible;
+      if (rigWasOn) this.setRigView(true);
+      if (selected) this.addHighlight(selected.object);
+      this.explodeRoot?.updateMatrixWorld(true);
+    }
+  }
+
   /** True once a root with more than one mesh is registered, i.e. worth offering the control. */
   get canExplode(): boolean {
     if (!this.explodeRoot) return false;
