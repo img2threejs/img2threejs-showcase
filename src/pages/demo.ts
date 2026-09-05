@@ -148,6 +148,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
               <div class="parts-scroll"><ul class="parts-list" id="parts-list"></ul></div>
               <p class="parts-prov" id="parts-prov" hidden></p>
             </section>
+            <!-- Shared, unconditional export UI: every current and future DemoEntry inherits it. -->
             <section class="demo-export" id="demo-export" aria-labelledby="demo-export-title">
               <div class="demo-export-head">
                 <div>

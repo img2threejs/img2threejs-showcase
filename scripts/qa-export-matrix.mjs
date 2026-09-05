@@ -18,35 +18,63 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import ts from 'typescript';
 
-const SHOWCASES = [
-  { id: 'raz', status: 'final' },
-  { id: 'mars-cat', status: 'final' },
-  { id: 'monster', status: 'placeholder' },
-  { id: 'leesin', status: 'final' },
-  { id: 'boxing-man', status: 'placeholder' },
-  { id: 'regret-warrior-reconstruction', status: 'placeholder' },
-  { id: 'warrior', status: 'placeholder' },
-  { id: 'starship-super-heavy', status: 'final' },
-  { id: 'girl-character', status: 'placeholder' },
-  { id: 'low-poly-humanoid', status: 'placeholder' },
-  { id: 'awp-medusa-v2', status: 'final' },
-  { id: 'electric-mouse-mascot', status: 'placeholder' },
-  { id: 'glock-ghost-protocol', status: 'final' },
-  { id: 'classic-fade', status: 'final' },
-  { id: 'bmx-endurance', status: 'final' },
-  { id: 'm9-doppler', status: 'final' },
-  { id: 'sony-wf1000xm3', status: 'final' },
-  { id: 'issaca-shotgun', status: 'final' },
-  { id: 'gerber-knife', status: 'final' },
-  { id: 'doraemon-house', status: 'final' },
-  { id: 'warhauler', status: 'final' },
-  { id: 'crown-chest', status: 'placeholder' },
-  { id: 'talon-doppler-ruby', status: 'final' },
-  { id: 'girl-character-3', status: 'final' },
-];
 const ALL_FORMATS = ['glb', 'gltf', 'obj', 'stl', 'ply', 'usdz'];
+
+/**
+ * Read the registry as TypeScript syntax instead of maintaining a second list by hand. A newly
+ * scaffolded DemoEntry is therefore part of the next export matrix automatically.
+ */
+async function loadRegisteredShowcases() {
+  const registryPath = fileURLToPath(new URL('../src/demos/registry.ts', import.meta.url));
+  const source = await readFile(registryPath, 'utf8');
+  const file = ts.createSourceFile(registryPath, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  let authored;
+  const visit = (node) => {
+    if (
+      ts.isVariableDeclaration(node)
+      && ts.isIdentifier(node.name)
+      && node.name.text === 'authored'
+      && node.initializer
+      && ts.isArrayLiteralExpression(node.initializer)
+    ) {
+      authored = node.initializer;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  if (!authored) throw new Error(`Could not find the authored DemoEntry array in ${registryPath}`);
+
+  const stringProperty = (entry, name) => {
+    const property = entry.properties.find((candidate) => (
+      ts.isPropertyAssignment(candidate)
+      && ((ts.isIdentifier(candidate.name) && candidate.name.text === name)
+        || (ts.isStringLiteral(candidate.name) && candidate.name.text === name))
+    ));
+    return property && ts.isStringLiteralLike(property.initializer)
+      ? property.initializer.text
+      : undefined;
+  };
+  const showcases = authored.elements.map((element, index) => {
+    if (!ts.isObjectLiteralExpression(element)) {
+      throw new Error(`Registry entry ${index + 1} is not an object literal; export QA cannot discover it`);
+    }
+    const id = stringProperty(element, 'id');
+    const status = stringProperty(element, 'status');
+    if (!id || !['placeholder', 'final'].includes(status)) {
+      throw new Error(`Registry entry ${index + 1} needs literal id and status fields for export QA`);
+    }
+    return { id, status };
+  });
+  const duplicate = showcases.find(({ id }, index) => showcases.findIndex((entry) => entry.id === id) !== index);
+  if (duplicate) throw new Error(`Duplicate showcase id in registry: ${duplicate.id}`);
+  return showcases;
+}
+
+const SHOWCASES = await loadRegisteredShowcases();
 
 function option(name, fallback) {
   const prefix = `--${name}=`;
@@ -58,6 +86,9 @@ const outputRoot = resolve(option('output', 'export-validation/latest'));
 const requestedIds = option('only', '').split(',').filter(Boolean);
 const formats = option('formats', ALL_FORMATS.join(',')).split(',').filter(Boolean);
 const resume = process.argv.includes('--resume');
+const listOnly = process.argv.includes('--list');
+const unknownIds = requestedIds.filter((id) => !SHOWCASES.some((showcase) => showcase.id === id));
+if (unknownIds.length) throw new Error(`Unknown showcase ids: ${unknownIds.join(', ')}`);
 const selected = requestedIds.length
   ? SHOWCASES.filter(({ id }) => requestedIds.includes(id))
   : SHOWCASES;
@@ -65,6 +96,10 @@ const selected = requestedIds.length
 if (!selected.length) throw new Error('No matching showcase ids');
 if (formats.some((format) => !ALL_FORMATS.includes(format))) {
   throw new Error(`Unknown format in ${formats.join(', ')}`);
+}
+if (listOnly) {
+  process.stdout.write(`${selected.map(({ id, status }) => `${id}\t${status}`).join('\n')}\n`);
+  process.exit(0);
 }
 
 async function loadPlaywright() {
