@@ -286,22 +286,26 @@ const authored: DemoEntry[] = [
   },
   {
     id: 'mars-cat',
-    updatedAt: '2026-09-02',
+    updatedAt: '2026-09-03',
     title: 'Mars Cat — Measured Procedural Surfaces',
     subjectClass: 'character',
     blurb:
-      'A code-bundled Surface Nets reconstruction of all 17 measured GLB regions, polished with '
-      + 'measured masks for the eyes, ears, hoodie, shorts and shoes. High, medium and low streams '
-      + 'ship without the reference GLB, binary surface files, texture images or UV atlas.',
+      'A code-bundled Surface Nets reconstruction of all 17 measured GLB regions, now bound to the '
+      + 'reference GLB\'s 95-joint skin order. The default medium stream retains the polished fidelity '
+      + 'geometry; the separately frozen low/game tier has 406,452 triangles (90.39% fewer), conditioned '
+      + 'skin weights, and a measured repair for the source pocket-to-thumb misweight. One idle and a '
+      + '12-action Raz-compatible menu are authored because the reference contains no clips. No reference GLB, binary surface '
+      + 'file, texture image or UV atlas is shipped or fetched.',
     referenceImage: `${BASE}references/mars-cat.webp`,
     referenceKind: 'model',
     sourcePath: 'src/demos/mars-cat/createMarsCatModel.ts',
     sourceUrl: `${REPO}/src/demos/mars-cat/createMarsCatModel.ts`,
-    generatedWith: 'img2threejs v1.5.1 · measured Surface Nets',
+    generatedWith: 'img2threejs v1.5.2 · measured Surface Nets and GLB-referenced rig',
     prompt:
       'Reconstruct every multipart GLB surface at its measured per-node cell size and bake declared '
       + 'material values into code. Use the source model only as a measurement instrument; do not '
-      + 'ship its topology, textures, UV atlas or binary geometry.',
+      + 'ship its topology, textures, UV atlas or binary geometry. Preserve the GLB skin joint order, '
+      + 'bind additively after a mesh freeze, and reject authored motion that breaks the surface.',
     author: 'Rigs',
     authorUrl: 'https://github.com/ClassicsCrypto',
     status: 'final',
