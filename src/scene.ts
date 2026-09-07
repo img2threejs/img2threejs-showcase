@@ -175,6 +175,7 @@ export class Viewer {
    * unaffected, and the re-walk is idempotent.
    */
   private tickers: Array<(dt: number, elapsed: number) => void> = [];
+  private readonly interactionRoots=new WeakSet<THREE.Object3D>();
 
   /** Re-walk the scene for `userData.tick`. Call after late geometry lands. */
   refreshTickers(): void {
@@ -182,6 +183,10 @@ export class Viewer {
     this.scene.traverse((object) => {
       const tick = (object.userData as { tick?: unknown }).tick;
       if (typeof tick === 'function') found.push(tick as (dt: number, elapsed: number) => void);
+      const mount=object.userData.mountViewerInteraction as ((viewer:Viewer)=>()=>void)|undefined;
+      if(mount&&!this.interactionRoots.has(object)){
+        this.interactionRoots.add(object);this.teardown.push(mount(this));
+      }
     });
     this.tickers = found;
   }
