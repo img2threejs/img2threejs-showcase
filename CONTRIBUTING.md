@@ -77,8 +77,9 @@ npm run new-demo -- <id> "<Title>" object   # subjectClass: object | character
 This runs [`scripts/new-showcase.mjs`](scripts/new-showcase.mjs) and does two things:
 - creates `src/demos/<id>/create<Id>Model.ts` — a placeholder gray box, so
   `npm run build` and `#/demo/<id>` already work before you touch anything
-- inserts a new entry into the `demos` array in `src/demos/registry.ts`,
-  with every field either filled in or marked `TODO`
+- inserts a new entry into the `authored` catalog in `src/demos/registry.ts`,
+  with `updatedAt`, a literal lazy runtime loader, and every remaining field
+  either filled in or marked `TODO`
 
 Nothing else changes — no other file needs editing.
 
@@ -89,7 +90,7 @@ placeholder box body with your img2threejs output, keeping the exported
 function name (or rename it in both places).
 
 **b. The registry entry.** Open `src/demos/registry.ts`, find the block the
-scaffold added (it's at the top of the `demos` array), and replace every
+scaffold added (it's at the top of the `authored` catalog), and replace every
 `TODO`:
 
 | Field | What goes here |
@@ -100,6 +101,9 @@ scaffold added (it's at the top of the `demos` array), and replace every
 | `authorUrl` | usually your GitHub profile |
 | `status` | change `'placeholder'` → `'final'` once the real factory is in |
 | `cameraPosition` / `cameraTarget` / `cameraFov` | tune these in `npm run preview` until the framing looks right |
+
+Keep the generated `loadRuntime` import literal and inside that catalog entry.
+This lets the landing page load metadata without downloading every demo's model code.
 
 **c. The reference image.** Add `public/references/<id>.png` (or `.jpg`/`.jpeg`/`.webp`,
 **≤ 800 KB** — larger files and other formats, including `.svg`, are rejected by CI).
@@ -152,7 +156,7 @@ need a maintainer's judgment:
 | Factory builds geometry procedurally in code — no imported mesh, no downloaded texture pack | maintainer |
 | Zero runtime network calls, no external CDN/fonts | CI (`check-showcase-safety.mjs`) |
 | `id` kebab-case, unique, matches its `src/demos/<id>/` folder exactly | CI + `tsc` |
-| Every `DemoEntry` field filled, `status: 'final'` | `tsc` (all fields required) |
+| Every catalog metadata field and runtime loader filled, `status: 'final'` | `tsc` (all fields required) |
 | Reference image ≤ 800 KB, `.png`/`.jpg`/`.jpeg`/`.webp` only (no `.svg`) | CI |
 | PR only touches the contribution surface above, or has owner review | `CODEOWNERS` |
 
@@ -165,8 +169,8 @@ need a maintainer's judgment:
   `http(s)://` strings inside `registry.ts`'s own metadata fields
   (`sourceUrl`, GitHub links). Any URL in your factory code itself, even in
   a comment, needs to go.
-- **Build fails on `registry.ts`** — almost always a missing `DemoEntry`
-  field; the error message names which one.
+- **Build fails on `registry.ts`** — usually a missing catalog metadata field
+  or an invalid `loadRuntime` return; the error message names the mismatch.
 
 ## CI: `pr-safety-check`
 

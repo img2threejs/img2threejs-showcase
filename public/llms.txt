@@ -1,0 +1,17 @@
+# img2threejs showcase
+
+img2threejs is an open-source workflow that rebuilds a single reference image as a procedural, animation-ready Three.js model written in TypeScript. This site is the live gallery: each study can be orbited, inspected by named part, and opened as source code.
+
+## Primary links
+
+- [Live showcase](https://img2threejs.io/)
+- [Core img2threejs repository](https://github.com/img2threejs/img2threejs)
+- [Showcase source](https://github.com/img2threejs/img2threejs-showcase)
+- [Contribution guide](https://github.com/img2threejs/img2threejs-showcase/blob/main/CONTRIBUTING.md)
+- [Canonical standard prompts](https://github.com/img2threejs/img2threejs/tree/main/docs/standard-prompts)
+- [YouTube build log](https://www.youtube.com/@hoainho1465)
+- [X / @NickDevFE](https://x.com/NickDevFE)
+
+## Pipeline
+
+The ordered build passes are blockout, structural, form, material, surface, lighting, interaction, and optimization. A pass must clear its deterministic and visual review gates before the next one starts.

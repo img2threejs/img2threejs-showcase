@@ -27,6 +27,8 @@ import {
   ROADMAP_URL,
   SITE_URL,
   SPONSORS,
+  X_URL,
+  YOUTUBE_URL,
 } from './site-data';
 
 function escapeAttr(text: string): string {
@@ -107,7 +109,7 @@ function sponsorDrawer(): string {
     <div class="sp-grid">${logos}</div>
     <div class="dr-actions" data-placement="sponsor_support">
       <a class="btn btn-accent" href="${COFFEE_URL}" target="_blank" rel="noopener noreferrer">${HEART} Support on Ko-fi</a>
-      <a class="btn" href="${DONATE_URL}" target="_blank" rel="noopener noreferrer">VietQR &middot; MoMo &middot; PayPal</a>
+      <a class="btn" href="${DONATE_URL}" target="_blank" rel="noopener noreferrer">VietQR &middot; PayPal &middot; Binance Pay</a>
       <a class="btn" href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer">Join the Discord</a>
     </div>
     <p class="dr-note">
@@ -166,7 +168,7 @@ function howItWorksDrawer(): string {
     : '';
 
   return `
-    <h2>How it works</h2>
+    <h2>How It Works</h2>
     <p class="dr-lede">
       ${brand('img2threejs')} does not generate a mesh and hand it to you. It writes a TypeScript
       function that BUILDS the mesh, then argues with itself about the result until the geometry
@@ -511,6 +513,8 @@ function aboutDrawer(): string {
       <div><dt class="label">Core tool</dt><dd><a href="${GITHUB_CORE}" target="_blank" rel="noopener noreferrer">${GITHUB_CORE.replace(/^https:\/\//, '')}</a></dd></div>
       <div><dt class="label">This gallery</dt><dd><a href="${GITHUB_SHOWCASE}" target="_blank" rel="noopener noreferrer">${GITHUB_SHOWCASE.replace(/^https:\/\//, '')}</a></dd></div>
       <div><dt class="label">Community</dt><dd><a href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer">discord.gg/8DS8RTyuR</a></dd></div>
+      <div><dt class="label">YouTube</dt><dd><a href="${YOUTUBE_URL}" target="_blank" rel="noopener noreferrer">youtube.com/@hoainho1465</a></dd></div>
+      <div><dt class="label">X</dt><dd><a href="${X_URL}" target="_blank" rel="noopener noreferrer">x.com/NickDevFE</a></dd></div>
       <div><dt class="label">Payments</dt><dd>ko-fi.com/iamnick, the donate page on this domain, GitHub Sponsors &mdash; nothing else</dd></div>
     </dl>
 
@@ -537,7 +541,7 @@ function aboutDrawer(): string {
  */
 function menuDrawer(): string {
   const items: Array<[string, string, string]> = [
-    ['how-it-works', 'How it works', 'The pipeline, the gates, and what one photo cannot tell it'],
+    ['how-it-works', 'How It Works', 'The pipeline, the gates, and what one photo cannot tell it'],
     ['roadmap', 'Roadmap', 'Every release, what shipped and what deliberately did not'],
     ['faq', 'FAQ', 'Straight answers, including the ones that are “ask a lawyer”'],
     ['sponsor', 'Sponsors', 'Who pays for the compute, and how to help'],
@@ -547,6 +551,14 @@ function menuDrawer(): string {
   ];
   return `
     <h2>Menu</h2>
+    <p class="label mn-label">On this page</p>
+    <nav class="mn-list" aria-label="Landing page sections">
+      <button type="button" class="mn-item" data-jump="#pipeline"><span class="mn-title">Pipeline</span><span class="mn-blurb">Eight gated passes, animated stage by stage</span></button>
+      <button type="button" class="mn-item" data-jump="#prompt-guide"><span class="mn-title">Prompt Kit</span><span class="mn-blurb">Guidelines and copy-ready briefs</span></button>
+      <button type="button" class="mn-item" data-jump="#sponsors"><span class="mn-title">Sponsor Signal</span><span class="mn-blurb">Partners supporting the open-source loop</span></button>
+      <button type="button" class="mn-item" data-jump="#archive"><span class="mn-title">Archive</span><span class="mn-blurb">Browse the live procedural studies</span></button>
+    </nav>
+    <p class="label mn-label">Field notes</p>
     <nav class="mn-list" aria-label="Pages">
       ${items
         .map(
@@ -558,9 +570,17 @@ function menuDrawer(): string {
         )
         .join('')}
     </nav>
+    <p class="label mn-label">Support the open work</p>
+    <p class="mn-support-note">
+      A one-time community donation helps cover hosting and reconstruction runs. Commercial
+      sponsorship is the separate route above for logo, story and direct-link placement.
+    </p>
     <div class="dr-actions">
+      <a class="btn btn-accent" href="${DONATE_URL}">${HEART} Make a donation</a>
       <a class="btn" href="${GITHUB_CORE}" target="_blank" rel="noopener noreferrer">Star on GitHub</a>
-      <a class="btn btn-accent" href="${COFFEE_URL}" target="_blank" rel="noopener noreferrer">${HEART} Sponsor</a>
+      <a class="btn" href="${YOUTUBE_URL}" target="_blank" rel="noopener noreferrer">YouTube</a>
+      <a class="btn" href="${X_URL}" target="_blank" rel="noopener noreferrer">X / @NickDevFE</a>
+      <a class="btn" href="${COFFEE_URL}" target="_blank" rel="noopener noreferrer">Support on Ko-fi</a>
     </div>`;
 }
 
@@ -569,7 +589,7 @@ function menuDrawer(): string {
 /** Drawer key → builder. Keys match `DRAWER_ROUTES` in router.ts, so each one is deep-linkable. */
 export const DRAWERS: Record<string, { title: string; build: () => string }> = {
   menu: { title: 'Menu', build: menuDrawer },
-  'how-it-works': { title: 'How it works', build: howItWorksDrawer },
+  'how-it-works': { title: 'How It Works', build: howItWorksDrawer },
   faq: { title: 'FAQ', build: faqDrawer },
   privacy: { title: 'Privacy', build: privacyDrawer },
   attribution: { title: 'Attribution', build: attributionDrawer },

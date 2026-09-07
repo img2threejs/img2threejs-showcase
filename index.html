@@ -3,14 +3,64 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>img2threejs — Live Demo Gallery</title>
+    <title>img2threejs — Image to Procedural Three.js Models</title>
     <meta
       name="description"
-      content="Every object and character here was rebuilt in code from a single reference image, then rendered live in your browser — animation-ready Three.js, no imported meshes."
+      content="Explore live procedural Three.js models rebuilt in TypeScript from a single reference image. Inspect geometry, parts, animation and open-source code."
     />
-    <meta name="theme-color" content="#0b0b0d" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="author" content="img2threejs contributors" />
+    <meta name="application-name" content="img2threejs showcase" />
+    <meta name="theme-color" content="#0b0d0f" />
+    <script>
+      /*
+       * Decide whether the first-visit intro is needed before styles or application JavaScript can
+       * paint. The production bundle contains the procedural models and can take materially longer
+       * to evaluate than the document, so creating this overlay from main.ts would expose the page
+       * first and make the loader appear late.
+       */
+      (() => {
+        const seenKey = 'img2threejs:intro-seen';
+        const route = location.hash.replace(/^#\/?/, '').split('?')[0];
+        const nonHomeRoutes = /^(?:demo|x)\//.test(route) ||
+          /^(?:how-it-works|faq|privacy|attribution|roadmap|sponsor|about|menu)$/.test(route);
+        const captureRun = /[?&](?:capture|mask|back|bg|reviewWhite)=/.test(location.hash) ||
+          [...new URLSearchParams(location.search).keys()]
+            .some((key) => ['capture', 'mask', 'back', 'bg', 'reviewWhite'].includes(key));
+        const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        let seen = false;
+        try {
+          seen = sessionStorage.getItem(seenKey) === '1';
+          if (reduceMotion) sessionStorage.setItem(seenKey, '1');
+        } catch {
+          /* Storage can be unavailable in private contexts; showing the intro remains safe. */
+        }
+
+        if (!nonHomeRoutes && !captureRun && !reduceMotion && !seen) {
+          document.documentElement.dataset.intro = 'pending';
+          window.__IMG2THREEJS_INTRO_STARTED_AT__ = performance.now();
+          /*
+           * The intro normally releases from intro.ts after 1.73s. This parser-time watchdog is
+           * deliberately independent of the module graph: a failed main.js request must never
+           * leave the useful HTML fallback hidden behind a permanent full-screen overlay.
+           */
+          window.__IMG2THREEJS_INTRO_FAILSAFE__ = window.setTimeout(() => {
+            document.getElementById('intro-overlay')?.remove();
+            document.body?.classList.remove('intro-active');
+            document.documentElement.classList.remove('intro-releasing');
+            delete document.documentElement.dataset.intro;
+            delete window.__IMG2THREEJS_INTRO_STARTED_AT__;
+            delete window.__IMG2THREEJS_INTRO_FAILSAFE__;
+          }, 2500);
+        }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
     <link rel="canonical" href="https://img2threejs.io/" />
+    <link rel="alternate" hreflang="en" href="https://img2threejs.io/" />
+    <link rel="alternate" hreflang="x-default" href="https://img2threejs.io/" />
 
     <!--
       Absolute URLs are mandatory here: every scraper resolves og:image and og:url against nothing,
@@ -24,10 +74,10 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="img2threejs" />
     <meta property="og:url" content="https://img2threejs.io/" />
-    <meta property="og:title" content="img2threejs — One photo in, a procedural model out" />
+    <meta property="og:title" content="img2threejs — Image to procedural Three.js models" />
     <meta
       property="og:description"
-      content="Every object and character here was rebuilt in code from a single reference image, then rendered live in your browser — animation-ready Three.js, no imported meshes."
+      content="Explore live 3D objects and characters rebuilt in TypeScript from one reference image. Inspect the geometry, animation and open-source code."
     />
     <meta property="og:image" content="https://img2threejs.io/og-cover.png" />
     <meta property="og:image:secure_url" content="https://img2threejs.io/og-cover.png" />
@@ -37,7 +87,7 @@
     <meta property="og:image:height" content="1260" />
     <meta
       property="og:image:alt"
-      content="A procedurally rebuilt AWP | Medusa sniper rifle — 37k triangles across 150 named parts — under the line: one photo in, a procedural model out."
+      content="A live procedural Three.js model beside its source image in the img2threejs showcase."
     />
     <meta property="og:locale" content="en_US" />
 
@@ -49,11 +99,114 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@NickDevFE" />
     <meta name="twitter:creator" content="@NickDevFE" />
+    <meta name="twitter:title" content="img2threejs — Image to procedural Three.js models" />
+    <meta
+      name="twitter:description"
+      content="Live 3D objects and characters rebuilt in TypeScript from one reference image, with inspectable geometry and open-source code."
+    />
+    <meta name="twitter:image" content="https://img2threejs.io/og-cover.png" />
+    <meta name="twitter:image:alt" content="A live procedural Three.js model beside its source image." />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://img2threejs.io/#website",
+            "url": "https://img2threejs.io/",
+            "name": "img2threejs showcase",
+            "description": "Live procedural Three.js models rebuilt in TypeScript from a single reference image.",
+            "inLanguage": "en"
+          },
+          {
+            "@type": "CollectionPage",
+            "@id": "https://img2threejs.io/#showcase",
+            "url": "https://img2threejs.io/",
+            "name": "Image to procedural Three.js model showcase",
+            "isPartOf": { "@id": "https://img2threejs.io/#website" },
+            "about": { "@id": "https://img2threejs.io/#software" },
+            "inLanguage": "en"
+          },
+          {
+            "@type": "SoftwareSourceCode",
+            "@id": "https://img2threejs.io/#software",
+            "name": "img2threejs",
+            "description": "An open-source image-to-3D workflow that builds procedural, animation-ready Three.js models in code.",
+            "codeRepository": "https://github.com/img2threejs/img2threejs",
+            "programmingLanguage": ["TypeScript", "JavaScript"],
+            "runtimePlatform": "Web browser",
+            "license": "https://github.com/img2threejs/img2threejs/blob/main/LICENSE",
+            "url": "https://img2threejs.io/",
+            "sameAs": [
+              "https://www.youtube.com/@hoainho1465",
+              "https://x.com/NickDevFE"
+            ]
+          }
+        ]
+      }
+    </script>
 
     <link rel="stylesheet" href="/src/styles.css" />
+    <link rel="stylesheet" href="/src/opendesign.css" />
   </head>
   <body>
-    <div id="app"></div>
+    <div class="intro-overlay" id="intro-overlay" aria-hidden="true">
+      <div class="intro-stage">
+        <svg class="intro-mark" viewBox="0 0 64 64" width="92" height="92">
+          <defs>
+            <linearGradient id="intro-top" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#5aa9ff"/><stop offset="1" stop-color="#22d3c8"/>
+            </linearGradient>
+            <linearGradient id="intro-left" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#22d3c8"/><stop offset="1" stop-color="#0f6e78"/>
+            </linearGradient>
+            <linearGradient id="intro-right" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#3163d6"/><stop offset="1" stop-color="#182a6b"/>
+            </linearGradient>
+            <linearGradient id="intro-pix" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#5aa9ff"/><stop offset="1" stop-color="#22d3c8"/>
+            </linearGradient>
+          </defs>
+          <g class="intro-pixels">
+            <rect x="6" y="40" width="6" height="6" rx="1.4" fill="url(#intro-pix)" style="--d:0"></rect>
+            <rect x="6" y="48" width="6" height="6" rx="1.4" fill="url(#intro-pix)" style="--d:1"></rect>
+            <rect x="14" y="48" width="6" height="6" rx="1.4" fill="url(#intro-pix)" style="--d:2"></rect>
+          </g>
+          <g class="intro-cube">
+            <polygon class="intro-face" style="--d:0" points="32,9 53,21 32,33 11,21" fill="url(#intro-top)"></polygon>
+            <polygon class="intro-face" style="--d:1" points="11,21 32,33 32,56 11,44" fill="url(#intro-left)"></polygon>
+            <polygon class="intro-face" style="--d:2" points="53,21 32,33 32,56 53,44" fill="url(#intro-right)"></polygon>
+          </g>
+          <path class="intro-glint" d="M30 15 l1.6 3.2 3.2 1.6 -3.2 1.6 -1.6 3.2 -1.6 -3.2 -3.2 -1.6 3.2 -1.6 z" fill="#f4faff"></path>
+        </svg>
+        <div class="intro-word"><span class="grad">img2threejs</span></div>
+        <div class="intro-progress" aria-hidden="true"><span></span></div>
+        <p class="intro-status">INITIALIZING LIVE SCENE</p>
+      </div>
+    </div>
+    <div id="app">
+      <header class="seo-fallback-head">
+        <a href="/" aria-label="img2threejs home">img<span>2</span>threejs</a>
+        <a href="https://github.com/img2threejs/img2threejs">View the Open-Source Project</a>
+      </header>
+      <main class="seo-fallback-main">
+        <p>Open-source image-to-3D studies</p>
+        <h1>Procedural Three.js models rebuilt from one reference image.</h1>
+        <p>
+          Explore live objects and characters written in TypeScript. Inspect their geometry,
+          separate named parts, play available animations and read the source behind each model.
+        </p>
+        <nav aria-label="Featured procedural 3D models">
+          <a href="#/x/awp-medusa-v2">AWP Medusa procedural model</a>
+          <a href="#/x/warrior">Rigged mouse warrior character</a>
+          <a href="#/x/girl-character">Dual-sword procedural character</a>
+          <a href="#/x/bmx-endurance">Procedural BMX bicycle</a>
+          <a href="#/x/sony-wf1000xm3">Sony WF-1000XM3 reconstruction</a>
+          <a href="#/x/doraemon-house">Procedural isometric house</a>
+        </nav>
+      </main>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

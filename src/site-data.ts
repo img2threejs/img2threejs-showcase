@@ -28,12 +28,14 @@ export const CHANGELOG_URL = `${GITHUB_CORE}/blob/main/CHANGELOG.md`;
 export const ROADMAP_URL = `${GITHUB_CORE}/blob/main/ROADMAP.md`;
 export const LICENSE_URL = `${GITHUB_CORE}/blob/main/LICENSE`;
 export const DISCORD_URL = 'https://discord.gg/8DS8RTyuR';
+export const YOUTUBE_URL = 'https://www.youtube.com/@hoainho1465';
+export const X_URL = 'https://x.com/NickDevFE';
 export const COFFEE_URL = 'https://ko-fi.com/iamnick';
 export const DONATE_URL = `${BASE}donate.html`;
 
 export const CONTACT_EMAIL = 'hoainho.work@gmail.com';
 export const CONTACT_NAME = 'Nick';
-export const CURRENT_VERSION = 'v1.5.1';
+export const CURRENT_VERSION = 'v1.5.2';
 
 /* --------------------------------------------------------------------------- analytics */
 
@@ -99,6 +101,8 @@ export interface SponsorEntry {
    */
   domains?: string[];
   /** The site renders dark-only (`color-scheme: dark`), so one light-on-dark mark is all it needs. */
+  /** Short landing-page headline; the longer factual description remains in `blurb`. */
+  headline: string;
   logo: string;
   /** What the sponsor sells, in their own terms. Sourced from their site, not written to flatter. */
   blurb: string;
@@ -112,9 +116,8 @@ export interface SponsorEntry {
 }
 
 /**
- * Logo sponsors, in the order they should render. Stacked as cards rather than looped as a
- * marquee: at this length a slider just reads as stuck, and each entry carries prose a logo strip
- * has nowhere to put.
+ * Logo sponsors, in the order they should appear in the accessible, auto-advancing carousel.
+ * Motion pauses while the user hovers, focuses or requests reduced motion.
  *
  * The newest sponsor is intentionally placed first: the carousel is the project's primary
  * acknowledgement surface, and the most recent partnership is the one that funded the work that
@@ -125,6 +128,7 @@ export const SPONSORS: SponsorEntry[] = [
     id: 'MiniMax',
     name: 'MiniMax',
     url: 'https://platform.minimax.io/subscribe/token-plan',
+    headline: 'Fund the verification loop.',
     logo: `${BASE}sponsors/minimax-logomark.svg`,
     blurb:
       'A global AI foundation model company founded in early 2022 with the mission ' +
@@ -136,12 +140,13 @@ export const SPONSORS: SponsorEntry[] = [
       'The publisher of the model is the one whose token plan gates how much verification the ' +
       'loop can afford. Sponsorship from the model publisher keeps img2threejs reruns possible ' +
       'without each contributor paying retail for the same multimodal family the gates call into.',
-    cta: 'Open the token plan',
+    cta: 'Open the Token Plan',
   },
   {
     id: 'atlas-cloud',
     name: 'Atlas Cloud',
     url: 'https://www.atlascloud.ai/console/coding-plan',
+    headline: 'One endpoint for the build loop.',
     logo: `${BASE}sponsors/atlas-cloud-logomark-white.svg`,
     blurb:
       'A full-modal AI inference platform: one API for video generation, image generation and ' +
@@ -149,7 +154,7 @@ export const SPONSORS: SponsorEntry[] = [
     pairing:
       'Reconstruction-by-code is an LLM workload before it is a graphics one — every img2threejs ' +
       'gate rerun spends tokens. One endpoint across 300+ models is what keeps that loop affordable.',
-    cta: 'Open the coding plan',
+    cta: 'Open the Coding Plan',
   },
   {
     id: 'tripo',
@@ -159,6 +164,7 @@ export const SPONSORS: SponsorEntry[] = [
     // subdomains, so the marketing host alone would already cover it. Named anyway, because it is
     // the one sponsor whose links appear outside the sponsor drawer.
     domains: ['tripo3d.ai'],
+    headline: 'A second read on the silhouette.',
     logo: `${BASE}sponsors/tripo-logomark-white.svg`,
     blurb:
       'Image- and text-to-3D at production quality: High Detail meshes up to 2M polygons, artist-' +
@@ -175,6 +181,7 @@ export const SPONSORS: SponsorEntry[] = [
     id: 'hyper3d',
     name: 'Hyper3D',
     url: 'https://hyper3d.ai/',
+    headline: 'Turn hidden sides into references.',
     logo: `${BASE}sponsors/hyper3d-logomark-white.png`,
     blurb:
       'Hyper3D Rodin turns a prompt or a reference image into a 3D asset in seconds, with bounding-' +

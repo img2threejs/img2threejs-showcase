@@ -72,6 +72,8 @@ function clip(value: string): string {
 /* ------------------------------------------------------------------- enable / disable */
 
 const OPT_OUT_KEY = 'img2threejs:analytics-opt-out';
+let previousPageLocation: string | null = null;
+let initialPageViewHandled = false;
 
 /** `?analytics=off` opts out for good; `?analytics=on` undoes it. Both work on the hash too. */
 function urlFlag(name: string): string | null {
@@ -96,6 +98,9 @@ function readOptOut(): boolean {
  * reload, so an opt-out does not have to wait for the next page load to mean something.
  */
 export function setAnalyticsOptOut(optedOut: boolean): void {
+  // Consent changes are a hard session boundary for the virtual navigation chain. A route visited
+  // while measurement was disabled must never appear later as the referrer of an opted-in event.
+  previousPageLocation = null;
   try {
     if (optedOut) window.localStorage.setItem(OPT_OUT_KEY, '1');
     else window.localStorage.removeItem(OPT_OUT_KEY);
@@ -112,7 +117,7 @@ export function setAnalyticsOptOut(optedOut: boolean): void {
    * "analytics is on" while `track()` silently dropped everything for want of a `gtag`. Loading it
    * here is what makes the switch mean the same thing in both directions.
    */
-  if (enabled && !window.gtag) loadGtag();
+  if (enabled) loadGtag();
 }
 
 export function isOptedOut(): boolean {
@@ -143,6 +148,7 @@ function disabledReason(): string | null {
 let debugForced = false;
 let enabled = false;
 let initialized = false;
+let gtagInitialized = false;
 
 export function isAnalyticsEnabled(): boolean {
   return enabled;
@@ -188,8 +194,11 @@ export function initAnalytics(): void {
  * lost. That is why `initAnalytics` can be called before the first render.
  */
 function loadGtag(): void {
+  if (gtagInitialized) return;
+  gtagInitialized = true;
+
   window.dataLayer = window.dataLayer || [];
-  const gtag: (...args: unknown[]) => void = function gtag() {
+  const gtag: (...args: unknown[]) => void = window.gtag || function gtag() {
     // The documented snippet pushes `arguments` itself, not an array built from it: gtag.js reads
     // the pushed objects back as Arguments, and an array does not deserialise the same way.
     // eslint-disable-next-line prefer-rest-params
@@ -210,10 +219,13 @@ function loadGtag(): void {
     debug_mode: debugForced,
   });
 
-  const script = document.createElement('script');
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_MEASUREMENT_ID)}`;
-  document.head.appendChild(script);
+  const scriptSrc = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_MEASUREMENT_ID)}`;
+  if (!document.querySelector<HTMLScriptElement>(`script[src="${scriptSrc}"]`)) {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = scriptSrc;
+    document.head.appendChild(script);
+  }
 }
 
 /* --------------------------------------------------------------------------- sending */
@@ -226,8 +238,8 @@ function loadGtag(): void {
  * change in the audience, and config-level parameter inheritance is not something to bet a whole
  * property's data on.
  */
-export function track(name: string, params: EventParams = {}): void {
-  if (!enabled || !window.gtag) return;
+export function track(name: string, params: EventParams = {}): boolean {
+  if (!enabled || !window.gtag) return false;
 
   const payload: Record<string, string | number | boolean> = { site_version: CURRENT_VERSION };
   for (const [key, value] of Object.entries(params)) {
@@ -241,6 +253,7 @@ export function track(name: string, params: EventParams = {}): void {
     // eslint-disable-next-line no-console
     console.debug('[analytics]', name, payload);
   }
+  return true;
 }
 
 /** One-shot guard for events that would otherwise fire on every frame or every scroll. */
@@ -274,19 +287,23 @@ export function resetExhibitOnceKeys(exhibitId: string): void {
  * is untouched — this is only the URL reported to GA4 — and it is the difference between a Pages
  * report that lists every exhibit and content page, and one that lists `/` eleven thousand times.
  */
-function reportableLocation(): string {
+export function reportableLocation(): string {
   const { origin, pathname, hash, search } = window.location;
   const route = hash.replace(/^#\/?/, '').split('?')[0];
   const base = pathname.endsWith('/') ? pathname : `${pathname}/`;
   return `${origin}${base}${route}${search}`;
 }
 
-export function trackPageView(title: string): void {
-  track('page_view', {
-    page_location: reportableLocation(),
+export function trackPageView(title: string, pageLocation = reportableLocation()): void {
+  const pageReferrer = previousPageLocation
+    ?? (initialPageViewHandled ? undefined : document.referrer || undefined);
+  const sent = track('page_view', {
+    page_location: pageLocation,
     page_title: clip(title),
-    page_referrer: document.referrer || undefined,
+    page_referrer: pageReferrer,
   });
+  initialPageViewHandled = true;
+  if (sent) previousPageLocation = pageLocation;
 }
 
 /* --------------------------------------------------------------------------- sponsors */
@@ -395,6 +412,7 @@ export type ExhibitEntry =
   | 'arrow'
   | 'keyboard'
   | 'palette'
+  | 'archive'
   | 'deeplink'
   | 'hashchange';
 

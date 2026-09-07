@@ -1,109 +1,7 @@
-import * as THREE from 'three';
+import type * as THREE from 'three';
 import type { PinnedCaptureCamera } from '../scene';
-import {
-  createStarshipSuperHeavyLookDevLights,
-  createStarshipSuperHeavyModel,
-} from './starship-super-heavy/createStarshipSuperHeavyModel';
-import {
-  createM9DopplerModel,
-  createM9DopplerLookDevLights,
-  makeM9DopplerBackground,
-} from './m9-doppler/createM9DopplerModel';
-import {
-  createRazShowcase,
-  createRazLights,
-} from './raz/razShowcase';
-import { prewarmRaz } from './raz/createRazModel';
-import { createCrownChestModel } from './crown-chest/createCrownChestModel';
-import {
-  createWarHaulerModel,
-  createWarHaulerLookDevLights,
-} from './warhauler/createWarHaulerModel';
-import {
-  createDoraemonHouseModel,
-  createDoraemonHouseLookDevLights,
-  makeSkyTexture,
-} from './doraemon-house/createDoraemonHouseModel';
-import {
-  createGerberKnifeModel,
-  createGerberKnifeLookDevLights,
-  makeStudioBackground,
-} from './gerber-knife/createGerberKnifeModel';
-import {
-  createIssacaShotgunModel,
-  createIssacaShotgunLookDevLights,
-  makeIssacaBackground,
-} from './issaca-shotgun/createIssacaShotgunModel';
-import {
-  createSonyWf1000xm3Model,
-  createSonyWf1000xm3LookDevLights,
-  makeSonyBackground,
-} from './sony-wf1000xm3/createSonyWf1000xm3Model';
-import {
-  createBMXEnduranceBikeModel,
-  createBMXEnduranceBikeLookDevLights,
-} from './bmx-endurance/createBmxEnduranceBikeModel';
-import {
-  createClassicFadeModel,
-  createClassicFadeLookDevLights,
-  makeClassicFadeBackground,
-} from './classic-fade/createClassicFadeModel';
-import {
-  createGlockGhostProtocolModel,
-  createGlockGhostProtocolLookDevLights,
-  makeGhostProtocolBackground,
-} from './glock-ghost-protocol/createGlockGhostProtocolModel';
-import {
-  createAWPMedusaMinimalWearModel,
-  createAWPMedusaMinimalWearLookDevLights,
-  makeAWPMedusaMinimalWearBackground,
-} from './awp-medusa-v2/createAwpMedusaModelV2';
-import {
-  createElectricMouseMascotLookDevLights,
-  createElectricMouseMascotModel,
-} from './electric-mouse-mascot/createElectricMouseMascotModel';
-import {
-  createGirlCharacterModel,
-  createGirlCharacterLookDevLights,
-  prewarmGirlCharacter,
-} from './girl-character/createGirlCharacterModel';
-import {
-  createTalonDopplerRubyModel,
-  createTalonDopplerRubyLookDevLights,
-  makeTalonDopplerRubyBackground,
-} from './talon-doppler-ruby/createTalonDopplerRubyModel';
-import {
-  createLowPolyHumanoidLookDevLights,
-  createLowPolyHumanoidModel,
-  prewarmLowPolyHumanoidField,
-} from './low-poly-humanoid/createLowPolyHumanoidModel';
-import {
-  createWarriorLookDevLights,
-  createWarriorModel,
-  prewarmWarrior,
-} from './warrior/createWarriorModel';
-import { createBoxingManShowcase, createRingsideLights } from './boxing-man/boxingManShowcase';
-import { prewarmBoxingMan } from './boxing-man/createBoxingManModel';
-import {
-  createRegretWarriorLookDevLights,
-  createRegretWarriorModel,
-} from './regret-warrior-reconstruction/createRegretWarriorModel';
 
-import {
-  createGirlCharacter3Model,
-  createGirlCharacter3LookDevLights,
-  prewarmGirlCharacter3,
-} from './girl-character-3/createGirlCharacter3Model';
-import {
-  createLeesinModel,
-  prewarmLeesin,
-} from './leesin/leesinDemo';
-import {
-  createMarsCatLookDevLights,
-  createMarsCatModel,
-} from './mars-cat/createMarsCatModel';
-
-export interface DemoEntry {
+export interface DemoMetadata {
   /** route id, e.g. 'crown-chest' */
   id: string;
   title: string;
@@ -172,28 +70,10 @@ export interface DemoEntry {
    * blade needs (ACES desaturates pure red toward pink/brown). */
   toneMapping?: 'aces' | 'agx' | 'neutral';
   /**
-   * Installs this demo's own light rig. When provided, the Viewer SKIPS its
-   * default studio rig — preventing the double-lighting (own rig + default rig)
-   * that blows out highlights and washes out low-key references. Demos with a
-   * bespoke look-dev rig MUST use this instead of adding lights inside build().
-   */
-  installLights?: (scene: THREE.Scene) => void;
-  /**
    * Orbit the camera slowly on load, so a subject whose sides differ shows them without a drag
    * (default false). The visitor can stop it from the toolbar, and a drag pauses it either way.
    */
   turntable?: boolean;
-  /** Adds the model (and any demo-specific lights) to the scene, returns the group. */
-  build: (scene: THREE.Scene) => THREE.Group;
-  /**
-   * Precomputes this demo's expensive intermediates, yielding to the browser as it goes.
-   *
-   * `build` is synchronous by contract and every caller may keep treating it that way. This is for
-   * demos whose build is heavy enough to be felt as a frozen page — awaiting it first moves that
-   * cost off the critical path, after which `build` is cheap. Resolving twice is a no-op, and the
-   * result is cached for the lifetime of the module, so any later `build` is fast too.
-   */
-  prewarm?: () => Promise<void>;
   /** Action id to start automatically once the runtime lands. Skipped in capture mode. */
   defaultAnimation?: string;
   /** Optional deterministic capture framing margin for source plates with tight bounds. */
@@ -213,13 +93,32 @@ export interface DemoEntry {
   capturePinnedCamera?: { front: PinnedCaptureCamera; back: PinnedCaptureCamera };
 }
 
-import { createAbyssLights, createMonsterShowcase } from './monster/monsterShowcase';
-import { prewarmMonster } from './monster/createMonsterModel';
+export interface DemoRuntime {
+  /**
+   * Installs this demo's own light rig. When provided, the Viewer SKIPS its default studio rig —
+   * preventing the double-lighting that washes out a bespoke look-dev setup.
+   */
+  installLights?: (scene: THREE.Scene) => void;
+  /** Adds the model (and any demo-specific lights) to the scene, returns the group. */
+  build: (scene: THREE.Scene) => THREE.Group;
+  /**
+   * Precomputes expensive intermediates while yielding to the browser. The synchronous `build`
+   * contract remains unchanged after this promise settles.
+   */
+  prewarm?: () => Promise<void>;
+}
+
+export type DemoEntry = DemoMetadata & DemoRuntime;
+
+type CatalogEntry = DemoMetadata & {
+  /** Literal, per-demo imports keep unrelated model code out of the selected exhibit's graph. */
+  loadRuntime: () => Promise<DemoRuntime>;
+};
 
 const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
-const authored: DemoEntry[] = [
+const authored: CatalogEntry[] = [
   {
     id: 'raz',
     updatedAt: '2026-09-03',
@@ -273,15 +172,23 @@ const authored: DemoEntry[] = [
     exposure: 1.0,
     environmentIntensity: 0.8,
     toneMapping: 'aces',
-    // Both the level of detail and the 25-clip rig live in their own chunks, so they have to be
-    // fetched before build() runs.
-    prewarm: () => prewarmRaz().then(() => undefined),
-    // Cold raked key, two jade rims that read as the crystals' own spill, and drifting jade haze.
-    installLights: (scene) => scene.add(createRazLights()),
-    build: (scene) => {
-      const group = createRazShowcase({ castShadow: true, receiveShadow: true });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const [{ createRazShowcase, createRazLights }, { prewarmRaz }] = await Promise.all([
+        import('./raz/razShowcase'),
+        import('./raz/createRazModel'),
+      ]);
+      return {
+        // Both the level of detail and the 25-clip rig live in their own chunks, so they have to be
+        // fetched before build() runs.
+        prewarm: () => prewarmRaz().then(() => undefined),
+        // Cold raked key, two jade rims that read as the crystals' own spill, and drifting jade haze.
+        installLights: (scene) => scene.add(createRazLights()),
+        build: (scene) => {
+          const group = createRazShowcase({ castShadow: true, receiveShadow: true });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -314,11 +221,18 @@ const authored: DemoEntry[] = [
     exposure: 1,
     environmentIntensity: 0.85,
     toneMapping: 'agx',
-    installLights: (scene) => scene.add(createMarsCatLookDevLights()),
-    build: (scene) => {
-      const group = createMarsCatModel({ castShadow: true, receiveShadow: true });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const { createMarsCatLookDevLights, createMarsCatModel } = await import(
+        './mars-cat/createMarsCatModel'
+      );
+      return {
+        installLights: (scene) => scene.add(createMarsCatLookDevLights()),
+        build: (scene) => {
+          const group = createMarsCatModel({ castShadow: true, receiveShadow: true });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -368,14 +282,22 @@ const authored: DemoEntry[] = [
     exposure: 0.92,
     environmentIntensity: 0.35,
     toneMapping: 'aces',
-    // The level of detail lives in its own chunk, so it has to be fetched before build() runs.
-    prewarm: () => prewarmMonster().then(() => undefined),
-    // Uplight, cold moon, crimson rim: lighting for something that should not be lit.
-    installLights: (scene) => scene.add(createAbyssLights()),
-    build: (scene) => {
-      const group = createMonsterShowcase({ castShadow: true, receiveShadow: true });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const [{ createAbyssLights, createMonsterShowcase }, { prewarmMonster }] = await Promise.all([
+        import('./monster/monsterShowcase'),
+        import('./monster/createMonsterModel'),
+      ]);
+      return {
+        // The level of detail lives in its own chunk, so it has to be fetched before build() runs.
+        prewarm: () => prewarmMonster().then(() => undefined),
+        // Uplight, cold moon, crimson rim: lighting for something that should not be lit.
+        installLights: (scene) => scene.add(createAbyssLights()),
+        build: (scene) => {
+          const group = createMonsterShowcase({ castShadow: true, receiveShadow: true });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -409,12 +331,17 @@ const authored: DemoEntry[] = [
     exposure: 0.9,
     environmentIntensity: 0.45,
     toneMapping: 'aces',
-    prewarm: prewarmLeesin,
     defaultAnimation: 'step-and-swing-arms',
-    build: (scene) => {
-      const group = createLeesinModel({ castShadow: true, receiveShadow: true });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const { createLeesinModel, prewarmLeesin } = await import('./leesin/leesinDemo');
+      return {
+        prewarm: prewarmLeesin,
+        build: (scene) => {
+          const group = createLeesinModel({ castShadow: true, receiveShadow: true });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -454,15 +381,23 @@ const authored: DemoEntry[] = [
     exposure: 0.95,
     environmentIntensity: 0.55,
     toneMapping: 'aces',
-    // The level of detail lives in its own chunk, so it has to be fetched before build() runs.
-    prewarm: () => prewarmBoxingMan().then(() => undefined),
-    // Broadcast ring light: one hard warm key on a truss, a dimmer bank across the ring, two cool
-    // rims to hold the silhouette against black, and rosin haze for the key to catch.
-    installLights: (scene) => scene.add(createRingsideLights()),
-    build: (scene) => {
-      const group = createBoxingManShowcase({ castShadow: true, receiveShadow: true });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const [{ createBoxingManShowcase, createRingsideLights }, { prewarmBoxingMan }] = await Promise.all([
+        import('./boxing-man/boxingManShowcase'),
+        import('./boxing-man/createBoxingManModel'),
+      ]);
+      return {
+        // The level of detail lives in its own chunk, so it has to be fetched before build() runs.
+        prewarm: () => prewarmBoxingMan().then(() => undefined),
+        // Broadcast ring light: one hard warm key on a truss, a dimmer bank across the ring, two cool
+        // rims to hold the silhouette against black, and rosin haze for the key to catch.
+        installLights: (scene) => scene.add(createRingsideLights()),
+        build: (scene) => {
+          const group = createBoxingManShowcase({ castShadow: true, receiveShadow: true });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -497,11 +432,18 @@ const authored: DemoEntry[] = [
     exposure: 1,
     environmentIntensity: 0.8,
     toneMapping: 'aces',
-    installLights: (scene) => scene.add(createRegretWarriorLookDevLights()),
-    build: (scene) => {
-      const group = createRegretWarriorModel({ castShadow: true, receiveShadow: true });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const { createRegretWarriorLookDevLights, createRegretWarriorModel } = await import(
+        './regret-warrior-reconstruction/createRegretWarriorModel'
+      );
+      return {
+        installLights: (scene) => scene.add(createRegretWarriorLookDevLights()),
+        build: (scene) => {
+          const group = createRegretWarriorModel({ castShadow: true, receiveShadow: true });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -536,12 +478,19 @@ const authored: DemoEntry[] = [
     exposure: 0.9,
     environmentIntensity: 0.7,
     toneMapping: 'aces',
-    prewarm: prewarmWarrior,
-    installLights: (scene) => scene.add(createWarriorLookDevLights()),
-    build: (scene) => {
-      const group = createWarriorModel({ castShadow: true, receiveShadow: true });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const { createWarriorLookDevLights, createWarriorModel, prewarmWarrior } = await import(
+        './warrior/createWarriorModel'
+      );
+      return {
+        prewarm: prewarmWarrior,
+        installLights: (scene) => scene.add(createWarriorLookDevLights()),
+        build: (scene) => {
+          const group = createWarriorModel({ castShadow: true, receiveShadow: true });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -569,13 +518,20 @@ const authored: DemoEntry[] = [
     backgroundGradient: { inner: '#10203a', outer: '#050a13' },
     exposure: 1.15,
     environmentIntensity: 0.55,
-    installLights: (scene) => {
-      scene.add(createStarshipSuperHeavyLookDevLights());
-    },
-    build: (scene) => {
-      const group = createStarshipSuperHeavyModel();
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const { createStarshipSuperHeavyLookDevLights, createStarshipSuperHeavyModel } = await import(
+        './starship-super-heavy/createStarshipSuperHeavyModel'
+      );
+      return {
+        installLights: (scene) => {
+          scene.add(createStarshipSuperHeavyLookDevLights());
+        },
+        build: (scene) => {
+          const group = createStarshipSuperHeavyModel();
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -589,7 +545,6 @@ const authored: DemoEntry[] = [
       + 'the athletic dual-sword warrior detailed and responsive across devices. Animation controls and '
       + 'the parts inspector remain available in the live demo.',
     referenceImage: `${BASE}references/girl-character/front.jpg`,
-    prewarm: prewarmGirlCharacter,
     sourcePath: 'src/demos/girl-character/createGirlCharacterModel.ts',
     sourceUrl: `${REPO}/src/demos/girl-character/createGirlCharacterModel.ts`,
     generatedWith: 'img2threejs v1.5.1 · procedural TypeScript Surface Nets',
@@ -608,13 +563,21 @@ const authored: DemoEntry[] = [
     exposure: 0.55,
     environmentIntensity: 1.0,
     toneMapping: 'aces',
-    installLights: (scene) => {
-      scene.add(createGirlCharacterLookDevLights());
-    },
-    build: (scene) => {
-      const group = createGirlCharacterModel({ castShadow: true, receiveShadow: true });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const { createGirlCharacterModel, createGirlCharacterLookDevLights, prewarmGirlCharacter } = await import(
+        './girl-character/createGirlCharacterModel'
+      );
+      return {
+        prewarm: prewarmGirlCharacter,
+        installLights: (scene) => {
+          scene.add(createGirlCharacterLookDevLights());
+        },
+        build: (scene) => {
+          const group = createGirlCharacterModel({ castShadow: true, receiveShadow: true });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -647,15 +610,24 @@ const authored: DemoEntry[] = [
     exposure: 0.95,
     environmentIntensity: 0.7,
     toneMapping: 'aces',
-    installLights: (scene) => {
-      scene.add(createLowPolyHumanoidLookDevLights('reference'));
-    },
-    // The only demo heavy enough to need this: its body is a 2.12M-sample signed-distance field.
-    prewarm: prewarmLowPolyHumanoidField,
-    build: (scene) => {
-      const group = createLowPolyHumanoidModel({ castShadow: true, receiveShadow: true });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const {
+        createLowPolyHumanoidLookDevLights,
+        createLowPolyHumanoidModel,
+        prewarmLowPolyHumanoidField,
+      } = await import('./low-poly-humanoid/createLowPolyHumanoidModel');
+      return {
+        installLights: (scene) => {
+          scene.add(createLowPolyHumanoidLookDevLights('reference'));
+        },
+        // The only demo heavy enough to need this: its body is a 2.12M-sample signed-distance field.
+        prewarm: prewarmLowPolyHumanoidField,
+        build: (scene) => {
+          const group = createLowPolyHumanoidModel({ castShadow: true, receiveShadow: true });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -708,14 +680,23 @@ const authored: DemoEntry[] = [
     exposure: 0.9,
     environmentIntensity: 0.82,
     toneMapping: 'neutral',
-    installLights: (scene) => {
-      scene.add(createAWPMedusaMinimalWearLookDevLights());
-    },
-    build: (scene) => {
-      scene.background = makeAWPMedusaMinimalWearBackground();
-      const group = createAWPMedusaMinimalWearModel({ shadows: true, qualityPriority: 'reference-fidelity' });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const {
+        createAWPMedusaMinimalWearModel,
+        createAWPMedusaMinimalWearLookDevLights,
+        makeAWPMedusaMinimalWearBackground,
+      } = await import('./awp-medusa-v2/createAwpMedusaModelV2');
+      return {
+        installLights: (scene) => {
+          scene.add(createAWPMedusaMinimalWearLookDevLights());
+        },
+        build: (scene) => {
+          scene.background = makeAWPMedusaMinimalWearBackground();
+          const group = createAWPMedusaMinimalWearModel({ shadows: true, qualityPriority: 'reference-fidelity' });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -767,17 +748,24 @@ const authored: DemoEntry[] = [
     exposure: 0.95,
     environmentIntensity: 0.48,
     toneMapping: 'aces',
-    installLights: (scene) => {
-      scene.add(createElectricMouseMascotLookDevLights());
-    },
-    build: (scene) => {
-      const group = createElectricMouseMascotModel({ includeSpeechBubble: true });
-      const runtime = group.userData.electricMouseMascotRuntime as ReturnType<typeof createElectricMouseMascotModel>['userData']['electricMouseMascotRuntime'];
-      // The runtime exposes getBellyTune/setBellyTune so the belly crease can be driven live.
-      // The editing UI for it is not part of this demo yet — it ships in v1.5.
-      group.userData.tick = (_dt: number, elapsed: number) => runtime.update(elapsed);
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const { createElectricMouseMascotLookDevLights, createElectricMouseMascotModel } = await import(
+        './electric-mouse-mascot/createElectricMouseMascotModel'
+      );
+      return {
+        installLights: (scene) => {
+          scene.add(createElectricMouseMascotLookDevLights());
+        },
+        build: (scene) => {
+          const group = createElectricMouseMascotModel({ includeSpeechBubble: true });
+          const runtime = group.userData.electricMouseMascotRuntime as ReturnType<typeof createElectricMouseMascotModel>['userData']['electricMouseMascotRuntime'];
+          // The runtime exposes getBellyTune/setBellyTune so the belly crease can be driven live.
+          // The editing UI for it is not part of this demo yet — it ships in v1.5.
+          group.userData.tick = (_dt: number, elapsed: number) => runtime.update(elapsed);
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -831,26 +819,35 @@ const authored: DemoEntry[] = [
     toneMapping: 'aces',
     exposure: 1.0,
     environmentIntensity: 0.52,
-    installLights: (scene) => {
-      scene.add(createGlockGhostProtocolLookDevLights());
-    },
-    build: (scene) => {
-      scene.background = makeGhostProtocolBackground();
-      const group = createGlockGhostProtocolModel({ shadows: true });
-      scene.add(group);
+    loadRuntime: async () => {
+      const {
+        createGlockGhostProtocolModel,
+        createGlockGhostProtocolLookDevLights,
+        makeGhostProtocolBackground,
+      } = await import('./glock-ghost-protocol/createGlockGhostProtocolModel');
+      return {
+        installLights: (scene) => {
+          scene.add(createGlockGhostProtocolLookDevLights());
+        },
+        build: (scene) => {
+          scene.background = makeGhostProtocolBackground();
+          const group = createGlockGhostProtocolModel({ shadows: true });
+          scene.add(group);
 
-      // slow studio rock so the clearcoat travels along the slide and the translucent
-      // frame reveals the barrel and the ribbon module from changing angles
-      let t = 0;
-      group.userData.tick = (dt: number) => {
-        t += dt;
-        // Kept to +-11 deg: the light rig and the material scalars were solved against the
-        // broadside references, and past ~15 deg the environment starts to dominate the
-        // clearcoat and the crimson drifts blue.
-        group.rotation.y = Math.sin(t * 0.33) * 0.2;
-        group.rotation.x = Math.sin(t * 0.21) * 0.035;
+          // slow studio rock so the clearcoat travels along the slide and the translucent
+          // frame reveals the barrel and the ribbon module from changing angles
+          let t = 0;
+          group.userData.tick = (dt: number) => {
+            t += dt;
+            // Kept to +-11 deg: the light rig and the material scalars were solved against the
+            // broadside references, and past ~15 deg the environment starts to dominate the
+            // clearcoat and the crimson drifts blue.
+            group.rotation.y = Math.sin(t * 0.33) * 0.2;
+            group.rotation.x = Math.sin(t * 0.21) * 0.035;
+          };
+          return group;
+        },
       };
-      return group;
     },
   },
   {
@@ -893,22 +890,31 @@ const authored: DemoEntry[] = [
     toneMapping: 'neutral',
     exposure: 1.0,
     environmentIntensity: 1.0,
-    installLights: (scene) => {
-      scene.add(createClassicFadeLookDevLights());
-    },
-    build: (scene) => {
-      scene.background = makeClassicFadeBackground();
-      const group = createClassicFadeModel({ shadows: true });
-      scene.add(group);
+    loadRuntime: async () => {
+      const {
+        createClassicFadeModel,
+        createClassicFadeLookDevLights,
+        makeClassicFadeBackground,
+      } = await import('./classic-fade/createClassicFadeModel');
+      return {
+        installLights: (scene) => {
+          scene.add(createClassicFadeLookDevLights());
+        },
+        build: (scene) => {
+          scene.background = makeClassicFadeBackground();
+          const group = createClassicFadeModel({ shadows: true });
+          scene.add(group);
 
-      // slow studio rock so the wedge grind and the anodized sheen travel across the blade
-      let t = 0;
-      group.userData.tick = (dt: number) => {
-        t += dt;
-        group.rotation.y = Math.sin(t * 0.35) * 0.32;
-        group.rotation.x = Math.sin(t * 0.23) * 0.06;
+          // slow studio rock so the wedge grind and the anodized sheen travel across the blade
+          let t = 0;
+          group.userData.tick = (dt: number) => {
+            t += dt;
+            group.rotation.y = Math.sin(t * 0.35) * 0.32;
+            group.rotation.x = Math.sin(t * 0.23) * 0.06;
+          };
+          return group;
+        },
       };
-      return group;
     },
   },
   {
@@ -939,65 +945,73 @@ const authored: DemoEntry[] = [
     environmentIntensity: 0.62,
     // Single rig routed through installLights so the Viewer skips its default studio
     // rig — otherwise the two stack and wash the orange clear-coat out to pale yellow.
-    installLights: (scene) => {
-      scene.add(createBMXEnduranceBikeLookDevLights());
-    },
-    build: (scene) => {
-      scene.background = new THREE.Color(0x0a0a0a); // dark studio stage (spec §4.A)
-      const group = createBMXEnduranceBikeModel({ castShadow: true, receiveShadow: true });
-      scene.add(group);
+    loadRuntime: async () => {
+      const [THREE, { createBMXEnduranceBikeModel, createBMXEnduranceBikeLookDevLights }] = await Promise.all([
+        import('three'),
+        import('./bmx-endurance/createBmxEnduranceBikeModel'),
+      ]);
+      return {
+        installLights: (scene) => {
+          scene.add(createBMXEnduranceBikeLookDevLights());
+        },
+        build: (scene) => {
+          scene.background = new THREE.Color(0x0a0a0a); // dark studio stage (spec §4.A)
+          const group = createBMXEnduranceBikeModel({ castShadow: true, receiveShadow: true });
+          scene.add(group);
 
-      // Contact-shadow floor right under the tyre contact patch (wheels sit at y≈-0.65),
-      // so the bike grips the ground instead of floating (spec §4.C).
-      const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(6, 6),
-        new THREE.ShadowMaterial({ opacity: 0.55 }),
-      );
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.y = -0.655;
-      floor.receiveShadow = true;
-      scene.add(floor);
+          // Contact-shadow floor right under the tyre contact patch (wheels sit at y≈-0.65),
+          // so the bike grips the ground instead of floating (spec §4.C).
+          const floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(6, 6),
+            new THREE.ShadowMaterial({ opacity: 0.55 }),
+          );
+          floor.rotation.x = -Math.PI / 2;
+          floor.position.y = -0.655;
+          floor.receiveShadow = true;
+          scene.add(floor);
 
-      // --- synchronized drivetrain rig (host-side, uses the model's node runtime) ---
-      const nodes =
-        (group.userData.sculptRuntime as { nodes?: Record<string, THREE.Object3D> } | undefined)
-          ?.nodes ?? {};
-      // Reparent parts onto a pivot at (cx,cy,0) so they spin about that axle.
-      const pivotAt = (ids: string[], cx: number, cy: number): THREE.Group => {
-        const pivot = new THREE.Group();
-        pivot.position.set(cx, cy, 0);
-        group.add(pivot);
-        for (const id of ids) {
-          const n = nodes[id];
-          if (!n) continue;
-          n.position.set(n.position.x - cx, n.position.y - cy, n.position.z);
-          pivot.add(n); // children (e.g. spokes under a rim) travel with it
-        }
-        return pivot;
+          // --- synchronized drivetrain rig (host-side, uses the model's node runtime) ---
+          const nodes =
+            (group.userData.sculptRuntime as { nodes?: Record<string, THREE.Object3D> } | undefined)
+              ?.nodes ?? {};
+          // Reparent parts onto a pivot at (cx,cy,0) so they spin about that axle.
+          const pivotAt = (ids: string[], cx: number, cy: number): THREE.Group => {
+            const pivot = new THREE.Group();
+            pivot.position.set(cx, cy, 0);
+            group.add(pivot);
+            for (const id of ids) {
+              const n = nodes[id];
+              if (!n) continue;
+              n.position.set(n.position.x - cx, n.position.y - cy, n.position.z);
+              pivot.add(n); // children (e.g. spokes under a rim) travel with it
+            }
+            return pivot;
+          };
+          const frontWheel = pivotAt(['frontTire', 'frontRim', 'frontHub'], -0.66, -0.28);
+          const rearWheel = pivotAt(['rearTire', 'rearRim', 'rearHub'], 0.52, -0.28);
+          const crank = pivotAt(['crankArmL', 'crankArmR', 'chainring'], -0.02, -0.24);
+          const pedals = ['pedalL', 'pedalR']
+            .map((id) => nodes[id])
+            .filter((n): n is THREE.Object3D => !!n);
+          for (const p of pedals) {
+            p.position.set(p.position.x - -0.02, p.position.y - -0.24, p.position.z);
+            crank.add(p);
+          }
+
+          // chainring radius / rear-cog radius → rear wheel turns faster than the cranks.
+          const GEAR_RATIO = 2.4;
+          const CRANK_SPEED = -1.5; // rad/s (negative = forward-rolling direction)
+          group.userData.tick = (dt: number) => {
+            const dCrank = CRANK_SPEED * dt;
+            crank.rotation.z -= dCrank;
+            for (const p of pedals) p.rotation.z += dCrank; // keep platforms level
+            const dWheel = dCrank * GEAR_RATIO; // synchronized: ω_wheel = ω_crank × ratio
+            frontWheel.rotation.z -= dWheel;
+            rearWheel.rotation.z -= dWheel;
+          };
+          return group;
+        },
       };
-      const frontWheel = pivotAt(['frontTire', 'frontRim', 'frontHub'], -0.66, -0.28);
-      const rearWheel = pivotAt(['rearTire', 'rearRim', 'rearHub'], 0.52, -0.28);
-      const crank = pivotAt(['crankArmL', 'crankArmR', 'chainring'], -0.02, -0.24);
-      const pedals = ['pedalL', 'pedalR']
-        .map((id) => nodes[id])
-        .filter((n): n is THREE.Object3D => !!n);
-      for (const p of pedals) {
-        p.position.set(p.position.x - -0.02, p.position.y - -0.24, p.position.z);
-        crank.add(p);
-      }
-
-      // chainring radius / rear-cog radius → rear wheel turns faster than the cranks.
-      const GEAR_RATIO = 2.4;
-      const CRANK_SPEED = -1.5; // rad/s (negative = forward-rolling direction)
-      group.userData.tick = (dt: number) => {
-        const dCrank = CRANK_SPEED * dt;
-        crank.rotation.z -= dCrank;
-        for (const p of pedals) p.rotation.z += dCrank; // keep platforms level
-        const dWheel = dCrank * GEAR_RATIO; // synchronized: ω_wheel = ω_crank × ratio
-        frontWheel.rotation.z -= dWheel;
-        rearWheel.rotation.z -= dWheel;
-      };
-      return group;
     },
   },
   {
@@ -1024,15 +1038,22 @@ const authored: DemoEntry[] = [
     exposure: 1.42,
     // Own rig via installLights so the Viewer skips its default studio rig (the build was lit
     // by this single 3-point rig + the RoomEnvironment IBL at exposure 1.42).
-    installLights: (scene) => {
-      scene.add(createM9DopplerLookDevLights());
-    },
-    build: (scene) => {
-      // Dark backdrop is owned by this demo's own module (runs after the Viewer, so it wins).
-      scene.background = makeM9DopplerBackground();
-      const group = createM9DopplerModel({ shadows: true });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const { createM9DopplerModel, createM9DopplerLookDevLights, makeM9DopplerBackground } = await import(
+        './m9-doppler/createM9DopplerModel'
+      );
+      return {
+        installLights: (scene) => {
+          scene.add(createM9DopplerLookDevLights());
+        },
+        build: (scene) => {
+          // Dark backdrop is owned by this demo's own module (runs after the Viewer, so it wins).
+          scene.background = makeM9DopplerBackground();
+          const group = createM9DopplerModel({ shadows: true });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -1058,13 +1079,20 @@ const authored: DemoEntry[] = [
     cameraPosition: [3.6, 2.7, 5.4],
     cameraTarget: [0, 0.55, 0],
     cameraFov: 35,
-    build: (scene) => {
-      scene.background = makeSonyBackground();
-      const group = createSonyWf1000xm3Model({ shadows: true });
-      scene.add(group);
-      const lights = createSonyWf1000xm3LookDevLights();
-      scene.add(lights);
-      return group;
+    loadRuntime: async () => {
+      const { createSonyWf1000xm3Model, createSonyWf1000xm3LookDevLights, makeSonyBackground } = await import(
+        './sony-wf1000xm3/createSonyWf1000xm3Model'
+      );
+      return {
+        build: (scene) => {
+          scene.background = makeSonyBackground();
+          const group = createSonyWf1000xm3Model({ shadows: true });
+          scene.add(group);
+          const lights = createSonyWf1000xm3LookDevLights();
+          scene.add(lights);
+          return group;
+        },
+      };
     },
   },
   {
@@ -1091,13 +1119,20 @@ const authored: DemoEntry[] = [
     cameraPosition: [1.9, 1.35, 3.5],
     cameraTarget: [-0.1, 0.5, 0],
     cameraFov: 32,
-    build: (scene) => {
-      scene.background = makeIssacaBackground();
-      const group = createIssacaShotgunModel({ shadows: true });
-      scene.add(group);
-      const lights = createIssacaShotgunLookDevLights();
-      scene.add(lights);
-      return group;
+    loadRuntime: async () => {
+      const { createIssacaShotgunModel, createIssacaShotgunLookDevLights, makeIssacaBackground } = await import(
+        './issaca-shotgun/createIssacaShotgunModel'
+      );
+      return {
+        build: (scene) => {
+          scene.background = makeIssacaBackground();
+          const group = createIssacaShotgunModel({ shadows: true });
+          scene.add(group);
+          const lights = createIssacaShotgunLookDevLights();
+          scene.add(lights);
+          return group;
+        },
+      };
     },
   },
   {
@@ -1123,13 +1158,20 @@ const authored: DemoEntry[] = [
     cameraPosition: [0.35, 2.15, 6.7],
     cameraTarget: [-0.15, 0, 0],
     cameraFov: 30,
-    build: (scene) => {
-      scene.background = makeStudioBackground();
-      const group = createGerberKnifeModel({ shadows: true });
-      scene.add(group);
-      const lights = createGerberKnifeLookDevLights();
-      scene.add(lights);
-      return group;
+    loadRuntime: async () => {
+      const { createGerberKnifeModel, createGerberKnifeLookDevLights, makeStudioBackground } = await import(
+        './gerber-knife/createGerberKnifeModel'
+      );
+      return {
+        build: (scene) => {
+          scene.background = makeStudioBackground();
+          const group = createGerberKnifeModel({ shadows: true });
+          scene.add(group);
+          const lights = createGerberKnifeLookDevLights();
+          scene.add(lights);
+          return group;
+        },
+      };
     },
   },
   {
@@ -1156,13 +1198,20 @@ const authored: DemoEntry[] = [
     cameraPosition: [19, 15.5, 19],
     cameraTarget: [-0.2, 1.3, 0],
     cameraFov: 23,
-    build: (scene) => {
-      scene.background = makeSkyTexture();
-      const group = createDoraemonHouseModel({ shadows: true });
-      scene.add(group);
-      const lights = createDoraemonHouseLookDevLights();
-      scene.add(lights);
-      return group;
+    loadRuntime: async () => {
+      const { createDoraemonHouseModel, createDoraemonHouseLookDevLights, makeSkyTexture } = await import(
+        './doraemon-house/createDoraemonHouseModel'
+      );
+      return {
+        build: (scene) => {
+          scene.background = makeSkyTexture();
+          const group = createDoraemonHouseModel({ shadows: true });
+          scene.add(group);
+          const lights = createDoraemonHouseLookDevLights();
+          scene.add(lights);
+          return group;
+        },
+      };
     },
   },
   {
@@ -1186,15 +1235,23 @@ const authored: DemoEntry[] = [
     cameraPosition: [-4.7, 2.7, -5.2],
     cameraTarget: [0, 0.95, -0.2],
     cameraFov: 33,
-    build: (scene) => {
-      // dark, cinematic environment to match the concept-sheet shading
-      scene.background = new THREE.Color(0x0c0d11);
-      scene.fog = new THREE.Fog(0x0c0d11, 11, 26);
-      const group = createWarHaulerModel({ shadows: true });
-      scene.add(group);
-      const lights = createWarHaulerLookDevLights();
-      scene.add(lights);
-      return group;
+    loadRuntime: async () => {
+      const [THREE, { createWarHaulerModel, createWarHaulerLookDevLights }] = await Promise.all([
+        import('three'),
+        import('./warhauler/createWarHaulerModel'),
+      ]);
+      return {
+        build: (scene) => {
+          // dark, cinematic environment to match the concept-sheet shading
+          scene.background = new THREE.Color(0x0c0d11);
+          scene.fog = new THREE.Fog(0x0c0d11, 11, 26);
+          const group = createWarHaulerModel({ shadows: true });
+          scene.add(group);
+          const lights = createWarHaulerLookDevLights();
+          scene.add(lights);
+          return group;
+        },
+      };
     },
   },
   {
@@ -1215,10 +1272,15 @@ const authored: DemoEntry[] = [
     cameraPosition: [-0.95, 0.5, 2.55],
     cameraTarget: [0, -0.05, 0],
     cameraFov: 38,
-    build: (scene) => {
-      const group = createCrownChestModel();
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const { createCrownChestModel } = await import('./crown-chest/createCrownChestModel');
+      return {
+        build: (scene) => {
+          const group = createCrownChestModel();
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -1293,14 +1355,23 @@ const authored: DemoEntry[] = [
     // reference is rgb(127, 24, 27). AgX desaturates high-chroma values toward white as part of
     // its highlight rolloff, which is exactly wrong when the chroma IS the reference data.
     toneMapping: 'neutral',
-    installLights: (scene) => {
-      scene.add(createTalonDopplerRubyLookDevLights());
-    },
-    build: (scene) => {
-      scene.background = makeTalonDopplerRubyBackground();
-      const group = createTalonDopplerRubyModel({ shadows: true });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const {
+        createTalonDopplerRubyModel,
+        createTalonDopplerRubyLookDevLights,
+        makeTalonDopplerRubyBackground,
+      } = await import('./talon-doppler-ruby/createTalonDopplerRubyModel');
+      return {
+        installLights: (scene) => {
+          scene.add(createTalonDopplerRubyLookDevLights());
+        },
+        build: (scene) => {
+          scene.background = makeTalonDopplerRubyBackground();
+          const group = createTalonDopplerRubyModel({ shadows: true });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
   {
@@ -1336,9 +1407,6 @@ const authored: DemoEntry[] = [
     // Measured from a GLB, not from photographs -- which is what lets this demo state a per-part triangle
     // count and be held to it. The thumbnail is a render OF that model, so it needs saying explicitly.
     referenceKind: 'model',
-    // The heaviest stream in the gallery: 24.5 MB of encoded mesh plus 4.1 MB of texture. Without a
-    // prewarm the page shows the cross-section loft first and then visibly swaps to the real surfaces.
-    prewarm: prewarmGirlCharacter3,
     referenceUrl: 'https://hyper3d.ai/workspace/rodin/b0d3a7bb-86d4-45dd-b93b-2d45316cdade',
     sourcePath: 'src/demos/girl-character-3/createGirlCharacter3Model.ts',
     sourceUrl: `${REPO}/src/demos/girl-character-3/createGirlCharacter3Model.ts`,
@@ -1354,20 +1422,32 @@ const authored: DemoEntry[] = [
     exposure: 1.06,
     environmentIntensity: 1.15,
     toneMapping: 'aces',
-    installLights: (scene) => {
-      scene.add(createGirlCharacter3LookDevLights());
-    },
-    build: (scene) => {
-      const group = createGirlCharacter3Model({
-        castShadow: true,
-        receiveShadow: true,
-        // Closed over the scene the viewer actually draws, so it keeps working across the model's own
-        // code-split rebuild. `Viewer.start` publishes the rate; 15 deg/s is its default, so a nominal
-        // turntable reads as 1.
-        ambient: () => Math.min(1.5, ((scene.userData as { turntableRate?: number }).turntableRate ?? 0) / 15),
-      });
-      scene.add(group);
-      return group;
+    loadRuntime: async () => {
+      const {
+        createGirlCharacter3Model,
+        createGirlCharacter3LookDevLights,
+        prewarmGirlCharacter3,
+      } = await import('./girl-character-3/createGirlCharacter3Model');
+      return {
+        // The heaviest stream in the gallery: 24.5 MB of encoded mesh plus 4.1 MB of texture. Without a
+        // prewarm the page shows the cross-section loft first and then visibly swaps to the real surfaces.
+        prewarm: prewarmGirlCharacter3,
+        installLights: (scene) => {
+          scene.add(createGirlCharacter3LookDevLights());
+        },
+        build: (scene) => {
+          const group = createGirlCharacter3Model({
+            castShadow: true,
+            receiveShadow: true,
+            // Closed over the scene the viewer actually draws, so it keeps working across the model's own
+            // code-split rebuild. `Viewer.start` publishes the rate; 15 deg/s is its default, so a nominal
+            // turntable reads as 1.
+            ambient: () => Math.min(1.5, ((scene.userData as { turntableRate?: number }).turntableRate ?? 0) / 15),
+          });
+          scene.add(group);
+          return group;
+        },
+      };
     },
   },
 ];
@@ -1379,9 +1459,45 @@ const authored: DemoEntry[] = [
  * order. `sort` is stable in every engine this ships to, so exhibits sharing a date keep the order they
  * were authored in rather than shuffling between builds.
  */
-export const demos: DemoEntry[] = [...authored]
+const catalog = [...authored]
   .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
 
-export function getDemo(id: string): DemoEntry | undefined {
-  return demos.find((demo) => demo.id === id);
+const metadataById = new Map<string, DemoMetadata>();
+const catalogById = new Map<string, CatalogEntry>();
+
+/** Lightweight exhibit data used by the landing page, drawers and search. */
+export const demos: DemoMetadata[] = catalog.map((entry) => {
+  const { loadRuntime: _loadRuntime, ...metadata } = entry;
+  metadataById.set(metadata.id, metadata);
+  catalogById.set(metadata.id, entry);
+  return metadata;
+});
+
+export function getDemo(id: string): DemoMetadata | undefined {
+  return metadataById.get(id);
+}
+
+const runtimeLoads = new Map<string, Promise<DemoEntry>>();
+
+/**
+ * Loads exactly one exhibit's executable model code. In-flight and fulfilled loads are shared;
+ * rejected loads are evicted so a later user action can retry the network request.
+ */
+export function loadDemo(id: string): Promise<DemoEntry | undefined> {
+  const existing = runtimeLoads.get(id);
+  if (existing) return existing;
+
+  const entry = catalogById.get(id);
+  const metadata = metadataById.get(id);
+  if (!entry || !metadata) return Promise.resolve(undefined);
+
+  let retryable: Promise<DemoEntry>;
+  retryable = entry.loadRuntime()
+    .then((runtime) => ({ ...metadata, ...runtime }))
+    .catch((error: unknown) => {
+      if (runtimeLoads.get(id) === retryable) runtimeLoads.delete(id);
+      throw error;
+    });
+  runtimeLoads.set(id, retryable);
+  return retryable;
 }

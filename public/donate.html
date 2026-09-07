@@ -4,284 +4,759 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Support img2threejs</title>
-    <meta name="description" content="Support the img2threejs project via MoMo, VietQR, any Vietnamese bank app, Ko-fi, or PayPal." />
+    <meta
+      name="description"
+      content="Support the open-source img2threejs project via MoMo, VietQR, any Vietnamese bank app, PayPal, Ko-fi, or crypto through Binance Pay."
+    />
+    <meta name="theme-color" content="#0d0c0b" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://img2threejs.io/donate.html" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="img2threejs" />
+    <meta property="og:title" content="Support img2threejs" />
+    <meta
+      property="og:description"
+      content="Support the open-source img2threejs project from Vietnam or anywhere in the world."
+    />
+    <meta property="og:url" content="https://img2threejs.io/donate.html" />
+    <meta property="og:image" content="https://img2threejs.io/og-cover.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Support img2threejs" />
+    <meta
+      name="twitter:description"
+      content="Support the open-source img2threejs project from Vietnam or anywhere in the world."
+    />
+    <meta name="twitter:image" content="https://img2threejs.io/og-cover.png" />
+
     <style>
-      @property --angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
-
       :root {
-        color-scheme: light dark;
-        --bg-1: #f4f0ff;
-        --bg-2: #eafaf6;
-        --blob-a: #c9a8ff;
-        --blob-b: #8ce0c9;
-        --blob-c: #ffc6e8;
-        --card: rgba(255, 255, 255, 0.74);
-        --text: #1c1330;
-        --muted: #6b6480;
-        --accent: #a626aa;
-        --accent-2: #6d28d9;
-        --line: rgba(120, 60, 160, 0.14);
-        --qr-shadow: rgba(120, 40, 160, 0.18);
-        --scan: rgba(166, 38, 170, 0.55);
-        --mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", "Menlo", Consolas, monospace;
+        color-scheme: dark;
+        --ink: #0d0c0b;
+        --ink-raised: #151311;
+        --paper: #f2eadc;
+        --paper-muted: #b9afa2;
+        --paper-faint: #8b8177;
+        --coral: #ff6f4e;
+        --coral-bright: #ff876b;
+        --coral-wash: rgba(255, 111, 78, 0.1);
+        --line: #37302a;
+        --line-strong: #55453b;
+        --shadow: rgba(0, 0, 0, 0.36);
+        --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        --serif: Iowan Old Style, Baskerville, "Times New Roman", serif;
+        --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
       }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg-1: #14101f; --bg-2: #0c141a;
-          --blob-a: #5b2a8c; --blob-b: #1f6f5c; --blob-c: #7a2a5a;
-          --card: rgba(24, 22, 34, 0.62);
-          --text: #ece7f5; --muted: #a49db8;
-          --accent: #d264d6; --accent-2: #a78bfa;
-          --line: rgba(180, 140, 220, 0.16);
-          --qr-shadow: rgba(0, 0, 0, 0.5); --scan: rgba(210, 100, 214, 0.6);
-        }
+
+      * {
+        box-sizing: border-box;
       }
-      * { box-sizing: border-box; }
-      html, body { height: 100%; }
+
+      html {
+        min-width: 20rem;
+        background: var(--ink);
+      }
+
       body {
-        margin: 0; position: relative; overflow-x: hidden;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
-        color: var(--text); background: var(--bg-2);
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        padding: 3rem 1.25rem; min-height: 100%;
+        min-height: 100vh;
+        margin: 0;
+        color: var(--paper);
+        background:
+          radial-gradient(circle at 12% 0%, rgba(255, 111, 78, 0.1), transparent 28rem),
+          linear-gradient(180deg, #100e0d 0%, var(--ink) 44%, #090908 100%);
+        font-family: var(--sans);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
       }
 
-      /* ---- animated gradient blobs ---- */
-      .blobs { position: fixed; inset: 0; z-index: -1; overflow: hidden; filter: blur(60px); }
-      .blob { position: absolute; border-radius: 50%; opacity: .7; will-change: transform; }
-      .blob.a { width: 46vmax; height: 46vmax; background: var(--blob-a); top: -18vmax; left: -12vmax; animation: drift1 22s ease-in-out infinite; }
-      .blob.b { width: 40vmax; height: 40vmax; background: var(--blob-b); bottom: -16vmax; right: -10vmax; animation: drift2 26s ease-in-out infinite; }
-      .blob.c { width: 30vmax; height: 30vmax; background: var(--blob-c); top: 40%; left: 55%; animation: drift3 30s ease-in-out infinite; }
-      @keyframes drift1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(8vmax,6vmax) scale(1.12)} }
-      @keyframes drift2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-7vmax,-5vmax) scale(1.08)} }
-      @keyframes drift3 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(-6vmax,4vmax) scale(.9)} 66%{transform:translate(5vmax,-6vmax) scale(1.1)} }
-
-      .wrap { width: 100%; max-width: 30rem; text-align: center; }
-
-      /* ---- staggered entrance ---- */
-      .reveal { opacity: 0; transform: translateY(16px); animation: rise .7s cubic-bezier(.2,.7,.2,1) forwards; }
-      .reveal.d1 { animation-delay: .05s; } .reveal.d2 { animation-delay: .15s; }
-      .reveal.d3 { animation-delay: .28s; } .reveal.d4 { animation-delay: .42s; }
-      @keyframes rise { to { opacity: 1; transform: translateY(0); } }
-
-      /* ---- coding-style eyebrow ---- */
-      .tag {
-        display: inline-block; font-family: var(--mono); font-size: .78rem; font-weight: 600;
-        letter-spacing: .02em; color: var(--accent-2);
-        padding: .35rem .85rem; border-radius: 8px;
-        background: color-mix(in srgb, var(--accent-2) 10%, transparent);
-        border: 1px solid color-mix(in srgb, var(--accent-2) 22%, transparent);
-        margin-bottom: 1.25rem;
+      a {
+        color: inherit;
       }
-      .tag .cursor { display: inline-block; width: .5ch; background: currentColor; margin-left: 1px;
-        animation: blink 1.1s steps(1) infinite; }
-      @keyframes blink { 50% { opacity: 0; } }
+
+      a:focus-visible {
+        outline: 3px solid var(--coral-bright);
+        outline-offset: 4px;
+        border-radius: 0.25rem;
+      }
+
+      .page-shell {
+        width: min(100% - 2rem, 72rem);
+        margin: 0 auto;
+      }
+
+      .site-header {
+        display: flex;
+        min-height: 4.5rem;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .brand {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        gap: 0.65rem;
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-decoration: none;
+        text-transform: uppercase;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 1.85rem;
+        height: 1.85rem;
+        place-items: center;
+        border: 1px solid var(--coral);
+        color: var(--coral);
+        font-size: 0.7rem;
+      }
+
+      .header-meta {
+        color: var(--paper-faint);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      main {
+        padding: clamp(2.25rem, 6vw, 5rem) 0 clamp(2.5rem, 7vw, 5.5rem);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.65fr);
+        gap: clamp(1.5rem, 5vw, 5rem);
+        align-items: end;
+        margin-bottom: clamp(2rem, 5vw, 3.75rem);
+      }
+
+      .eyebrow,
+      .section-kicker {
+        margin: 0 0 0.8rem;
+        color: var(--coral-bright);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
 
       h1 {
-        font-size: clamp(1.7rem, 5vw, 2.3rem); line-height: 1.1; margin: 0 0 .6rem;
-        font-weight: 800; letter-spacing: -0.02em;
-        background: linear-gradient(120deg, var(--accent), var(--accent-2), var(--accent));
-        background-size: 220% auto;
-        -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-        animation: shimmer 6s linear infinite;
+        max-width: 12ch;
+        margin: 0;
+        font-family: var(--serif);
+        font-size: clamp(3.15rem, 8vw, 6.7rem);
+        font-weight: 500;
+        letter-spacing: -0.055em;
+        line-height: 0.88;
       }
-      @keyframes shimmer { to { background-position: 220% center; } }
 
-      .lead { color: var(--muted); font-size: 1rem; line-height: 1.55; margin: 0 auto 2rem; max-width: 26rem; }
+      .hero-copy {
+        margin: 0;
+        color: var(--paper-muted);
+        font-size: clamp(1rem, 1.7vw, 1.18rem);
+        line-height: 1.65;
+      }
 
-      /* ---- card with rotating glow border ---- */
-      .card {
-        position: relative; isolation: isolate;
-        background: var(--card); border-radius: 24px; padding: 1.75rem 1.75rem 1.6rem;
-        backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
-        box-shadow: 0 24px 60px -20px var(--qr-shadow), 0 2px 8px rgba(0,0,0,0.04);
-        transition: transform .35s cubic-bezier(.2,.7,.2,1);
+      .hero-copy strong {
+        color: var(--paper);
+        font-weight: 650;
       }
-      .card:hover { transform: translateY(-6px); }
-      /* animated conic gradient ring */
-      .card::before {
-        content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; padding: 1.5px;
-        background: conic-gradient(from var(--angle),
-          transparent 0deg, var(--accent) 60deg, var(--accent-2) 120deg, transparent 200deg, transparent 360deg);
-        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-        -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-        mask-composite: exclude;
-        animation: spin-border 5s linear infinite;
+
+      .support-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: 1rem;
       }
-      /* static hairline so the border is always visible under the sweep */
-      .card::after {
-        content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+
+      .support-panel {
+        position: relative;
+        overflow: hidden;
         border: 1px solid var(--line);
+        background: var(--ink-raised);
+        box-shadow: 0 1.5rem 4rem -2.5rem var(--shadow);
       }
-      @keyframes spin-border { to { --angle: 360deg; } }
 
-      .rails {
-        display: flex; align-items: center; justify-content: center; gap: .55rem;
-        font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: .08em;
-        text-transform: uppercase; color: var(--muted); margin-bottom: 1.25rem;
+      .support-panel::before {
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 4.5rem;
+        height: 2px;
+        background: var(--coral);
+        content: "";
       }
-      .rails span { color: var(--accent); }
-      .rails i { width: 1px; height: 12px; background: currentColor; opacity: .3; font-style: normal; }
 
-      .qr {
-        position: relative; width: min(72%, 260px); aspect-ratio: 1; margin: 0 auto;
-        border-radius: 18px; overflow: hidden; background: #fff; padding: 10px;
-        box-shadow: 0 10px 30px -10px var(--qr-shadow);
+      .panel-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: clamp(1.35rem, 3vw, 2rem);
+        border-bottom: 1px solid var(--line);
       }
-      .qr img { width: 100%; height: 100%; object-fit: contain; display: block; }
-      .qr::after {
-        content: ""; position: absolute; left: 8%; right: 8%; top: 0; height: 22%;
-        background: linear-gradient(to bottom, transparent, var(--scan) 45%, var(--scan) 55%, transparent);
-        mix-blend-mode: multiply; border-radius: 8px;
-        animation: scan 2.6s cubic-bezier(.55,0,.45,1) infinite;
+
+      .panel-index {
+        margin: 0;
+        color: var(--paper-faint);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
       }
-      @keyframes scan { 0%{transform:translateY(-10%);opacity:0} 12%{opacity:1} 88%{opacity:1} 100%{transform:translateY(370%);opacity:0} }
 
-      .payee { margin: 1.4rem 0 0; font-size: .95rem; font-weight: 600; }
-      .hint { margin: .35rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
+      h2 {
+        margin: 0.15rem 0 0;
+        font-family: var(--serif);
+        font-size: clamp(1.9rem, 4vw, 2.8rem);
+        font-weight: 500;
+        letter-spacing: -0.03em;
+        line-height: 1;
+      }
 
-      /* ---- coding-style step row, perfectly aligned ---- */
+      .method-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 0.35rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .method-list li {
+        padding: 0.38rem 0.55rem;
+        border: 1px solid var(--line-strong);
+        color: var(--paper-muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+      }
+
+      .local-body {
+        display: grid;
+        grid-template-columns: minmax(10.5rem, 13.5rem) minmax(0, 1fr);
+        gap: clamp(1.25rem, 3vw, 2rem);
+        align-items: center;
+        padding: clamp(1.35rem, 3vw, 2rem);
+      }
+
+      .qr-frame {
+        width: 100%;
+        aspect-ratio: 1;
+        padding: 0.6rem;
+        border: 1px solid rgba(242, 234, 220, 0.32);
+        background: #fff;
+      }
+
+      .qr-frame img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .payee-label {
+        margin: 0 0 0.4rem;
+        color: var(--paper-faint);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .payee-name {
+        margin: 0 0 1rem;
+        color: var(--paper);
+        font-size: clamp(1.3rem, 3vw, 1.75rem);
+        font-weight: 700;
+      }
+
+      .instruction {
+        margin: 0;
+        color: var(--paper-muted);
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+
+      .instruction strong {
+        color: var(--paper);
+      }
+
       .steps {
-        display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
-        gap: .35rem .7rem; margin: 1.5rem 0 0;
-        font-family: var(--mono); font-size: .8rem; color: var(--muted);
-      }
-      .steps .step { display: inline-flex; align-items: center; gap: .45rem; white-space: nowrap; }
-      .steps .n {
-        flex: none; display: inline-grid; place-items: center; width: 1.35rem; height: 1.35rem;
-        border-radius: 7px; font-size: .68rem; font-weight: 700; line-height: 1; color: #fff;
-        background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      }
-      .steps .sep { color: var(--accent); opacity: .5; }
-
-      .divider {
-        display: flex; align-items: center; gap: .6rem; margin: 1.4rem 0 1.1rem;
-        font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: .08em;
-        text-transform: uppercase; color: var(--muted);
-      }
-      .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
-
-      .support-row { display: flex; gap: .6rem; margin-top: 1.4rem; }
-      @media (max-width: 360px) { .support-row { flex-direction: column; } }
-
-      .paypal {
-        display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-        flex: 1 1 0; padding: .75rem 1rem; border-radius: 12px;
-        font-weight: 700; font-size: .95rem; text-decoration: none;
-        color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2));
-        box-shadow: 0 10px 26px -10px var(--qr-shadow);
-        transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease;
-      }
-      .paypal:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -10px var(--qr-shadow); }
-
-      /* Now a text button (the hosted badge image was a third-party request). Colours are set
-         explicitly: it used to be a white plate holding an image, so with only inherited colour
-         the label went invisible against #fff in dark mode. */
-      .kofi {
-        flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-        padding: .75rem 1rem; border-radius: 12px;
-        font-weight: 700; font-size: .95rem; text-decoration: none;
-        color: var(--text); background: var(--card);
-        border: 1px solid var(--line);
-        box-shadow: 0 10px 26px -10px var(--qr-shadow);
-        transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease;
-      }
-      .kofi:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -10px var(--qr-shadow); }
-
-      /* Smaller than the VietQR code above it: this is the fallback for people who would rather
-         scan than tap a link, not the primary path on this page. */
-      .kofi-qr { margin: 1.3rem auto 0; max-width: 14rem; }
-      .kofi-qr img {
-        width: 100%; display: block; border-radius: 14px;
-        background: #fff; padding: 8px;
-        box-shadow: 0 10px 30px -12px var(--qr-shadow);
+        display: grid;
+        gap: 0.7rem;
+        margin: 1.35rem 0 0;
+        padding: 1.15rem 0 0;
+        border-top: 1px solid var(--line);
+        counter-reset: donate-step;
+        list-style: none;
       }
 
-      footer { margin-top: 2rem; font-family: var(--mono); font-size: .85rem; color: var(--muted); }
-      footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
-      footer a:hover { text-decoration: underline; }
-      .heart { color: var(--accent); font-weight: 700; display: inline-block; animation: beat 1.6s ease-in-out infinite; }
-      @keyframes beat { 0%,100%{transform:scale(1)} 15%{transform:scale(1.18)} 30%{transform:scale(1)} }
+      .steps li {
+        display: grid;
+        grid-template-columns: 1.75rem 1fr;
+        gap: 0.65rem;
+        align-items: center;
+        color: var(--paper-muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        counter-increment: donate-step;
+      }
+
+      .steps li::before {
+        display: grid;
+        width: 1.75rem;
+        height: 1.75rem;
+        place-items: center;
+        border: 1px solid var(--line-strong);
+        color: var(--coral-bright);
+        content: "0" counter(donate-step);
+        font-size: 0.75rem;
+      }
+
+      .international-body {
+        display: grid;
+        gap: 1.4rem;
+        padding: clamp(1.35rem, 3vw, 2rem);
+      }
+
+      .international-lead {
+        margin: 0;
+        color: var(--paper-muted);
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+
+      .support-actions {
+        display: grid;
+        gap: 0.7rem;
+      }
+
+      .support-button {
+        display: flex;
+        min-height: 3.25rem;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.85rem 1rem;
+        border: 1px solid var(--line-strong);
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease;
+      }
+
+      .support-button .arrow {
+        font-family: var(--mono);
+        font-size: 0.85rem;
+      }
+
+      .support-button.primary {
+        border-color: var(--coral);
+        background: var(--coral);
+        color: #180c08;
+      }
+
+      .support-button:hover {
+        border-color: var(--coral-bright);
+        background: var(--coral-wash);
+        color: var(--paper);
+      }
+
+      .support-button.primary:hover {
+        background: var(--coral-bright);
+        color: #180c08;
+      }
+
+      .international-qr {
+        display: grid;
+        grid-template-columns: 7rem minmax(0, 1fr);
+        gap: 1rem;
+        align-items: center;
+        padding-top: 1.4rem;
+        border-top: 1px solid var(--line);
+      }
+
+      .international-qr img {
+        display: block;
+        width: 7rem;
+        height: 7rem;
+        padding: 0.35rem;
+        background: #fff;
+        object-fit: contain;
+      }
+
+      .international-qr p {
+        margin: 0;
+        color: var(--paper-muted);
+        font-size: 0.88rem;
+        line-height: 1.55;
+      }
+
+      .international-qr strong {
+        display: block;
+        margin-bottom: 0.25rem;
+        color: var(--paper);
+      }
+
+      .crypto-support {
+        display: grid;
+        grid-template-columns: 9rem minmax(0, 1fr);
+        gap: 1.25rem;
+        align-items: center;
+        padding-top: 1.4rem;
+        border-top: 1px solid var(--line);
+      }
+
+      .crypto-qr-link {
+        position: relative;
+        display: block;
+        width: 9rem;
+        aspect-ratio: 1;
+        overflow: hidden;
+        border: 0.45rem solid #fff;
+        background: #fff;
+      }
+
+      .crypto-qr-link img {
+        position: absolute;
+        top: -99.77%;
+        left: -39.95%;
+        display: block;
+        width: 179.44%;
+        max-width: none;
+        height: auto;
+      }
+
+      .crypto-copy h3 {
+        margin: 0 0 0.55rem;
+        color: var(--paper);
+        font-family: var(--serif);
+        font-size: clamp(1.35rem, 3vw, 1.85rem);
+        font-weight: 500;
+        letter-spacing: -0.02em;
+      }
+
+      .crypto-copy p {
+        margin: 0;
+        color: var(--paper-muted);
+        font-size: 0.88rem;
+        line-height: 1.55;
+      }
+
+      .crypto-copy strong {
+        color: var(--paper);
+      }
+
+      .crypto-open {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        margin-top: 0.55rem;
+        color: var(--coral-bright);
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-underline-offset: 0.2em;
+      }
+
+      .page-footer {
+        display: flex;
+        min-height: 5rem;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        border-top: 1px solid var(--line);
+        color: var(--paper-faint);
+        font-size: 0.8rem;
+      }
+
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.2rem;
+      }
+
+      .page-footer a {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        color: var(--paper-muted);
+        font-weight: 650;
+        text-underline-offset: 0.2em;
+      }
+
+      .page-footer a:hover {
+        color: var(--coral-bright);
+      }
+
+      @media (max-width: 54rem) {
+        .hero,
+        .support-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .hero {
+          gap: 1.5rem;
+        }
+
+        h1 {
+          max-width: 9ch;
+        }
+      }
+
+      @media (max-width: 37.5rem) {
+        .page-shell {
+          width: min(100% - 1.25rem, 72rem);
+        }
+
+        .site-header,
+        .page-footer {
+          align-items: flex-start;
+          flex-direction: column;
+          justify-content: center;
+          padding: 0.8rem 0;
+        }
+
+        .header-meta {
+          padding-left: 2.5rem;
+        }
+
+        main {
+          padding-top: 2rem;
+        }
+
+        h1 {
+          font-size: clamp(3rem, 17vw, 4.8rem);
+        }
+
+        .panel-heading {
+          display: grid;
+        }
+
+        .method-list {
+          justify-content: flex-start;
+        }
+
+        .local-body {
+          grid-template-columns: 1fr;
+        }
+
+        .qr-frame {
+          width: min(100%, 14.5rem);
+          margin: 0 auto;
+        }
+
+        .international-qr {
+          grid-template-columns: 5.5rem minmax(0, 1fr);
+        }
+
+        .international-qr img {
+          width: 5.5rem;
+          height: 5.5rem;
+        }
+
+        .crypto-support {
+          grid-template-columns: 7.5rem minmax(0, 1fr);
+        }
+
+        .crypto-qr-link {
+          width: 7.5rem;
+        }
+      }
+
+      @media (max-height: 45rem) and (min-width: 54.01rem) {
+        main {
+          padding-top: 2rem;
+          padding-bottom: 2.5rem;
+        }
+
+        .hero {
+          margin-bottom: 2rem;
+        }
+
+        .qr-frame {
+          width: min(100%, 10.5rem);
+          margin: 0 auto;
+        }
+      }
 
       @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { animation: none !important; transition: none !important; }
-        .reveal { opacity: 1; transform: none; }
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
       }
     </style>
   </head>
+
   <body>
-    <div class="blobs" aria-hidden="true">
-      <div class="blob a"></div><div class="blob b"></div><div class="blob c"></div>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="./" data-home-link aria-label="Back to the img2threejs demo gallery">
+          <span class="brand-mark" aria-hidden="true">i3</span>
+          <span>img2threejs</span>
+        </a>
+        <span class="header-meta">Open source · Apache 2.0</span>
+      </header>
+
+      <main>
+        <section class="hero" aria-labelledby="page-title">
+          <div>
+            <p class="eyebrow">Support the work</p>
+            <h1 id="page-title">Support img2threejs.</h1>
+          </div>
+          <p class="hero-copy">
+            Thanks for using img2threejs. If it saved you time, a small tip helps keep the
+            <strong>Apache 2.0</strong> project growing. Choose the route that works where you are.
+          </p>
+        </section>
+
+        <div class="support-grid">
+          <section class="support-panel" aria-labelledby="vietnam-title">
+            <header class="panel-heading">
+              <div>
+                <p class="section-kicker">Local transfer</p>
+                <h2 id="vietnam-title">Vietnam</h2>
+              </div>
+              <ul class="method-list" aria-label="Supported local transfer methods">
+                <li>MoMo</li>
+                <li>VietQR</li>
+                <li>napas 247</li>
+              </ul>
+            </header>
+
+            <div class="local-body">
+              <div class="qr-frame">
+                <img src="momo-qr.png" alt="MoMo and VietQR donation QR code for Nguyễn Hoài Nhớ" />
+              </div>
+
+              <div>
+                <p class="payee-label">Payee</p>
+                <p class="payee-name">Nguyễn Hoài Nhớ</p>
+                <p class="instruction">
+                  Scan with the <strong>MoMo app</strong> or <strong>any Vietnamese bank app</strong>.
+                </p>
+                <ol class="steps" aria-label="Donation steps">
+                  <li>Open app</li>
+                  <li>Scan QR</li>
+                  <li>Send</li>
+                </ol>
+              </div>
+            </div>
+          </section>
+
+          <section class="support-panel" aria-labelledby="international-title">
+            <header class="panel-heading">
+              <div>
+                <p class="section-kicker">Card, account or crypto</p>
+                <h2 id="international-title">International</h2>
+              </div>
+              <p class="panel-index" aria-hidden="true">02 / WORLDWIDE</p>
+            </header>
+
+            <div class="international-body">
+              <p class="international-lead">
+                Donate directly through PayPal, support ongoing work on Ko-fi, or send crypto with Binance Pay.
+              </p>
+
+              <div class="support-actions">
+                <a
+                  class="support-button primary"
+                  href="https://www.paypal.com/paypalme/NguyenHoai545"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-support-channel="paypal"
+                >
+                  <span>Donate via PayPal</span>
+                  <span class="arrow" aria-hidden="true">↗</span>
+                </a>
+                <a
+                  class="support-button"
+                  href="https://ko-fi.com/iamnick"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-support-channel="kofi"
+                >
+                  <span>Support on Ko-fi</span>
+                  <span class="arrow" aria-hidden="true">↗</span>
+                </a>
+              </div>
+
+              <div class="international-qr">
+                <img
+                  src="https://storage.ko-fi.com/cdn/useruploads/O8A625YLSR/qrcode.png?v=635ec747-2db3-4f66-ab06-cca530f75325"
+                  alt="Ko-fi donation QR code"
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                  onerror="this.closest('.international-qr').hidden = true"
+                />
+                <p>
+                  <strong>Prefer to scan?</strong>
+                  Open Ko-fi from this QR. It works with any international card.
+                </p>
+              </div>
+
+              <div class="crypto-support">
+                <a
+                  class="crypto-qr-link"
+                  href="https://app.binance.com/uni-qr/Trcs9shL"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-crypto-qr
+                  aria-label="Open Binance Pay for Img2Threejs"
+                >
+                  <img
+                    src="binance-pay-qr.png"
+                    alt="Binance Pay donation QR for Img2Threejs"
+                    loading="lazy"
+                  />
+                </a>
+                <div class="crypto-copy">
+                  <p class="payee-label">Crypto · Binance Pay</p>
+                  <h3>Scan with Binance</h3>
+                  <p>
+                    Send crypto through <strong>Binance Pay</strong>. Binance should show the recipient
+                    as <strong>Img2Threejs</strong>; verify that name before confirming payment.
+                  </p>
+                  <a
+                    class="crypto-open"
+                    href="https://app.binance.com/uni-qr/Trcs9shL"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open in Binance&nbsp;↗
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <footer class="page-footer">
+        <span>img2threejs · Open source under Apache 2.0</span>
+        <nav class="footer-links" aria-label="Donation page links">
+          <a href="./#/privacy" data-privacy-link>Privacy &amp; analytics</a>
+          <a href="./" data-home-link>← Back to img2threejs</a>
+        </nav>
+      </footer>
     </div>
 
-    <main class="wrap">
-      <span class="tag reveal d1">// open-source · Apache 2.0<span class="cursor">&nbsp;</span></span>
-      <h1 class="reveal d1">Support img2threejs</h1>
-      <p class="lead reveal d2">
-        Thanks for using img2threejs! If it saved you time, a small tip helps keep the
-        project growing. Scan the code below to donate.
-      </p>
-
-      <section class="card reveal d3">
-        <div class="rails"><span>MoMo</span><i></i><span>VietQR</span><i></i><span>napas&nbsp;247</span></div>
-        <div class="qr">
-          <img src="momo-qr.png" alt="MoMo / VietQR donation QR code" onerror="this.parentElement.style.opacity=.35" />
-        </div>
-        <p class="payee">Nguyễn Hoài Nhớ</p>
-        <p class="hint">Scan with the <strong>MoMo app</strong> or <strong>any Vietnamese bank app</strong>.</p>
-        <div class="steps">
-          <span class="step"><span class="n">01</span>open&nbsp;app</span>
-          <span class="sep">/</span>
-          <span class="step"><span class="n">02</span>scan&nbsp;qr</span>
-          <span class="sep">/</span>
-          <span class="step"><span class="n">03</span>send</span>
-        </div>
-
-        <div class="divider"><span>or</span></div>
-
-        <div class="support-row">
-          <a class="paypal" href="https://www.paypal.com/paypalme/NguyenHoai545" target="_blank" rel="noopener noreferrer">
-            Donate via PayPal
-          </a>
-          <!-- Text button, not Ko-fi's hosted badge image: the badge would be a second request to
-               storage.ko-fi.com purely to render a label we can draw ourselves. -->
-          <a class="kofi" href="https://ko-fi.com/iamnick" target="_blank" rel="noopener noreferrer">
-            Support on Ko-fi
-          </a>
-        </div>
-
-        <!-- The one third-party request on this page. Ko-fi generates this QR against the account,
-             so it cannot be regenerated locally; `no-referrer` keeps the visitor's path off the CDN,
-             and onerror hides the frame rather than leaving a broken box if the CDN is blocked.
-             To make the page request-free again, save the image to public/kofi-qr.png and point
-             src at it. Like the VietQR code above, a scan raises no analytics event: it happens on
-             a phone this page never hears from. -->
-        <div class="kofi-qr">
-          <img src="https://storage.ko-fi.com/cdn/useruploads/O8A625YLSR/qrcode.png?v=635ec747-2db3-4f66-ab06-cca530f75325"
-               alt="Ko-fi donation QR code" loading="lazy" referrerpolicy="no-referrer"
-               onerror="this.closest('.kofi-qr').hidden = true" />
-          <p class="hint">Or scan for Ko-fi &mdash; works with any international card.</p>
-        </div>
-      </section>
-
-      <footer class="reveal d4">
-        <span class="heart">&lt;3</span> &nbsp;·&nbsp; <a href="./">&larr; back to the img2threejs demo gallery</a>
-      </footer>
-    </main>
-
     <!--
-      Analytics, standalone.
-
-      This page lives in `public/`, which Vite copies verbatim, so it cannot import from
-      `src/site-data.ts` the way the app does. The measurement ID below is therefore a SECOND copy
-      of `GA_MEASUREMENT_ID` — change both together. (`index.html` already duplicates `SITE_URL` in
-      its Open Graph tags for the same reason, and for the same reason it says so out loud.)
-
-      The three gates that stop the app from reporting junk are repeated here rather than assumed:
-      a non-production host, an automated browser, and the visitor's own opt-out — the same
-      `img2threejs:analytics-opt-out` key the privacy page writes, so opting out on the gallery
-      opts out here too.
+      This standalone page mirrors the app's analytics contract. It loads analytics only on the
+      two production hosts, honours the shared opt-out key, ignores automated browsers, and records
+      clicks on the two outbound support links. Local MoMo and Binance QR views and scans do not
+      emit analytics events.
     -->
     <script>
       (function () {
@@ -292,40 +767,36 @@
         var optedOut = false;
         try {
           optedOut = localStorage.getItem('img2threejs:analytics-opt-out') === '1';
-        } catch (e) { /* storage blocked is not an opt-out */ }
+        } catch (error) {
+          // Storage may be unavailable. The host and automation gates still apply.
+        }
 
-        if (GA_MEASUREMENT_ID === 'G-XXXXXXXXXX') return;
         if (optedOut || navigator.webdriver) return;
-        if (!debug && HOSTS.indexOf(location.hostname) === -1) return;
+        if (HOSTS.indexOf(location.hostname) === -1) return;
 
         window.dataLayer = window.dataLayer || [];
-        window.gtag = function () { window.dataLayer.push(arguments); };
-        gtag('js', new Date());
-        // This page has a real path, so GA4's own automatic page view is correct here — unlike the
-        // gallery, which is one document behind a hash router and has to send its own.
-        gtag('config', GA_MEASUREMENT_ID, { debug_mode: debug });
+        window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+        window.gtag('js', new Date());
+        window.gtag('config', GA_MEASUREMENT_ID, { debug_mode: debug });
 
         var script = document.createElement('script');
         script.async = true;
         script.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_MEASUREMENT_ID;
         document.head.appendChild(script);
 
-        /**
-         * `support_click`, with the same `channel` vocabulary `src/analytics.ts` uses, so the
-         * donation funnel reads as one report across both pages instead of two that have to be
-         * added up by hand. The QR code is deliberately not measured: it is an image, and a scan
-         * happens on a phone this page never hears from — inventing an event for it would put a
-         * number in the report that means nothing.
-         */
         document.addEventListener('click', function (event) {
-          var anchor = event.target.closest && event.target.closest('a[href]');
+          var target = event.target;
+          if (!target || target.nodeType !== 1 || !target.closest) return;
+          var anchor = target.closest('a[data-support-channel]');
           if (!anchor) return;
-          var href = anchor.getAttribute('href') || '';
-          var channel = null;
-          if (href.indexOf('paypal.') !== -1) channel = 'paypal';
-          else if (href.indexOf('ko-fi.com') !== -1) channel = 'kofi';
-          if (!channel) return;
-          gtag('event', 'support_click', { channel: channel, placement: 'donate_page' });
+
+          var channel = anchor.getAttribute('data-support-channel');
+          if (channel !== 'paypal' && channel !== 'kofi') return;
+
+          window.gtag('event', 'support_click', {
+            channel: channel,
+            placement: 'donate_page'
+          });
         });
       })();
     </script>
