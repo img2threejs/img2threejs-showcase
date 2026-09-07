@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { forestGround } from './grootTerrain';
+import { forestGround, placementTrees, type TreePlacementSource } from './grootWorld';
 import { inRiverH } from './grootRiverPath';
 import type { GrootSkin, GrootOutfit } from './grootSkin';
 
@@ -14,9 +14,9 @@ export class GrootWardrobe {
  private allowed=true;
  private readonly buttons=new Map<GrootOutfit,HTMLButtonElement>();
  private readonly clearInput:()=>void;
- constructor(private readonly skin:GrootSkin,private readonly actor:THREE.Object3D,private readonly height:number,colliders:readonly {x:number;z:number;radius:number}[],hud:HTMLElement,clearInput:()=>void,private readonly canvas:HTMLCanvasElement){
+ constructor(private readonly skin:GrootSkin,private readonly actor:THREE.Object3D,private readonly height:number,colliders:TreePlacementSource,hud:HTMLElement,clearInput:()=>void,private readonly canvas:HTMLCanvasElement){
   this.clearInput=clearInput;
-  const safe=(x:number,z:number)=>!inRiverH(x/height,z/height,.5)&&colliders.every(c=>Math.hypot(x-c.x,z-c.z)>c.radius+.45*height);
+  const safe=(x:number,z:number)=>!inRiverH(x/height,z/height,.5)&&placementTrees(colliders,x,z,.45*height).every(c=>Math.hypot(x-c.x,z-c.z)>c.radius+.45*height);
   let found=false;
   for(let i=0;i<120&&!found;i++){
    const a=.4+i*2.39996,r=(2.0+Math.floor(i/24)*.22)*height,x=Math.cos(a)*r,z=Math.sin(a)*r;

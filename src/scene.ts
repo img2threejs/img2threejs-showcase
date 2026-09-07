@@ -175,20 +175,24 @@ export class Viewer {
    * unaffected, and the re-walk is idempotent.
    */
   private tickers: Array<(dt: number, elapsed: number) => void> = [];
+  private renderPreparers: Array<() => void> = [];
   private readonly interactionRoots=new WeakSet<THREE.Object3D>();
 
   /** Re-walk the scene for `userData.tick`. Call after late geometry lands. */
   refreshTickers(): void {
     const found: Array<(dt: number, elapsed: number) => void> = [];
+    const preparers: Array<() => void> = [];
     this.scene.traverse((object) => {
       const tick = (object.userData as { tick?: unknown }).tick;
       if (typeof tick === 'function') found.push(tick as (dt: number, elapsed: number) => void);
+      const prepare=object.userData.prepareRender;
+      if(typeof prepare==='function')preparers.push(prepare);
       const mount=object.userData.mountViewerInteraction as ((viewer:Viewer)=>()=>void)|undefined;
       if(mount&&!this.interactionRoots.has(object)){
         this.interactionRoots.add(object);this.teardown.push(mount(this));
       }
     });
-    this.tickers = found;
+    this.tickers = found;this.renderPreparers=preparers;
   }
 
   private readonly mount: HTMLElement;
@@ -1215,6 +1219,9 @@ export class Viewer {
       (this.scene.userData as { turntableRate?: number }).turntableRate =
         this.turntableSpinning ? this.turntableRate : 0;
       this.controls.update();
+      // Exactly once per actual main frame, including paused/capture simulation. Never
+      // called by renderer callbacks (water reflections/shadows) or fixed-step motion.
+      for(const prepare of this.renderPreparers)prepare();
       this.renderer.render(this.scene, this.camera);
     };
     loop();

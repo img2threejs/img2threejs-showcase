@@ -1,7 +1,10 @@
 import * as THREE from 'three';
-import { inRiverH, riverCentreH, riverWidthH, RIVER_LEVEL_H } from './grootRiverPath';
+import { inRiverH, riverCentreH, RIVER_LEVEL_H } from './grootRiverPath';
 import { forestGround } from './grootTerrain';
 import { GrootWaterReflection } from './grootWaterReflection';
+import { riverTile } from './grootRiverChunks';
+import { geometryBytes } from './grootTerrainChunks';
+import { cellIntersects, type StreamPart } from './grootStreaming';
 
 const WAVE_CAPACITY=16,DROP_CAPACITY=128,WAVE_LIFE=2.5;
 /** A shallow dielectric surface: advected multi-scale normals and anchored dispersive wakes. */
@@ -26,17 +29,12 @@ export class GrootRiver {
   private readonly ages=new Float32Array(DROP_CAPACITY).fill(99);
   private readonly alphas=new Float32Array(DROP_CAPACITY);
   private readonly sizes=new Float32Array(DROP_CAPACITY);
-  private readonly bankGeometry:THREE.BufferGeometry;
-  constructor(readonly height:number,bankMaterial:THREE.Material|THREE.Material[]){
+  readonly surfaces=new THREE.Group();
+  private readonly cells=new Set<StreamPart>();
+  constructor(readonly height:number,private readonly bankMaterial:THREE.Material|THREE.Material[]){
     this.group.name='groot-woodland-river';
     this.reflection=new GrootWaterReflection(RIVER_LEVEL_H*height);
-    const geometry=new THREE.PlaneGeometry(1,1,272,24),p=geometry.attributes.position,uv=geometry.attributes.uv;
-    const depths=new Float32Array(p.count);
-    for(let i=0;i<p.count;i++){
-      const x=(uv.getX(i)*2-1)*34,side=uv.getY(i)*2-1,z=riverCentreH(x)+side*riverWidthH(x);
-      p.setXYZ(i,x*height,RIVER_LEVEL_H*height,z*height);depths[i]=Math.max(0,RIVER_LEVEL_H-forestGround(x*height,z*height,height)/height);
-    }
-    geometry.setAttribute('riverDepth',new THREE.BufferAttribute(depths,1));geometry.computeVertexNormals();
+    const geometry=new THREE.BufferGeometry();
     const material=new THREE.MeshPhysicalMaterial({color:'#436653',roughness:.085,metalness:0,ior:1.333,transparent:true,opacity:.93,depthWrite:false,side:THREE.DoubleSide});
     material.forceSinglePass=true;
     material.onBeforeCompile=shader=>{
@@ -98,31 +96,36 @@ export class GrootRiver {
       `);
     };
     material.customProgramCacheKey=()=> 'groot-river-dispersive-v2';
-    this.surface=new THREE.Mesh(geometry,material);this.surface.name='moonroot-running-water';this.surface.receiveShadow=true;this.group.add(this.surface);
+    // Empty material/callback handle; rendered water exists only inside resident cells.
+    this.surface=new THREE.Mesh(geometry,material);this.surface.name='moonroot-running-water';this.surface.receiveShadow=true;
+    this.surfaces.name='resident-river-surfaces';this.group.add(this.surfaces);
     this.surface.onBeforeRender=(renderer,scene,camera)=>{
       const x=camera.position.x/height,z=camera.position.z/height;
-      if(Math.abs(x)<39&&Math.abs(z-riverCentreH(x))<12)this.reflection.render(renderer,scene,camera,this.surface);
+      if(Math.abs(x)<39&&Math.abs(z-riverCentreH(x))<12)this.reflection.render(renderer,scene,camera,this.surfaces);
     };
-    const vertices:number[]=[],uvs:number[]=[],indices:number[]=[],colours:number[]=[];
-    for(const side of [-1,1]){
-      const start=vertices.length/3;
-      for(let i=0;i<=272;i++)for(let j=0;j<=6;j++){
-        const x=-34+i*.25,z=riverCentreH(x)+side*(riverWidthH(x)*.78+j/6*1.25);
-        vertices.push(x*height,forestGround(x*height,z*height,height)+.006*height,z*height);uvs.push(x*.75,z*.75);
-        const patch=.88+.12*Math.sin(x*.61+Math.sin(z*.47));colours.push(patch,patch*.98,patch*.9);
-      }
-      for(let i=0;i<272;i++)for(let j=0;j<6;j++){
-        const a=start+i*7+j,b=a+7;
-        if(side===1)indices.push(a,a+1,b,b,a+1,b+1);else indices.push(a,b,a+1,b,b+1,a+1);
-      }
-    }
-    const banks=this.bankGeometry=new THREE.BufferGeometry();banks.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));banks.setAttribute('color',new THREE.Float32BufferAttribute(colours,3));banks.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));banks.setIndex(indices);banks.computeVertexNormals();
-    const bank=new THREE.Mesh(banks,bankMaterial);bank.name='river-soft-soil-banks';bank.receiveShadow=true;this.group.add(bank);
+
     const drops=new THREE.BufferGeometry();drops.setAttribute('position',new THREE.BufferAttribute(this.positions,3));drops.setAttribute('aAlpha',new THREE.BufferAttribute(this.alphas,1));drops.setAttribute('aSize',new THREE.BufferAttribute(this.sizes,1));
     this.drops=new THREE.Points(drops,new THREE.ShaderMaterial({transparent:true,depthWrite:false,
       vertexShader:'attribute float aAlpha,aSize;varying float vAlpha;void main(){vAlpha=aAlpha;vec4 p=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*p;gl_PointSize=clamp(aSize/max(.1,-p.z),1.,7.);}',
       fragmentShader:'varying float vAlpha;void main(){vec2 p=gl_PointCoord-.5;float r=length(p*vec2(1.,.75));if(r>.5)discard;float glint=pow(max(0.,1.-length(p-vec2(-.12,.13))*2.),4.);gl_FragColor=vec4(mix(vec3(.18,.34,.31),vec3(.83,.96,.91),glint),vAlpha*(1.-smoothstep(.22,.5,r))*.7);}'
     }));this.drops.name='river-splash-droplets';this.drops.frustumCulled=false;this.group.add(this.drops);this.animate(0);
+  }
+  createCell(cx:number,cz:number):StreamPart {
+    const group=new THREE.Group(),waterGroup=new THREE.Group(),geometries:THREE.BufferGeometry[]=[];
+    group.name=`river-cell:${cx}:${cz}`;waterGroup.name=`water-cell:${cx}:${cz}`;
+    for(const bank of [false,true]){
+      const geometry=riverTile(cx,cz,this.height,bank);geometries.push(geometry);
+      if(!geometry.attributes.position.count)continue;
+      const mesh=new THREE.Mesh(geometry,bank?this.bankMaterial:this.surface.material);mesh.receiveShadow=true;
+      mesh.name=bank?'river-soft-soil-banks':'moonroot-running-water';
+      if(!bank)mesh.onBeforeRender=this.surface.onBeforeRender;
+      (bank?group:waterGroup).add(mesh);
+    }
+    // Empty reserved cells own no render objects. Keep their slot/lifecycle handles,
+    // but do not traverse two empty scene groups for every non-river ground cell.
+    if(group.children.length)this.group.add(group);if(waterGroup.children.length)this.surfaces.add(waterGroup);
+    const part:StreamPart={group,extraBuffers:geometries.flatMap(g=>Object.values(g.attributes) as THREE.BufferAttribute[]),bytes:geometries.reduce((sum,g)=>sum+geometryBytes(g),0),setVisible:(visible,x,z,r)=>{group.visible=visible;waterGroup.visible=visible&&cellIntersects(cx,cz,x,z,r);},dispose:()=>{group.removeFromParent();waterGroup.removeFromParent();for(const g of geometries)g.dispose();this.cells.delete(part);}};
+    this.cells.add(part);return part;
   }
   contains(position:THREE.Vector3):boolean{return inRiverH(position.x/this.height,position.z/this.height)&&forestGround(position.x,position.z,this.height)<RIVER_LEVEL_H*this.height;}
   update(dt:number,position:THREE.Vector3,grounded:boolean):void{
@@ -164,6 +167,6 @@ export class GrootRiver {
   inspect(){return{wet:this.wet,crossings:this.crossings,emitted:this.emitted,time:this.clock.value,ripples:this.waves.filter(r=>r.w>0).length,drops:this.alphas.filter(a=>a>0).length,waveCapacity:WAVE_CAPACITY,dropCapacity:DROP_CAPACITY,waves:this.waves.filter(r=>r.w>0).map(r=>({x:r.x,z:r.y,age:r.z,radiusH:.07+r.z*.64,envelope:Math.exp(-r.z*1.35)*r.w})),reflection:{size:this.reflection.size,maxHz:this.reflection.maxHz,frames:this.reflection.frames,drawCalls:this.reflection.lastDrawCalls,averageCpuMs:this.reflection.frames?this.reflection.totalMs/this.reflection.frames:0},disposed:this.disposed};}
   dispose():void {
     if(this.disposed)return;this.disposed=true;this.surface.onBeforeRender=()=>{};this.reflection.dispose();
-    this.surface.geometry.dispose();this.surface.material.dispose();this.bankGeometry.dispose();this.drops.geometry.dispose();(this.drops.material as THREE.Material).dispose();
+    this.surface.geometry.dispose();this.surface.material.dispose();for(const cell of this.cells)cell.dispose();this.drops.geometry.dispose();(this.drops.material as THREE.Material).dispose();
   }
 }
