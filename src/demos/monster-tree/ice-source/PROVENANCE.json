@@ -1,0 +1,67 @@
+{
+  "archive": "/Users/nhonh/Desktop/groot.zip",
+  "sha256": "a53f7752329d1ab7fce6a2aa6f5a662b18abbe12c432c61f70038ebc67e6f53a",
+  "identity": "ice",
+  "levels": {
+    "high": {
+      "member": "cosdes-groot-abies-algae-full-threejs/src/surfaceData.high.ts",
+      "memberSha256": "0c080cff407a3e9ac68e8f8d75c5e8d5e1411b16fe5c3bcd4c0d762996aa34a3",
+      "streamSha256": "129bb326618c47b98c1d3af89cedd1bb97d98a24a7f77ce1df90eec30dc3b6d4",
+      "vertices": 164291,
+      "triangles": 293844,
+      "parts": 33,
+      "quantization": {
+        "origin": [
+          -0.10251317918300629,
+          0,
+          -0.5
+        ],
+        "extent": [
+          0.20502635836601257,
+          0.9639910459518433,
+          1
+        ]
+      }
+    },
+    "medium": {
+      "member": "cosdes-groot-abies-algae-full-threejs/src/surfaceData.medium.ts",
+      "memberSha256": "769d938faedea013f00ff66fe5bb08a21c9b923344f85e2e8e0e03c4c7060c97",
+      "streamSha256": "bbe33fb811e40b1da2fa528bd9c9d2a69c48657fdb079a0a5cd13dc5279370f9",
+      "vertices": 74707,
+      "triangles": 117506,
+      "parts": 33,
+      "quantization": {
+        "origin": [
+          -0.10251317918300629,
+          3.7729740142822266e-05,
+          -0.49998077750205994
+        ],
+        "extent": [
+          0.20502635836601257,
+          0.9639533162117004,
+          0.9999310076236725
+        ]
+      }
+    },
+    "low": {
+      "member": "cosdes-groot-abies-algae-full-threejs/src/surfaceData.low.ts",
+      "memberSha256": "c653558d5c5d37267ee801528dee97718f113fb3213aeaa67d28d4624ff77264",
+      "streamSha256": "4c5506ec10e548b06985f51310c42417cb64f3c31d3130667a7c2984eb81a1ba",
+      "vertices": 31058,
+      "triangles": 39110,
+      "parts": 33,
+      "quantization": {
+        "origin": [
+          -0.10251317918300629,
+          3.7729740142822266e-05,
+          -0.49998077750205994
+        ],
+        "extent": [
+          0.20454426109790802,
+          0.9639533162117004,
+          0.9999310076236725
+        ]
+      }
+    }
+  }
+}

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { MonsterTreeRig } from './rig';
 
 /**
- * Authored gestures for Y'bneth's kit.
+ * Authored gestures for Groot's living-wood kit.
  *
  * WHY THESE EXIST. The rig ships sixteen clips from Tripo's generic biped library — boxing rounds,
  * front kicks, six dances. They are real motion and they are measured honestly elsewhere in this
@@ -10,7 +10,7 @@ import type { MonsterTreeRig } from './rig';
  * itself into the ground. Borrowing `box_01` for Heartwood Lash gives a boxer's jab with a vine drawn on
  * it, and no amount of effect work fixes a body doing the wrong thing.
  *
- * So the kit's four moves are POSED here rather than borrowed. Each is a timeline of aim
+ * So the public kit is POSED here rather than borrowed. Each move is a timeline of aim
  * directions, one per bone, blended with smoothstep and solved onto the skeleton by
  * `rig.aim` / `rig.applyPose`. Underneath, the body still plays a trimmed copy of
  * `standing_relax` — the quietest clip in the library — so the torso keeps breathing and the
@@ -286,6 +286,16 @@ function sample(keys: Key[], bone: string, time: number, out: THREE.Vector3): TH
  * vine leaves a hand that is still winding up.
  */
 export const BEATS = {
+  // A detached seed is picked from the crown, cradled low, released while the hand is still
+  // accelerating, and allowed to land after the throwing arm has arrested. It is deliberately a
+  // throw rather than another hand impact.
+  seed: { pluck: 0.42, cradle: 0.64, release: 0.82, arrest: 1.00, land: 1.40, duration: 2.18 },
+  // The plates travel IN toward the body before the incoming force arrives. The hit is not a
+  // strike played backwards: the arms stay crossed, the trunk yields, and bark leaves the chest.
+  guard: { close: 0.62, hit: 1.02, release: 1.48, duration: 2.22 },
+  // A pure external-force reaction. There is no windup because the character does not know the
+  // blow is coming; the fast compression starts on the scheduled hit frame.
+  recoil: { hit: 0.34, compressed: 0.48, regrow: 1.18, duration: 1.82 },
   // The branch begins travelling at `release`; the throwing hand stops at `arrest`. Keeping both
   // beats explicit is the difference between an effect that merely follows a hand and one that
   // builds around the instant the hand and branch run out of travel together.
@@ -295,7 +305,163 @@ export const BEATS = {
   // window; `recover` is when the torso has carried the recoil back upward.
   logs: { raised: 0.52, contact: 0.90, calls: [1.08, 1.28], finish: 0.90, recover: 1.58, duration: 2.45 },
   ultimate: { rooted: 0.55, open: 0.80, rainEnds: 2.55, duration: 3.20 },
+  spore: { open: 0.58, glow: 0.92, release: 1.22, fade: 2.20, duration: 2.80 },
+  fallingTree: { coil: 0.42, launch: 0.62, arrest: 0.94, recover: 1.60, duration: 2.30 },
+  embrace: { open: 0.58, gather: 0.94, stunEnds: 1.94, recover: 2.30, duration: 2.75 },
+  lifeSeed: {
+    crouch: 0.28,
+    air: 0.52,
+    land: 0.78,
+    rooted: 1.03,
+    volleys: [1.28, 1.92, 2.56, 3.20, 3.84, 4.48, 5.12],
+    pull: 5.30,
+    wake: 5.68,
+    duration: 6.20,
+  },
 } as const;
+
+/**
+ * Firstborn Seed — pluck from the crown, cradle near the heartwood, then cast underhand.
+ *
+ * The throw is intentionally compact. Groot's extended plant matter and Maokai's detached
+ * saplings suggested the action category, but this character's heavy trunk means the object is
+ * passed down the body before release instead of flicked from a human wrist.
+ */
+export function seedPose(): Key[] {
+  const rest = passivePose(0)[0].pose;
+  return [
+    { at: 0, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+    {
+      at: BEATS.seed.pluck,
+      turn: { Hip: -5, Waist: -8, Spine01: -12, Spine02: -16 },
+      hips: [-0.018, -0.020, 0.014],
+      pose: {
+        ...leg(-1, 10, -0.01), ...leg(1, 15, 0.02),
+        Waist: [-0.08, 0.99, 0.02], Spine01: [-0.12, 0.98, 0.04], Spine02: [-0.17, 0.96, 0.08],
+        L_Upperarm: [0.28, -0.67, -0.69], L_Forearm: [0.48, -0.80, -0.35],
+        R_Clavicle: [-0.10, 0.42, 0.90],
+        R_Upperarm: [-0.20, 0.86, 0.46], R_Forearm: [-0.28, 0.93, -0.24],
+      },
+    },
+    {
+      // The seed is brought down beside the heart. Both elbows make a small, closed silhouette.
+      at: BEATS.seed.cradle,
+      turn: { Hip: -11, Waist: -16, Spine01: -20, Spine02: -23 },
+      hips: [-0.042, -0.050, 0.025],
+      pose: {
+        ...leg(-1, 17, -0.018), ...leg(1, 25, 0.026),
+        Waist: [-0.18, 0.97, 0.03], Spine01: [-0.23, 0.95, 0.06], Spine02: [-0.28, 0.92, 0.10],
+        L_Upperarm: [0.32, -0.62, -0.72], L_Forearm: [0.55, -0.80, 0.03],
+        R_Upperarm: [-0.34, -0.54, 0.77], R_Forearm: [0.50, -0.73, -0.46],
+      },
+    },
+    // There is intentionally NO key on the release. The smooth interpolation from cradle to
+    // arrest reaches peak speed halfway between 0.64 and 1.00 — exactly 0.82 — so the object
+    // leaves while the hand is moving fastest instead of easing to a stop on its release frame.
+    {
+      // ARREST. Shoulder and trunk pass the hand, giving the thrown seed a readable follow-through.
+      at: BEATS.seed.arrest,
+      turn: { Hip: 15, Waist: 28, Spine01: 36, Spine02: 42 },
+      hips: [0.078, -0.042, -0.020],
+      pose: {
+        ...leg(-1, 24, 0.035), ...leg(1, 15, -0.018),
+        Waist: [0.28, 0.95, -0.02], Spine01: [0.39, 0.91, -0.05], Spine02: [0.49, 0.85, -0.10],
+        L_Upperarm: [-0.18, -0.72, -0.67], L_Forearm: [0.10, -0.96, -0.26],
+        R_Upperarm: [0.82, -0.36, 0.45], R_Forearm: [0.96, -0.24, 0.12],
+      },
+    },
+    {
+      at: 1.58,
+      turn: { Hip: 5, Waist: 10, Spine01: 13, Spine02: 15 },
+      hips: [0.022, -0.020, -0.006],
+      pose: {
+        ...leg(-1, 11), ...leg(1, 12),
+        Waist: [0.10, 0.99, 0], Spine01: [0.14, 0.98, -0.02], Spine02: [0.18, 0.97, -0.03],
+        L_Upperarm: [0.24, -0.76, -0.60], L_Forearm: [0.40, -0.88, -0.24],
+        R_Upperarm: [0.48, -0.69, 0.54], R_Forearm: [0.62, -0.75, 0.22],
+      },
+    },
+    { at: BEATS.seed.duration, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+  ];
+}
+
+/** Living-bark defence: the silhouette closes before it yields to a blow from the front. */
+export function guardPose(): Key[] {
+  const rest = passivePose(0)[0].pose;
+  const closed: Pose = {
+    ...leg(-1, 19, -0.018), ...leg(1, 20, 0.020),
+    Waist: [-0.10, 0.99, 0], Spine01: [-0.14, 0.98, 0], Spine02: [-0.18, 0.97, 0],
+    L_Clavicle: [0.22, 0.12, -0.97], R_Clavicle: [0.22, 0.12, 0.97],
+    L_Upperarm: [0.60, 0.04, -0.80], L_Forearm: [0.72, 0.34, 0.60],
+    R_Upperarm: [0.60, 0.04, 0.80], R_Forearm: [0.72, -0.10, -0.68],
+  };
+  return [
+    { at: 0, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+    {
+      // Begin wide: the ward closes like layers of bark, rather than appearing already formed.
+      at: 0.25,
+      pose: {
+        ...leg(-1, 10), ...leg(1, 11),
+        Waist: [-0.04, 1, 0], Spine01: [-0.06, 1, 0], Spine02: [-0.08, 0.99, 0],
+        L_Upperarm: [0.18, 0.08, -0.98], L_Forearm: [0.38, 0.18, -0.91],
+        R_Upperarm: [0.18, 0.08, 0.98], R_Forearm: [0.38, 0.18, 0.91],
+      },
+      turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [-0.01, 0, 0],
+    },
+    { at: BEATS.guard.close, pose: closed, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [-0.035, 0.012, 0] },
+    {
+      // The force arrives from outside the clip. Arms stay shut; hips and crown yield backward.
+      at: BEATS.guard.hit,
+      pose: { ...closed, Waist: [-0.28, 0.95, 0], Spine01: [-0.38, 0.91, 0], Spine02: [-0.48, 0.86, 0] },
+      turn: { Hip: -4, Waist: -6, Spine01: -8, Spine02: -10 }, hips: [-0.095, -0.018, 0],
+    },
+    {
+      at: 1.24,
+      pose: { ...closed, Waist: [-0.16, 0.98, 0], Spine01: [-0.22, 0.96, 0], Spine02: [-0.28, 0.93, 0] },
+      turn: { Hip: 2, Waist: 3, Spine01: 4, Spine02: 5 }, hips: [-0.052, 0.002, 0],
+    },
+    { at: BEATS.guard.release, pose: closed, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [-0.028, 0.018, 0] },
+    { at: BEATS.guard.duration, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+  ];
+}
+
+/** A blow taken: no anticipation, no hand flash, fast compression followed by slow regrowth. */
+export function recoilPose(): Key[] {
+  const rest = passivePose(0)[0].pose;
+  const thrown: Pose = {
+    ...leg(-1, 28, -0.035), ...leg(1, 18, 0.030),
+    Waist: [-0.40, 0.90, 0.12], Spine01: [-0.52, 0.82, 0.18], Spine02: [-0.62, 0.72, 0.25],
+    L_Upperarm: [-0.34, -0.18, -0.92], L_Forearm: [-0.58, -0.10, -0.81],
+    R_Upperarm: [-0.30, -0.22, 0.93], R_Forearm: [-0.54, -0.14, 0.83],
+  };
+  return [
+    { at: 0, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+    // There is deliberately no windup key. The body cannot anticipate an external blow.
+    { at: BEATS.recoil.hit - 0.015, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+    {
+      at: BEATS.recoil.compressed,
+      pose: thrown,
+      turn: { Hip: -17, Waist: -29, Spine01: -38, Spine02: -48 },
+      hips: [-0.115, -0.025, 0.055],
+    },
+    {
+      at: 0.70,
+      pose: { ...thrown, Waist: [-0.30, 0.94, 0.10], Spine01: [-0.40, 0.88, 0.15], Spine02: [-0.48, 0.82, 0.20] },
+      turn: { Hip: -12, Waist: -21, Spine01: -27, Spine02: -34 }, hips: [-0.085, -0.013, 0.040],
+    },
+    {
+      at: BEATS.recoil.regrow,
+      pose: {
+        ...leg(-1, 17, -0.012), ...leg(1, 14, 0.014),
+        Waist: [-0.12, 0.99, 0.04], Spine01: [-0.17, 0.98, 0.06], Spine02: [-0.22, 0.96, 0.08],
+        L_Upperarm: [0.10, -0.72, -0.69], L_Forearm: [0.22, -0.92, -0.32],
+        R_Upperarm: [0.12, -0.72, 0.68], R_Forearm: [0.24, -0.91, 0.33],
+      },
+      turn: { Hip: -3, Waist: -6, Spine01: -8, Spine02: -10 }, hips: [-0.030, 0.018, 0.012],
+    },
+    { at: BEATS.recoil.duration, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+  ];
+}
 
 /**
  * Nội tại — Thân Thể Đại Thụ.
@@ -604,5 +770,136 @@ export function ultimatePose(): Key[] {
       turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 },
       hips: [0, 0, 0],
     },
+  ];
+}
+
+/** Groot's quietest power: open both palms and let warm spores lift from the crown. */
+export function sporePose(): Key[] {
+  const rest = passivePose(0)[0].pose;
+  const cradle: Pose = {
+    ...leg(-1, 10, -0.012), ...leg(1, 12, 0.014),
+    Waist: [-0.05, 0.99, 0], Spine01: [-0.08, 0.99, 0], Spine02: [-0.12, 0.98, 0],
+    L_Clavicle: [0.02, 0.20, -0.98], R_Clavicle: [0.02, 0.20, 0.98],
+    L_Upperarm: [0.34, -0.30, -0.89], L_Forearm: [0.28, 0.50, 0.82],
+    R_Upperarm: [0.34, -0.30, 0.89], R_Forearm: [0.28, 0.50, -0.82],
+  };
+  const open: Pose = {
+    ...leg(-1, 8, -0.016), ...leg(1, 10, 0.018),
+    Waist: [0.02, 1, 0], Spine01: [0.04, 1, 0], Spine02: [0.08, 0.99, 0],
+    L_Clavicle: [-0.08, 0.28, -0.96], R_Clavicle: [-0.08, 0.28, 0.96],
+    L_Upperarm: [0.16, 0.32, -0.93], L_Forearm: [0.10, 0.68, -0.72],
+    R_Upperarm: [0.16, 0.32, 0.93], R_Forearm: [0.10, 0.68, 0.72],
+  };
+  return [
+    { at: 0, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+    { at: BEATS.spore.open, pose: cradle, turn: { Hip: -2, Waist: -3, Spine01: -2, Spine02: 2 }, hips: [-0.012, -0.018, 0] },
+    { at: BEATS.spore.glow, pose: cradle, turn: { Hip: 2, Waist: 3, Spine01: 4, Spine02: -3 }, hips: [0.006, -0.012, 0.006] },
+    { at: BEATS.spore.release, pose: open, turn: { Hip: 0, Waist: 2, Spine01: 3, Spine02: 5 }, hips: [0.010, 0.012, 0] },
+    { at: BEATS.spore.fade, pose: open, turn: { Hip: -2, Waist: -1, Spine01: 2, Spine02: -4 }, hips: [0.004, 0.008, -0.008] },
+    { at: BEATS.spore.duration, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+  ];
+}
+
+/** Cây Đổ: Groot hardens into a shoulder-led battering ram, then arrests all at once. */
+export function fallingTreePose(): Key[] {
+  const rest = passivePose(0)[0].pose;
+  const shield: Pose = {
+    ...leg(-1, 29, -0.040), ...leg(1, 25, 0.042),
+    Waist: [0.28, 0.95, 0], Spine01: [0.38, 0.91, 0], Spine02: [0.50, 0.86, -0.02],
+    L_Clavicle: [0.26, 0.02, -0.96], R_Clavicle: [0.30, 0.02, 0.95],
+    L_Upperarm: [0.68, -0.12, -0.72], L_Forearm: [0.84, 0.18, 0.51],
+    R_Upperarm: [0.72, -0.10, 0.68], R_Forearm: [0.86, 0.14, -0.49],
+  };
+  return [
+    { at: 0, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+    {
+      at: BEATS.fallingTree.coil,
+      pose: {
+        ...leg(-1, 34, -0.045), ...leg(1, 31, 0.045),
+        Waist: [-0.20, 0.97, 0], Spine01: [-0.28, 0.95, 0], Spine02: [-0.38, 0.92, 0],
+        L_Upperarm: [0.30, -0.35, -0.89], L_Forearm: [0.52, 0.10, 0.85],
+        R_Upperarm: [0.30, -0.35, 0.89], R_Forearm: [0.52, 0.10, -0.85],
+      },
+      turn: { Hip: -5, Waist: -8, Spine01: -11, Spine02: -14 }, hips: [-0.060, -0.076, 0],
+    },
+    { at: BEATS.fallingTree.launch, pose: shield, turn: { Hip: 3, Waist: 7, Spine01: 10, Spine02: 12 }, hips: [0.045, -0.044, 0] },
+    { at: BEATS.fallingTree.arrest, pose: shield, turn: { Hip: 10, Waist: 16, Spine01: 20, Spine02: 24 }, hips: [0.135, -0.032, -0.018] },
+    {
+      at: BEATS.fallingTree.arrest + 0.22,
+      pose: { ...shield, Waist: [0.38, 0.91, 0], Spine01: [0.48, 0.86, 0], Spine02: [0.58, 0.80, 0] },
+      turn: { Hip: 6, Waist: 10, Spine01: 12, Spine02: 14 }, hips: [0.105, -0.061, 0.012],
+    },
+    { at: BEATS.fallingTree.recover, pose: { ...shield, ...leg(-1, 14), ...leg(1, 15) }, turn: { Hip: 2, Waist: 4, Spine01: 5, Spine02: 6 }, hips: [0.030, -0.025, 0] },
+    { at: BEATS.fallingTree.duration, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+  ];
+}
+
+/** Thiên Nhiên Vỗ Về: grow wide, then close the entire front arc into one stunned centre. */
+export function embracePose(): Key[] {
+  const rest = passivePose(0)[0].pose;
+  const wide: Pose = {
+    ...leg(-1, 18, -0.030), ...leg(1, 19, 0.032),
+    Waist: [-0.08, 0.99, 0], Spine01: [-0.12, 0.98, 0], Spine02: [-0.16, 0.97, 0],
+    L_Clavicle: [-0.18, 0.10, -0.98], R_Clavicle: [-0.18, 0.10, 0.98],
+    L_Upperarm: [-0.16, 0.08, -0.98], L_Forearm: [-0.12, 0.02, -0.99],
+    R_Upperarm: [-0.16, 0.08, 0.98], R_Forearm: [-0.12, 0.02, 0.99],
+  };
+  const closed: Pose = {
+    ...leg(-1, 27, -0.028), ...leg(1, 28, 0.030),
+    Waist: [0.28, 0.95, 0], Spine01: [0.38, 0.91, 0], Spine02: [0.48, 0.86, 0],
+    L_Clavicle: [0.30, 0.06, -0.95], R_Clavicle: [0.30, 0.06, 0.95],
+    L_Upperarm: [0.76, -0.10, -0.64], L_Forearm: [0.98, -0.12, 0.12],
+    R_Upperarm: [0.76, -0.10, 0.64], R_Forearm: [0.98, -0.12, -0.12],
+  };
+  return [
+    { at: 0, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+    { at: 0.24, pose: { ...wide, ...leg(-1, 12), ...leg(1, 13) }, turn: { Hip: -3, Waist: -5, Spine01: -7, Spine02: -9 }, hips: [-0.025, -0.020, 0] },
+    { at: BEATS.embrace.open, pose: wide, turn: { Hip: -7, Waist: -11, Spine01: -15, Spine02: -18 }, hips: [-0.055, -0.045, 0] },
+    { at: BEATS.embrace.gather, pose: closed, turn: { Hip: 8, Waist: 15, Spine01: 20, Spine02: 24 }, hips: [0.075, -0.070, 0] },
+    { at: BEATS.embrace.stunEnds, pose: closed, turn: { Hip: 5, Waist: 9, Spine01: 12, Spine02: 15 }, hips: [0.050, -0.055, 0.008] },
+    { at: BEATS.embrace.recover, pose: { ...closed, ...leg(-1, 13), ...leg(1, 14) }, turn: { Hip: 1, Waist: 3, Spine01: 4, Spine02: 5 }, hips: [0.018, -0.018, 0] },
+    { at: BEATS.embrace.duration, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+  ];
+}
+
+/** Hạt Giống Sinh Mệnh: leap, land, then sleep as a dense rooted siege-tree for six seconds. */
+export function lifeSeedPose(): Key[] {
+  const rest = passivePose(0)[0].pose;
+  const sleeping = (phase: number): Pose => ({
+    ...leg(-1, 32 + phase * 2, -0.065), ...leg(1, 31 - phase * 2, 0.068),
+    Waist: [0.32 + phase * 0.025, 0.94, -0.02],
+    Spine01: [0.42 + phase * 0.035, 0.90, -0.03],
+    Spine02: [0.54 + phase * 0.035, 0.84, -0.04],
+    L_Clavicle: [0.16, -0.20, -0.97], R_Clavicle: [0.16, -0.20, 0.97],
+    L_Upperarm: [0.42 + phase * 0.025, -0.74, -0.52 + phase * 0.035],
+    L_Forearm: [0.34 + phase * 0.04, -0.91, -0.22 + phase * 0.025],
+    R_Upperarm: [0.42 - phase * 0.025, -0.74, 0.52 + phase * 0.035],
+    R_Forearm: [0.34 - phase * 0.04, -0.91, 0.22 + phase * 0.025],
+  });
+  return [
+    { at: 0, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
+    {
+      at: BEATS.lifeSeed.crouch,
+      pose: { ...sleeping(0), ...leg(-1, 39, -0.05), ...leg(1, 38, 0.052) },
+      turn: { Hip: -5, Waist: -8, Spine01: -11, Spine02: -14 }, hips: [-0.045, -0.094, 0],
+    },
+    {
+      at: BEATS.lifeSeed.air,
+      pose: {
+        ...leg(-1, 18, -0.10), ...leg(1, 28, 0.11),
+        Waist: [-0.16, 0.98, 0], Spine01: [-0.22, 0.96, 0], Spine02: [-0.30, 0.93, 0],
+        L_Upperarm: [-0.22, 0.46, -0.86], L_Forearm: [-0.34, 0.62, -0.71],
+        R_Upperarm: [-0.22, 0.46, 0.86], R_Forearm: [-0.34, 0.62, 0.71],
+      },
+      turn: { Hip: 2, Waist: 4, Spine01: 5, Spine02: 7 }, hips: [0.065, 0.115, 0],
+    },
+    { at: BEATS.lifeSeed.land, pose: sleeping(0), turn: { Hip: 5, Waist: 8, Spine01: 9, Spine02: 8 }, hips: [0.105, -0.080, 0] },
+    { at: BEATS.lifeSeed.rooted, pose: sleeping(0), turn: { Hip: 1, Waist: 2, Spine01: 1, Spine02: -2 }, hips: [0.040, -0.052, 0] },
+    { at: 2.24, pose: sleeping(1.40), turn: { Hip: -4, Waist: -6, Spine01: -5, Spine02: 6 }, hips: [0.035, -0.048, -0.016] },
+    { at: 3.44, pose: sleeping(-1.25), turn: { Hip: 4, Waist: 6, Spine01: 5, Spine02: -6 }, hips: [0.042, -0.051, 0.018] },
+    { at: 4.64, pose: sleeping(1.20), turn: { Hip: -4, Waist: -6, Spine01: -5, Spine02: 5 }, hips: [0.038, -0.049, -0.014] },
+    { at: BEATS.lifeSeed.pull, pose: sleeping(0), turn: { Hip: 0, Waist: 1, Spine01: 0, Spine02: 0 }, hips: [0.040, -0.052, 0] },
+    { at: BEATS.lifeSeed.wake, pose: { ...sleeping(0), ...leg(-1, 18), ...leg(1, 19) }, turn: { Hip: 3, Waist: 5, Spine01: 7, Spine02: 9 }, hips: [0.025, -0.030, 0] },
+    { at: BEATS.lifeSeed.duration, pose: rest, turn: { Hip: 0, Waist: 0, Spine01: 0, Spine02: 0 }, hips: [0, 0, 0] },
   ];
 }

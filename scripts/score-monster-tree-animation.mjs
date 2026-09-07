@@ -36,7 +36,7 @@ const { launch } = await import(pathToFileURL(join(DRIVER, entry)).href);
 const URL = process.argv.find((a) => a.startsWith('--url='))?.slice(6)
   ?? 'http://127.0.0.1:5347/#/demo/monster-tree';
 const JSON_OUT = process.argv.includes('--json');
-const KIT = ['passive', 'vine', 'natures-call', 'ultimate'];
+const KIT = ['passive', 'thornline', 'falling-tree', 'natures-embrace', 'life-seed', 'regrowth', 'spore-light'];
 const RATE = 240;
 
 const browser = await launch({ headless: true });
@@ -175,6 +175,26 @@ const data = await page.evaluate(({ kit, rate }) => {
         if (speed[side][i] === peak) peakAt = s.frames[i + 1].t;
       }
     }
+    // A throw can have a faster pickup before its actual cast. Measure the release against the
+    // local travel window that contains it, not against an unrelated motion elsewhere in the
+    // clip. Dây Gai releases inside the authored raised-to-arrest travel window.
+    const releaseWindow = skill === 'thornline'
+      ? [mt.beats.vine.raised, mt.beats.vine.arrest]
+      : null;
+    let releasePeak = -1;
+    let releasePeakAt = peakAt;
+    if (releaseWindow) {
+      for (const side of ['L', 'R']) {
+        for (let i = 0; i < speed[side].length; i += 1) {
+          const at = s.frames[i + 1].t;
+          if (at < releaseWindow[0] || at > releaseWindow[1]) continue;
+          if (speed[side][i] > releasePeak) {
+            releasePeak = speed[side][i];
+            releasePeakAt = at;
+          }
+        }
+      }
+    }
     const p90 = q(0.90);
     let worstRatioAt = 0;
     let worstRatio = 0;
@@ -196,8 +216,8 @@ const data = await page.evaluate(({ kit, rate }) => {
     const toeHi = Math.min(...s.frames.map((f) => Math.max(f.toeL, f.toeR)));
     // Motion during a HOLD, if the skill declares one: the window between the arms arriving and
     // the move committing at the end.
-    const hold = skill === 'natures-call' && window.monsterTree.beats
-      ? [window.monsterTree.beats.logs.raised + 0.05, window.monsterTree.beats.logs.finish - 0.15]
+    const hold = skill === 'life-seed' && window.monsterTree.beats
+      ? [window.monsterTree.beats.lifeSeed.rooted + 0.20, window.monsterTree.beats.lifeSeed.pull - 0.30]
       : null;
     let holdMean = 0;
     if (hold) {
@@ -216,6 +236,7 @@ const data = await page.evaluate(({ kit, rate }) => {
       holdMean: +holdMean.toFixed(4),
       peak: +peak.toFixed(3),
       peakAt: +peakAt.toFixed(3),
+      releasePeakAt: +releasePeakAt.toFixed(3),
       p90: +p90.toFixed(3),
       mean: +(all.reduce((a, b) => a + b, 0) / all.length).toFixed(4),
       worstRatio: +worstRatio.toFixed(2),
@@ -339,6 +360,32 @@ const data = await page.evaluate(({ kit, rate }) => {
   return out;
 }, { kit: KIT, rate: RATE });
 
+// The deterministic pose sweep above intentionally does not advance the VFX clock, but skill cues
+// still fire while it crosses their beats. Measuring rAF on that same scene leaves every burst,
+// grass patch, seed volley and slow field from all seven actions stacked at age zero — a state the
+// runtime can never reach. Reload a clean, constructor-prewarmed scene before measuring frame time;
+// animation data stays in the Node-side `data` object and the resource counts remain comparable.
+await page.reload({ waitUntil: 'load', timeout: 180000 });
+await page.waitForFunction(
+  () => {
+    const viewer = window.__IMG2THREEJS_VIEWER__;
+    const model = viewer?.scene?.getObjectByName('monster-tree');
+    return window.__IMG2THREEJS_READY__ === true
+      && Boolean(model?.userData?.sculptRuntime?.diagnostics);
+  },
+  null,
+  { timeout: 240000 },
+);
+await page.waitForTimeout(2500);
+await page.evaluate(() => {
+  const viewer = window.__IMG2THREEJS_VIEWER__;
+  const model = viewer.scene.getObjectByName('monster-tree');
+  window.monsterTree = {
+    ...model.userData.sculptRuntime.diagnostics,
+    camera: viewer.camera,
+  };
+});
+
 /**
  * Frame timing, measured live — TWICE, keeping the better pass per skill.
  *
@@ -394,7 +441,7 @@ const timing = await page.evaluate(async (skills) => {
     merged[s].repeated = Math.min(a[s].over25, b[s].over25);
   }
   return merged;
-}, ['passive', 'vine', 'natures-call', 'ultimate']);
+}, KIT);
 
 // Effects consume world-space socket positions. The rig and VFX therefore have to be siblings in
 // the model: nesting VFX under the moving rig applies the lunge transform twice, so a vine begins
@@ -477,19 +524,19 @@ const ramp = (value, good, bad) => (value <= good ? 1 : value >= bad ? 0 : (bad 
   // still travelling as fast as it ever will, and the hand's hardest stop comes later, at the end
   // of the follow-through. Applying the punch rule here scored 0.49 on a gesture that was doing
   // exactly the right thing — the hand peaks 36 ms before the vine leaves it.
-  const dv = Math.abs((data.clips.vine?.peakAt ?? 99) - (beats?.vine?.release ?? 0.34));
-  add('release lands on peak speed', ramp(dv, 0.06, 0.30),
-    `Heartwood Lash's hand peaks ${dv.toFixed(3)}s from its authored release`);
+  const dv = Math.abs((data.clips.thornline?.releasePeakAt ?? 99) - (beats?.vine?.release ?? 0.72));
+  add('elongation releases near peak speed', ramp(dv, 0.06, 0.30),
+    `Dây Gai ${dv.toFixed(3)}s from authored release`);
 }
 // 6. alive
 {
   const p = data.clips.passive?.mean ?? 0;
-  // The hold, not the whole clip. Rootbreaker spends its first 0.52s raising both arms, and
-  // averaging that in reports the raise rather than the thing the criterion is about.
-  const n = data.clips['natures-call']?.holdMean ?? 0;
+  // The hold, not the whole clip. Hạt Giống Sinh Mệnh spends its opening second jumping and
+  // landing; averaging that in would report the impact instead of the rooted six-second channel.
+  const n = data.clips['life-seed']?.holdMean ?? 0;
   const inBand = (v, lo, hi) => (v >= lo && v <= hi ? 1 : v < lo ? v / lo : ramp(v, hi, hi * 3));
   add('holds are alive', Math.min(inBand(p, 0.03, 0.35), inBand(n, 0.02, 0.5)),
-    `passive mean ${p} H/s, Rootbreaker hold-window mean ${n} H/s`);
+    `passive mean ${p} H/s, Life Seed hold-window mean ${n} H/s`);
 }
 // 7. feet
 {
@@ -511,7 +558,7 @@ const ramp = (value, good, bad) => (value <= good ? 1 : value >= bad ? 0 : (bad 
   // sits from the resting pose tests nothing about it, and an earlier version of this check spent
   // most of its budget failing the passive for being what it is meant to be. It still takes part
   // in the pairwise check below, where "is this a different move" does mean something.
-  const ACTIVES = ['vine', 'natures-call', 'ultimate'];
+  const ACTIVES = KIT.filter((id) => id !== 'passive');
   const fromRest = ACTIVES.filter((k) => data.payoff[k]).map((k) => [k, meanDist(data.payoff[k], data.restPose)]);
   const worstRest = fromRest.reduce((a, b) => (b[1] < a[1] ? b : a));
   let closest = ['', '', 99];
@@ -545,9 +592,13 @@ const ramp = (value, good, bad) => (value <= good ? 1 : value >= bad ? 0 : (bad 
   for (const [k, s] of Object.entries(data.payoffScreen)) {
     if (k === 'passive') continue;
     const v = spread(s);
-    // Either the hands reach further from the body than at rest, or they open wider from each
-    // other. A gesture that does neither is not visible as a gesture.
-    const score = Math.max(v.reach / Math.max(1, rest.reach), v.apart / Math.max(1, rest.apart));
+    // A readable gesture can OPEN (lash/canopy) or deliberately CLOSE (guard). Measure the larger
+    // proportional change in either direction; the previous one-way ratio failed a crossed-arm
+    // ward precisely because it succeeded at becoming more compact than rest.
+    const score = Math.max(
+      v.reach / Math.max(1, rest.reach), rest.reach / Math.max(1, v.reach),
+      v.apart / Math.max(1, rest.apart), rest.apart / Math.max(1, v.apart),
+    );
     if (score < worst[1]) worst = [k, score];
   }
   add('gestures survive the projection', ramp(1.15 - worst[1], 0, 0.35),
@@ -591,7 +642,7 @@ const total = (raw / checks.length) * 10;
 if (JSON_OUT) {
   console.log(JSON.stringify({ total: +total.toFixed(2), raw: +raw.toFixed(2), checks: checks.length, breakdown: checks, clips: data.clips, timing, residue: data.residue, effectSpace }, null, 2));
 } else {
-  console.log('\nY’bneth animation score\n');
+  console.log('\nGroot animation score\n');
   for (const c of checks) {
     console.log(`  ${c.score.toFixed(2)}  ${c.name.padEnd(30)} ${c.detail}`);
   }

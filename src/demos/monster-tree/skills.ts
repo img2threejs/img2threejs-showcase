@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { EchoChorus, ECHO_RIM, type EchoChorusOptions } from './echoes';
-import { BEATS, blendPose, clearPose, type Key, logsPose, passivePose, ultimatePose, vinePose } from './poses';
+import {
+  BEATS, blendPose, clearPose, embracePose, fallingTreePose, type Key, lifeSeedPose, passivePose,
+  recoilPose, sporePose, vinePose,
+} from './poses';
 import { beats, clipEvents, HANDS, loudestArrest } from './events';
 import { PALETTE } from './measured';
 import type { MonsterTreeRig } from './rig';
@@ -154,7 +157,6 @@ const IMPACT_AT = new THREE.Vector3();
 const SKILL_AT = new THREE.Vector3();
 const SKILL_GROUND = new THREE.Vector3();
 const SKILL_CROWN = new THREE.Vector3();
-const SKILL_HIGH = new THREE.Vector3();
 
 /**
  * Each skill's accent, taken from the reference's own measured palette.
@@ -306,43 +308,49 @@ export const SKILLS: Skill[] = [
   {
     id: 'passive',
     accent: ACCENT.moss,
-    label: 'Quietest · Greatwood Body',
+    label: 'Nội tại · Đất Mẹ',
     pose: (time) => passivePose(time),
     clip: 'authored:passive',
     fade: 0.45,
     loop: true,
-    measured: 'AUTHORED from the quietest embedded source clip. The 15.38s standing_relax base measures bodyMean 0.006 H/s with no event spikes; asymmetric branch sway and a sparse root-to-heart sap circulation add life without turning the rest state into a spell cast.',
+    measured: 'QUIETEST. Groot enters living grass, draws a 2% max-health pulse from the soil, and carries a five-second +60 movement-speed wake. The activation is table-scheduled; the calm asymmetric sway stays calibrated to the quietest embedded clip instead of using a global motion threshold.',
     drive: (_rig, vfx, time) => {
-      // The quiet action is continuous rather than a sequence of repeated particle bursts. Sap
-      // rises from the visible root footprint into the chest, breathing at a deliberately
-      // incommensurate rate from the hips and crown.
-      vfx.signature.passiveStrength = 0.58 + Math.sin(time * 0.73) * 0.08;
-      vfx.charge = 0.055 + Math.sin(time * 1.1) * 0.018;
+      const speedWindow = time < 5 ? 1 - time / 5 : 0;
+      vfx.signature.passiveStrength = 0.58 + speedWindow * 0.22 + Math.sin(time * 0.73) * 0.06;
+      vfx.charge = 0.055 + speedWindow * 0.10 + Math.sin(time * 1.1) * 0.018;
     },
-    cues: [],
+    cues: [{
+      at: 0,
+      run: (rig, vfx) => {
+        SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+        SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld).add(SKILL_AT).multiplyScalar(0.5).setY(0);
+        vfx.grass(SKILL_GROUND, { radius: 1.16, duration: 8, count: 300 });
+        vfx.drawUp(SKILL_GROUND, { radius: 0.76, count: 64 });
+        vfx.runeCircle(SKILL_GROUND, 0.70, 1.15);
+      },
+    }],
   },
   {
-    id: 'vine',
+    id: 'thornline',
     accent: ACCENT.iris,
-    label: 'Loudest · Heartwood Lash',
+    label: 'Chiêu 1 · Dây Gai',
     pose: () => vinePose(),
-    clip: 'authored:vine',
+    clip: 'authored:thornline',
     fade: 0.14,
     loop: false,
-    measured: 'AUTHORED as bend → hold → release → arrest. The whole tree winds away for 0.58s, holds loaded until 0.72s, and crosses to a full-body stop at 0.86s. A fixed bark-and-sap branch reaches its target on that same arrest frame; 65ms of hitstop belongs to the stop, not the travel.',
+    measured: 'LOUD RANGED STRIKE. Groot bends his whole trunk away for 0.58s, holds the living limb loaded until 0.72s, then elongates arm and thornwood together. The branch reaches maximum extension at the authored 0.86s arrest; 65ms of hitstop belongs to that stop.',
+    trails: ['grip-l'],
     drive: (rig, vfx, time) => {
-      const reach = swell(time, BEATS.vine.release, BEATS.vine.recover + 0.18) * 0.32;
+      const reach = swell(time, BEATS.vine.release, BEATS.vine.recover + 0.18) * 0.38;
       rig.stretch('L_Forearm', reach);
-      rig.stretch('L_Upperarm', reach * 0.42);
+      rig.stretch('L_Upperarm', reach * 0.46);
       const build = buildTo(time, BEATS.vine.release, 0.60);
-      if (build * 0.32 > vfx.charge) vfx.charge = build * 0.32;
       vfx.signature.gather(build, 0);
-      // Every cast commits its root mass. The translation is small compared with the hip shift but
-      // gives the branch a visible forward origin; it eases home before the one-shot ends.
+      vfx.charge = Math.max(vfx.charge, build * 0.34);
       LUNGE.copy(facing(rig));
       rig.group.position.copy(HOME).addScaledVector(
         LUNGE,
-        swell(time, BEATS.vine.release, BEATS.vine.recover + 0.28) * 0.16,
+        swell(time, BEATS.vine.release, BEATS.vine.recover + 0.28) * 0.12,
       );
     },
     cues: [
@@ -352,155 +360,256 @@ export const SKILLS: Skill[] = [
           vfx.charge = 0;
           const heading = lashDirection(rig);
           vfx.signature.castLash(
-            rig.sockets['grip-l'],
-            heading,
-            0.38,
-            BEATS.vine.arrest - BEATS.vine.release,
+            rig.sockets['grip-l'], heading, 0.56, BEATS.vine.arrest - BEATS.vine.release,
           );
+          SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+          SKILL_AT.addScaledVector(heading, 0.12).setY(0);
+          vfx.signature.aftershock(SKILL_AT, heading, 0.48);
           vfx.burst(rig.sockets['grip-l'], {
-            count: 20, speed: 0.42, duration: 0.58, spread: 0.7, gravity: -0.45, lightness: 0.78,
+            count: 26, speed: 0.46, duration: 0.62, spread: 0.62, gravity: -0.45, lightness: 0.78,
           });
         },
       },
       {
         at: BEATS.vine.arrest,
         run: (rig, vfx) => {
-          const at = vfx.signature.arrestLash(rig, 1.0);
-          vfx.impactFlash(at, 8, 0.24);
-          vfx.flash(0.58);
+          const at = vfx.signature.arrestLash(rig, 1.08);
+          vfx.impactFlash(at, 9, 0.26);
+          vfx.flash(0.68);
           vfx.burstAt(at, {
-            count: 92, speed: 1.65, duration: 0.72, spread: 0.76, gravity: -1.1, lightness: 0.82,
+            count: 108, speed: 1.75, duration: 0.78, spread: 0.68, gravity: -1.05, lightness: 0.82,
           });
         },
       },
     ],
   },
   {
-    id: 'natures-call',
+    id: 'falling-tree',
     accent: ACCENT.deep,
-    label: "Ground Contact · Rootbreaker",
-    pose: () => logsPose(),
-    clip: 'authored:logs',
+    label: 'Chiêu 1 · Cây Đổ',
+    pose: () => fallingTreePose(),
+    clip: 'authored:falling-tree',
+    fade: 0.16,
+    loop: false,
+    measured: 'HEAVY DASH. Groot compresses into a hardened bark shield at 0.42s, launches at 0.62s, and drives shoulder, hips, and root mass into one 0.94s directional arrest. The stop emits a forward splinter crown and root wedge, visually separating knockback from an ordinary hand hit.',
+    drive: (rig, vfx, time) => {
+      const armorIn = Math.min(1, time / BEATS.fallingTree.coil);
+      const armorOut = time < BEATS.fallingTree.recover
+        ? 1
+        : Math.max(0, 1 - (time - BEATS.fallingTree.recover) / (BEATS.fallingTree.duration - BEATS.fallingTree.recover));
+      const armor = armorIn * armorIn * (3 - 2 * armorIn) * armorOut;
+      vfx.signature.wardStrength = armor;
+      vfx.charge = Math.max(vfx.charge, armor * 0.20);
+      const dash = time <= BEATS.fallingTree.launch
+        ? 0
+        : time < BEATS.fallingTree.arrest
+          ? (time - BEATS.fallingTree.launch) / (BEATS.fallingTree.arrest - BEATS.fallingTree.launch)
+          : Math.max(0, 1 - (time - BEATS.fallingTree.arrest) / (BEATS.fallingTree.duration - BEATS.fallingTree.arrest));
+      const eased = dash * dash * (3 - 2 * dash);
+      LUNGE.copy(facing(rig));
+      rig.group.position.copy(HOME).addScaledVector(LUNGE, eased * 0.34);
+    },
+    cues: [
+      {
+        at: BEATS.fallingTree.launch,
+        run: (rig, vfx) => {
+          SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld).setY(0);
+          vfx.roots(SKILL_AT, { count: 7, spread: 0.22, duration: 0.70 });
+        },
+      },
+      {
+        at: BEATS.fallingTree.arrest,
+        run: (rig, vfx) => {
+          const heading = facing(rig);
+          SKILL_AT.setFromMatrixPosition(rig.sockets['chest-core'].matrixWorld).addScaledVector(heading, 0.16);
+          vfx.signature.knockback(SKILL_AT, heading, rig, 1.24);
+          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld).setY(0);
+          vfx.roots(SKILL_GROUND, { count: 12, spread: 0.36, duration: 1.10 });
+          vfx.burstAt(SKILL_AT, { count: 128, speed: 1.65, duration: 0.92, spread: 0.44, gravity: -1.35, lightness: 0.70 });
+          vfx.impactFlash(SKILL_AT, 10, 0.30);
+          vfx.flash(0.82);
+        },
+      },
+    ],
+  },
+  {
+    id: 'natures-embrace',
+    accent: ACCENT.deep,
+    label: 'Chiêu 2 · Thiên Nhiên Vỗ Về',
+    pose: () => embracePose(),
+    clip: 'authored:embrace',
     fade: 0.18,
     loop: false,
-    measured: 'AUTHORED as a two-hand ground arrest. The body sinks and sweeps wide, locks overhead at 0.52s, holds, then hands, trunk and knees meet the earth together at 0.90s. A wedge of roots inherits the hand-to-ground force vector; two smaller waves are scheduled at 1.08s and 1.28s.',
+    measured: 'GATHER / STUN. Both arms open to the full front arc at 0.58s, then close into the centre at 0.94s. Leaves and bark move inward before colour changes; the converging field holds for one second, making this control move read differently from Dây Gai and Cây Đổ.',
+    trails: ['grip-l', 'grip-r'],
     drive: (_rig, vfx, time) => {
-      const up = Math.min(1, Math.max(0, (time - 0.14) / (BEATS.logs.raised - 0.14)));
-      const down = time < BEATS.logs.contact ? 1 : Math.max(0, 1 - (time - BEATS.logs.contact) / 0.16);
-      vfx.signature.gather(up * down, up * down);
-      const build = buildTo(time, BEATS.logs.contact, 0.58);
-      const surfaceCharge = Math.max(build * 0.34, up * down * 0.14);
-      if (surfaceCharge > vfx.charge) vfx.charge = surfaceCharge;
+      const build = buildTo(time, BEATS.embrace.gather, 0.70);
+      const hold = time >= BEATS.embrace.gather && time <= BEATS.embrace.stunEnds ? 0.28 : 0;
+      vfx.signature.gather(Math.max(build, hold), Math.max(build, hold));
+      vfx.charge = Math.max(vfx.charge, build * 0.28 + hold * 0.20);
     },
     cues: [
       {
-        at: BEATS.logs.contact,
+        at: BEATS.embrace.open,
         run: (rig, vfx) => {
-          SKILL_AT.setFromMatrixPosition(rig.sockets['grip-l'].matrixWorld);
-          SKILL_GROUND.setFromMatrixPosition(rig.sockets['grip-r'].matrixWorld).add(SKILL_AT).multiplyScalar(0.5);
-          SKILL_GROUND.y = 0;
-          vfx.charge = 0;
           const heading = facing(rig);
-          vfx.signature.groundContact(SKILL_GROUND, heading, rig, 1.18);
-          SKILL_HIGH.copy(SKILL_GROUND).setY(0.08);
-          vfx.impactFlash(SKILL_HIGH, 10, 0.30);
-          vfx.flash(0.72);
-          vfx.burstAt(SKILL_HIGH, {
-            count: 120, speed: 1.25, duration: 1.05, spread: 0.28, gravity: -1.9, lightness: 0.68,
-          });
+          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld).setY(0).addScaledVector(heading, 0.44);
+          vfx.runeCircle(SKILL_GROUND, 1.28, 1.62);
+          vfx.vortex(SKILL_GROUND, { radius: 1.62, duration: 0.72, count: 168 });
         },
       },
-      ...BEATS.logs.calls.map((at, i) => ({
-        at,
-        run: (rig: MonsterTreeRig, vfx: MonsterTreeVfx) => {
-          SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld).add(SKILL_AT).multiplyScalar(0.5);
+      {
+        at: BEATS.embrace.gather,
+        run: (rig, vfx) => {
           const heading = facing(rig);
-          SKILL_GROUND.addScaledVector(heading, 0.18 + i * 0.24).setY(0);
-          vfx.signature.aftershock(SKILL_GROUND, heading, 0.72 - i * 0.12);
+          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld).setY(0).addScaledVector(heading, 0.44);
+          rig.hitstop(0.058, 0.04);
+          vfx.vortex(SKILL_GROUND, { radius: 0.80, duration: 1.02, count: 112 });
+          vfx.roots(SKILL_GROUND, { count: 9, spread: 0.25, duration: 1.18 });
+          vfx.flash(0.48);
         },
-      })),
+      },
     ],
   },
   {
-    id: 'ultimate',
+    id: 'life-seed',
     accent: ACCENT.seed,
-    label: 'Ultimate · Crown of First Seeds',
-    pose: () => ultimatePose(),
-    clip: 'authored:ultimate',
-    fade: 0.26,
+    label: 'Chiêu Cuối · Hạt Giống Sinh Mệnh',
+    pose: () => lifeSeedPose(),
+    clip: 'authored:life-seed',
+    fade: 0.22,
     loop: false,
-    measured: 'AUTHORED as a rooted canopy channel. The body sinks before growing through the spine, opens at 0.80s, and holds the silhouette while warm leather-toned seeds orbit a pale sap crown. Three volleys widen on fixed table beats before the stored force returns through the roots.',
+    measured: 'ULTIMATE CHANNEL. Groot crouches, jumps, and arrests on the ground at 0.78s, then sleeps inside hardened heartwood for a six-second shield/slow zone. Seven life-seed volleys are table-scheduled; repeated hits culminate in an inward stun-and-pull at 5.30s while earth pulses climb back into the body.',
     drive: (rig, vfx, time) => {
-      const grow = Math.min(1, time / BEATS.ultimate.rooted)
-        * (time > BEATS.ultimate.rainEnds ? Math.max(0, 1 - (time - BEATS.ultimate.rainEnds) / 0.5) : 1);
-      // The growth COMPOUNDS down the chain — waist, then spine, then chest — so these are much
-      // smaller than they look. At 0.42/0.38/0.30 the product is 2.55x and the crown left the top
-      // of the frame entirely; at these values it is about 1.45x.
-      rig.stretch('Waist', grow * 0.16);
-      rig.stretch('Spine01', grow * 0.14);
-      rig.stretch('Spine02', grow * 0.12);
-      rig.stretch('L_Thigh', grow * 0.10);
-      rig.stretch('R_Thigh', grow * 0.10);
-      vfx.charge = Math.max(vfx.charge, grow * 0.22);
-      vfx.signature.canopyStrength = grow;
-      vfx.signature.gather(grow * 0.24, grow * 0.24);
+      const inT = Math.min(1, Math.max(0, (time - BEATS.lifeSeed.land) / 0.36));
+      const outT = time < BEATS.lifeSeed.wake
+        ? 1
+        : Math.max(0, 1 - (time - BEATS.lifeSeed.wake) / (BEATS.lifeSeed.duration - BEATS.lifeSeed.wake));
+      const channel = inT * inT * (3 - 2 * inT) * outT;
+      rig.stretch('Waist', channel * 0.10);
+      rig.stretch('Spine01', channel * 0.08);
+      rig.stretch('Spine02', channel * 0.07);
+      rig.stretch('L_Thigh', channel * 0.05);
+      rig.stretch('R_Thigh', channel * 0.05);
+      vfx.signature.wardStrength = channel;
+      vfx.signature.canopyStrength = channel * 0.64;
+      vfx.signature.passiveStrength = channel * 0.78;
+      vfx.charge = Math.max(vfx.charge, channel * 0.24);
     },
     cues: [
       {
-        at: 0.0,
+        at: BEATS.lifeSeed.land,
+        run: (rig, vfx) => {
+          const heading = lashDirection(rig);
+          SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld).add(SKILL_AT).multiplyScalar(0.5).setY(0);
+          vfx.signature.groundContact(SKILL_GROUND, heading, rig, 1.30);
+          vfx.runeCircle(SKILL_GROUND, 1.68, 5.22);
+          vfx.roots(SKILL_GROUND, { count: 14, spread: 0.44, duration: 1.44 });
+          vfx.burstAt(SKILL_GROUND, { count: 132, speed: 1.10, duration: 1.12, spread: 0.52, gravity: -1.15, lightness: 0.76 });
+          vfx.flash(0.92);
+        },
+      },
+      {
+        at: BEATS.lifeSeed.rooted,
         run: (rig, vfx) => {
           SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
           SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld).add(SKILL_AT).multiplyScalar(0.5).setY(0);
-          SKILL_HIGH.copy(facing(rig));
-          vfx.signature.aftershock(SKILL_GROUND, SKILL_HIGH, 0.68);
-          SKILL_HIGH.multiplyScalar(-1);
-          vfx.signature.aftershock(SKILL_GROUND, SKILL_HIGH, 0.54);
+          vfx.drawUp(SKILL_GROUND, { radius: 0.82, count: 72 });
         },
       },
-      { at: BEATS.ultimate.rooted, run: (rig, vfx) => {
-        vfx.burst(rig.sockets['crown'], {
-          count: 72, speed: 0.65, spread: 1, duration: 1.1, gravity: 0.28, lightness: 0.78,
-        });
-      } },
+      ...BEATS.lifeSeed.volleys.map((at, index) => ({
+        at,
+        run: (rig: MonsterTreeRig, vfx: MonsterTreeVfx) => {
+          SKILL_CROWN.setFromMatrixPosition(rig.sockets.crown.matrixWorld);
+          vfx.seeds(SKILL_CROWN, { count: 9 + (index % 3) * 2, spread: 0.92 + index * 0.09, flight: 0.58 + (index % 2) * 0.10 });
+          vfx.burst(rig.sockets.crown, { count: 16, speed: 0.28, duration: 0.90, spread: 0.82, gravity: 0.38, lightness: 0.82 });
+          if (index === 2 || index === 5) {
+            SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
+            SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld).add(SKILL_AT).multiplyScalar(0.5).setY(0);
+            vfx.drawUp(SKILL_GROUND, { radius: 0.72, count: 48 });
+          }
+        },
+      })),
       {
-        at: BEATS.ultimate.open,
+        at: BEATS.lifeSeed.pull,
         run: (rig, vfx) => {
-          const crown = SKILL_CROWN.setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
-          vfx.signature.releaseCanopy(crown);
-          vfx.seeds(crown, { count: 10, spread: 0.82, flight: 0.58 });
-          vfx.impactFlash(crown, 11, 0.36);
-          vfx.flash(1.15);
+          const heading = facing(rig);
+          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld).setY(0).addScaledVector(heading, 0.38);
+          rig.hitstop(0.072, 0.025);
+          vfx.vortex(SKILL_GROUND, { radius: 1.54, duration: 0.88, count: 190 });
+          vfx.roots(SKILL_GROUND, { count: 12, spread: 0.34, duration: 1.08 });
+          vfx.flash(0.74);
         },
       },
+    ],
+  },
+  {
+    id: 'regrowth',
+    accent: ACCENT.bark,
+    label: 'Groot · Tái Sinh Tế Bào',
+    pose: () => recoilPose(),
+    clip: 'authored:regrowth',
+    fade: 0.10,
+    loop: false,
+    measured: 'TAKEN HIT / REGENERATION. There is no windup before the outside force arrives at 0.34s. Bark leaves the torso and the ring contracts inward; only after the fast 0.14s compression does root-to-heart sap regrow the silhouette over 0.70s. No flash appears at either hand.',
+    drive: (_rig, vfx, time) => {
+      const recovery = Math.min(1, Math.max(0,
+        (time - BEATS.recoil.compressed) / (BEATS.recoil.regrow - BEATS.recoil.compressed),
+      ));
+      const life = recovery * recovery * (3 - 2 * recovery);
+      vfx.signature.passiveStrength = life * 0.80;
+      vfx.charge = Math.max(vfx.charge, life * 0.18);
+    },
+    cues: [
       {
-        at: BEATS.ultimate.open + 0.20,
+        at: BEATS.recoil.hit,
         run: (rig, vfx) => {
-          SKILL_CROWN.setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
-          vfx.seeds(SKILL_CROWN, { count: 13, spread: 1.15, flight: 0.70 });
+          SKILL_AT.setFromMatrixPosition(rig.sockets['chest-core'].matrixWorld);
+          rig.hitstop(0.046, 0.03);
+          vfx.signature.taken(SKILL_AT, facing(rig));
         },
       },
       {
-        at: BEATS.ultimate.open + 0.44,
-        run: (rig, vfx) => {
-          SKILL_CROWN.setFromMatrixPosition(rig.sockets['crown'].matrixWorld);
-          vfx.seeds(SKILL_CROWN, { count: 16, spread: 1.55, flight: 0.84 });
-        },
-      },
-      {
-        at: BEATS.ultimate.open + 0.78,
+        at: BEATS.recoil.compressed,
         run: (rig, vfx) => {
           SKILL_AT.setFromMatrixPosition(rig.sockets['foot-l'].matrixWorld);
-          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld).add(SKILL_AT).multiplyScalar(0.5).setY(0);
-          vfx.signature.groundContact(SKILL_GROUND, facing(rig), rig, 0.96);
+          SKILL_GROUND.setFromMatrixPosition(rig.sockets['foot-r'].matrixWorld).add(SKILL_AT).multiplyScalar(0.5);
+          vfx.drawUp(SKILL_GROUND.setY(0), { radius: 0.58, count: 52 });
+        },
+      },
+    ],
+  },
+  {
+    id: 'spore-light',
+    accent: ACCENT.seed,
+    label: 'Groot · Bào Tử Phát Quang',
+    pose: () => sporePose(),
+    clip: 'authored:spore',
+    fade: 0.24,
+    loop: false,
+    measured: 'QUIET GROOT SIGNATURE. Palms cup toward the heartwood, the crown warms at 0.92s, then the whole silhouette opens at 1.22s and releases slow golden spores. Motion is a buoyant lift with no impact ring, debris burst, or hitstop.',
+    drive: (_rig, vfx, time) => {
+      const gather = buildTo(time, BEATS.spore.release, 0.72);
+      const open = swell(time, BEATS.spore.release, BEATS.spore.duration);
+      vfx.signature.gather(gather * 0.70, gather * 0.70);
+      vfx.signature.canopyStrength = Math.max(gather * 0.48, open * 0.38);
+      vfx.charge = Math.max(vfx.charge, gather * 0.20 + open * 0.08);
+    },
+    cues: [
+      {
+        at: BEATS.spore.glow,
+        run: (rig, vfx) => {
+          vfx.burst(rig.sockets.crown, { count: 38, speed: 0.20, duration: 1.52, spread: 1, gravity: 0.48, lightness: 0.88 });
         },
       },
       {
-        at: BEATS.ultimate.rainEnds,
-        run: (_rig, vfx) => {
-          vfx.charge = 0;
-          vfx.coils = 0;
-          vfx.signature.canopyStrength = 0;
+        at: BEATS.spore.release,
+        run: (rig, vfx) => {
+          vfx.burst(rig.sockets.crown, { count: 118, speed: 0.38, duration: 1.88, spread: 1, gravity: 0.58, lightness: 0.92 });
+          vfx.burst(rig.sockets['grip-l'], { count: 34, speed: 0.26, duration: 1.42, spread: 1, gravity: 0.46, lightness: 0.86 });
+          vfx.burst(rig.sockets['grip-r'], { count: 34, speed: 0.26, duration: 1.42, spread: 1, gravity: 0.46, lightness: 0.86 });
+          vfx.flash(0.32);
         },
       },
     ],
@@ -843,9 +952,12 @@ export class SkillRunner {
     // that is driven bone by bone. Registered before the first `play`, or the runner would look
     // for a clip that does not exist yet and refuse to start.
     rig.authorClip('authored:passive', 8.0);
-    rig.authorClip('authored:vine', BEATS.vine.duration);
-    rig.authorClip('authored:logs', BEATS.logs.duration);
-    rig.authorClip('authored:ultimate', BEATS.ultimate.duration);
+    rig.authorClip('authored:thornline', BEATS.vine.duration);
+    rig.authorClip('authored:falling-tree', BEATS.fallingTree.duration);
+    rig.authorClip('authored:embrace', BEATS.embrace.duration);
+    rig.authorClip('authored:life-seed', BEATS.lifeSeed.duration);
+    rig.authorClip('authored:regrowth', BEATS.recoil.duration);
+    rig.authorClip('authored:spore', BEATS.spore.duration);
     // Parented to the rig's own root, so a copy placed at a world offset from the character
     // travels with the character when the viewer turns the turntable.
     this.chorus = new EchoChorus(
@@ -889,6 +1001,7 @@ export class SkillRunner {
     this.vfx.coils = 0;
     this.vfx.signature.passiveStrength = 0;
     this.vfx.signature.canopyStrength = 0;
+    this.vfx.signature.wardStrength = 0;
     this.vfx.signature.gather(0, 0);
     this.lungeFrom.copy(this.rig.group.position);
     this.lungeK = this.lungeFrom.distanceToSquared(HOME) > 1e-8 ? 0 : 1;

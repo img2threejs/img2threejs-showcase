@@ -2,7 +2,7 @@ import type { EncodedModel, EncodedRig } from './meshCodec';
 import { buildMonsterTreeRig, type MonsterTreeRig, type RigOptions } from './rig';
 
 /**
- * Y'bneth — the treant from `public/references/monster-tree/front.jpg`, built on the img2threejs
+ * Groot — the treant from `public/references/monster-tree/front.jpg`, built on the img2threejs
  * playground export and finished under the `animated-character` profile.
  *
  * ONE level of detail, deliberately. The export ships a single `high` level and no lower one, and
@@ -40,8 +40,8 @@ export function createMonsterTree(options: RigOptions = {}): MonsterTreeRig {
 /**
  * Review framing for both the gesture and its consequence.
  *
- * Y'bneth faces +X. Equal +X/+Z weight gives a true three-quarter front: the two hands separate in
- * Rootbreaker, the trunk bend remains readable, and Heartwood Lash travels across the open side of
+ * Groot faces +X. Equal +X/+Z weight gives a true three-quarter front: the two hands separate in
+ * Thiên Nhiên Vỗ Về, the trunk bend remains readable, and Dây Gai travels across the open side of
  * the shot. The target leads the torso slightly downrange without pushing the figure behind the
  * details panel.
  */

@@ -1,24 +1,24 @@
 import * as THREE from 'three';
 import { createBackdrop, createMonsterTreeLights } from './lighting';
-import { COSTUME_PIECES, SOCKETS } from './measured';
+import { SOCKETS } from './measured';
 import type { EncodedModel, EncodedRig } from './meshCodec';
 import { buildMonsterTreeRig, type MonsterTreeRig, type RigOptions } from './rig';
-import { BEATS } from './poses';
-import { SKILLS, SkillRunner } from './skills';
-import { MonsterTreeVfx } from './vfx';
-
-const SHOWCASE_ACTION_IDS = new Set(['passive', 'vine', 'natures-call', 'ultimate']);
+import { GrootMotion, GROOT_ACTIONS } from './grootAnimation';
+import { GrootEffects } from './grootEffects';
+import { articulateGrootHands } from './grootRig';
+import { GrootGame } from './grootGame';
+import { prewarmGrootBloom } from './grootBloomBinding';
+import type { Viewer } from '../../scene';
 
 /**
- * Monster Tree — a rigged treant rebuilt from one photograph.
+ * Groot — a rigged Flora Colossus rebuilt from one photograph.
  *
  * Gallery entry point. Everything substantive lives in the modules beside this file; this one
  * adapts them to the showcase's contracts — `userData.tick(dt, elapsed)` for the frame loop and
  * `userData.sculptRuntime.animationController` for the Animations panel.
  *
- * The full write-up, including the three defects this build fixes in the playground export's own
- * rig path and the measurements behind every claim, is in `README.md` next to this file. The
- * numbers are reproducible: `node scripts/measure-monster-tree-rig.mjs`.
+ * Current motion/rig/VFX design and verification commands live in GROOT_REBUILD.md.
+ * README.md retains the original export investigation as explicitly historical notes.
  *
  * One level of detail, deliberately. `skinIndex`/`skinWeight` address vertices by position in the
  * buffer, so decimating a skinned shell leaves the binding pointing at vertices that no longer
@@ -37,6 +37,8 @@ let loading: Promise<void> | null = null;
  * renders until all 11 MB has landed.
  */
 export function prewarmMonsterTree(): Promise<void> {
+  // Separate optional source prewarm: a payload failure must not prevent the original forest.
+  void prewarmGrootBloom().catch(()=>{});
   if (loaded) return Promise.resolve();
   // The in-flight promise is cached, not just the result. The showcase calls `prewarm` twice — once
   // to drive the loader and once to rebuild the panels — and `createMonsterTreeModel` awaits it a
@@ -67,7 +69,7 @@ export interface MonsterTreeAnimationController {
 /**
  * Build the figure.
  *
- * The returned group holds the bark shell, the four rigid costume pieces, the skeleton and the
+ * The returned group holds the continuous bark shell, the extended skeleton, forest and
  * effects, and drives all of them from a single `userData.tick`.
  */
 export function createMonsterTreeModel(options: RigOptions = {}): THREE.Group {
@@ -93,24 +95,35 @@ function populate(group: THREE.Group, options: RigOptions): void {
     castShadow: true,
     receiveShadow: true,
     ...options,
+    fuseCostume: true,
   });
-  group.add(rig.group);
+  articulateGrootHands(rig);
+  const actor=new THREE.Group();actor.name='groot-player';actor.add(rig.group);group.add(actor);
 
   // The effects read socket world positions, so the skeleton has to have been posed once before the
   // bounding box that sizes them is measured.
   group.updateMatrixWorld(true);
-  const bounds = new THREE.Box3().setFromObject(rig.group);
-
-  const vfx = new MonsterTreeVfx(rig, bounds);
+  const runner = new GrootMotion(rig);
+  const vfx = new GrootEffects(rig, runner.height, runner.clips);
+  vfx.actor=actor;
+  vfx.skin.safeToSwitch=()=>runner.outfitSafe;
+  vfx.skin.sourceRecovering=()=>runner.recovering;
   // Effects and the rig are siblings. The rig may lunge during Vine Lash; parenting world-space
   // trails and impact decals under that moving group applied the lunge twice and then dragged the
   // landed effect home during recovery. Sibling ownership keeps socket-following effects attached
   // through their sampled matrices while world impacts stay where they landed.
   group.add(vfx.group);
 
-  // The shipped biped idle lifts and twists limbs like a human performer. Greatwood Body is the
-  // authored treant stance, so it is both the public rest state and the hand-back target.
-  const runner = new SkillRunner(rig, vfx, 'passive');
+  // Conditioned supplied FBX/native clips drive public actions; the legacy embedded presets stay inactive.
+  runner.hooks = vfx;
+  let game:GrootGame|undefined;
+  group.userData.mountViewerInteraction=(viewer:Viewer):(()=>void)=>{
+    // The workbench also previews this model: keyboard capture/HUD belong only to its game route.
+    if(window.location.hash.split('?')[0]!=='#/demo/monster-tree')return()=>{};
+    game=new GrootGame(actor,runner,vfx,viewer);
+    group.userData.sculptRuntime.diagnostics.game=game;
+    return()=>{game?.dispose();game=undefined;};
+  };
 
   const listeners = new Set<(active: string) => void>();
   const announce = (): void => {
@@ -118,9 +131,7 @@ function populate(group: THREE.Group, options: RigOptions): void {
   };
 
   const animationController: MonsterTreeAnimationController = {
-    actions: SKILLS
-      .filter((skill) => SHOWCASE_ACTION_IDS.has(skill.id))
-      .map((skill) => ({ id: skill.id, label: skill.label, loop: skill.loop })),
+    actions: GROOT_ACTIONS,
     get active() {
       return runner.current.id;
     },
@@ -128,7 +139,7 @@ function populate(group: THREE.Group, options: RigOptions): void {
       if (runner.play(name)) announce();
     },
     stop: () => {
-      if (runner.play('passive')) announce();
+      if (runner.play('grove-idle')) announce();
     },
     subscribe: (listener) => {
       listeners.add(listener);
@@ -143,13 +154,8 @@ function populate(group: THREE.Group, options: RigOptions): void {
   // forward, which skips every impact cue in between.
   group.userData.tick = (dt: number): void => {
     const step = Math.min(dt, 0.1);
-    rig.update(step);
-    runner.update(step);   // fires cues, drives the authored poses and any bone stretch
-    rig.applyPose();       // ...solves those aims onto the skeleton, parents first
-    rig.applyStretch();    // ...and the stretch must follow, exactly once, or it lands a frame
-                           // late — and twice would square the factor
-    vfx.update(step);
-    // A one-shot skill hands itself back to Greatwood Body when its clip ends; the panel has to
+    if(game)game.update(step);else runner.update(step);
+    // A one-shot returns to forest idle when its clip ends; the panel has to
     // hear that state change.
     if (runner.current.id !== announced) {
       announced = runner.current.id;
@@ -160,11 +166,10 @@ function populate(group: THREE.Group, options: RigOptions): void {
   group.userData.sculptRuntime = {
     animationController,
     /** Deterministic browser harness access; no second render loop or duplicate runtime state. */
-    diagnostics: { rig, runner, vfx, beats: BEATS },
-    /** Named, selectable pieces — the shell plus the four rigid costume meshes. */
+    diagnostics: { rig, runner, vfx, actor, relics:vfx.relics, measures: runner.measures },
+    /** One continuous selectable skin: no detached bracer seams. */
     parts: [
       { id: 'bark-shell', label: 'bark shell', kind: 'skinned', triangles: (rig.shell.geometry.index?.count ?? 0) / 3 },
-      ...COSTUME_PIECES.map((p) => ({ id: p.id, label: p.label, kind: 'rigid', triangles: p.triangles })),
     ],
     sockets: SOCKETS.map((s) => ({ id: s.id, bone: s.bone, kind: s.kind })),
     provenance: {
@@ -173,8 +178,9 @@ function populate(group: THREE.Group, options: RigOptions): void {
       levelsOfDetail: 1,
       inferred: [
         'hidden sides are generated, not observed — one photograph cannot confirm the back',
-        'the costume split is a warmth-profile hypothesis; the export carries no material IDs',
-        'skill names come from measured clip kinematics, not from a visual review of the pose',
+        '30 digit joints inferred from the existing hand surface; original 41 joint indices preserved',
+        'costume stays in the continuous skin to avoid separated bracer seams',
+        '21 supplied FBX motions retargeted and conditioned; two retained procedural clips; not movie motion capture',
       ],
     },
   };
@@ -190,4 +196,4 @@ export function makeMonsterTreeBackground(): THREE.Texture {
   return createBackdrop();
 }
 
-export { SKILLS as MONSTER_TREE_SKILLS } from './skills';
+export { GROOT_ACTIONS as MONSTER_TREE_SKILLS } from './grootAnimation';

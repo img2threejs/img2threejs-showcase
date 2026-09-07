@@ -277,7 +277,7 @@
   "animationAnchors": [
     "root group supports whole-object translation, rotation, scale and visibility",
     "group.userData.pivots[<part-id>] is a pivot group at each part's bounds centre",
-    "group.userData.sculptRuntime.animationController exposes passive, vine, natures-call and ultimate",
+    "group.userData.sculptRuntime.animationController exposes Groot's seven authored actions: passive, thornline, falling-tree, natures-embrace, life-seed, regrowth and spore-light",
     "one-shot authored actions return to passive; generic biped clips remain rig evidence only",
     "rig and VFX are siblings under the model because effects consume world-space socket positions"
   ],
@@ -546,6 +546,26 @@
     "pooling": "all public action effects are constructor-owned, invisible before first use and restartable; the browser sweep holds at 338 objects, 238 geometries and 169 materials before and after all four actions"
   },
   "reviewHistory": [
+    {
+      "passId": "groot-feedback-forest-and-equipment-2026-09-06",
+      "action": "continue",
+      "scope": "Incremental VFX, equipment state and woodland polish only; existing rig and imported clips retained. Not a rerun of historical reconstruction gates.",
+      "summary": "Faultline starts 2 metres ahead with pointed rough bark and small jade-accented thorns; corrected inward thorn winding after visual review. Armour toggles persistently with reversible growth. Removed Life Seeds trailing spurs. Added measured gait footprints/grass regrowth, terrain-conforming roots, pooled mist/pollen and a real day/night lighting control.",
+      "referenceScreenshot": ".img2threejs/groot-feedback/forest-night.png",
+      "renderScreenshot": ".img2threejs/groot-feedback/forest-day.png",
+      "comparisonImage": ".img2threejs/groot-feedback/day-night-comparison.png",
+      "cameraView": "matching three-quarter woodland views at night and noon",
+      "aiVisionScore": 0.77,
+      "layerScores": {"silhouetteProportion": 0.78, "componentStructure": 0.78, "formDetail": 0.72, "materialSurface": 0.72, "lightingCamera": 0.84},
+      "featureReviews": [
+        {"id": "root-ground-cohesion", "score": 0.76, "visibility": "visible in both panels", "notes": "Root bases meet the terrain and undergrowth; procedural repetition and simplified rocks remain visible."},
+        {"id": "day-night-and-mist", "score": 0.82, "visibility": "visible in both panels", "notes": "Warm diffuse daylight and cool shaft-lit night read distinctly; drifting haze is restrained around the character, not a full-screen green overlay."}
+      ],
+      "additionalEvidence": [".img2threejs/groot-feedback/faultline-comparison.png", ".img2threejs/groot-feedback/07-armour-equipped.png", ".img2threejs/groot-feedback/07-armour-removing.png", ".img2threejs/groot-feedback/forest-footprint-detail.png"],
+      "aiVisionNotes": "Wide/detail Faultline pair confirms pointed tips and minority jade barbs with outward normals after correction. Armour transition frames preserve attachment. Footprints are deliberately subtle surface impressions with a grass fringe, not displaced soil. This remains a procedural game prototype, not photogrammetry or film-quality rendering.",
+      "gates": {"focusedBrowser": "14 passed", "scheduler": "92 passed", "gameControls": "42 passed", "world": "9 passed", "interactions": "8 passed", "vitalityAndReview": "5 passed", "sourceWood": "unchanged; audit passed", "productionBuild": "passed with bundle-size warnings"},
+      "performance": {"medianFrameMs": 24.3, "p95FrameMs": 37, "note": "Sampled local heavy scene; not a 60 fps gate pass."}
+    },
     {
       "passId": "stage-R-animated-character",
       "action": "continue",

@@ -2025,7 +2025,7 @@ class GroveEruption implements Tickable {
 /**
  * A patch of undergrowth: the one piece of TERRAIN this demo owns, and the hinge of the whole kit.
  *
- * Y'bneth's passive reads the ground he is standing on, and his first skill changes shape
+ * Groot's passive reads the ground he is standing on, and his first skill changes shape
  * depending on the same thing. A showcase has no map to read, so the grass is made a real object
  * with a real lifetime: the passive plants it, it stands for a while, and Dây Leo asks whether it
  * is still there. The two skills then genuinely interact rather than each miming an interaction
@@ -4756,7 +4756,7 @@ export class MonsterTreeVfx {
     this.grove(SCRATCH_WORLD, { count: 1, spread: 0.01, duration: 0.2 });
     this.shockwave(SCRATCH_WORLD, 0.01, 0.2);
     this.burstAt(SCRATCH_WORLD, { count: 4, duration: 0.2, speed: 0.01 });
-    // Y'bneth's own kit. These pooled objects have distinct ShaderMaterials or PointsMaterials,
+    // Groot's own kit. These pooled objects have distinct ShaderMaterials or PointsMaterials,
     // and each would otherwise compile on the first visible beat it was cued on.
     this.grass(SCRATCH_WORLD, { radius: 0.01, duration: 0.2, count: 4 });
     SCRATCH_CUE_DIRECTION.set(0, -1, 0);

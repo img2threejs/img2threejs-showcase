@@ -1,4 +1,20 @@
-# Y'bneth — img2threejs `animated-character`, Stage R
+# Groot — Heart of the Forest
+
+The current runtime has 31 actions: 21 original user-supplied FBX motions, eight additional
+animation-only B2 FBXs, and two retained procedural clips, using one 71-joint controller. Walking and Shift-running use the supplied movement files;
+Rootfall grips and releases an overhead bark vine. It includes two keyboard spellbooks, an English first-use
+field guide, a moonlit forest and summonable lantern spirits. Attacks use the character's original
+bark shapes and colours, with subtle toxic sap and expanded visual reach. Original embedded clips
+are preserved. Original and Bloom are available at the near-spawn wardrobe; three unique relics
+unlock the actual supplied Ice form and its private frost/crystal B1 themes. Selection waits for
+cast recovery and uses reversible two-second transitions. See [GROOT_ICE.md](./GROOT_ICE.md) for
+source provenance, wardrobe/state APIs, evidence and limitations, [GROOT_B2_V2.md](./GROOT_B2_V2.md)
+for the silent second bank, and [GROOT_FBX.md](./GROOT_FBX.md) for original motion mapping.
+
+The sections below are historical export/rig investigation notes. The old `SkillRunner`, pose
+overrides, costume splitting and seven-action table are not used by the current showcase.
+
+## Historical Stage-R investigation
 
 A treant rebuilt from `public/references/monster-tree/front.jpg`, built **on top of** the playground's
 own export rather than re-deriving it. The geometry was already measured; nothing here re-sculpts
@@ -184,7 +200,7 @@ of a treant bending into a branch strike, dropping its full trunk weight into th
 an antler canopy. A human jab with green particles is still a human jab; effects cannot fix a body
 doing the wrong thing.
 
-So the kit's four moves are **posed** (`poses.ts`). Each is a timeline of aim directions, one per
+So the kit's seven moves are **posed** (`poses.ts`). Each is a timeline of aim directions, one per
 bone, solved onto the skeleton by `rig.aim` / `rig.applyPose`. Underneath, the body still plays a
 trimmed copy of `standing_relax`, so the torso keeps breathing and the weight keeps shifting
 without any of that having to be hand-authored.
@@ -205,7 +221,8 @@ code would aim the two legs by different bones.
 ### Authored beats
 
 Everywhere else this showcase schedules against `events.ts`, a 240 Hz sweep of clips nobody here
-wrote. For these four the relationship inverts: the gesture is designed around when the hand should
+wrote. For these seven the relationship inverts: the gesture is designed around when a hand, body,
+or external force should
 stop, and `BEATS` holds those numbers in one place so the pose and the effect cannot drift apart.
 
 They are then measured back, with the same method, to check the gesture does what it claims:
@@ -213,6 +230,9 @@ They are then measured back, with the same method, to check the gesture does wha
 | move | peak hand | what the sweep finds |
 |---|---|---|
 | Greatwood Body | 0.063 H/s | no event spike; mean body motion is 0.0335 H/s |
+| Firstborn Seed | 3.798 H/s | the cast-window peak is **0.804 s**, 0.016 s from the 0.820 s release; soil contact follows at 1.400 s |
+| Heartwood Aegis | 2.343 H/s | arms close by 0.620 s and the whole trunk yields to the scheduled outside hit at 1.020 s |
+| Splintered Resolve | 5.583 H/s | no anticipation before 0.340 s; full compression follows at 0.480 s |
 | Heartwood Lash | 8.359 H/s | hand speed peaks at **0.787 s**, 0.067 s after release and before the 0.860 s arrest |
 | Rootbreaker | 11.808 H/s | two-hand descent peaks at **0.838 s** and arrests on the authored 0.900 s ground contact |
 | Crown of First Seeds | 3.103 H/s | a controlled channel whose largest motion is the trunk growth at 0.400 s |
@@ -254,17 +274,22 @@ recorded the second base from the first write's output, compounding in the other
 lurching the shoulders every time the mixer happened to write. Factors and divisors are now
 collected first, and each affected bone is written exactly once.
 
-## Y'bneth's kit
+## Groot's living-world kit
 
-The character is **Y'bneth**. The four moves at the top of the panel are authored for his mass and
-silhouette; the embedded clips remain measurement and binding evidence rather than public actions.
+The character is **Groot**. Y'bneth supplies the battlefield grammar from the user's ability brief;
+Groot supplies the Flora Colossus motion, body transformation, regrowth, and VFX material language.
+The seven panel actions are authored for this rig; embedded biped clips remain measurement and
+binding evidence rather than public actions.
 
 | | clip | what it does |
 |---|---|---|
-| **Quietest · Greatwood Body** | `authored:passive` | asymmetrical branch sway over the measured resting base, with sparse sap motes circulating from the visible roots to the heart; no combat ring or repeated burst |
-| **Loudest · Heartwood Lash** | `authored:vine` | bends the whole trunk away, holds the loaded curve, then crosses into a hand-bound bark branch with a visible sap spine and living side growth; it arrests in directional splinters and 65 ms of hitstop |
-| **Ground Contact · Rootbreaker** | `authored:logs` | opens wide, locks both hands overhead, then drops hands, trunk and knees into one 0.900 s contact; a travelling wedge of raised roots and fractures carries the force away with two scheduled aftershocks |
-| **Ultimate · Crown of First Seeds** | `authored:ultimate` | roots and lengthens the body, then opens a broken-arc canopy above the antlers; warm leather-palette seeds orbit the crown before the stored force returns through the roots |
+| **Nội tại · Đất Mẹ** | `authored:passive` | living grass appears under the feet; soil-to-heart sap presents the 2% heal and a five-second +60 speed wake without turning the resting loop into a repeated explosion |
+| **Chiêu 1 · Dây Gai** | `authored:thornline` | bends the full trunk, elongates the left arm into thornwood, and reaches its target on the 0.860 s arrest with 65 ms of hitstop |
+| **Chiêu 1 · Cây Đổ** | `authored:falling-tree` | compresses into hardened heartwood, dashes shoulder-first, then stops at 0.940 s while splinters and a root wedge continue forward as knockback |
+| **Chiêu 2 · Thiên Nhiên Vỗ Về** | `authored:embrace` | opens both arms to claim the front arc, closes into a 0.940 s centre gather, and holds the converging field for the one-second stun |
+| **Chiêu Cuối · Hạt Giống Sinh Mệnh** | `authored:life-seed` | crouches, jumps, arrests on the ground, then sleeps in a six-second shield/slow zone while seven scheduled seed volleys, healing pulses, and a final stun/pull cycle play |
+| **Groot · Tái Sinh Tế Bào** | `authored:regrowth` | receives an outside force with no false windup, sheds bark from the torso, contracts the ring inward, and regrows from root to heart |
+| **Groot · Bào Tử Phát Quang** | `authored:spore` | cups both palms, opens the canopy, and releases slow warm spores with no impact ring or hitstop |
 
 ### The lash is a living branch, not a beam
 
@@ -274,32 +299,31 @@ reads as sap under bark. Both endpoints update from the same hand and stage dire
 so the branch remains attached while the arrest pose moves. The catch point uses one incomplete
 compression arc, a warm resin core and directional wood splinters — no white portal at the hand.
 
-### The ultimate grows outward from the character
+### The ultimate is a rooted six-second channel
 
-The former full-screen rain had no readable source and obscured the held pose. Crown of First Seeds
-now keeps twenty-four small, warm seeds inside three rotating broken arcs above the antlers. The
-face stays clear, the one contrasting colour comes from the reference's leather, and the final beat
-returns downward as a root crest rather than spawning unrelated scenery.
+The ultimate now has a visible crouch, airborne beat, ground arrest, sleep posture, shield shell,
+slow field, seven fixed seed volleys, two soil-to-body healing pulses, and one inward pull. Warm seed
+resin is the single contrast against bark/moss green; its source stays on Groot's crown instead of
+becoming unrelated full-screen rain.
 
 ### The camera leads the action
 
-Y'bneth faces +X. The review camera uses equal +X/+Z weight for a true three-quarter front: both
-hands separate during Rootbreaker and the trunk bend stays readable. The target leads mid-torso
+Groot faces +X. The review camera uses equal +X/+Z weight for a true three-quarter front: both
+hands separate during Thiên Nhiên Vỗ Về and the trunk bend stays readable. The target leads mid-torso
 slightly downrange, leaving the right half of the shot for the complete lash and arrest crown.
 
-### The passive is circulation, not a spell cast
+### The passive is an activation, then circulation
 
-Greatwood Body uses the quietest measured motion budget in the demo. Root lines barely breathe at
-the feet while forty-eight pooled sap motes rise toward the live chest socket at slightly different
-rates. It follows the body continuously but never presents a ring, lawn or periodic detonation that
-would make a resting treant look as if it were repeatedly casting.
+Đất Mẹ explicitly grows the brush patch once, lifts a healing pulse into the body, and keeps a
+five-second brighter circulation window. After that activation, only the quiet, clip-calibrated
+root-to-heart layer remains; the loop does not keep re-casting the heal.
 
 ### Public actions stay character-native
 
-The downloaded rig still carries 16 clips, but twelve generic biped clips are retained only as
-binding and retarget evidence. The gallery controller exposes the four authored treant actions
-above, defaults to Greatwood Body, and returns one-shot skills to that same passive loop. Human
-boxing, kicking and dancing clips are not presented as Y'bneth's moves.
+The downloaded rig still carries 16 clips, but the generic biped clips are retained only as
+binding and retarget evidence. The gallery controller exposes the seven authored treant actions
+above, defaults to Đất Mẹ, and returns one-shot skills to that same passive loop. Human boxing,
+kicking and dancing clips are not presented as Groot's moves.
 
 ## Archived rig experiment: Phân Thân
 
@@ -426,23 +450,29 @@ thirteen checks scaled to ten. It steps every public authored clip deterministic
 through the real mixer, with the pose solved exactly as the frame loop solves it — and separately
 measures live frame timing twice. It exits non-zero below 9.0, so it can gate.
 
-The 2026-09-04 polish run reads:
+Visual review is reproducible too. `node scripts/review-monster-tree-frames.mjs` renders nine
+labelled event frames for each action and packages seven contact sheets. Add `--every-frame` to
+export the complete 30 fps review sequence: **786 screenshots** spanning all seven actions while
+the real mixer is still integrated at 120 Hz. Evidence is written below `.img2threejs/review/`,
+which is intentionally ignored rather than adding generated captures to the application bundle.
+
+The 2026-09-04 expanded-kit run reads:
 
 ```
-1.00  no teleports                    peak 11.808 H/s; worst frame 1.32x its neighbours
-0.99  no frame stalls                 worst max 23.8ms; p95 20.1ms; repeated stalls 0
-1.00  transitions do not pop          worst natures-call -> ultimate 0.031
-0.97  release lands on peak speed     Heartwood Lash within 0.067s
-1.00  holds are alive                 passive 0.0335 H/s; Rootbreaker hold 0.0401 H/s
-0.97  feet stay planted               highest toe 0.031; lowest -0.013
-1.00  payoffs readable and distinct   weakest from rest 0.451; closest pair 0.401
-1.00  gestures survive projection     weakest 1.39x the resting spread
+1.00  no teleports                    peak 8.335 H/s; worst frame 1.32x its neighbours
+1.00  no frame stalls                 worst max 23.3ms; p95 17.0ms; repeated stalls 0
+1.00  transitions do not pop          worst natures-embrace -> regrowth 0.0353
+0.97  elongation release at peak      Dây Gai 0.067s from authored release
+1.00  holds are alive                 passive 0.0335 H/s; Life Seed hold 0.0223 H/s
+1.00  feet stay planted               highest toe 0.035; lowest -0.008
+1.00  payoffs readable and distinct   weakest from rest 0.314; closest pair 0.215
+1.00  gestures survive projection     weakest 1.24x the resting spread
 1.00  nothing left behind             0.02deg; zero scale and position residue
 1.00  clean run                       no console errors
 1.00  VFX follows the animated rig    stable model space; rest = passive
-1.00  VFX pools allocation-stable     objects 338; geometries 238; materials 169
-1.00  harness reports every clip      4/4 public clips
-TOTAL 9.95 / 10
+1.00  VFX pools allocation-stable     objects 353; geometries 242; materials 181
+1.00  harness reports every clip      7/7 public clips
+TOTAL 9.98 / 10
 ```
 
 ### What it caught that no still frame shows
@@ -504,8 +534,8 @@ eight frame stall, landing exactly on the beat. Three causes, all found by measu
 3. **Skeletons.** A skeleton uploads its bone texture on the first frame it is rendered. Warming one
    copy of the chorus left the other four to upload theirs on the frame of the split.
 
-Measured after the final 2026-09-04 pass: the four public actions report a worst live frame of
-23.8 ms, a worst p95 of 20.1 ms, and **zero stalls over 25 ms repeated across both timing passes**.
+Measured after the expanded 2026-09-04 pass: the seven public actions report a worst live frame of
+15.6 ms, a worst p95 of 14.0 ms, and **zero stalls over 25 ms repeated across both timing passes**.
 
 Two more discontinuities came out of the same pass:
 
@@ -852,11 +882,11 @@ saturated, its oldest slot restarts rather than extending the scene. Heartwood L
 preallocated instance matrices in place instead of creating or disposing geometry during play.
 
 This is checked in the browser harness, which sweeps every public action and asserts that the scene
-contains the same **338 objects, 238 geometries and 169 materials** before and after the sweep.
+contains the same **353 objects, 242 geometries and 181 materials** before and after the sweep.
 Starting every
 object invisible also means the viewer's framing pass measures the figure alone, never an effect.
-On the final two-pass run, no action repeated a frame over 25 ms; the worst frame was 23.8 ms and
-the worst p95 was 20.1 ms, both in `natures-call`.
+On the final clean-scene two-pass run, no action repeated a frame over 25 ms; the worst frame was
+23.3 ms and the worst p95 was 17.0 ms, both in `thornline`.
 
 ### One palette, used across its range
 

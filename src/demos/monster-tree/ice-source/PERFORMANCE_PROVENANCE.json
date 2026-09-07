@@ -1,0 +1,12 @@
+{
+  "archive": "/Users/nhonh/Desktop/groot.zip",
+  "archiveSha256": "a53f7752329d1ab7fce6a2aa6f5a662b18abbe12c432c61f70038ebc67e6f53a",
+  "member": "cosdes-groot-abies-algae-full-threejs/src/surfaceData.medium.ts",
+  "memberSha256": "769d938faedea013f00ff66fe5bb08a21c9b923344f85e2e8e0e03c4c7060c97",
+  "assetSha256": "81421d0999f255e538cfe0e21d59347768c2fa6df9131b6fd7fd3313100515f1",
+  "streamSha256": "bbe33fb811e40b1da2fa528bd9c9d2a69c48657fdb079a0a5cd13dc5279370f9",
+  "vertices": 74707,
+  "triangles": 117506,
+  "parts": 33,
+  "calibration": "Same source-specific measured landmarks/reference convention; independently solve welded anatomy and support on THIS topology, never reuse high vertex indices. Runtime70 only."
+}

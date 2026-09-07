@@ -2,12 +2,13 @@ import * as THREE from 'three';
 import { PALETTE } from './measured';
 
 interface SignatureRig {
+  group: THREE.Object3D;
   sockets: Record<string, THREE.Object3D>;
   bones: Record<string, THREE.Bone>;
 }
 
 /**
- * Y'bneth's signature effects.
+ * Groot's signature living-wood effects.
  *
  * The older layer was a collection of rings, decals and point bursts. Those ingredients were
  * technically attached to the rig, but their motion did not describe the force in the animation:
@@ -30,6 +31,7 @@ const LIFE = new THREE.Color(PALETTE.eyeIris).multiplyScalar(1.08);
 const DEEP = new THREE.Color(PALETTE.eyeDeep);
 const BARK_LIT = new THREE.Color(PALETTE.barkLight);
 const SEED = new THREE.Color(PALETTE.leatherLight).multiplyScalar(1.32);
+const SEED_SHELL = new THREE.Color(PALETTE.leatherDark).multiplyScalar(0.82);
 
 const UP = new THREE.Vector3(0, 1, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -391,10 +393,11 @@ class ArrestCrown implements PoolSlot {
 
     for (let i = 0; i < ArrestCrown.SPLINTERS; i += 1) {
       const stagger = saturate(t * 2.7 - (i % 5) * 0.045);
-      const travel = this.scale * this.power * (0.12 + (i % 7) * 0.018)
-        * (inward ? 1 - outQuart(stagger) : outQuart(stagger));
+      // A taken blow is not an outgoing hit reversed. Its RING compresses inward, while the bark
+      // fragments still leave the body in the direction the force tears them loose. The old code
+      // pulled both toward the chest and visually swallowed its own debris.
+      const travel = this.scale * this.power * (0.12 + (i % 7) * 0.018) * outQuart(stagger);
       SEG_A.copy(this.velocity[i]).multiplyScalar(travel);
-      if (inward) SEG_A.addScaledVector(this.velocity[i], this.scale * this.power * 0.18);
       SEG_B.copy(SEG_A).addScaledVector(this.velocity[i], this.scale * this.power * (0.055 + (i % 4) * 0.012));
       const radius = this.scale * this.power * 0.010 * fade;
       writeSegment(this.splinters, i, SEG_A, SEG_B, radius);
@@ -407,11 +410,18 @@ class ArrestCrown implements PoolSlot {
 
     for (let i = 0; i < this.rings.length; i += 1) {
       const local = saturate(t * 1.55 - i * 0.16);
-      const size = this.scale * this.power * (0.026 + outQuart(local) * (0.075 + i * 0.025));
+      const ringTravel = inward ? 1 - outQuart(local) : outQuart(local);
+      // An incoming blow needs a readable compression envelope before the fragments leave the
+      // body. The previous taken ring began at only 0.07 figure heights and disappeared into the
+      // chest silhouette; start broad, then collapse it to the wound while outgoing arrests keep
+      // their compact expansion.
+      const base = inward ? 0.050 : 0.026;
+      const reach = inward ? 0.190 + i * 0.045 : 0.075 + i * 0.025;
+      const size = this.scale * this.power * (base + ringTravel * reach);
       this.rings[i].scale.setScalar(size);
       // One incomplete compression arc is enough to define the stop. Stacking three recreated
       // the portal silhouette this layer replaced.
-      const gain = this.mode === 'ground' ? 0 : (i === 0 ? (inward ? 0.18 : 0.28) : 0);
+      const gain = this.mode === 'ground' ? 0 : (i === 0 ? (inward ? 0.42 : 0.28) : 0);
       this.ringMaterials[i].opacity = (1 - smooth(local)) * gain;
     }
     const core = Math.sin(Math.min(1, t * 2.2) * Math.PI);
@@ -465,9 +475,11 @@ class RootQuake implements PoolSlot {
       const row = Math.floor(i / 7);
       const lane = (i % 7) - 3;
       const rowK = row / 5;
-      this.rootDistance[i] = 0.10 + rowK * 0.92 + ((i * 17) % 11) * 0.008;
+      // Keep the far crest inside the public camera. At the old 1.1-height reach the last row was
+      // cut in half by the viewport, which made a deliberate root wave look like broken geometry.
+      this.rootDistance[i] = 0.07 + rowK * 0.40 + ((i * 17) % 11) * 0.004;
       this.rootLateral[i] = lane * (0.035 + rowK * 0.034) + Math.sin(i * 2.31) * 0.018;
-      this.rootHeight[i] = 0.07 + rowK * 0.13 + ((i * 7) % 5) * 0.018;
+      this.rootHeight[i] = 0.06 + rowK * 0.10 + ((i * 7) % 5) * 0.013;
     }
 
     const crackGeometry = new THREE.BufferGeometry();
@@ -510,8 +522,8 @@ class RootQuake implements PoolSlot {
       const u1 = (i + 1) / RootQuake.CRACKS;
       const branch = ((i % 5) - 2) * (0.025 + u0 * 0.16) + Math.sin(i * 1.7) * 0.028;
       const branchNext = branch + Math.sin(i * 3.1) * 0.035;
-      const d0 = this.scale * this.power * (0.08 + u0 * 1.08);
-      const d1 = this.scale * this.power * (0.08 + u1 * 1.08);
+      const d0 = this.scale * this.power * (0.06 + u0 * 0.52);
+      const d1 = this.scale * this.power * (0.06 + u1 * 0.52);
       attr.setXYZ(i * 2,
         this.heading.x * d0 + this.side.x * branch * this.scale,
         0,
@@ -568,6 +580,282 @@ class RootQuake implements PoolSlot {
     this.sap.instanceMatrix.needsUpdate = true;
     this.barkMaterial.opacity = fade;
     this.sapMaterial.opacity = fade * (0.58 + Math.sin(this.age * 25) * 0.16);
+  }
+}
+
+/**
+ * Interlocking bark ribs that close IN around the torso before a hit.
+ *
+ * This is deliberately not a bubble or a recoloured impact ring. The readable motion is a set of
+ * rigid wooden laminations sliding toward each other and overlapping in front of crossed arms;
+ * the sap seams only make that motion legible in the dark palette.
+ */
+class BarkWard {
+  static readonly RIBS = 10;
+  readonly object = new THREE.Group();
+  strength = 0;
+  private readonly bark: THREE.InstancedMesh;
+  private readonly seams: THREE.InstancedMesh;
+  private readonly barkMaterial: THREE.MeshStandardMaterial;
+  private readonly seamMaterial: THREE.MeshBasicMaterial;
+  private readonly chest: THREE.Object3D;
+  private readonly root: THREE.Object3D;
+  private readonly centre = new THREE.Vector3();
+  private readonly forward = new THREE.Vector3(1, 0, 0);
+  private readonly side = new THREE.Vector3(0, 0, 1);
+  private pulseAge = 99;
+  private readonly scale: number;
+
+  constructor(rig: SignatureRig, scale: number, cylinder: THREE.BufferGeometry) {
+    this.scale = scale;
+    this.chest = rig.sockets['chest-core'];
+    this.root = rig.group;
+    this.barkMaterial = new THREE.MeshStandardMaterial({
+      color: BARK_LIT,
+      emissive: BARK_LIT,
+      emissiveIntensity: 0.34,
+      roughness: 0.91,
+      transparent: true,
+      opacity: 0,
+    });
+    this.seamMaterial = new THREE.MeshBasicMaterial({
+      color: LIFE,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    this.bark = dynamicInstances(cylinder, this.barkMaterial, BarkWard.RIBS, 'vfx:ward-bark-ribs');
+    this.seams = dynamicInstances(cylinder, this.seamMaterial, BarkWard.RIBS, 'vfx:ward-sap-seams');
+    this.seams.renderOrder = 7;
+    this.object.name = 'vfx:heartwood-ward';
+    this.object.add(this.bark, this.seams);
+    this.object.visible = false;
+  }
+
+  hit(): void {
+    this.pulseAge = 0;
+  }
+
+  tick(dt: number, _elapsed: number): void {
+    this.pulseAge += dt;
+    const level = smooth(this.strength);
+    this.object.visible = level > 0.005;
+    if (!this.object.visible) return;
+    this.centre.setFromMatrixPosition(this.chest.matrixWorld);
+    this.forward.set(1, 0, 0).transformDirection(this.root.matrixWorld).setY(0);
+    if (this.forward.lengthSq() < 1e-8) this.forward.set(1, 0, 0);
+    this.forward.normalize();
+    this.side.set(-this.forward.z, 0, this.forward.x);
+    const pulse = this.pulseAge < 0.34
+      ? Math.sin((this.pulseAge / 0.34) * Math.PI) * (1 - this.pulseAge / 0.34)
+      : 0;
+
+    for (let i = 0; i < BarkWard.RIBS; i += 1) {
+      const u = (i + 0.5) / BarkWard.RIBS;
+      const row = u * 2 - 1;
+      // Centre slats arrive first, the outer ones a few frames later. Each slat crosses the full
+      // torso and alternates its diagonal, so the finished object is an interlocked bark lattice,
+      // not the one-ended hanging roots produced by the earlier fan.
+      const local = smooth(level * 1.42 - Math.abs(row) * 0.30);
+      const width = this.scale * (0.18 + (1 - local) * 0.16);
+      const front = this.scale * (0.13 - pulse * 0.035);
+      const tilt = (i % 2 ? 1 : -1) * this.scale * 0.060;
+      const y = row * this.scale * 0.070;
+      SEG_A.copy(this.centre).addScaledVector(this.forward, front)
+        .addScaledVector(this.side, -width);
+      SEG_B.copy(this.centre).addScaledVector(this.forward, front)
+        .addScaledVector(this.side, width);
+      SEG_A.y += y - tilt;
+      SEG_B.y += y + tilt;
+      const radius = this.scale * (0.012 + (1 - Math.abs(row)) * 0.006) * local;
+      writeSegment(this.bark, i, SEG_A, SEG_B, radius);
+      SEG_A.lerp(SEG_B, 0.30);
+      SEG_B.lerp(SEG_A, 0.18);
+      writeSegment(this.seams, i, SEG_A, SEG_B, radius * 0.22);
+    }
+    this.bark.instanceMatrix.needsUpdate = true;
+    this.seams.instanceMatrix.needsUpdate = true;
+    this.barkMaterial.opacity = level * (0.92 - pulse * 0.12);
+    this.seamMaterial.opacity = level * (0.34 + pulse * 0.58);
+  }
+}
+
+/** One warm seed following a readable ballistic arc, then becoming a small rooted sapling. */
+class FirstbornSeed implements PoolSlot {
+  static readonly TRAIL = 18;
+  static readonly SPROUT = 12;
+  readonly object = new THREE.Group();
+  alive = false;
+  private readonly seed: THREE.Mesh;
+  private readonly seedMaterial: THREE.MeshStandardMaterial;
+  private readonly core: THREE.Mesh;
+  private readonly coreMaterial: THREE.MeshBasicMaterial;
+  private readonly trail: THREE.InstancedMesh;
+  private readonly trailMaterial: THREE.MeshBasicMaterial;
+  private readonly sprout: THREE.InstancedMesh;
+  private readonly sproutCore: THREE.InstancedMesh;
+  private readonly sproutMaterial: THREE.MeshStandardMaterial;
+  private readonly sproutCoreMaterial: THREE.MeshBasicMaterial;
+  private readonly origin = new THREE.Vector3();
+  private readonly target = new THREE.Vector3();
+  private readonly heading = new THREE.Vector3(1, 0, 0);
+  private readonly side = new THREE.Vector3(0, 0, 1);
+  private readonly point = new THREE.Vector3();
+  private age = 0;
+  private flight = 0.58;
+  private readonly scale: number;
+
+  constructor(scale: number, shard: THREE.BufferGeometry, cylinder: THREE.BufferGeometry) {
+    this.scale = scale;
+    this.seedMaterial = new THREE.MeshStandardMaterial({
+      // A detached seed should read as a warm resin kernel, not a flesh-coloured hole in the
+      // character. The pale palette stays in the trail/core while the solid shell remains dark.
+      color: SEED_SHELL,
+      emissive: new THREE.Color(PALETTE.leatherMid),
+      emissiveIntensity: 0.82,
+      roughness: 0.72,
+      transparent: true,
+    });
+    this.seed = new THREE.Mesh(new THREE.OctahedronGeometry(scale * 0.020, 1), this.seedMaterial);
+    this.seed.scale.set(0.78, 1.42, 0.78);
+    this.seed.castShadow = true;
+    this.seed.name = 'vfx:firstborn-seed';
+    this.coreMaterial = new THREE.MeshBasicMaterial({
+      color: LIFE, transparent: true, opacity: 0.64,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    this.core = new THREE.Mesh(new THREE.IcosahedronGeometry(scale * 0.017, 1), this.coreMaterial);
+    this.core.renderOrder = 8;
+    this.trailMaterial = new THREE.MeshBasicMaterial({
+      color: LIFE, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    this.trail = dynamicInstances(shard, this.trailMaterial, FirstbornSeed.TRAIL, 'vfx:firstborn-seed-trail');
+    this.trail.renderOrder = 7;
+    this.sproutMaterial = new THREE.MeshStandardMaterial({
+      color: BARK_LIT, emissive: DEEP, emissiveIntensity: 0.22,
+      roughness: 0.92, transparent: true, opacity: 0,
+    });
+    this.sproutCoreMaterial = new THREE.MeshBasicMaterial({
+      color: LIFE, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    this.sprout = dynamicInstances(cylinder, this.sproutMaterial, FirstbornSeed.SPROUT, 'vfx:firstborn-sapling-bark');
+    this.sproutCore = dynamicInstances(cylinder, this.sproutCoreMaterial, FirstbornSeed.SPROUT, 'vfx:firstborn-sapling-sap');
+    this.sproutCore.renderOrder = 6;
+    this.object.name = 'vfx:firstborn-seed-cast';
+    this.object.add(this.seed, this.core, this.trail, this.sprout, this.sproutCore);
+    this.object.visible = false;
+  }
+
+  restart(from: THREE.Object3D, direction: THREE.Vector3, reach: number, flight: number): void {
+    this.origin.setFromMatrixPosition(from.matrixWorld);
+    this.heading.copy(direction).setY(0);
+    if (this.heading.lengthSq() < 1e-8) this.heading.set(1, 0, 0);
+    this.heading.normalize();
+    this.side.set(-this.heading.z, 0, this.heading.x);
+    // Clear the wrist and the trunk on the release frame. Starting exactly at the socket left the
+    // opaque kernel embedded in the underhand pose for several frames before the arc separated.
+    this.origin.addScaledVector(this.heading, this.scale * 0.060)
+      .addScaledVector(this.side, this.scale * 0.018);
+    this.target.copy(this.origin).addScaledVector(this.heading, reach).addScaledVector(this.side, reach * 0.22);
+    this.target.y = 0.025;
+    this.flight = flight;
+    this.age = 0;
+    this.alive = true;
+    this.object.visible = true;
+    this.seed.visible = true;
+    this.core.visible = true;
+    this.seedMaterial.opacity = 1;
+    this.coreMaterial.opacity = 0.64;
+    this.sproutMaterial.opacity = 1;
+    this.sproutCoreMaterial.opacity = 0.7;
+  }
+
+  park(): void {
+    this.alive = false;
+    this.object.visible = false;
+  }
+
+  private arc(u: number, out: THREE.Vector3): THREE.Vector3 {
+    out.lerpVectors(this.origin, this.target, u);
+    out.y += Math.sin(u * Math.PI) * this.scale * 0.28;
+    return out;
+  }
+
+  tick(dt: number, _elapsed: number): void {
+    if (!this.alive) return;
+    this.age += dt;
+    const u = saturate(this.age / this.flight);
+    const after = Math.max(0, this.age - this.flight);
+    const fade = 1 - smooth((after - 0.92) / 0.48);
+    if (this.age > this.flight + 1.40) {
+      this.park();
+      return;
+    }
+
+    if (u < 1) {
+      this.arc(u, this.point);
+      this.seed.position.copy(this.point);
+      this.core.position.copy(this.point);
+      this.seed.rotation.x += dt * 8.4;
+      this.seed.rotation.z += dt * 5.7;
+      const throb = 1 + Math.sin(this.age * 21) * 0.14;
+      this.core.scale.setScalar(throb);
+      for (let i = 0; i < FirstbornSeed.TRAIL; i += 1) {
+        const p = u - (i + 1) * 0.028;
+        if (p <= 0) {
+          this.trail.setMatrixAt(i, ZERO_M);
+          continue;
+        }
+        this.arc(p, SEG_MID);
+        SEG_Q.setFromAxisAngle(UP, i * 1.7 + this.age * 8);
+        // `shard` is a unit cone. Scale it in figure heights; the previous dimensionless 0.62
+        // produced metre-wide wedges that covered the character even though the flight was right.
+        const s = this.scale * 0.014 * (1 - i / FirstbornSeed.TRAIL);
+        SEG_SCALE.set(s * 0.48, s * 1.12, s * 0.48);
+        SEG_M.compose(SEG_MID, SEG_Q, SEG_SCALE);
+        this.trail.setMatrixAt(i, SEG_M);
+      }
+      this.trailMaterial.opacity = 0.62;
+    } else {
+      this.seed.visible = false;
+      this.core.visible = false;
+      for (let i = 0; i < FirstbornSeed.TRAIL; i += 1) this.trail.setMatrixAt(i, ZERO_M);
+      this.trailMaterial.opacity = 0;
+    }
+    this.trail.instanceMatrix.needsUpdate = true;
+
+    const grow = outQuart(after / 0.46);
+    for (let i = 0; i < FirstbornSeed.SPROUT; i += 1) {
+      const ring = Math.floor(i / 3);
+      const lane = i % 3;
+      const reveal = smooth(grow * 1.45 - ring * 0.13);
+      if (reveal <= 0.002) {
+        this.sprout.setMatrixAt(i, ZERO_M);
+        this.sproutCore.setMatrixAt(i, ZERO_M);
+        continue;
+      }
+      const angle = lane * Math.PI * 2 / 3 + ring * 0.72;
+      const baseHeight = ring * this.scale * 0.043;
+      const radial = ring === 0 ? 0 : this.scale * ring * 0.015;
+      SEG_A.copy(this.target).addScaledVector(this.side, Math.sin(angle) * radial)
+        .addScaledVector(this.heading, Math.cos(angle) * radial);
+      SEG_A.y += baseHeight;
+      SEG_B.copy(SEG_A)
+        .addScaledVector(this.side, Math.sin(angle) * this.scale * (0.025 + ring * 0.012))
+        .addScaledVector(this.heading, Math.cos(angle) * this.scale * (0.025 + ring * 0.012));
+      SEG_B.y += this.scale * (0.075 - ring * 0.006) * reveal;
+      const radius = this.scale * (0.010 - ring * 0.0014) * reveal * fade;
+      writeSegment(this.sprout, i, SEG_A, SEG_B, radius);
+      SEG_A.lerp(SEG_B, 0.14);
+      writeSegment(this.sproutCore, i, SEG_A, SEG_B, radius * 0.24);
+    }
+    this.sprout.instanceMatrix.needsUpdate = true;
+    this.sproutCore.instanceMatrix.needsUpdate = true;
+    this.sproutMaterial.opacity = fade;
+    this.sproutCoreMaterial.opacity = fade * (0.48 + Math.sin(after * 12) * 0.12);
   }
 }
 
@@ -842,6 +1130,8 @@ export class TreantSignatureVfx {
   private readonly breath: RootBreath;
   private readonly canopy: CanopyCharge;
   private readonly handGather: HandGather;
+  private readonly ward: BarkWard;
+  private readonly seeds: FirstbornSeed[] = [];
   private readonly lashTarget = new THREE.Vector3();
   private readonly lashHeading = new THREE.Vector3(1, 0, 0);
   private activeLash: SapLash | null = null;
@@ -875,7 +1165,13 @@ export class TreantSignatureVfx {
     this.breath = new RootBreath(rig, scale, glow);
     this.canopy = new CanopyCharge(rig.sockets.crown, scale, torus);
     this.handGather = new HandGather(rig, scale);
-    this.group.add(this.breath.object, this.canopy.object, this.handGather.object);
+    this.ward = new BarkWard(rig, scale, rootShape);
+    for (let i = 0; i < 2; i += 1) {
+      const seed = new FirstbornSeed(scale, shard, cylinder);
+      this.seeds.push(seed);
+      this.group.add(seed.object);
+    }
+    this.group.add(this.breath.object, this.canopy.object, this.handGather.object, this.ward.object);
     this.group.traverse((object) => { object.userData.isHighlight = true; });
   }
 
@@ -885,6 +1181,10 @@ export class TreantSignatureVfx {
 
   set canopyStrength(value: number) {
     this.canopy.strength = saturate(value);
+  }
+
+  set wardStrength(value: number) {
+    this.ward.strength = saturate(value);
   }
 
   gather(left: number, right: number): void {
@@ -920,12 +1220,33 @@ export class TreantSignatureVfx {
     take(this.quakes).restart(at, direction, power);
   }
 
+  /** Directional Cây Đổ payoff: bark and roots keep travelling away from Groot after he stops. */
+  knockback(
+    at: THREE.Vector3,
+    direction: THREE.Vector3,
+    rig?: { hitstop(seconds: number, scale?: number): void },
+    power = 1,
+  ): void {
+    rig?.hitstop(0.088, 0.018);
+    take(this.impacts).restart(at, direction, power, 'lash');
+    take(this.quakes).restart(at, direction, power * 0.82);
+  }
+
   aftershock(at: THREE.Vector3, direction: THREE.Vector3, power = 0.65): void {
     take(this.quakes).restart(at, direction, power);
   }
 
   taken(at: THREE.Vector3, direction: THREE.Vector3): void {
     take(this.impacts).restart(at, direction, 0.72, 'taken');
+  }
+
+  hitWard(rig?: { hitstop(seconds: number, scale?: number): void }): void {
+    rig?.hitstop(0.052, 0.04);
+    this.ward.hit();
+  }
+
+  castSeed(from: THREE.Object3D, direction: THREE.Vector3, reachInHeights = 0.76, flight = 0.58): void {
+    take(this.seeds).restart(from, direction, reachInHeights * this.scale, flight);
   }
 
   releaseCanopy(at: THREE.Vector3): void {
@@ -937,18 +1258,22 @@ export class TreantSignatureVfx {
     this.breath.tick(dt, elapsed);
     this.canopy.tick(dt, elapsed);
     this.handGather.tick(dt, elapsed);
+    this.ward.tick(dt, elapsed);
     for (const lash of this.lashes) lash.tick(dt, elapsed);
     for (const impact of this.impacts) impact.tick(dt, elapsed);
     for (const quake of this.quakes) quake.tick(dt, elapsed);
+    for (const seed of this.seeds) seed.tick(dt, elapsed);
   }
 
   get liveEffects(): number {
     let n = this.breath.strength > 0.005 ? 1 : 0;
     if (this.canopy.strength > 0.005) n += 1;
     if (Math.max(this.handGather.left, this.handGather.right) > 0.005) n += 1;
+    if (this.ward.strength > 0.005) n += 1;
     for (const lash of this.lashes) if (lash.alive) n += 1;
     for (const impact of this.impacts) if (impact.alive) n += 1;
     for (const quake of this.quakes) if (quake.alive) n += 1;
+    for (const seed of this.seeds) if (seed.alive) n += 1;
     return n;
   }
 }
