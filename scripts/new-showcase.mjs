@@ -82,12 +82,16 @@ export function ${factoryFnName}(): THREE.Group {
   // 2. Insert the import + registry entry.
   const importLine = `import { ${factoryFnName} } from './${id}/${factoryFnName}';\n`;
   const withImport = registrySource.replace(
-    /(^import \* as THREE from 'three';\n)/,
+    /(^import \* as THREE from 'three';\r?\n)/,
     `$1${importLine}`,
   );
+  if (withImport === registrySource) {
+    fail('could not find "import * as THREE from three" at the top of registry.ts.');
+  }
 
   const entryBlock = `  {
     id: '${id}',
+    updatedAt: '${new Date().toISOString().slice(0, 10)}',
     title: '${displayTitle.replace(/'/g, "\\'")}',
     subjectClass: '${subjectClass}',
     blurb:
@@ -110,13 +114,16 @@ export function ${factoryFnName}(): THREE.Group {
   },
 `;
 
+  // The demos array is `const authored: DemoEntry[] = [...spread]` in the current registry
+  // (the exported const is the spread result, which is not a valid insertion point). Accept
+  // either declaration so both old and new registries scaffold.
   const withEntry = withImport.replace(
-    /(export const demos: DemoEntry\[\] = \[\n)/,
+    /((?:const authored|export const demos): DemoEntry\[\] = \[\r?\n)/,
     `$1${entryBlock}`,
   );
 
   if (withEntry === withImport) {
-    fail('could not find "export const demos: DemoEntry[] = [" in registry.ts — insert the entry manually.');
+    fail('could not find "const authored: DemoEntry[] = [" in registry.ts — insert the entry manually.');
   }
 
   writeFileSync(registryFile, withEntry);
