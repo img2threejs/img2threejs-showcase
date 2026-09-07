@@ -39,6 +39,7 @@ function main() {
   const subjectClass = subjectClassArg === 'character' ? 'character' : 'object';
   const displayTitle = title || toPascalCase(id).replace(/([a-z])([A-Z])/g, '$1 $2');
   const pascalId = toPascalCase(id);
+  const updatedAt = new Date().toISOString().slice(0, 10);
   const factoryFnName = `create${pascalId}Model`;
   const demoDir = join(ROOT, 'src/demos', id);
   const factoryFile = join(demoDir, `${factoryFnName}.ts`);
@@ -68,12 +69,17 @@ function main() {
 // below keeps working, or update both if you rename it.
 export function ${factoryFnName}(): THREE.Group {
   const group = new THREE.Group();
+  group.name = '${id}';
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
     new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.6 }),
   );
+  mesh.name = '${id}-mesh';
   mesh.castShadow = true;
   group.add(mesh);
+  // Full-assembly export is inherited automatically from the shared demo viewer. If this showcase
+  // contains multiple independent models, declare only those model roots here:
+  // group.userData.exportModels = [{ id: 'model-a', label: 'Model A', root: modelA }];
   return group;
 }
 `,
@@ -88,6 +94,7 @@ export function ${factoryFnName}(): THREE.Group {
 
   const entryBlock = `  {
     id: '${id}',
+    updatedAt: '${updatedAt}',
     title: '${displayTitle.replace(/'/g, "\\'")}',
     subjectClass: '${subjectClass}',
     blurb:
@@ -111,12 +118,12 @@ export function ${factoryFnName}(): THREE.Group {
 `;
 
   const withEntry = withImport.replace(
-    /(export const demos: DemoEntry\[\] = \[\n)/,
+    /(const authored: DemoEntry\[\] = \[\n)/,
     `$1${entryBlock}`,
   );
 
   if (withEntry === withImport) {
-    fail('could not find "export const demos: DemoEntry[] = [" in registry.ts — insert the entry manually.');
+    fail('could not find "const authored: DemoEntry[] = [" in registry.ts — insert the entry manually.');
   }
 
   writeFileSync(registryFile, withEntry);
@@ -130,10 +137,13 @@ Next steps:
   1. Replace the placeholder factory body with your generated code.
   2. Fill in every TODO in the new registry.ts entry (blurb, generatedWith, author, authorUrl).
   3. Add public/references/${id}.png (or .jpg/.jpeg/.webp, <= 800 KB).
-  4. npm run build && npm run preview   — check #/demo/${id}
-  5. node scripts/check-showcase-safety.mjs --base main
-  6. git add -A && git commit -m "Add ${id} showcase demo" && git push
-  7. gh pr create --fill   (or open https://github.com/hoainho/img2threejs-showcase/compare)
+  4. Open #/demo/${id} and verify the inherited six-format export panel.
+  5. If it contains multiple independent models, declare group.userData.exportModels roots.
+  6. npm run build && npm run preview
+  7. node scripts/qa-export-matrix.mjs --only=${id}
+  8. node scripts/check-showcase-safety.mjs --base main
+  9. git add -A && git commit -m "Add ${id} showcase demo" && git push
+ 10. gh pr create --fill   (or open https://github.com/hoainho/img2threejs-showcase/compare)
 `);
 }
 

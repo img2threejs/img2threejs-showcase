@@ -208,7 +208,11 @@ const WELL_FLOOR_Y = 0.5;
 export function createSonyWf1000xm3Model(options: SonyWf1000xm3Options = {}): THREE.Group {
   const shadows = options.shadows ?? true;
   const root = new THREE.Group();
+  root.name = 'sonyWf1000xm3Set';
   root.position.y = 0.16; // hover so the tilt never clips the contact-shadow plane
+  const caseGroup = new THREE.Group();
+  caseGroup.name = 'chargingCase';
+  root.add(caseGroup);
 
   /* ---- materials ---- */
   const matBody = new THREE.MeshPhysicalMaterial({
@@ -305,7 +309,8 @@ export function createSonyWf1000xm3Model(options: SonyWf1000xm3Options = {}): TH
 
   /* ---- BODY ---- */
   const bodyGroup = new THREE.Group();
-  root.add(bodyGroup);
+  bodyGroup.name = 'caseBody';
+  caseGroup.add(bodyGroup);
 
   // ONE smooth full-height body shell with two real oval well through-holes.
   // Single extruded piece → continuous rounded exterior, no mid-height seam.
@@ -392,8 +397,9 @@ export function createSonyWf1000xm3Model(options: SonyWf1000xm3Options = {}): TH
 
   /* ---- LID (copper, rear hinge) ---- */
   const lidPivot = new THREE.Group();
+  lidPivot.name = 'caseLidPivot';
   lidPivot.position.set(0, topY - 0.1, -CASE_DEP / 2 + 0.06);
-  root.add(lidPivot);
+  caseGroup.add(lidPivot);
 
   const lidGroup = new THREE.Group();
   lidPivot.add(lidGroup);
@@ -509,8 +515,15 @@ export function createSonyWf1000xm3Model(options: SonyWf1000xm3Options = {}): TH
 
   const budL = makeEarbud(-1);
   const budR = makeEarbud(1);
+  budL.name = 'leftEarbud';
+  budR.name = 'rightEarbud';
   root.add(budL);
   root.add(budR);
+  root.userData.exportModels = [
+    { id: 'charging-case', label: 'Charging case', root: caseGroup },
+    { id: 'left-earbud', label: 'Left earbud', root: budL },
+    { id: 'right-earbud', label: 'Right earbud', root: budR },
+  ];
 
   const seat = {
     L: { pos: new THREE.Vector3(-WELL_X, topY - 0.06, 0.02), rot: new THREE.Euler(0.15, 0, 0.05) },

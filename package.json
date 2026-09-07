@@ -8,6 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "new-demo": "node scripts/new-showcase.mjs",
+    "qa:export:list": "node scripts/qa-export-matrix.mjs --list",
+    "qa:export:matrix": "node scripts/qa-export-matrix.mjs",
     "star-history": "node scripts/generate-star-history.mjs"
   },
   "dependencies": {
