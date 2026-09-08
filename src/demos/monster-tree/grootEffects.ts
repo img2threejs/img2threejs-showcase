@@ -99,6 +99,8 @@ export class GrootEffects implements GrootFxHooks {
     this.woodStock=extractGrootWood(rig);
     this.forest=new GrootForest(height);this.group.add(this.forest.group);
     this.river=new GrootRiver(height,this.forest.terrain.ground.material);this.group.add(this.river.group);
+    this.forest.terrain.riverCell=(cx,cz)=>this.river.createCell(cx,cz);
+    this.forest.terrain.stream.fade(this.river.surface.material);
     this.seedCover=new GrootSeedCover(height);this.group.add(this.seedCover.group);
     this.groundWake=new GrootGroundWake(height);this.group.add(this.groundWake.group);
     this.weather=new GrootWeather(height);this.group.add(this.weather.group);
@@ -128,8 +130,7 @@ export class GrootEffects implements GrootFxHooks {
     this.woodDebris.visible=false;this.woodDebris.count=0;this.woodDebris.frustumCulled=false;this.group.add(this.woodDebris);
     this.vitality=new GrootVitality(rig);
     this.skin=new GrootSkin(rig,this.vitality,height);
-    const relicColliders=[...this.forest.colliders,...this.forest.terrain.colliders.slice(0,this.forest.terrain.colliderCount)];
-    this.relics=new GrootRelics(height,this.skin,relicColliders);this.group.add(this.relics.group);
+    this.relics=new GrootRelics(height,this.skin,this.forest.terrain.world);this.group.add(this.relics.group);
     this.group.traverse(object=>{object.userData.isHighlight=true;});
   }
 

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GrootAtmosphere } from './grootAtmosphere';
 import { GrootTerrain, forestHeightH } from './grootTerrain';
-import { batchGrootForest } from './grootForestBatch';
+import { batchGrootForest, ownGrootGrove } from './grootForestBatch';
 
 /** Seeded construction: revisiting a clip does not regenerate its surroundings. */
 export function forestRandom(seed = 8731): () => number {
@@ -98,7 +98,7 @@ export class GrootForest {
       shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.z += sin(groveTime*1.1 + instanceMatrix[3].x*2.1 + instanceMatrix[3].z)*0.055*position.y;');
     };
     const leaf = leafGeometry(), dummy = new THREE.Object3D(), color = new THREE.Color();
-    this.terrain=new GrootTerrain(height,bark,leaf,foliage,this.colliders);this.group.add(this.terrain.group);
+    this.terrain=new GrootTerrain(height,bark,leaf,foliage);this.group.add(this.terrain.group);
     const canopy = new THREE.InstancedMesh(leaf, foliage, 2400); canopy.castShadow = false;
     let leafAt = 0;
     for (let tree = 0; tree < 12; tree++) {
@@ -162,8 +162,14 @@ export class GrootForest {
       const stalk=new THREE.Mesh(stem,bark);stalk.position.set(x,.018,z);this.group.add(stalk);
       const mushroom=new THREE.Mesh(cap,capMat);mushroom.position.set(x,.039,z);mushroom.scale.set(.027,.012,.027);this.group.add(mushroom);
     }
+    // The authored RNG is interleaved with geometry: only now are all 38 trunks known.
+    this.terrain.world.registerGrove(this.colliders);
     batchGrootForest(this.group);
+    ownGrootGrove(this.group,this.terrain.chunks.authored,material=>this.terrain.stream.fade(material));
     this.atmosphere=new GrootAtmosphere(height,glowTexture());this.group.add(this.atmosphere.group);
+    // Keep dynamic spirits and the stable lighting rig untouched, but the four fixed
+    // origin moonshafts must have the same slot ownership as the authored grove.
+    ownGrootGrove(this.atmosphere.group,this.terrain.chunks.authored,material=>this.terrain.stream.fade(material));
     this.group.traverse(object=>{object.userData.isHighlight=true;});
   }
   summon(seconds=18):void {this.atmosphere.summon(seconds);}

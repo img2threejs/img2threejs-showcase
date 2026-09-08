@@ -51,6 +51,9 @@ export class GrootGame {
   private readonly up=new THREE.Vector3(0,1,0);
   private readonly hud=document.createElement('div');
   private readonly status:HTMLElement;
+  private readonly readiness=document.createElement('div');
+  private seenStalls=0;
+  private readinessUntil=0;
   private readonly toggle:HTMLButtonElement;
   readonly tutorial:GrootTutorial;
   readonly wardrobe:GrootWardrobe;
@@ -108,7 +111,11 @@ export class GrootGame {
     </style><div class="groot-heading"><strong>GROOT</strong><small>FOREST GUARDIAN · MOONLIT REALM</small></div><button class="groot-mode" type="button">Review poses</button><button class="groot-guide" type="button">Field guide · H</button><div class="groot-controls"><div class="groot-help">W A S D / ↑ ↓ ← → · Move &nbsp; SHIFT · Run &nbsp; 1–0 · Cast &nbsp; P · Pause &nbsp; Drag · Orbit</div><div class="groot-skills"></div><p class="groot-status" role="status" aria-live="polite">Press 0 to summon lantern spirits.</p></div>`;
     const responsive=document.createElement('style');responsive.textContent='@media(max-width:650px){.groot-world-label{font-size:9px!important;letter-spacing:.02em!important}.groot-world-settings{right:12px!important}}';this.hud.appendChild(responsive);
     this.originalPixelRatio=viewer.renderer.getPixelRatio();
-    this.quality=new GrootRenderQuality(viewer.scene,effects.skin,effects.river.reflection);
+    this.quality=new GrootRenderQuality(viewer.scene,effects.skin,effects.river.reflection,effects.forest.terrain.stream);
+    this.readiness.className='groot-local-readiness';this.readiness.setAttribute('role','status');
+    this.readiness.textContent='Preparing nearby woodland…';
+    this.readiness.style.cssText='position:absolute;inset:0;z-index:19;display:grid;place-items:center;background:#06101c;color:#b9d8cf;font:14px system-ui;pointer-events:none';
+    viewer.renderer.domElement.parentElement!.appendChild(this.readiness);
     this.status=this.hud.querySelector('.groot-status')!;this.toggle=this.hud.querySelector('.groot-mode')!;
     this.hud.querySelector('.groot-help')!.textContent='W A S D / ↑ ↓ ← → · Move   SHIFT · Run   SPACE · Jump   1–0 · Cast   P · Pause   Drag · Look   V · View';
     this.worldLabel.className='groot-world-label';this.worldLabel.style.cssText='margin-bottom:10px;color:#9dafab;font:11px system-ui;letter-spacing:.08em;text-shadow:0 1px 5px #000';
@@ -141,6 +148,7 @@ export class GrootGame {
     volume.addEventListener('input',()=>this.sound.setVolume(Number(volume.value)/100));this.sound.onChange();settings.appendChild(audio);
     const quality=document.createElement('label');quality.htmlFor='groot-render-scale';quality.style.cssText='display:block;margin-top:12px;padding-top:10px;border-top:1px solid #7d949c44';
     quality.innerHTML='Render resolution<select id="groot-render-scale" aria-label="Render resolution" style="display:block;width:100%;margin-top:7px;background:#172d2d;color:#d8e4df;border:1px solid #69848766;padding:6px"><option value="1">Full · 100%</option><option value="0.85">Balanced · 85%</option><option value="0.7">Performance · 70%</option></select><small style="display:block;margin-top:5px;color:#a6b7bc;font-size:10px">Only 70% lowers source mesh, shadows and reflection quality. All lighting and VFX stay enabled.</small><small class="groot-quality-status" aria-live="polite" style="display:block;margin-top:5px;color:#a6b7bc;font-size:10px"></small>';
+    quality.querySelector('small')!.textContent='Scenery range grows at 70 / 85 / 100%. Only 70% lowers source mesh, shadows and reflection quality; lighting and VFX stay enabled.';
     settings.appendChild(quality);this.qualityLabel=quality.querySelector('.groot-quality-status');const scale=quality.querySelector('select')!;
     try{const saved=Number(localStorage.getItem('groot:render-scale:v1'));if([1,.85,.7].includes(saved))this.renderScale=saved;}catch{/* Preferences are optional. */}
     // Apply the resolved preference even when storage is absent/blocked: the quality
@@ -151,7 +159,7 @@ export class GrootGame {
     time.addEventListener('input',()=>{const hour=Number(time.value);this.dayNight.setHour(hour);const hh=Math.floor(hour)%24,mm=Math.round((hour%1)*60);label.textContent=`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${hour>=6&&hour<18?'Day':'Night'}`;});this.hud.appendChild(settings);
     this.tutorial=new GrootTutorial(this.hud,this.hud.querySelector('.groot-guide')!);
     const book=document.createElement('button');book.type='button';book.className='groot-spellbook';book.textContent='Spellbook 1 / 2 · B';book.addEventListener('click',()=>this.setBank(1-this.bank));this.hud.appendChild(book);
-    this.wardrobe=new GrootWardrobe(effects.skin,actor,motion.height,[...effects.forest.colliders,...effects.forest.terrain.colliders.slice(0,effects.forest.terrain.colliderCount)],this.hud,()=>{this.held.clear();this.velocity.set(0,0,0);this.motion.setLocomotion(0,false);this.perspective.cancelLook();},viewer.renderer.domElement);effects.group.add(this.wardrobe.group);
+    this.wardrobe=new GrootWardrobe(effects.skin,actor,motion.height,effects.forest.terrain.world,this.hud,()=>{this.held.clear();this.velocity.set(0,0,0);this.motion.setLocomotion(0,false);this.perspective.cancelLook();},viewer.renderer.domElement);effects.group.add(this.wardrobe.group);
     const skinButton=document.createElement('button');skinButton.type='button';skinButton.className='groot-skin-toggle';skinButton.textContent='Wardrobe near spawn · E';skinButton.setAttribute('aria-label','Find the grove wardrobe');
     effects.skin.onChange=()=>{this.wardrobe.refresh();this.updateRelicLabel();if(!effects.skin.transitioning&&this.status.textContent===FORM_CAST_WAIT)this.status.textContent='Form ready · You can cast again.';};
     skinButton.addEventListener('click',()=>{if(!this.wardrobe.show())this.status.textContent=`Wardrobe · Return near spawn and approach the ringed crystal marker (${Math.ceil(this.actor.position.distanceTo(this.wardrobe.position))} m).`;});
@@ -273,13 +281,23 @@ export class GrootGame {
     this.oldPosition.copy(this.actor.position);this.actor.position.addScaledVector(this.velocity,dt);
     const radius=h*GROOT_WORLD_RADIUS_H,planar=Math.hypot(this.actor.position.x,this.actor.position.z);
     if(planar>radius){this.actor.position.x*=radius/planar;this.actor.position.z*=radius/planar;}
-    for(const collider of this.effects.forest.colliders){
+    const stream=this.effects.forest.terrain.stream;
+    // Hold only proposed ordinary travel out of a valid view. Collision response below
+    // must still run and must never be undone by restoring a penetrated old endpoint.
+    if(stream.canExpose(this.oldPosition)&&!stream.canExpose(this.actor.position)){
+      this.actor.position.copy(this.oldPosition);stream.stats.stalls++;
+    }
+    // Gather logical candidates before response/visual refresh, including unloaded cells.
+    // Keep the legacy endpoint pushout: authored grove first, then cell row/column order.
+    const candidates=this.effects.forest.terrain.world.queryMovement(this.oldPosition,this.actor.position,h*.12);
+    for(const collider of candidates){
+      if(collider.kind!=='grove')continue;
       const dx=this.actor.position.x-collider.x,dz=this.actor.position.z-collider.z,distance=Math.hypot(dx,dz),limit=collider.radius+h*.12;
       if(distance<limit){const safe=distance||1;this.actor.position.x=collider.x+(distance?dx/safe:1)*limit;this.actor.position.z=collider.z+dz/safe*limit;}
     }
-    const world=this.effects.forest.terrain;
-    for(let i=0;i<world.colliderCount;i++){
-      const collider=world.colliders[i],dx=this.actor.position.x-collider.x,dz=this.actor.position.z-collider.z,distance=Math.hypot(dx,dz),limit=collider.radius+h*.12;
+    for(const collider of candidates){
+      if(collider.kind!=='cell')continue;
+      const dx=this.actor.position.x-collider.x,dz=this.actor.position.z-collider.z,distance=Math.hypot(dx,dz),limit=collider.radius+h*.12;
       if(distance<limit){this.actor.position.x=collider.x+(distance?dx/distance:1)*limit;this.actor.position.z=collider.z+(distance?dz/distance:0)*limit;}
     }
     this.actor.position.y=forestGround(this.actor.position.x,this.actor.position.z,h);
@@ -320,6 +338,18 @@ export class GrootGame {
       }
     }
   }
+  prepareRender():void {
+    if(this.disposed)return;
+    const stream=this.effects.forest.terrain.stream,background=this.viewer.scene.background;
+    stream.pump(this.actor.position,background instanceof THREE.Color?background:undefined);
+    const ready=stream.canExpose(this.actor.position);
+    this.readiness.style.display=ready?'none':'grid';
+    if(background instanceof THREE.Color)this.readiness.style.backgroundColor='#'+background.getHexString();
+    this.readiness.dataset.ready=String(ready);
+    if(stream.stats.stalls!==this.seenStalls){this.seenStalls=stream.stats.stalls;this.readinessUntil=performance.now()+500;}
+    const label=performance.now()<this.readinessUntil?'Preparing nearby woodland · Movement held briefly':'MOONROOT WILDS · R to return to the grove';
+    if(this.worldLabel.textContent!==label)this.worldLabel.textContent=label;
+  }
   private updateRelicLabel():void{
     const relics=this.effects.relics,count=relics.collectedCount;this.relicLabel.dataset.mask=String(relics.skin.mask);
     this.hud.dataset.elder=String(relics.skin.complete);
@@ -327,5 +357,5 @@ export class GrootGame {
     const distance=relics.nearestDistance(this.actor.position),pips='●'.repeat(count)+'○'.repeat(3-count);
     this.relicLabel.innerHTML=`<strong>${count?'ELDER MOONROOT '+count+'/3':'WILDS RELICS'}</strong> · ${pips} · nearest echo ${Number.isFinite(distance)?Math.max(1,Math.round(distance)):'—'} m`;
   }
-  dispose():void{this.quality.dispose();this.disposed=true;this.wardrobe.dispose();cancelAnimationFrame(this.warmupFrame);this.perspective.dispose();this.effects.river.dispose();this.effects.skin.dispose();this.effects.themes.dispose();for(const ground of this.studioGround)ground.mesh.visible=ground.visible;this.viewer.renderer.setPixelRatio(this.originalPixelRatio);this.setStealthed(false);this.effects.relics.onCollect=undefined;this.effects.relics.setActive(false);this.disposeInput();this.sound.dispose();this.dayNight.dispose();if(this.effects.sound===this.sound)this.effects.sound=undefined;if(this.worldLights)this.worldLights.position.copy(this.lightOrigin);this.tutorial.dispose();this.hud.remove();document.body.classList.remove('groot-playing');}
+  dispose():void{if(this.disposed)return;this.quality.dispose();this.disposed=true;this.effects.forest.terrain.stream.dispose();this.effects.forest.terrain.chunks.dispose();this.readiness.remove();this.wardrobe.dispose();cancelAnimationFrame(this.warmupFrame);this.perspective.dispose();this.effects.river.dispose();this.effects.skin.dispose();this.effects.themes.dispose();for(const ground of this.studioGround)ground.mesh.visible=ground.visible;this.viewer.renderer.setPixelRatio(this.originalPixelRatio);this.setStealthed(false);this.effects.relics.onCollect=undefined;this.effects.relics.setActive(false);this.disposeInput();this.sound.dispose();this.dayNight.dispose();if(this.effects.sound===this.sound)this.effects.sound=undefined;if(this.worldLights)this.worldLights.position.copy(this.lightOrigin);this.tutorial.dispose();this.hud.remove();document.body.classList.remove('groot-playing');}
 }

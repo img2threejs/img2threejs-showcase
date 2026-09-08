@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { forestRandom } from './grootForest';
-import { forestGround } from './grootTerrain';
+import { forestGround, placementTrees, type TreePlacementSource } from './grootWorld';
 import { GrootSkin, RELIC_SKIN_BITS } from './grootSkin';
 import { inRiverH } from './grootRiverPath';
 
@@ -11,7 +11,6 @@ export const GROOT_RELICS=[
 ] as const;
 
 type RelicDefinition=(typeof GROOT_RELICS)[number];
-type Collider={x:number;z:number;radius:number};
 interface RelicState {position:THREE.Vector3;drawPosition:THREE.Vector3;collected:boolean;age:number;}
 const BURST_PER_RELIC=24,HALO_COUNT=3,POINT_COUNT=HALO_COUNT+GROOT_RELICS.length*BURST_PER_RELIC;
 const ease=(x:number):number=>{const t=THREE.MathUtils.clamp(x,0,1);return 1-(1-t)**3;};
@@ -21,13 +20,13 @@ function freshSeed():number{
 }
 
 /** Pure, bounded placement with deterministic fallbacks for browser reproduction. */
-export function planGrootRelics(seed:number,height:number,colliders:readonly Collider[]):THREE.Vector3[]{
+export function planGrootRelics(seed:number,height:number,colliders:TreePlacementSource):THREE.Vector3[]{
   const random=forestRandom(seed||1),points:THREE.Vector3[]=[];
   const safe=(x:number,z:number):boolean=>{
     if(inRiverH(x/height,z/height,.6))return false;
     if(Math.hypot(x,z)<6*height||Math.hypot(x,z)>15*height)return false;
     for(const point of points)if(Math.hypot(point.x-x,point.z-z)<3.8*height)return false;
-    for(const collider of colliders)if(Math.hypot(collider.x-x,collider.z-z)<collider.radius+.48*height)return false;
+    for(const collider of placementTrees(colliders,x,z,.48*height))if(Math.hypot(collider.x-x,collider.z-z)<collider.radius+.48*height)return false;
     return true;
   };
   for(let i=0;i<GROOT_RELICS.length;i++){
@@ -67,7 +66,7 @@ export class GrootRelics {
   private readonly velocity=new Float32Array(POINT_COUNT*3);
   private readonly ages=new Float32Array(POINT_COUNT);
   private readonly lives=new Float32Array(POINT_COUNT);
-  constructor(readonly height:number,skin:GrootSkin,private readonly colliders:readonly Collider[]){
+  constructor(readonly height:number,skin:GrootSkin,private readonly colliders:TreePlacementSource){
     this.skin=skin;this.group.name='groot-random-relics';this.group.visible=false;
     const geometry=new THREE.DodecahedronGeometry(1,1);
     const material=new THREE.MeshStandardMaterial({color:'#ffffff',emissive:'#346c63',emissiveIntensity:.88,roughness:.34,metalness:.16,vertexColors:true});

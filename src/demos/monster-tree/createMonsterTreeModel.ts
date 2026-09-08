@@ -82,8 +82,23 @@ export function createMonsterTreeModel(options: RigOptions = {}): THREE.Group {
   const group = new THREE.Group();
   group.name = 'monster-tree';
 
-  if (loaded) populate(group, options);
-  else void prewarmMonsterTree().then(() => populate(group, options));
+  // Register lifetime ownership even while this group is still empty. A preview can
+  // mount and unmount before shared source prewarm resolves; that must not resurrect
+  // a detached model or lose the teardown registered by Viewer.refreshTickers().
+  let disposed=false,release:()=>void=()=>{};
+  let mountRuntime:((viewer:Viewer)=>()=>void)|undefined,mountedViewer:Viewer|undefined;
+  const dispose=():void=>{if(disposed)return;disposed=true;release();};
+  const mount=(viewer:Viewer):(()=>void)=>{if(!disposed){mountedViewer=viewer;mountRuntime?.(viewer);}return dispose;};
+  group.userData.dispose=dispose;group.userData.mountViewerInteraction=mount;
+  const populateReady=():void=>{
+    if(disposed)return;
+    populate(group,options);
+    release=group.userData.dispose;mountRuntime=group.userData.mountViewerInteraction;
+    group.userData.dispose=dispose;group.userData.mountViewerInteraction=mount;
+    if(mountedViewer)mountRuntime?.(mountedViewer);
+  };
+  if (loaded) populateReady();
+  else void prewarmMonsterTree().then(populateReady);
 
   return group;
 }
@@ -117,12 +132,26 @@ function populate(group: THREE.Group, options: RigOptions): void {
   // Conditioned supplied FBX/native clips drive public actions; the legacy embedded presets stay inactive.
   runner.hooks = vfx;
   let game:GrootGame|undefined;
+  let disposed=false;
+  const disposeModel=():void=>{
+    if(disposed)return;disposed=true;
+    game?.dispose();game=undefined;
+    // These resources belong to the MODEL, not its optional game HUD. The stream
+    // closes suspended generators before shared source templates are released.
+    // All three owners are idempotent if the game already released them.
+    vfx.forest.terrain.stream.dispose();vfx.forest.terrain.chunks.dispose();
+    vfx.river.dispose();vfx.river.group.removeFromParent();
+    vfx.skin.dispose();vfx.themes.dispose();
+    listeners.clear();
+  };
+  group.userData.dispose=disposeModel;
   group.userData.mountViewerInteraction=(viewer:Viewer):(()=>void)=>{
-    // The workbench also previews this model: keyboard capture/HUD belong only to its game route.
-    if(window.location.hash.split('?')[0]!=='#/demo/monster-tree')return()=>{};
+    // Preview/workbench still pumps scenery: always register model teardown, even
+    // though keyboard capture and HUD belong only to the dedicated game route.
+    if(disposed||window.location.hash.split('?')[0]!=='#/demo/monster-tree')return disposeModel;
     game=new GrootGame(actor,runner,vfx,viewer);
     group.userData.sculptRuntime.diagnostics.game=game;
-    return()=>{game?.dispose();game=undefined;};
+    return disposeModel;
   };
 
   const listeners = new Set<(active: string) => void>();
@@ -152,7 +181,12 @@ function populate(group: THREE.Group, options: RigOptions): void {
   // The showcase passes (dt, elapsed) and a mixer integrates a delta, so dt is what gets used. Long
   // frames are clamped: a backgrounded tab otherwise resumes by jumping the mixer several seconds
   // forward, which skips every impact cue in between.
+  group.userData.prepareRender=():void=>{
+    if(disposed)return;
+    if(game)game.prepareRender();else vfx.forest.terrain.stream.pump(actor.position);
+  };
   group.userData.tick = (dt: number): void => {
+    if(disposed)return;
     const step = Math.min(dt, 0.1);
     if(game)game.update(step);else runner.update(step);
     // A one-shot returns to forest idle when its clip ends; the panel has to
