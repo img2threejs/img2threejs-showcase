@@ -167,20 +167,48 @@ export function renderWorkbench(
     )
     .join('');
 
-  const archiveCharacterCount = demos.filter((demo) => demo.subjectClass === 'character').length;
-  const archiveObjectCount = demos.length - archiveCharacterCount;
-  const archiveCards = demos
+  // Standalone product experiences share the archive card and filters while keeping their viewer.
+  const archiveEntries = [
+    {
+      id: 'iphone-duo',
+      title: 'iPhone Duo — A Whole New Dimension',
+      subjectClass: 'object',
+      blurb: 'A folding-phone showcase with a continuous display, six finishes and two release sequences. '
+        + 'Inspect the model and explore the img2threejs workflow behind the experience.',
+      referenceImage: `${import.meta.env.BASE_URL}iphone-duo/showcase-preview.webp`,
+      imageAlt: 'iPhone Duo showcase with the continuous display open',
+      imageLabel: 'Showcase preview',
+      href: `${import.meta.env.BASE_URL}iphone-duo.html#explore`,
+      status: 'final',
+      generationLabel: 'Product Study',
+      generatedWith: 'img2threejs · Product Study',
+      referenceLabel: 'Measured Model',
+      linkLabel: 'Open Live 3D Showcase',
+    },
+    ...demos.map((demo) => ({
+      ...demo,
+      imageAlt: `Reference used to reconstruct ${demo.title}`,
+      imageLabel: 'Reference image',
+      href: `#/demo/${demo.id}`,
+      generationLabel: extractVersion(demo.generatedWith) ?? CURRENT_VERSION,
+      referenceLabel: demo.referenceKind === 'model' ? 'Measured Model' : 'Image Reference',
+      linkLabel: 'Open Live 3D Inspector',
+    })),
+  ];
+  const archiveCharacterCount = archiveEntries.filter((demo) => demo.subjectClass === 'character').length;
+  const archiveObjectCount = archiveEntries.length - archiveCharacterCount;
+  const archiveCards = archiveEntries
     .map(
       (demo, i) => `
-      <a class="archive-card" href="#/demo/${demo.id}" data-archive-subject="${demo.subjectClass}">
+      <a class="archive-card" href="${demo.href}" data-archive-subject="${demo.subjectClass}">
         <div class="archive-card-surface">
           <figure class="archive-image">
-            <span class="archive-live mono">Reference image</span>
+            <span class="archive-live mono">${escapeAttr(demo.imageLabel)}</span>
             <span class="archive-model-stage">
-              <img src="${demo.referenceImage}" alt="Reference used to reconstruct ${escapeAttr(demo.title)}" loading="lazy"
+              <img src="${demo.referenceImage}" alt="${escapeAttr(demo.imageAlt)}" loading="lazy"
                    onerror="this.classList.add('missing')" />
             </span>
-            <span class="archive-viewer-cue mono" aria-hidden="true">Open live 3D inspector</span>
+            <span class="archive-viewer-cue mono" aria-hidden="true">${escapeAttr(demo.linkLabel)}</span>
             <figcaption class="mono">${String(i + 1).padStart(2, '0')} / ${demo.subjectClass}</figcaption>
           </figure>
           <div class="archive-copy">
@@ -192,10 +220,10 @@ export function renderWorkbench(
             <p class="archive-description">${brand(demo.blurb)}</p>
             <div class="archive-meta mono">
               <span>Live 3D on open</span>
-              <span>${escapeAttr(extractVersion(demo.generatedWith) ?? CURRENT_VERSION)}</span>
-              <span>${demo.referenceKind === 'model' ? 'Measured Model' : 'Image Reference'}</span>
+              <span>${escapeAttr(demo.generationLabel)}</span>
+              <span>${escapeAttr(demo.referenceLabel)}</span>
             </div>
-            <span class="archive-link">Open Live 3D Inspector <span aria-hidden="true">↗</span></span>
+            <span class="archive-link">${escapeAttr(demo.linkLabel)} <span aria-hidden="true">↗</span></span>
           </div>
         </div>
       </a>`,
@@ -508,14 +536,14 @@ export function renderWorkbench(
           <p class="section-index mono">04 / THE ARCHIVE</p>
           <div class="section-title-wrap">
             <h2 id="archive-title">A library of<br /><em>working geometry.</em></h2>
-            <p>Every entry is a live Three.js system, not a still render. Orbit the model, run its animations, inspect its parts and read the code behind it.</p>
+            <p>Explore live Three.js studies: orbit models, play their animations and discover how each one was made. Each card opens its interactive viewer.</p>
           </div>
-          <p class="archive-count mono">${String(demos.length).padStart(2, '0')} STUDIES<br />OBJECTS + CHARACTERS</p>
+          <p class="archive-count mono">${String(archiveEntries.length).padStart(2, '0')} STUDIES<br />OBJECTS + CHARACTERS</p>
         </header>
         <div class="archive-toolbar" aria-label="Archive Controls">
           <div class="archive-filters" role="group" aria-label="Filter Studies">
             <button type="button" class="archive-filter is-active" data-archive-filter="all" aria-pressed="true">
-              <span>All Studies</span><strong class="mono">${String(demos.length).padStart(2, '0')}</strong>
+              <span>All Studies</span><strong class="mono">${String(archiveEntries.length).padStart(2, '0')}</strong>
             </button>
             <button type="button" class="archive-filter" data-archive-filter="character" aria-pressed="false">
               <span>Characters</span><strong class="mono">${String(archiveCharacterCount).padStart(2, '0')}</strong>
@@ -525,12 +553,12 @@ export function renderWorkbench(
             </button>
           </div>
           <p class="archive-filter-status mono" id="archive-filter-status" aria-live="polite">
-            <span>On View</span><strong>06 / ${String(demos.length).padStart(2, '0')}</strong>
+            <span>On View</span><strong>06 / ${String(archiveEntries.length).padStart(2, '0')}</strong>
           </p>
         </div>
         <div class="archive-grid" id="archive-grid">${archiveCards}</div>
         <button type="button" class="archive-more" id="archive-more" aria-expanded="false" aria-controls="archive-grid">
-          <span>Show the Complete Archive</span><strong class="mono">06 / ${String(demos.length).padStart(2, '0')}</strong>
+          <span>Show the Complete Archive</span><strong class="mono">06 / ${String(archiveEntries.length).padStart(2, '0')}</strong>
         </button>
       </section>
 
@@ -1340,14 +1368,14 @@ export function renderWorkbench(
       }
     }
 
-    const total = archiveFilter === 'all' ? demos.length : matching;
+    const total = archiveFilter === 'all' ? archiveEntries.length : matching;
     archiveStatus.textContent = `${String(visible).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
     archiveMore.querySelector('span')!.textContent = archiveExpanded
       ? `Show the Essential ${collapsedLimit === 4 ? 'Four' : 'Six'}`
       : 'Show the Complete Archive';
     archiveMore.querySelector('strong')!.textContent = archiveExpanded
-      ? `${String(demos.length).padStart(2, '0')} / ${String(demos.length).padStart(2, '0')}`
-      : `${String(Math.min(collapsedLimit, demos.length)).padStart(2, '0')} / ${String(demos.length).padStart(2, '0')}`;
+      ? `${String(archiveEntries.length).padStart(2, '0')} / ${String(archiveEntries.length).padStart(2, '0')}`
+      : `${String(Math.min(collapsedLimit, archiveEntries.length)).padStart(2, '0')} / ${String(archiveEntries.length).padStart(2, '0')}`;
     for (const button of archiveFilters) {
       const active = button.dataset.archiveFilter === archiveFilter;
       button.classList.toggle('is-active', active);
@@ -1841,10 +1869,10 @@ export function renderWorkbench(
   /* ---- command palette ---- */
   let palIndex = 0;
 
-  const palMatches = (): DemoMetadata[] => {
+  const palMatches = (): typeof archiveEntries => {
     const q = palInput.value.trim().toLowerCase();
-    if (!q) return demos;
-    return demos.filter(
+    if (!q) return archiveEntries;
+    return archiveEntries.filter(
       (d) =>
         d.title.toLowerCase().includes(q) ||
         d.id.includes(q) ||
@@ -1864,7 +1892,7 @@ export function renderWorkbench(
             <button type="button" class="pal-item${i === palIndex ? ' is-active' : ''}" data-id="${d.id}"
                     id="pal-option-${d.id}" role="option" aria-selected="${i === palIndex}" tabindex="-1">
               <span class="pal-title">${escapeAttr(d.title)}</span>
-              <span class="pal-meta mono">${escapeAttr(d.subjectClass)} · ${escapeAttr(extractVersion(d.generatedWith) ?? '')}</span>
+              <span class="pal-meta mono">${escapeAttr(d.subjectClass)} · ${escapeAttr(d.generationLabel)}</span>
             </button>
           </li>`,
           )
@@ -1900,7 +1928,12 @@ export function renderWorkbench(
     const target = id ?? matches[palIndex]?.id;
     if (!target) return;
     const i = demos.findIndex((d) => d.id === target);
-    if (i >= 0) void loadExhibit(i, 'palette');
+    if (i >= 0) {
+      void loadExhibit(i, 'palette');
+    } else {
+      const standalone = archiveEntries.find((entry) => entry.id === target);
+      if (standalone) window.location.assign(standalone.href);
+    }
     closeOverlays();
   };
 
