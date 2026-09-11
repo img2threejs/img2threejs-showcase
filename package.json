@@ -5,14 +5,18 @@
   "type": "module",
   "scripts": {
     "check:donate": "node scripts/check-donate-integrity.mjs",
-    "prebuild": "npm run check:donate",
+    "prebuild": "npm run check:donate && npm run check:iphone-duo",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "new-demo": "node scripts/new-showcase.mjs",
     "qa:export:list": "node scripts/qa-export-matrix.mjs --list",
     "qa:export:matrix": "node scripts/qa-export-matrix.mjs",
-    "star-history": "node scripts/generate-star-history.mjs"
+    "star-history": "node scripts/generate-star-history.mjs",
+    "dev:iphone-duo": "vite --config vite.iphone-duo.config.ts",
+    "build:iphone-duo": "npm run check:iphone-duo && tsc --noEmit -p tsconfig.iphone-duo.json && vite build --config vite.iphone-duo.config.ts",
+    "preview:iphone-duo": "vite preview --config vite.iphone-duo.config.ts",
+    "check:iphone-duo": "node scripts/check-iphone-duo-no-glb.mjs"
   },
   "dependencies": {
     "meshoptimizer": "~0.18.1",

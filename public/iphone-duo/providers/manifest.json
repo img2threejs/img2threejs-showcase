@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-10T04:12:48.164050+00:00",
+  "referenceSources": [
+    "https://www.apple.com/iphone-duo/",
+    "https://www.apple.com/newsroom/2026/09/apple-unveils-iphone-duo/"
+  ],
+  "providers": [
+    {
+      "id": "hyper3d",
+      "label": "Hyper3D / Rodin",
+      "file": "embedded://iphone-duo/hyper3d-source",
+      "runtimePayload": "src/iphone-duo/encodedHyper3d.ts",
+      "generationId": "d5fe7b2a-939d-45de-9ffa-0dc721e6ba3f",
+      "creditsConsumed": null,
+      "source": "Consistent orthographic front/left/back/right views of one closed device rendered from Apple official USDZ; Hyper3D additionally receives oblique view",
+      "geometryOwnership": "provider-generated static study; not independently authored procedural geometry",
+      "limitations": [
+        "Front-screen and rear-camera details incorrectly mixed on one face",
+        "Weak color transfer and textured surface distortion",
+        "No articulated hinge; rejected as reference-faithful hero"
+      ],
+      "reviewStatus": "retained-as-study-not-admitted-as-hero",
+      "measuredTriangles": 150000,
+      "previewRotationY": 0,
+      "visualEvidence": "work/iphone-duo/revision/evidence/hyper3d-v2-{0,45,90,180,270}.png",
+      "creditsStatus": "unavailable-from-provider-tool",
+      "creditsNote": "Rodin MCP generate/status/result responses do not expose credits consumed or account balance. The recorded null means unknown, not zero or free. No amount is inferred.",
+      "parameters": {
+        "quality": "150000 triangle target; Gen-2.5-Medium Raw",
+        "inputCount": 5
+      },
+      "referenceInput": {
+        "requiredForBuild": false,
+        "requiredForRuntime": false,
+        "retainedInRepository": false,
+        "note": "Historical provenance only. GLB files and GLB encoding are prohibited in the supported source/build/runtime workflow. Existing encoded surfaces remain source-derived; new geometry may be authored procedurally from images and measurements."
+      },
+      "referenceGlbSha256": "8e95c6d6c05fe8534f9fe4c1246258f1fb63ec3f120b90d9b2eaf03b46fcf11b",
+      "referenceGlbBytes": 13931276
+    }
+  ]
+}

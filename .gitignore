@@ -17,3 +17,6 @@ public/baseline/
 public/mesh/
 .renders/
 .venv/
+
+# Standalone iPhone Duo build output
+/dist-iphone-duo/

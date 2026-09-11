@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://www.apple.com/105/media/us/iphone-duo/2026/9305e4b9-72d9-4c05-9381-b572adadd5e5/ar/iPhone_Duo_e-sim_Star-White_Variant.usdz",
+  "sourceSha256": "5cab2ea636da0bc0b06c8abf4809843498f7c1d680042b4f95e383b5c6a718b2",
+  "file": "embedded://iphone-duo/source",
+  "runtimePayload": "src/iphone-duo/encodedSource.ts",
+  "geometryOwnership": "Apple original USDZ geometry converted to GLB; not provider-generated and not a code-only procedural reconstruction",
+  "conversion": "Blender 5.2.1 USD importer and glTF exporter, no remesh/decimate/rename/join",
+  "preserved": {
+    "meshObjects": 74,
+    "materials": 33,
+    "embeddedImages": 23,
+    "triangles": 83664
+  },
+  "materialTranslation": [
+    {
+      "material": "VnRXIqfJGJZbeXY",
+      "role": "rear optics glass",
+      "change": "black diffuse tint to white transmission tint; transmission 0.99 retained",
+      "reason": "USD transmission semantic translation into glTF; underlying original optics were otherwise hidden by black tint"
+    },
+    {
+      "material": "VKnKoHfJjSdRybB",
+      "role": "cover camera aperture",
+      "change": "none; black tint preserved"
+    }
+  ],
+  "sourceAnimation": false,
+  "runtimeFold": "Enabled in the runtime: measured hinge controls drive the native hierarchy. Display reveal and Titanium hinge sequences are reconstructed from supplied films; the source itself has no authored animation track.",
+  "referenceSources": [
+    "https://www.apple.com/iphone-duo/",
+    "https://www.apple.com/iphone-duo/specs/"
+  ],
+  "limitations": [
+    "Web PBR lighting differs from Apple studio photography",
+    "Star White is the supplied AR variant; Night and the four study finishes are disclosed runtime material adaptations",
+    "No claim of 100 percent pixel identity or hidden manufacturing geometry"
+  ],
+  "runtimeFinish": "Star White source finish plus runtime controls for White, Night and four labeled study finishes; Night and study finishes are material adaptations rather than additional Apple source variants.",
+  "referenceInput": {
+    "requiredForBuild": false,
+    "requiredForRuntime": false,
+    "retainedInRepository": false,
+    "note": "Historical provenance only. GLB files and GLB encoding are prohibited in the supported source/build/runtime workflow. Existing encoded surfaces remain source-derived; new geometry may be authored procedurally from images and measurements."
+  },
+  "referenceGlbSha256": "f60f602fa7c602384b5e251e364a9885bef5ec70cfecc5627d2adcfcaeed13d7",
+  "referenceGlbBytes": 9258260
+}
