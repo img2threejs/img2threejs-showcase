@@ -41,7 +41,7 @@
     "requiredForBuild": false,
     "requiredForRuntime": false,
     "retainedInRepository": false,
-    "note": "GLB is an optional reference input. Geometry can also be authored procedurally from images and measurements; this edition retains encoded source-derived surfaces."
+    "note": "Historical provenance only. GLB files and GLB encoding are prohibited in the supported source/build/runtime workflow. Existing encoded surfaces remain source-derived; new geometry may be authored procedurally from images and measurements."
   },
   "referenceGlbSha256": "f60f602fa7c602384b5e251e364a9885bef5ec70cfecc5627d2adcfcaeed13d7",
   "referenceGlbBytes": 9258260
