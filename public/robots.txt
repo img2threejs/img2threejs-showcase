@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://img2threejs.io/sitemap.xml

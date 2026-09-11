@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { fitScale, subjectExtent, type SubjectExtent } from './framing';
+import { fitDistance, fitScale, subjectExtent, type SubjectExtent } from './framing';
 
 export interface ViewerOptions {
   /** Install per-demo lights into the scene. Falls back to a neutral studio rig. */
@@ -196,7 +196,16 @@ export class Viewer {
   }
 
   private readonly mount: HTMLElement;
-  private rafHandle = 0;
+  private rafHandle: number | null = null;
+  private started = false;
+  private paused = false;
+  private disposed = false;
+  /** Owns the legacy global ready flag so an older viewer cannot signal readiness for a newer one. */
+  private readyToken: object | null = null;
+  /** Timestamp of the last rendered frame. Cleared across pauses so hidden time never becomes `dt`. */
+  private lastFrameTime: number | null = null;
+  /** Running time supplied to demo tickers. Pauses preserve it without advancing it. */
+  private elapsedTime = 0;
   private readonly onResize: () => void;
   private readonly capture: boolean;
 
@@ -256,6 +265,9 @@ export class Viewer {
   private readonly authoredFar: number;
   /** Subject size around the orbit target; null until fitToViewport() runs. */
   private fitExtent: SubjectExtent | null = null;
+
+  /** The dedicated inspector contains the complete subject; embedded stages keep authored crops. */
+  private containSubject = false;
   /** Distance applyFit() last set, so a resize can preserve the user's own zoom. */
   private appliedDistance = 0;
   private fogBase: { near: number; far: number } | null = null;
@@ -1119,15 +1131,16 @@ export class Viewer {
 
   /**
    * Makes the framing responsive: measures `object` around the orbit target and dollies the
-   * camera back far enough that it fits the current viewport on both axes. On a desktop-shaped
-   * viewport the authored distance already fits, so nothing moves; in portrait — where the
-   * horizontal fov collapses and the subject would fall outside the frame — the camera pulls
-   * back. Call once, AFTER the demo's build(). Re-applied automatically on resize/rotate.
+   * camera back far enough that it fits the current viewport on both axes. By default a wide
+   * viewport preserves the art-directed crop; `containSubject` instead guarantees the complete
+   * silhouette, which is appropriate for the dedicated inspector. Call once, AFTER the demo's
+   * build(). Re-applied automatically on resize/rotate.
    */
-  fitToViewport(object: THREE.Object3D | THREE.Object3D[]): void {
+  fitToViewport(object: THREE.Object3D | THREE.Object3D[], containSubject = false): void {
     // Capture mode owns its own deterministic framing (frameForCapture) — leave it alone.
     if (this.capture) return;
     const objects = Array.isArray(object) ? object : [object];
+    this.containSubject = containSubject;
     this.fitExtent = subjectExtent(objects, this.controls.target);
     const fog = this.scene.fog;
     this.fogBase = fog instanceof THREE.Fog ? { near: fog.near, far: fog.far } : null;
@@ -1137,12 +1150,15 @@ export class Viewer {
   private applyFit(): void {
     if (!this.fitExtent || this.authoredDistance <= 0) return;
 
-    const scale = fitScale(
-      this.fitExtent,
-      this.camera.fov,
-      this.camera.aspect,
-      this.authoredDistance,
-    );
+    const scale = this.containSubject
+      ? Math.max(1, fitDistance(this.fitExtent, this.camera.fov, this.camera.aspect, 1.08)
+        / this.authoredDistance)
+      : fitScale(
+        this.fitExtent,
+        this.camera.fov,
+        this.camera.aspect,
+        this.authoredDistance,
+      );
     const desired = this.authoredDistance * scale;
     if (this.appliedDistance && Math.abs(desired - this.appliedDistance) < 1e-3) return;
 
@@ -1213,68 +1229,92 @@ export class Viewer {
     this.turntableSpinning = this.turntableWanted;
   }
 
-  start(): void {
-    const clock = new THREE.Clock();
-    this.refreshTickers();
+  /**
+   * Render one frame and request exactly one successor. Keeping the callback on the instance lets
+   * pause() cancel that successor and resume() restart from a fresh timestamp without building a
+   * second requestAnimationFrame chain.
+   */
+  private readonly renderFrame = (now: number): void => {
+    // The handle that invoked this callback has been consumed. A pause from a demo ticker can then
+    // leave the handle empty, and the final schedule guard below respects that pause.
+    this.rafHandle = null;
+    if (!this.started || this.paused || this.disposed) return;
 
-    const loop = (): void => {
-      this.rafHandle = requestAnimationFrame(loop);
-      const dt = clock.getDelta();
-      const elapsed = clock.getElapsedTime();
-      // Review captures must freeze the authored idle pose so repeated screenshots
-      // compare the same pixels. The runtime hook remains active in the live viewer.
-      if (!this.capture) {
-        for (const tick of this.tickers) tick(dt, elapsed);
+    const dt = this.lastFrameTime === null ? 0 : Math.max(0, (now - this.lastFrameTime) / 1000);
+    this.lastFrameTime = now;
+    this.elapsedTime += dt;
+
+    // Review captures must freeze the authored idle pose so repeated screenshots
+    // compare the same pixels. The runtime hook remains active in the live viewer.
+    if (!this.capture) {
+      for (const tick of this.tickers) tick(dt, this.elapsedTime);
+    }
+    // Ease toward the explode target, then hold the pose. Runs AFTER the demo tickers so
+    // that on a demo which animates part positions (a rising lid, a turning crank) the
+    // explode offset wins while separated, and the ticker gets its parts back the frame
+    // after we settle at 0.
+    if (this.explodeT !== this.explodeTarget) {
+      const k = 1 - Math.pow(0.001, dt); // frame-rate-independent exponential ease
+      this.explodeT += (this.explodeTarget - this.explodeT) * k;
+      if (Math.abs(this.explodeTarget - this.explodeT) < 0.001) this.explodeT = this.explodeTarget;
+    }
+    if (this.explodeT > 0 || this.explodeApplied) this.applyExplode();
+    this.easeCamera(dt);
+    if (this.turntableResume > 0) {
+      this.turntableResume -= dt;
+      if (this.turntableResume <= 0) {
+        this.turntableResume = 0;
+        this.turntableSpinning = this.turntableWanted;
       }
-      // Ease toward the explode target, then hold the pose. Runs AFTER the demo tickers so
-      // that on a demo which animates part positions (a rising lid, a turning crank) the
-      // explode offset wins while separated, and the ticker gets its parts back the frame
-      // after we settle at 0.
-      if (this.explodeT !== this.explodeTarget) {
-        const k = 1 - Math.pow(0.001, dt); // frame-rate-independent exponential ease
-        this.explodeT += (this.explodeTarget - this.explodeT) * k;
-        if (Math.abs(this.explodeTarget - this.explodeT) < 0.001) this.explodeT = this.explodeTarget;
-      }
-      if (this.explodeT > 0 || this.explodeApplied) this.applyExplode();
-      this.easeCamera(dt);
-      if (this.turntableResume > 0) {
-        this.turntableResume -= dt;
-        if (this.turntableResume <= 0) {
-          this.turntableResume = 0;
-          this.turntableSpinning = this.turntableWanted;
-        }
-      }
-      // Ahead of `controls.update()`, which is what reads the moved camera back.
-      if (this.turntableSpinning) this.spinTurntable(dt);
-      /**
-       * PUBLISHED FOR THE DEMOS, in degrees per second and 0 when the orbit is not running.
-       *
-       * A demo cannot see the turntable otherwise -- it is a property of the camera, and the camera is the
-       * viewer's. Cloth and hair on this character are asked to react to the turn, so the one number they
-       * need is put somewhere they can read it. A plain number and not an object: this runs every frame.
-       */
-      (this.scene.userData as { turntableRate?: number }).turntableRate =
-        this.turntableSpinning ? this.turntableRate : 0;
-      this.controls.update();
-      // Exactly once per actual main frame, including paused/capture simulation. Never
-      // called by renderer callbacks (water reflections/shadows) or fixed-step motion.
-      for(const prepare of this.renderPreparers)prepare();
-      this.renderer.render(this.scene, this.camera);
-    };
-    loop();
+    }
+    // Ahead of `controls.update()`, which is what reads the moved camera back.
+    if (this.turntableSpinning) this.spinTurntable(dt);
+    /**
+     * PUBLISHED FOR THE DEMOS, in degrees per second and 0 when the orbit is not running.
+     *
+     * A demo cannot see the turntable otherwise -- it is a property of the camera, and the camera is the
+     * viewer's. Cloth and hair on this character are asked to react to the turn, so the one number they
+     * need is put somewhere they can read it. A plain number and not an object: this runs every frame.
+     */
+    (this.scene.userData as { turntableRate?: number }).turntableRate =
+      this.turntableSpinning ? this.turntableRate : 0;
+    this.controls.update();
+    // Exactly once per actual main frame, including paused/capture simulation. Never
+    // called by renderer callbacks (water reflections/shadows) or fixed-step motion.
+    for (const prepare of this.renderPreparers) prepare();
+    this.renderer.render(this.scene, this.camera);
+
+    if (!this.paused && !this.disposed) {
+      this.rafHandle = requestAnimationFrame(this.renderFrame);
+    }
+  };
+
+  /** Start the viewer once. Later activity changes go through pause() and resume(). */
+  start(): void {
+    if (this.started || this.disposed) return;
+    this.started = true;
+    this.refreshTickers();
+    if (!this.paused) this.renderFrame(performance.now());
 
     // Headless-evaluation ready-signal: wait for async texture loads (DefaultLoadingManager),
     // then a few frames so shaders compile + buffers flip, then flag the page as capture-ready.
     // Fixes the load-race that produced false "chrome"/white renders. No-op for normal viewing
     // beyond setting a window flag. See grimoire/feedback/render_capture.md.
-    const w = window as unknown as { __IMG2THREEJS_READY__?: boolean };
+    const w = window as unknown as {
+      __IMG2THREEJS_READY__?: boolean;
+      __IMG2THREEJS_READY_TOKEN__?: object;
+    };
+    const readyToken = {};
+    this.readyToken = readyToken;
+    w.__IMG2THREEJS_READY_TOKEN__ = readyToken;
     w.__IMG2THREEJS_READY__ = false;
     let signalled = false;
     const signalReady = (): void => {
-      if (signalled) return;
+      if (signalled || this.disposed || w.__IMG2THREEJS_READY_TOKEN__ !== readyToken) return;
       signalled = true;
       let framesToWait = 6;
       const pump = (): void => {
+        if (this.disposed || w.__IMG2THREEJS_READY_TOKEN__ !== readyToken) return;
         if (framesToWait-- > 0) {
           requestAnimationFrame(pump);
           return;
@@ -1286,6 +1326,28 @@ export class Viewer {
     THREE.DefaultLoadingManager.onLoad = signalReady;
     // Fallback: if no async loads are pending, onLoad never fires → kick after a short delay.
     setTimeout(signalReady, 600);
+  }
+
+  /** Stop rendering until resume(). Safe to call repeatedly and before start(). */
+  pause(): void {
+    if (this.paused || this.disposed) return;
+    this.paused = true;
+    this.lastFrameTime = null;
+    if (this.rafHandle !== null) {
+      cancelAnimationFrame(this.rafHandle);
+      this.rafHandle = null;
+    }
+  }
+
+  /**
+   * Continue a paused viewer without counting the paused interval as animation time. A disposed
+   * viewer can never be restarted, and repeated calls cannot create parallel RAF loops.
+   */
+  resume(): void {
+    if (!this.paused || this.disposed) return;
+    this.paused = false;
+    this.lastFrameTime = null;
+    if (this.started && this.rafHandle === null) this.renderFrame(performance.now());
   }
 
   /**
@@ -1342,7 +1404,23 @@ export class Viewer {
 
   /** Frees renderer/GPU resources. Call this before swapping to a new demo. */
   dispose(): void {
-    cancelAnimationFrame(this.rafHandle);
+    if (this.disposed) return;
+    this.disposed = true;
+    this.paused = true;
+    const readyState = window as unknown as {
+      __IMG2THREEJS_READY__?: boolean;
+      __IMG2THREEJS_READY_TOKEN__?: object;
+    };
+    if (this.readyToken && readyState.__IMG2THREEJS_READY_TOKEN__ === this.readyToken) {
+      delete readyState.__IMG2THREEJS_READY__;
+      delete readyState.__IMG2THREEJS_READY_TOKEN__;
+    }
+    this.readyToken = null;
+    if (this.rafHandle !== null) {
+      cancelAnimationFrame(this.rafHandle);
+      this.rafHandle = null;
+    }
+    this.lastFrameTime = null;
     window.removeEventListener('resize', this.onResize);
     for (const off of this.teardown) off();
     this.teardown.length = 0;
@@ -1353,33 +1431,45 @@ export class Viewer {
     this.highlightMat?.dispose();
     this.controls.dispose();
 
-    this.scene.traverse((object) => {
-      const mesh = object as THREE.Mesh;
-      if (mesh.geometry) {
-        mesh.geometry.dispose();
-      }
-      const material = mesh.material as THREE.Material | THREE.Material[] | undefined;
-      if (material) {
-        const materials = Array.isArray(material) ? material : [material];
-        for (const mat of materials) {
-          disposeMaterialTextures(mat);
-          mat.dispose();
-        }
-      }
-    });
+    disposeObjectResources(this.scene);
 
     this.renderer.dispose();
     if (this.renderer.domElement.parentElement === this.mount) {
       this.mount.removeChild(this.renderer.domElement);
     }
   }
+
 }
 
-function disposeMaterialTextures(material: THREE.Material): void {
+/** Dispose each GPU resource below `root` once during this sweep. */
+function disposeObjectResources(root: THREE.Object3D): void {
+  const geometries = new Set<THREE.BufferGeometry>();
+  const materials = new Set<THREE.Material>();
+  const textures = new Set<THREE.Texture>();
+
+  root.traverse((object) => {
+    const mesh = object as THREE.Mesh;
+    if (mesh.geometry && !geometries.has(mesh.geometry)) {
+      geometries.add(mesh.geometry);
+      mesh.geometry.dispose();
+    }
+    const material = mesh.material as THREE.Material | THREE.Material[] | undefined;
+    if (!material) return;
+    for (const entry of Array.isArray(material) ? material : [material]) {
+      if (materials.has(entry)) continue;
+      materials.add(entry);
+      disposeMaterialTextures(entry, textures);
+      entry.dispose();
+    }
+  });
+}
+
+function disposeMaterialTextures(material: THREE.Material, textures: Set<THREE.Texture>): void {
   const record = material as unknown as Record<string, unknown>;
   for (const key of Object.keys(record)) {
     const value = record[key];
-    if (value instanceof THREE.Texture) {
+    if (value instanceof THREE.Texture && !textures.has(value)) {
+      textures.add(value);
       value.dispose();
     }
   }

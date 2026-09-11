@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-import '../export.css';
-import { getDemo } from '../demos/registry';
+import { getDemo, loadDemo } from '../demos/registry';
 import { Viewer, type PartInfo } from '../scene';
 import { navigate } from '../router';
 import { brand, extractVersion, escapeAttr, GITHUB_CORE as GITHUB_URL } from '../site-data';
@@ -32,7 +31,7 @@ import {
 } from '../analytics';
 
 /** Viewports where the info panel becomes a collapsible bottom sheet over the model. */
-const COMPACT_QUERY = '(max-width: 860px), (max-height: 520px)';
+const COMPACT_QUERY = '(max-width: 960px), (max-height: 520px)';
 
 /**
  * Whether the details sheet is expanded, remembered across demo navigations within a session.
@@ -43,31 +42,49 @@ let panelExpanded: boolean | null = null;
 
 
 /**
- * Renders the full-viewport demo viewer + info panel for `id`.
- * Returns a cleanup function the router must call before switching routes.
+ * Loads one selected runtime, then renders the full-viewport demo viewer + info panel for `id`.
+ * Resolves to a cleanup function the router must call before switching routes.
  * If `id` is unknown, redirects to home and returns a no-op cleanup.
  */
-export function renderDemo(mount: HTMLElement, id: string): () => void {
-  const demo = getDemo(id);
-  if (!demo) {
+export async function renderDemo(
+  mount: HTMLElement,
+  id: string,
+  isCurrent: () => boolean = () => true,
+): Promise<() => void> {
+  const metadata = getDemo(id);
+  if (!metadata) {
     navigate('#/');
     return () => {};
   }
 
+  const startedAt = performance.now();
+  // Count the chosen exhibit before its model chunk arrives; a failed or abandoned download is
+  // still a real visit and must remain visible in the exhibit-view to exhibit-ready funnel.
+  resetExhibitOnceKeys(metadata.id);
+  trackExhibitView(metadata, 'deeplink', 'viewer');
+
+  const demo = await loadDemo(id);
+  // A hash change can supersede this import while the network is in flight. Do not let that stale
+  // route replace the newer route's DOM or create a Viewer after its generation was invalidated.
+  if (!demo || !isCurrent()) return () => {};
+
+  let disposed = false;
+  let signalDisposed!: () => void;
+  const disposedSignal = new Promise<void>((resolve) => {
+    signalDisposed = resolve;
+  });
+  const routeIsActive = (): boolean => !disposed && isCurrent();
+
   const compact = window.matchMedia(COMPACT_QUERY);
   const expanded = panelExpanded ?? !compact.matches;
-  const startedAt = performance.now();
   /**
-   * Always 'deeplink': `#/demo/<id>` is only ever reached from outside the workbench — a shared
-   * link, a README link, or the workbench's own "Open full viewer" button, which reports its own
-   * event before navigating. Nothing inside this page can change the exhibit without a reload.
+   * Always 'deeplink': `#/demo/<id>` owns a separate viewer page, whether it is reached from a
+   * shared link, a README link, an archive card or the landing page's primary viewer CTA. In-place
+   * workbench swaps report their own entry source before this route is involved.
    *
    * Unguarded by `capture`, because it does not need to be: a capture run is a headless browser on
    * localhost, and `analytics.ts` refuses to send for either of those reasons on its own.
    */
-  resetExhibitOnceKeys(demo.id);
-  trackExhibitView(demo, 'deeplink', 'viewer');
-
   // Read structurally, like `toneMapping`, so this file stays independent of the fields being declared
   // on DemoEntry. `image` is the default because every demo predating the field was built from
   // photographs -- the honest default rather than the flattering one.
@@ -78,155 +95,238 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   const version = extractVersion(demo.generatedWith);
 
   mount.innerHTML = `
-    <div class="demo-page">
+    <div class="demo-page" data-inspector-open="${expanded}">
       <div class="demo-canvas-mount" id="demo-canvas-mount"></div>
-      <section class="demo-panel" id="demo-panel" data-expanded="${expanded}">
+      <a class="back-link" href="#/" aria-label="Back to Showcase">
+        <span class="back-arrow" aria-hidden="true">&larr;</span>
+        <span class="back-text">Back to Showcase</span>
+      </a>
+      <div class="demo-stage-label" aria-hidden="true">
+        <span>Procedural Scene</span>
+        <strong>${demo.id}</strong>
+      </div>
+      <div class="demo-stage-axis" aria-hidden="true">
+        <span class="axis-x">X</span><span class="axis-y">Y</span><span class="axis-z">Z</span>
+      </div>
+      <section class="demo-panel" id="demo-panel" data-expanded="${expanded}" aria-label="Model Inspector">
         <div class="demo-panel-bar">
-          <a class="back-link" href="#/" aria-label="Back to gallery">
-            <span class="back-arrow" aria-hidden="true">&larr;</span>
-            <span class="back-text">Back to gallery</span>
-          </a>
-          <span class="demo-bar-title">${demo.title}</span>
+          <span class="demo-panel-mark mono" aria-hidden="true">I / 3</span>
+          <span class="demo-bar-title">Model Inspector</span>
+          <span class="demo-panel-mode mono"><i aria-hidden="true"></i> Live Inspector</span>
           <button class="panel-toggle" type="button" id="panel-toggle"
-                  aria-controls="demo-panel-body" aria-expanded="${expanded}">
-            <span class="panel-toggle-label">Details</span>
+                  aria-controls="demo-panel-body" aria-expanded="${expanded}"
+                  aria-label="${expanded ? 'Close' : 'Open'} Model Inspector">
+            <span class="panel-toggle-label">${expanded ? 'Hide' : 'Inspect'}</span>
             <span class="panel-toggle-chevron" aria-hidden="true"></span>
           </button>
         </div>
-        <div class="demo-panel-body" id="demo-panel-body">
+        <div class="demo-panel-body" id="demo-panel-body" aria-hidden="${!expanded}"${expanded ? '' : ' inert'}>
           <div class="demo-panel-inner">
             <header class="demo-panel-head">
-              <span class="demo-kicker">${brand('img2threejs')} · reconstruction</span>
+              <div class="demo-head-line">
+                <span class="demo-kicker">${brand('img2threejs')} / Live Model</span>
+                <span class="demo-model-type mono">${demo.subjectClass}</span>
+              </div>
               <h2>${demo.title}</h2>
-              <p class="demo-author">by
+              <p class="demo-author">Created By
                 <a href="${demo.authorUrl}" target="_blank" rel="noopener noreferrer">${demo.author}</a>
               </p>
             </header>
-            <figure class="demo-ref">
-              <img class="demo-ref-thumb" src="${demo.referenceImage}" alt="${demo.title} reference" />
-              <figcaption>${refKind === 'model' ? 'reference model &middot; rendered view' : 'source reference'}</figcaption>
-            </figure>
-            <div class="demo-meta">
-              <div class="badges">
-                <span class="badge badge-ref badge-ref-${refKind}" title="${refKind === 'model'
-                  ? 'Rebuilt from a 3D asset: geometry is measured, so triangle counts and cross-sections are read off the reference.'
-                  : 'Rebuilt from images: depth and every hidden face are inferred, not measured.'}">${refKind} reference</span>
-                <span class="badge badge-${demo.subjectClass}">${demo.subjectClass}</span>
-                ${version ? `<span class="badge badge-version"
-                  title="${escapeAttr(demo.generatedWith)}">${version}</span>` : ''}
-                <span class="badge badge-status status-${demo.status}">${demo.status}</span>
-              </div>
-              <p>${demo.blurb}</p>
-            </div>
-            <section class="demo-animations" id="demo-animations" hidden aria-labelledby="demo-animations-title">
-              <div class="demo-animations-head">
-                <span class="parts-title" id="demo-animations-title">Animations</span>
-                <output class="demo-animation-status" id="demo-animation-status">Idle</output>
-              </div>
-              <div class="demo-animation-buttons" id="demo-animation-buttons"></div>
-            </section>
-            <section class="demo-animations" id="demo-vfx" hidden aria-labelledby="demo-vfx-title">
-              <div class="demo-animations-head">
-                <span class="parts-title" id="demo-vfx-title">Strike element</span>
-                <output class="demo-animation-status" id="demo-vfx-status"></output>
-              </div>
-              <div class="demo-animation-buttons" id="demo-vfx-buttons"></div>
-            </section>
-            <section class="demo-animations" id="demo-detail" hidden aria-labelledby="demo-detail-title">
-              <div class="demo-animations-head">
-                <span class="parts-title" id="demo-detail-title">Quality</span>
-                <output class="demo-animation-status" id="demo-detail-status"></output>
-              </div>
-              <div class="demo-animation-buttons" id="demo-detail-buttons"></div>
-            </section>
-            <section class="demo-parts" id="demo-parts" hidden>
-              <div class="parts-head">
-                <span class="parts-title">Parts</span>
-                <span class="parts-count" id="parts-count"></span>
-              </div>
-              <div class="part-card" id="part-card" hidden></div>
-              <div class="parts-scroll"><ul class="parts-list" id="parts-list"></ul></div>
-              <p class="parts-prov" id="parts-prov" hidden></p>
-            </section>
-            <!-- Shared, unconditional export UI: every current and future DemoEntry inherits it. -->
-            <section class="demo-export" id="demo-export" aria-labelledby="demo-export-title">
-              <div class="demo-export-head">
-                <div>
-                  <span class="parts-title" id="demo-export-title">Export a 3D Asset</span>
-                  <span class="demo-export-subtitle">From Stage</span>
-                </div>
-                <output class="demo-export-status" id="demo-export-status" data-state="ready">Ready</output>
-              </div>
-              <div class="demo-export-scope" id="demo-export-scope" hidden>
-                <label for="demo-export-scope-select">Export scope</label>
-                <select id="demo-export-scope-select" aria-describedby="demo-export-scope-note"></select>
-                <p id="demo-export-scope-note">Choose the complete assembly or one independently declared model.</p>
-              </div>
-              <div class="demo-export-formats" id="demo-export-formats">
-                ${EXPORT_FORMATS.map(({ format, label, note, keeps, limits }) => `
-                  <div class="demo-export-format-row" data-export-row="${format}">
-                    <button class="demo-export-format" type="button" data-export-format="${format}">
-                      <span class="demo-export-label">${label}</span>
-                      <span class="demo-export-note">${note}</span>
-                      <span class="demo-export-arrow" aria-hidden="true">&darr;</span>
-                    </button>
-                    <button class="demo-export-info" type="button" data-export-info="${format}"
-                            aria-label="What ${label} export includes"
-                            aria-describedby="demo-export-tooltip-${format}" aria-expanded="false">i</button>
-                    <div class="demo-export-tooltip" id="demo-export-tooltip-${format}" role="tooltip">
-                      <strong>${label} portability</strong>
-                      <p><span>Keeps</span>${keeps}</p>
-                      <p><span>Limits</span>${limits}</p>
+            <div class="demo-inspector-shell">
+              <nav class="demo-inspector-tabs" aria-label="Inspector Sections" role="tablist">
+                <button class="demo-inspector-tab is-active" id="demo-tab-details" type="button"
+                        data-inspector-tab="details" role="tab" aria-selected="true"
+                        aria-controls="demo-pane-details">
+                  <span class="demo-tab-index mono" aria-hidden="true">01</span>
+                  <span>Overview</span>
+                </button>
+                <button class="demo-inspector-tab" id="demo-tab-animation" type="button"
+                        data-inspector-tab="animation" role="tab" aria-selected="false"
+                        aria-controls="demo-pane-animation" aria-disabled="true" disabled>
+                  <span class="demo-tab-index mono" aria-hidden="true">02</span>
+                  <span>Motion</span>
+                </button>
+                <button class="demo-inspector-tab" id="demo-tab-parts" type="button"
+                        data-inspector-tab="parts" role="tab" aria-selected="false"
+                        aria-controls="demo-pane-parts" aria-disabled="true" disabled>
+                  <span class="demo-tab-index mono" aria-hidden="true">03</span>
+                  <span>Parts</span>
+                </button>
+                <button class="demo-inspector-tab" id="demo-tab-export" type="button"
+                        data-inspector-tab="export" role="tab" aria-selected="false"
+                        aria-controls="demo-pane-export">
+                  <span class="demo-tab-index mono" aria-hidden="true">04</span>
+                  <span>Export</span>
+                </button>
+              </nav>
+              <div class="demo-inspector-panes">
+                <section class="demo-inspector-pane is-active" id="demo-pane-details"
+                         data-inspector-pane="details" role="tabpanel" aria-labelledby="demo-tab-details">
+                  <div class="demo-pane-intro">
+                    <span class="mono">Scene Overview</span>
+                    <p>Inspect The Source, Build Profile, And Provenance.</p>
+                  </div>
+                  <div class="demo-overview">
+                    <figure class="demo-ref">
+                      <img class="demo-ref-thumb" src="${demo.referenceImage}" alt="${demo.title} reference" />
+                      <figcaption>${refKind === 'model' ? 'Reference Model' : 'Source Reference'}</figcaption>
+                    </figure>
+                    <div class="demo-meta">
+                      <span class="parts-title">Model Profile</span>
+                      <div class="badges">
+                        <span class="badge badge-ref badge-ref-${refKind}" title="${refKind === 'model'
+                          ? 'Rebuilt from a 3D asset: geometry is measured, so triangle counts and cross-sections are read off the reference.'
+                          : 'Rebuilt from images: depth and every hidden face are inferred, not measured.'}">${refKind} reference</span>
+                        <span class="badge badge-${demo.subjectClass}">${demo.subjectClass}</span>
+                        ${version ? `<span class="badge badge-version"
+                          title="${escapeAttr(demo.generatedWith)}">${version}</span>` : ''}
+                        <span class="badge badge-status status-${demo.status}">${demo.status}</span>
+                      </div>
                     </div>
                   </div>
-                `).join('')}
+                  <section class="demo-description" aria-labelledby="demo-description-title">
+                    <span class="parts-title" id="demo-description-title">Build Notes</span>
+                    <p>${demo.blurb}</p>
+                  </section>
+                  <div class="demo-links demo-source-links">
+                    <a class="btn" href="${demo.sourceUrl}" target="_blank" rel="noopener noreferrer"
+                       data-track-skip>
+                      &lt;/&gt; View Generated Source
+                    </a>
+                    ${demo.referenceUrl ? `<a class="btn btn-ref-link" href="${demo.referenceUrl}"
+                      target="_blank" rel="noopener noreferrer">
+                      <span class="ref-glyph">&#9670;</span> Generated by Hyper3D
+                    </a>` : ''}
+                    ${demo.tripoUrl ? `
+                    <a class="btn" href="${demo.tripoUrl}" target="_blank" rel="noopener noreferrer">
+                      &#9670; Generated by Tripo
+                    </a>` : ''}
+                    ${demo.artstationUrl ? `
+                    <a class="btn" href="${demo.artstationUrl}" target="_blank" rel="noopener noreferrer">
+                      &#9650; View on ArtStation
+                    </a>` : ''}
+                    <a class="btn btn-star" href="${GITHUB_URL}" target="_blank" rel="noopener noreferrer">
+                      &#9733; Star ${brand('img2threejs')} on GitHub
+                    </a>
+                  </div>
+                </section>
+                <section class="demo-inspector-pane" id="demo-pane-animation"
+                         data-inspector-pane="animation" role="tabpanel" aria-labelledby="demo-tab-animation" hidden>
+                  <div class="demo-pane-intro">
+                    <span class="mono">Performance Controls</span>
+                    <p>Preview Motion, Effects, And Scene Behavior In Real Time.</p>
+                  </div>
+                  <section class="demo-animations demo-motion" id="demo-animations" hidden aria-labelledby="demo-animations-title">
+                    <div class="demo-animations-head">
+                      <div>
+                        <span class="parts-title" id="demo-animations-title">Motion Library</span>
+                        <span class="demo-animations-note">Choose a Clip · ↻ Loop · ▶ Once</span>
+                      </div>
+                      <output class="demo-animation-status" id="demo-animation-status" data-state="idle">Ready</output>
+                    </div>
+                    <div class="demo-animation-buttons" id="demo-animation-buttons"></div>
+                    <div class="demo-animation-footer" id="demo-animation-footer"></div>
+                  </section>
+                  <section class="demo-animations" id="demo-vfx" hidden aria-labelledby="demo-vfx-title">
+                    <div class="demo-animations-head">
+                      <span class="parts-title" id="demo-vfx-title">Strike Element</span>
+                      <output class="demo-animation-status" id="demo-vfx-status"></output>
+                    </div>
+                    <div class="demo-animation-buttons" id="demo-vfx-buttons"></div>
+                  </section>
+                  <section class="demo-animations" id="demo-detail" hidden aria-labelledby="demo-detail-title">
+                    <div class="demo-animations-head">
+                      <span class="parts-title" id="demo-detail-title">Quality</span>
+                      <output class="demo-animation-status" id="demo-detail-status"></output>
+                    </div>
+                    <div class="demo-animation-buttons" id="demo-detail-buttons"></div>
+                  </section>
+                  <div class="demo-links demo-model-controls">
+                    <button class="btn btn-explode" id="demo-explode" type="button" aria-pressed="false" hidden>
+                      <span class="explode-glyph">&#10021;</span> <span class="explode-label">Explode Parts</span>
+                    </button>
+                    <button class="btn btn-spin" id="demo-spin" type="button" aria-pressed="false" hidden>
+                      <span class="explode-glyph">&#8635;</span> <span class="spin-label">Stop Turntable</span>
+                    </button>
+                  </div>
+                </section>
+                <section class="demo-inspector-pane" id="demo-pane-parts"
+                         data-inspector-pane="parts" role="tabpanel" aria-labelledby="demo-tab-parts" hidden>
+                  <div class="demo-pane-intro">
+                    <span class="mono">Assembly Inspector</span>
+                    <p>Select A Mesh In The Scene Or Browse The Model Structure.</p>
+                  </div>
+                  <section class="demo-parts" id="demo-parts" hidden>
+                    <div class="parts-head">
+                      <span class="parts-title">Model Parts</span>
+                      <span class="parts-count" id="parts-count"></span>
+                    </div>
+                    <div class="part-card" id="part-card" hidden></div>
+                    <div class="parts-scroll"><ul class="parts-list" id="parts-list"></ul></div>
+                    <p class="parts-prov" id="parts-prov" hidden></p>
+                  </section>
+                </section>
+                <section class="demo-inspector-pane" id="demo-pane-export"
+                         data-inspector-pane="export" role="tabpanel" aria-labelledby="demo-tab-export" hidden>
+                  <div class="demo-pane-intro">
+                    <span class="mono">Production Export</span>
+                    <p>Validate The Current Scene And Download A Portable 3D Asset.</p>
+                  </div>
+                  <section class="demo-export" id="demo-export" aria-labelledby="demo-export-title">
+                    <div class="demo-export-head">
+                      <div>
+                        <span class="parts-title" id="demo-export-title">Export a 3D Asset</span>
+                        <span class="demo-export-subtitle">From Stage</span>
+                      </div>
+                      <output class="demo-export-status" id="demo-export-status" data-state="ready">Ready</output>
+                    </div>
+                    <div class="demo-export-scope" id="demo-export-scope" hidden>
+                      <label for="demo-export-scope-select">Export scope</label>
+                      <select id="demo-export-scope-select" aria-describedby="demo-export-scope-note"></select>
+                      <p id="demo-export-scope-note">Choose the complete assembly or one independently declared model.</p>
+                    </div>
+                    <div class="demo-export-formats" id="demo-export-formats">
+                      ${EXPORT_FORMATS.map(({ format, label, note, keeps, limits }) => `
+                        <div class="demo-export-format-row" data-export-row="${format}">
+                          <button class="demo-export-format" type="button" data-export-format="${format}">
+                            <span class="demo-export-label">${label}</span>
+                            <span class="demo-export-note">${note}</span>
+                            <span class="demo-export-arrow" aria-hidden="true">&darr;</span>
+                          </button>
+                          <button class="demo-export-info" type="button" data-export-info="${format}"
+                                  aria-label="What ${label} export includes"
+                                  aria-describedby="demo-export-tooltip-${format}" aria-expanded="false">i</button>
+                          <div class="demo-export-tooltip" id="demo-export-tooltip-${format}" role="tooltip">
+                            <strong>${label} portability</strong>
+                            <p><span>Keeps</span>${keeps}</p>
+                            <p><span>Limits</span>${limits}</p>
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                    <button class="demo-export-all" id="demo-export-all" type="button">
+                      <span>
+                        <strong>Export all formats</strong>
+                        <small>Current scope · 6 validated assets + manifest</small>
+                      </span>
+                      <span class="demo-export-zip" aria-hidden="true">.ZIP &darr;</span>
+                    </button>
+                    <div class="demo-export-report" id="demo-export-report" hidden>
+                      <p id="demo-export-summary"></p>
+                      <ul id="demo-export-warnings"></ul>
+                    </div>
+                  </section>
+                </section>
               </div>
-              <button class="demo-export-all" id="demo-export-all" type="button">
-                <span>
-                  <strong>Export all formats</strong>
-                  <small>Current scope · 6 validated assets + manifest</small>
-                </span>
-                <span class="demo-export-zip" aria-hidden="true">.ZIP &darr;</span>
-              </button>
-              <div class="demo-export-report" id="demo-export-report" hidden>
-                <p id="demo-export-summary"></p>
-                <ul id="demo-export-warnings"></ul>
-              </div>
-            </section>
-            <div class="demo-links">
-              <button class="btn btn-explode" id="demo-explode" type="button" aria-pressed="false" hidden>
-                <span class="explode-glyph">&#10021;</span> <span class="explode-label">Explode parts</span>
-              </button>
-              <button class="btn btn-spin" id="demo-spin" type="button" aria-pressed="false" hidden>
-                <span class="explode-glyph">&#8635;</span> <span class="spin-label">Stop turntable</span>
-              </button>
-              <a class="btn" href="${demo.sourceUrl}" target="_blank" rel="noopener noreferrer"
-                 data-track-skip>
-                &lt;/&gt; View generated source
-              </a>
-              ${demo.referenceUrl ? `<a class="btn btn-ref-link" href="${demo.referenceUrl}"
-                target="_blank" rel="noopener noreferrer">
-                <span class="ref-glyph">&#9670;</span> Generated by Hyper3D
-              </a>` : ''}
-              ${demo.tripoUrl ? `
-              <a class="btn" href="${demo.tripoUrl}" target="_blank" rel="noopener noreferrer">
-                &#9670; Generated by Tripo
-              </a>` : ''}
-              ${demo.artstationUrl ? `
-              <a class="btn" href="${demo.artstationUrl}" target="_blank" rel="noopener noreferrer">
-                &#9650; View on ArtStation
-              </a>` : ''}
-              <a class="btn btn-star" href="${GITHUB_URL}" target="_blank" rel="noopener noreferrer">
-                &#9733; Star ${brand('img2threejs')} on GitHub
-              </a>
             </div>
           </div>
         </div>
       </section>
       <div class="hint" id="demo-hint">
-        <span class="hint-glyph" aria-hidden="true">&#8635;</span>
-        <span class="hint-pointer">drag to orbit &middot; scroll to zoom</span>
-        <span class="hint-touch">drag to orbit &middot; pinch to zoom</span>
+        <span class="hint-state"><i aria-hidden="true"></i> Interactive</span>
+        <span class="hint-divider" aria-hidden="true"></span>
+        <span class="hint-pointer">Drag To Orbit &middot; Scroll To Zoom &middot; Select A Part</span>
+        <span class="hint-touch">Drag To Orbit &middot; Pinch To Zoom &middot; Tap A Part</span>
       </div>
     </div>
   `;
@@ -244,6 +344,74 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   const capture = /[?&]capture=1\b/.test(window.location.hash) ||
     new URLSearchParams(window.location.search).get('capture') === '1';
   const backCapture = new URLSearchParams(window.location.search).get('back') === '1';
+
+  // The inspector reveals one concern at a time. Runtime-dependent tabs stay disabled until their
+  // capability exists, so an exhibit never opens into an empty panel while a lazy asset is loading.
+  type InspectorSection = 'details' | 'animation' | 'parts' | 'export';
+  const inspectorTabs = [...mount.querySelectorAll<HTMLButtonElement>('[data-inspector-tab]')];
+  const inspectorPanes = [...mount.querySelectorAll<HTMLElement>('[data-inspector-pane]')];
+  const inspectorCleanups: Array<() => void> = [];
+  let inspectorTouched = false;
+  let activeInspectorSection: InspectorSection = 'details';
+  const setInspectorSection = (section: InspectorSection, userInitiated = false): void => {
+    const nextTab = inspectorTabs.find((tab) => tab.dataset.inspectorTab === section);
+    if (!nextTab || nextTab.disabled) return;
+    activeInspectorSection = section;
+    if (userInitiated) inspectorTouched = true;
+    for (const tab of inspectorTabs) {
+      const selected = tab === nextTab;
+      tab.classList.toggle('is-active', selected);
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+    }
+    for (const pane of inspectorPanes) {
+      const selected = pane.dataset.inspectorPane === section;
+      pane.hidden = !selected;
+      pane.classList.toggle('is-active', selected);
+    }
+  };
+  const enableInspectorSection = (section: InspectorSection, prefer = false): void => {
+    const tab = inspectorTabs.find((candidate) => candidate.dataset.inspectorTab === section);
+    if (!tab) return;
+    tab.disabled = false;
+    tab.removeAttribute('aria-disabled');
+    if (prefer && !inspectorTouched && activeInspectorSection === 'details') {
+      setInspectorSection(section);
+    }
+  };
+  for (const tab of inspectorTabs) {
+    const onClick = (): void => setInspectorSection(
+      tab.dataset.inspectorTab as InspectorSection,
+      true,
+    );
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+        return;
+      }
+      event.preventDefault();
+      const enabledTabs = inspectorTabs.filter((candidate) => !candidate.disabled);
+      const currentIndex = Math.max(0, enabledTabs.indexOf(tab));
+      let nextIndex = currentIndex;
+      if (event.key === 'Home') nextIndex = 0;
+      else if (event.key === 'End') nextIndex = enabledTabs.length - 1;
+      else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+        nextIndex = (currentIndex - 1 + enabledTabs.length) % enabledTabs.length;
+      } else {
+        nextIndex = (currentIndex + 1) % enabledTabs.length;
+      }
+      const nextTab = enabledTabs[nextIndex];
+      nextTab?.focus();
+      if (nextTab) setInspectorSection(nextTab.dataset.inspectorTab as InspectorSection, true);
+    };
+    tab.addEventListener('click', onClick);
+    tab.addEventListener('keydown', onKeyDown);
+    inspectorCleanups.push(() => {
+      tab.removeEventListener('click', onClick);
+      tab.removeEventListener('keydown', onKeyDown);
+    });
+  }
+  setInspectorSection('details');
+
   const cameraPosition: [number, number, number] = backCapture
     ? [-demo.cameraPosition[0], demo.cameraPosition[1], -demo.cameraPosition[2]]
     : demo.cameraPosition;
@@ -281,6 +449,35 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   });
 
   const model = demo.build(viewer.scene);
+  let prewarmFailureTracked = false;
+  let prewarmSettled = false;
+  const detachDisposedModel = (): void => {
+    // Wait for BOTH events. If cleanup wins, the factory may still attach children later; if
+    // prewarm wins, the outgoing viewer may still be drawing during the route transition.
+    if (disposed && prewarmSettled) model.removeFromParent();
+  };
+  /**
+   * One invocation and one settlement path per rendered demo. Consumers share `prewarmCurrent`
+   * instead of calling the cached demo function independently. The final continuation also gives a
+   * stale render one place to detach geometry that arrived after its Viewer was disposed.
+   */
+  const prewarmSettlement: Promise<void> = demo.prewarm
+    ? demo.prewarm().catch(() => {
+        if (routeIsActive() && !prewarmFailureTracked) {
+          prewarmFailureTracked = true;
+          trackExhibitPrewarmFailed(demo.id, 'viewer');
+        }
+      })
+    : Promise.resolve();
+  const prewarmCurrent: Promise<boolean> = prewarmSettlement.then(() => {
+    prewarmSettled = true;
+    if (routeIsActive()) return true;
+    // A factory can cache materials, textures or other resources across builds. Detach only this
+    // render's root after its own bind callback has run; disposing here could poison a newer render
+    // of the same demo that shares those module-owned resources.
+    detachDisposedModel();
+    return false;
+  });
   type AnimationController = {
     actions: ReadonlyArray<{ id: string; label: string; loop: boolean }>;
     readonly active: string;
@@ -293,6 +490,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   )?.animationController;
   const animationSection = mount.querySelector<HTMLElement>('#demo-animations');
   const animationButtons = mount.querySelector<HTMLElement>('#demo-animation-buttons');
+  const animationFooter = mount.querySelector<HTMLElement>('#demo-animation-footer');
   const animationStatus = mount.querySelector<HTMLOutputElement>('#demo-animation-status');
   const animationButtonCleanups: Array<() => void> = [];
   let unsubscribeAnimation: (() => void) | undefined;
@@ -308,15 +506,27 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     if (!animationSection || !animationButtons || capture) return;
     mountedAnimationController = controller;
     animationSection.hidden = false;
+    enableInspectorSection('animation', true);
     const buttons = new Map<string, HTMLButtonElement>();
-    for (const action of controller.actions) {
+    for (const [actionIndex, action] of controller.actions.entries()) {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'btn demo-animation-btn';
+      button.className = 'btn demo-animation-btn demo-animation-action';
       button.dataset.animation = action.id;
-      button.textContent = action.label;
+      button.dataset.playback = action.loop ? 'loop' : 'once';
       button.setAttribute('aria-pressed', 'false');
-      button.title = action.loop ? `${action.label} (loops until stopped)` : `${action.label} (plays once)`;
+      const behavior = action.loop ? 'Loops Until Stopped' : 'Plays Once';
+      button.title = `${action.label} · ${behavior}`;
+      const indexLabel = document.createElement('span');
+      indexLabel.className = 'demo-animation-index mono';
+      indexLabel.textContent = String(actionIndex + 1).padStart(2, '0');
+      const actionLabel = document.createElement('span');
+      actionLabel.className = 'demo-animation-label';
+      actionLabel.textContent = action.label;
+      const playGlyph = document.createElement('span');
+      playGlyph.className = 'demo-animation-play';
+      playGlyph.textContent = action.loop ? '↻' : '▶';
+      button.append(indexLabel, actionLabel, playGlyph);
       const onClick = (): void => {
         controller.play(action.id);
         trackAnimationPlay(demo.id, action, 'viewer');
@@ -330,14 +540,14 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     stopButton.type = 'button';
     stopButton.className = 'btn demo-animation-btn demo-animation-stop';
     stopButton.dataset.animation = 'stop';
-    stopButton.textContent = 'Stop / Reset';
+    stopButton.innerHTML = '<span aria-hidden="true">■</span><span>Stop and Return to Idle</span>';
     const onStop = (): void => {
       controller.stop();
       trackAnimationStop(demo.id, 'viewer');
     };
     stopButton.addEventListener('click', onStop);
     animationButtonCleanups.push(() => stopButton.removeEventListener('click', onStop));
-    animationButtons.appendChild(stopButton);
+    (animationFooter ?? animationButtons).appendChild(stopButton);
     // Autoplay before subscribing is safe either way: `subscribe` replays the active id immediately,
     // so the highlighted button and the status text agree with whatever is already running.
     if (demo.defaultAnimation && !capture) {
@@ -345,9 +555,13 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
       if (wanted) controller.play(wanted.id);
     }
     unsubscribeAnimation = controller.subscribe((active) => {
-      if (animationStatus) animationStatus.value = active === 'idle'
-        ? 'Idle'
-        : buttons.get(active)?.textContent ?? active.charAt(0).toUpperCase() + active.slice(1);
+      if (animationStatus) {
+        const activeLabel = controller.actions.find((action) => action.id === active)?.label;
+        animationStatus.value = active === 'idle'
+          ? 'Idle'
+          : `Playing · ${activeLabel ?? active.charAt(0).toUpperCase() + active.slice(1)}`;
+        animationStatus.dataset.state = active === 'idle' ? 'idle' : 'playing';
+      }
       for (const [id, button] of buttons) {
         const selected = id === active;
         button.classList.toggle('is-active', selected);
@@ -376,6 +590,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     if (!runtime?.elements?.length || !section || !host) return;
     vfxMounted = true;
     section.hidden = false;
+    enableInspectorSection('animation', true);
     const buttons = new Map<string, HTMLButtonElement>();
     const select = (id: string): void => {
       runtime.setElement(id);
@@ -421,6 +636,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   const detailButtons = mount.querySelector<HTMLElement>('#demo-detail-buttons');
   if (detail && detailSection && detailButtons && !capture) {
     detailSection.hidden = false;
+    enableInspectorSection('animation', true);
     const status = mount.querySelector<HTMLOutputElement>('#demo-detail-status');
     for (const option of detail.options) {
       const button = document.createElement('button');
@@ -447,6 +663,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   }
 
   viewer.setExplodeRoot(model);
+
   // --- validated asset export -----------------------------------------------------------
   // Every format goes through one serializer and one validation path. The test hook returns only
   // the JSON report (never the potentially huge Blob), so browser QA can exercise the exact same
@@ -463,9 +680,6 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   const exportAllNote = exportAllButton?.querySelector<HTMLElement>('small');
   const exportInfoButtons = [...mount.querySelectorAll<HTMLButtonElement>('[data-export-info]')];
   const exportButtonCleanups: Array<() => void> = [];
-  const exportReady: Promise<unknown> = demo.prewarm
-    ? demo.prewarm().catch(() => undefined)
-    : Promise.resolve();
   let declaredExportModels: ExportModelScope[] = [];
   let exportBusy = false;
 
@@ -475,6 +689,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
   const showExportReport = (report: ExportReport): void => {
+    if (!routeIsActive()) return;
     if (!exportReport || !exportSummary || !exportWarnings) return;
     const materialFormat = report.format === 'glb' || report.format === 'gltf' || report.format === 'usdz';
     const vertexColourFormat = report.format === 'glb' || report.format === 'gltf' || report.format === 'ply';
@@ -515,6 +730,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   };
 
   const showExportError = (error: unknown, context: string): void => {
+    if (!routeIsActive()) return;
     const message = error instanceof Error ? error.message : String(error);
     if (exportSummary && exportReport && exportWarnings) {
       exportSummary.textContent = message;
@@ -542,6 +758,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     };
   };
   const syncExportScopes = (): void => {
+    if (!routeIsActive()) return;
     const previous = exportScopeSelect?.value ?? 'all';
     declaredExportModels = exportModelsFor(model);
     const multiple = declaredExportModels.length > 1;
@@ -567,30 +784,39 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     if (exportAllNote) exportAllNote.textContent = 'Current scope · 6 validated assets + manifest';
   };
   syncExportScopes();
-  void exportReady.then(syncExportScopes);
+  void prewarmCurrent.then((current) => {
+    if (current && routeIsActive()) syncExportScopes();
+  });
 
   const createExport = async (format: ExportFormat, scopeId?: string) => {
-    await exportReady;
+    const current = await prewarmCurrent;
+    if (!current || !routeIsActive()) throw new Error('The demo route changed before export was ready.');
     syncExportScopes();
     const selected = scopeForId(scopeId);
-    return exportModel(
+    const artifact = await exportModel(
       model,
       format,
       (snapshot) => viewer.withAssetExportState(snapshot),
       selected?.root,
     );
+    if (!routeIsActive()) throw new Error('The demo route changed during export.');
+    return artifact;
   };
   const exportForQa = async (format: ExportFormat, scopeId = 'all'): Promise<ExportReport> => {
+    if (!routeIsActive()) throw new Error('The demo route is no longer active.');
     if (!EXPORT_FORMATS.some((entry) => entry.format === format)) {
       throw new Error(`Unsupported export format: ${String(format)}`);
     }
     const report = (await createExport(format, scopeId)).report;
+    if (!routeIsActive()) throw new Error('The demo route changed during export.');
     (window as unknown as Record<string, unknown>).__IMG2THREEJS_LAST_EXPORT_REPORT__ = report;
     return report;
   };
-  (window as unknown as Record<string, unknown>).__IMG2THREEJS_EXPORT__ = exportForQa;
+  const qaWindow = window as unknown as Record<string, unknown>;
+  qaWindow.__IMG2THREEJS_EXPORT__ = exportForQa;
 
   const setExportBusy = (busy: boolean): void => {
+    if (!routeIsActive()) return;
     exportBusy = busy;
     for (const candidate of exportButtons) candidate.disabled = busy;
     if (exportAllButton) exportAllButton.disabled = busy;
@@ -601,6 +827,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     bytes: number,
     scopeLabel: string,
   ): void => {
+    if (!routeIsActive()) return;
     if (!exportReport || !exportSummary || !exportWarnings) return;
     const warnings = [...new Set(reports.flatMap((report) => report.warnings))];
     exportSummary.textContent = `${scopeLabel} · ${reports.length} formats · manifest.json · ${readableBytes(bytes)}`;
@@ -677,7 +904,8 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
         }
         try {
           const artifact = await createExport(format, scope.id);
-          (window as unknown as Record<string, unknown>).__IMG2THREEJS_LAST_EXPORT_REPORT__ = artifact.report;
+          if (!routeIsActive()) return;
+          qaWindow.__IMG2THREEJS_LAST_EXPORT_REPORT__ = artifact.report;
           showExportReport(artifact.report);
           const filename = scope.id === 'all'
             ? `${demo.id}.${artifact.filenameExtension}`
@@ -688,10 +916,12 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
             exportStatus.dataset.state = artifact.report.warnings.length ? 'warning' : 'success';
           }
         } catch (error) {
-          showExportError(error, format);
+          if (routeIsActive()) showExportError(error, format);
         } finally {
-          setExportBusy(false);
-          button.classList.remove('is-exporting');
+          if (routeIsActive()) {
+            setExportBusy(false);
+            button.classList.remove('is-exporting');
+          }
         }
       };
       button.addEventListener('click', onExport);
@@ -704,10 +934,11 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
         setExportBusy(true);
         exportAllButton.classList.add('is-exporting');
         exportReport?.setAttribute('hidden', '');
-        await exportReady;
-        syncExportScopes();
-        const scope = currentScope();
         try {
+          const current = await prewarmCurrent;
+          if (!current || !routeIsActive()) return;
+          syncExportScopes();
+          const scope = currentScope();
           const bundle = await exportAllFormatsZip(model, {
             assetId: demo.id,
             scopeId: scope.id,
@@ -715,13 +946,14 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
             selectedRoot: scope.root,
             snapshot: (snapshot) => viewer.withAssetExportState(snapshot),
             onProgress: ({ label, index, total }) => {
-              if (exportStatus) {
+              if (routeIsActive() && exportStatus) {
                 exportStatus.value = `${label} ${index}/${total}`;
                 exportStatus.dataset.state = 'busy';
               }
             },
           });
-          (window as unknown as Record<string, unknown>).__IMG2THREEJS_LAST_EXPORT_BUNDLE__ = {
+          if (!routeIsActive()) return;
+          qaWindow.__IMG2THREEJS_LAST_EXPORT_BUNDLE__ = {
             bytes: bundle.blob.size,
             filename: bundle.filename,
             files: bundle.files,
@@ -735,10 +967,12 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
             exportStatus.dataset.state = hasWarnings ? 'warning' : 'success';
           }
         } catch (error) {
-          showExportError(error, 'zip');
+          if (routeIsActive()) showExportError(error, 'zip');
         } finally {
-          exportAllButton.classList.remove('is-exporting');
-          setExportBusy(false);
+          if (routeIsActive()) {
+            exportAllButton.classList.remove('is-exporting');
+            setExportBusy(false);
+          }
         }
       };
       exportAllButton.addEventListener('click', onExportAll);
@@ -748,8 +982,8 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   // QA capture scripts may place a diagnostic camera on a named socket. This
   // is not part of the demo UI or model geometry; it exposes only the existing
   // viewer instance to the local evidence harness.
-  (window as unknown as Record<string, unknown>).__IMG2THREEJS_VIEWER__ = viewer;
-  const modelRuntime = model.userData.sculptRuntime as {
+  qaWindow.__IMG2THREEJS_VIEWER__ = viewer;
+  type ModelRuntime = {
     pivots?: Record<string, unknown>;
     sockets?: Record<string, unknown>;
     actionAnchors?: Record<string, unknown>;
@@ -759,43 +993,57 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     attachmentAudit?: unknown;
     destructionGroups?: Record<string, unknown>;
     logicalComponents?: Record<string, { kind?: string; binding?: string; boundMeshes?: string[] }>;
-  } | undefined;
-  (window as unknown as Record<string, unknown>).__IMG2THREEJS_RUNTIME__ = {
-    model: id,
-    hasTick: typeof model.userData.tick === 'function',
-    pivotNames: Object.keys(modelRuntime?.pivots ?? model.userData.pivots ?? {}),
-    socketNames: Object.keys(modelRuntime?.sockets ?? {}),
-    actionAnchors: modelRuntime?.actionAnchors ?? model.userData.actionAnchors ?? {},
-    colliderCount: modelRuntime?.colliders?.length ?? 0,
-    adjacencyCount: modelRuntime?.adjacency?.length ?? 0,
-    attachmentGate: modelRuntime?.attachmentGate ?? null,
-    attachmentAudit: modelRuntime?.attachmentAudit ?? null,
-    destructionGroupNames: Object.keys(modelRuntime?.destructionGroups ?? {}),
   };
-  // Responsive framing: keeps the authored desktop composition, dollies back on narrow/short
-  // viewports so the whole subject stays in frame instead of being cropped away.
-  viewer.fitToViewport(model);
+  const currentModelRuntime = (): ModelRuntime | undefined => (
+    model.userData.sculptRuntime as ModelRuntime | undefined
+  );
+  let publishedRuntime: unknown;
+  const publishRuntime = (): void => {
+    if (!routeIsActive()) return;
+    const modelRuntime = currentModelRuntime();
+    publishedRuntime = {
+      model: id,
+      hasTick: typeof model.userData.tick === 'function',
+      pivotNames: Object.keys(modelRuntime?.pivots ?? model.userData.pivots ?? {}),
+      socketNames: Object.keys(modelRuntime?.sockets ?? {}),
+      actionAnchors: modelRuntime?.actionAnchors ?? model.userData.actionAnchors ?? {},
+      colliderCount: modelRuntime?.colliders?.length ?? 0,
+      adjacencyCount: modelRuntime?.adjacency?.length ?? 0,
+      attachmentGate: modelRuntime?.attachmentGate ?? null,
+      attachmentAudit: modelRuntime?.attachmentAudit ?? null,
+      destructionGroupNames: Object.keys(modelRuntime?.destructionGroups ?? {}),
+    };
+    qaWindow.__IMG2THREEJS_RUNTIME__ = publishedRuntime;
+  };
+  publishRuntime();
+  // The dedicated inspector is a containment view: unlike an editorial thumbnail, it must expose
+  // the complete subject at every panel state so a visitor can inspect the silhouette and parts.
+  viewer.fitToViewport(model, true);
 
   // Part tree published for the assembly gate (forge/stage4_review/check_part_coverage.py).
   // Set in capture mode too — that is the headless run the gate reads it from.
-  const logicalParts = Object.entries(modelRuntime?.logicalComponents ?? {}).map(([name, value]) => ({
-    name,
-    module: null,
-    kind: value.kind ?? 'logical',
-    triangles: 0,
-    materials: [],
-  }));
   // Logical entries describe a coverage binding only; they do not add
   // geometry, selectable meshes, or a camera-facing surface to the model.
   // Re-published after prewarm as well: a demo whose meshes arrive lazily had none to report on the
   // first pass, which left the assembly gate reading zero parts for a model that ships 69 of them.
+  let publishedPartManifest: unknown;
   const publishPartManifest = (): void => {
+    if (!routeIsActive()) return;
+    const logicalParts = Object.entries(currentModelRuntime()?.logicalComponents ?? {})
+      .map(([name, value]) => ({
+        name,
+        module: null,
+        kind: value.kind ?? 'logical',
+        triangles: 0,
+        materials: [],
+      }));
     const live = viewer.partManifest();
-    (window as unknown as Record<string, unknown>).__IMG2THREEJS_PARTS__ = {
+    publishedPartManifest = {
       model: id,
       ...(live ?? { parts: [], unnamedMeshes: 0, integralMeshes: 0 }),
       parts: [...(live?.parts ?? []), ...logicalParts],
     };
+    qaWindow.__IMG2THREEJS_PARTS__ = publishedPartManifest;
   };
   publishPartManifest();
 
@@ -806,11 +1054,12 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   const spinBtn = mount.querySelector<HTMLButtonElement>('#demo-spin');
   if (spinBtn && turntable && !capture) {
     spinBtn.hidden = false;
+    enableInspectorSection('animation', true);
     const syncSpin = (): void => {
       const on = viewer.turntable;
       spinBtn.setAttribute('aria-pressed', String(on));
       spinBtn.classList.toggle('is-active', on);
-      spinBtn.querySelector('.spin-label')!.textContent = on ? 'Stop turntable' : 'Turntable';
+      spinBtn.querySelector('.spin-label')!.textContent = on ? 'Stop Turntable' : 'Turntable';
     };
     spinBtn.addEventListener('click', () => {
       viewer.setTurntable(!viewer.turntable);
@@ -829,6 +1078,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   const syncExplodeButton = (): void => {
     if (!explodeBtn || capture) return;
     explodeBtn.hidden = !viewer.canExplode;
+    if (viewer.canExplode) enableInspectorSection('animation', true);
   };
   if (explodeBtn && !capture) {
     syncExplodeButton();
@@ -839,7 +1089,7 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
       viewer.setExplode(exploded ? 1 : 0);
       explodeBtn.setAttribute('aria-pressed', String(exploded));
       explodeBtn.classList.toggle('is-active', exploded);
-      explodeBtn.querySelector('.explode-label')!.textContent = exploded ? 'Assemble' : 'Explode parts';
+      explodeBtn.querySelector('.explode-label')!.textContent = exploded ? 'Assemble' : 'Explode Parts';
     });
   }
 
@@ -874,6 +1124,8 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
       partCard.replaceChildren();
       return;
     }
+    enableInspectorSection('parts');
+    setInspectorSection('parts', true);
     partCard.hidden = false;
 
     const head = el('div', 'part-card-head');
@@ -905,16 +1157,17 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     partsList.querySelector('.part-item.is-active')?.scrollIntoView({ block: 'nearest' });
   };
 
+  let populateParts: (() => void) | undefined;
   if (!capture) {
     viewer.enableInspect({ onSelect: renderSelection });
-    let hintShown = false;
 
-    const populateParts = (): void => {
+    populateParts = (): void => {
       const parts = viewer.parts;
       // One nameless blob is not a part tree — leave the section hidden rather than show a list
       // of one. This is what keeps the demos with unnamed meshes from looking broken.
       if (parts.length <= 1) return;
       partsSection.hidden = false;
+      enableInspectorSection('parts');
       mount.querySelector<HTMLElement>('#parts-count')!.textContent = String(parts.length);
       partsList.replaceChildren();
 
@@ -957,16 +1210,6 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
         ].filter(Boolean).join(' · ');
       }
 
-      // Wrapped in its own span so the compact layout can drop it: the hint is a single-line
-      // pill, and this clause alone is wider than a phone screen.
-      if (!hintShown) {
-        hintShown = true;
-        const inspectHint = document.createElement('span');
-        inspectHint.className = 'hint-extra';
-        inspectHint.textContent =
-          ' · click a part to inspect · click again to reach what is behind it';
-        mount.querySelector<HTMLElement>('.hint')!.append(inspectHint);
-      }
     };
 
     // Delegated from the list, and registered ONCE rather than inside populateParts: repopulating
@@ -980,38 +1223,26 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     });
 
     populateParts();
-
-    // A demo that loads an asset cannot fill its group inside the synchronous `build()`, so the
-    // list above came from an empty group and the section would stay hidden for the rest of the
-    // page's life. Rebuild once the demo reports its data is in. Cheap and idempotent for demos
-    // that were already complete: prewarm resolves immediately and the list is rebuilt identically.
-    if (demo.prewarm) {
-      // `finally`, not `then`. A prewarm that REJECTS still changes the scene -- girl-character falls
-      // back to its cross-section loft -- and running the UI sync only on success left that fallback
-      // with no parts panel and no explode button at all.
-      void demo.prewarm().catch(() => {
-        /* the demo logs its own reason */
-        // Reported from this catch and not the loader's below: `prewarm` caches and resolves the
-        // same promise for both, so tracking it in both places would double-count one failure.
-        trackExhibitPrewarmFailed(demo.id, 'viewer');
-      }).finally(() => {
-        viewer.rebuildParts();
-        populateParts();
-        publishPartManifest();
-        syncExplodeButton();
-        // The runtime and its per-frame ticker both arrive with the late geometry, so the viewer has
-        // to be told to look again -- otherwise the mixer never advances and every clip plays silently.
-        viewer.refreshTickers();
-        mountAnimationPanel(
-          (model.userData.sculptRuntime as { animationController?: AnimationController } | undefined)
-            ?.animationController,
-        );
-        mountVfxPanel();
-      });
-    }
   }
 
-  if (capture) {
+  /**
+   * Refresh state that depends on children attached after the synchronous build. This runs for
+   * capture and interactive routes alike; only the inspector DOM work below is interactive-only.
+   */
+  const refreshCompletedModel = (): boolean => {
+    if (!routeIsActive()) return false;
+    viewer.rebuildParts();
+    publishRuntime();
+    publishPartManifest();
+    // The runtime and its per-frame ticker can arrive with the lazy geometry.
+    viewer.refreshTickers();
+    return routeIsActive();
+  };
+
+  let capturePrepared = false;
+  const prepareCapture = (): boolean => {
+    if (!capture || capturePrepared || !routeIsActive()) return false;
+    capturePrepared = true;
     // Flat white bg + hide the UI overlay + freeze per-frame animation so the evaluation
     // frame is deterministic and shows only the object (matches the reference plate).
     //
@@ -1053,54 +1284,86 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
         backCapture ? demo.captureTargetOffsetYBack ?? demo.captureTargetOffsetY ?? 0 : demo.captureTargetOffsetY ?? 0,
       );
     }
+    return routeIsActive();
+  };
+
+  // Interactive routes keep progressive rendering: start immediately, then refresh the inspector
+  // when the shared prewarm settles. Capture routes wait so their first ready frame, globals and
+  // framing all describe the completed model rather than the synchronous placeholder root.
+  if (!capture) viewer.start();
+  if (demo.prewarm) {
+    void prewarmCurrent.then((current) => {
+      if (!current || !refreshCompletedModel()) return;
+      if (capture) {
+        if (prepareCapture() && routeIsActive()) viewer.start();
+        return;
+      }
+      populateParts?.();
+      syncExplodeButton();
+      mountAnimationPanel(
+        (model.userData.sculptRuntime as { animationController?: AnimationController } | undefined)
+          ?.animationController,
+      );
+      mountVfxPanel();
+    });
+  } else if (capture && refreshCompletedModel() && prepareCapture()) {
+    viewer.start();
   }
-  viewer.start();
 
   /**
    * Dismissal, owned in exactly one place so there is no second handler racing it.
    *
    * A `prewarm` demo's geometry lands AFTER `build()` returns, so waiting on the viewer's ready
-   * flag alone would uncover an empty scene. Awaiting `prewarm()` a second time here is safe and
-   * intended: the DemoEntry contract states it resolves twice as a no-op and caches its result for
-   * the module's lifetime, so this is the same settled promise the parts-rebuild handler uses, not
-   * a second expensive run. A rejection is treated as settled — the demo falls back to simpler
-   * geometry and the page should still be revealed rather than sitting behind the overlay.
+   * flag alone would uncover an empty scene. The loader shares the render's single prewarm
+   * settlement with the parts and export paths. A rejection is treated as settled because the demo
+   * can fall back to simpler geometry.
    */
   if (loader) {
-    const geometryIn: Promise<unknown> = demo.prewarm
-      ? demo.prewarm().catch(() => undefined)
-      : Promise.resolve();
-    void geometryIn
-      .then(() => {
-        loader.phase('Framing');
-        return whenViewerReady();
-      })
-      .then(() => {
-        loader.done();
-        const manifest = viewer.partManifest();
-        trackExhibitReady(
-          demo,
-          {
-            loadMs: performance.now() - startedAt,
-            triangles: manifest
-              ? manifest.parts.reduce((sum, part) => sum + part.triangles, 0)
-              : 0,
-            partCount: manifest ? manifest.parts.length : 0,
-            prewarm: !!demo.prewarm,
-          },
-          'viewer',
-        );
-      });
+    void (async () => {
+      const current = await prewarmCurrent;
+      if (!current || !routeIsActive()) return;
+      loader.phase('Framing');
+      const viewerBecameReady = await Promise.race([
+        whenViewerReady().then(() => true),
+        disposedSignal.then(() => false),
+      ]);
+      if (!viewerBecameReady || !routeIsActive()) return;
+      loader.done();
+      const manifest = viewer.partManifest();
+      trackExhibitReady(
+        demo,
+        {
+          loadMs: performance.now() - startedAt,
+          triangles: manifest
+            ? manifest.parts.reduce((sum, part) => sum + part.triangles, 0)
+            : 0,
+          partCount: manifest ? manifest.parts.length : 0,
+          prewarm: !!demo.prewarm,
+        },
+        'viewer',
+      );
+    })();
   }
 
   // --- collapsible details sheet ---------------------------------------------------------
   const panel = mount.querySelector<HTMLElement>('#demo-panel')!;
+  const panelBody = mount.querySelector<HTMLElement>('#demo-panel-body')!;
   const bar = mount.querySelector<HTMLElement>('.demo-panel-bar')!;
   const toggle = mount.querySelector<HTMLButtonElement>('#panel-toggle')!;
+  const toggleLabel = toggle.querySelector<HTMLElement>('.panel-toggle-label');
+  const page = mount.querySelector<HTMLElement>('.demo-page')!;
+  let resizeFrame = 0;
   const setExpanded = (next: boolean): void => {
     panelExpanded = next;
     panel.dataset.expanded = String(next);
+    page.dataset.inspectorOpen = String(next);
+    panelBody.inert = !next;
+    panelBody.setAttribute('aria-hidden', String(!next));
     toggle.setAttribute('aria-expanded', String(next));
+    toggle.setAttribute('aria-label', `${next ? 'Close' : 'Open'} Model Inspector`);
+    if (toggleLabel) toggleLabel.textContent = next ? 'Hide' : 'Inspect';
+    window.cancelAnimationFrame(resizeFrame);
+    resizeFrame = window.requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
   };
   // The whole bar is the hit target (the button's click bubbles up to it), so a sheet on a phone
   // toggles from anywhere along the header — everywhere except the back link.
@@ -1163,7 +1426,11 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
   mount.addEventListener('click', onPanelLinkClick);
 
   return () => {
+    // Flip lifecycle state before any teardown so already-queued promise continuations become inert.
+    disposed = true;
+    signalDisposed();
     window.clearTimeout(hintTimer);
+    window.cancelAnimationFrame(resizeFrame);
     bar.removeEventListener('click', onBarClick);
     compact.removeEventListener('change', onCompactChange);
     canvasMount.removeEventListener('pointerdown', hideHint);
@@ -1171,15 +1438,23 @@ export function renderDemo(mount: HTMLElement, id: string): () => void {
     canvasMount.removeEventListener('wheel', onFirstWheel);
     canvasMount.removeEventListener('touchstart', onFirstTouch);
     mount.removeEventListener('click', onPanelLinkClick);
+    if (qaWindow.__IMG2THREEJS_EXPORT__ === exportForQa) {
+      delete qaWindow.__IMG2THREEJS_EXPORT__;
+    }
+    if (qaWindow.__IMG2THREEJS_VIEWER__ === viewer) delete qaWindow.__IMG2THREEJS_VIEWER__;
+    if (qaWindow.__IMG2THREEJS_RUNTIME__ === publishedRuntime) delete qaWindow.__IMG2THREEJS_RUNTIME__;
+    if (qaWindow.__IMG2THREEJS_PARTS__ === publishedPartManifest) delete qaWindow.__IMG2THREEJS_PARTS__;
+    delete qaWindow.__IMG2THREEJS_LAST_EXPORT_REPORT__;
+    delete qaWindow.__IMG2THREEJS_LAST_EXPORT_BUNDLE__;
+    for (const cleanup of exportButtonCleanups) cleanup();
+    for (const cleanup of inspectorCleanups) cleanup();
     mountedAnimationController?.stop();
     unsubscribeAnimation?.();
-    if ((window as unknown as Record<string, unknown>).__IMG2THREEJS_EXPORT__ === exportForQa) {
-      delete (window as unknown as Record<string, unknown>).__IMG2THREEJS_EXPORT__;
-      delete (window as unknown as Record<string, unknown>).__IMG2THREEJS_LAST_EXPORT_REPORT__;
-      delete (window as unknown as Record<string, unknown>).__IMG2THREEJS_LAST_EXPORT_BUNDLE__;
-    }
-    for (const cleanup of exportButtonCleanups) cleanup();
     for (const cleanup of animationButtonCleanups) cleanup();
     viewer.dispose();
+    // If prewarm already bound the completed model, release the old scene's reference only after
+    // its renderer and ordinary resource sweep are finished. Otherwise prewarmCurrent does this
+    // when the late bind settles; neither path traverses or disposes a newer model.
+    detachDisposedModel();
   };
 }

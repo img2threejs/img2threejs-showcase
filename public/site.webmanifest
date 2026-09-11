@@ -1,0 +1,17 @@
+{
+  "name": "img2threejs showcase",
+  "short_name": "img2threejs",
+  "description": "Live procedural Three.js models rebuilt from a single reference image.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0d0f",
+  "theme_color": "#0b0d0f",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

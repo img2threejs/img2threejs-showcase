@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "check:donate": "node scripts/check-donate-integrity.mjs",
+    "prebuild": "npm run check:donate",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",

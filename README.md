@@ -139,7 +139,8 @@ gh pr create --fill
 ```
 
 `npm run new-demo` runs [`scripts/new-showcase.mjs`](scripts/new-showcase.mjs) —
-it creates the factory stub and registry entry for you, TODO-marked, so
+it creates the factory stub and a TODO-marked catalog entry with `updatedAt`
+and a literal lazy runtime loader, so
 `npm run build` already passes before you've written a line of your own.
 `pr-safety-check` CI must pass before a maintainer reviews; on merge,
 `deploy.yml` republishes the live gallery automatically.
@@ -185,7 +186,7 @@ src/
   analytics.ts          every event the site sends, as named functions
   pages/home.ts         gallery landing page
   pages/demo.ts         per-demo viewer + info panel
-  demos/registry.ts     single source of truth for demo metadata + build fn
+  demos/registry.ts     demo metadata catalog + literal per-demo runtime loaders
   demos/<id>/           ported factory source, one folder per demo
 scripts/
   new-showcase.mjs          scaffolds a new demo folder + registry entry
@@ -202,7 +203,8 @@ maintainer, not via the contributor PR flow above):
 1. Drop the new factory file under `src/demos/<id>/` (keep the exported
    function name — copy it in verbatim from the img2threejs output).
 2. Update that demo's entry in `src/demos/registry.ts`:
-   - point `build` at the new factory's exported function(s),
+   - point its literal `loadRuntime` import and returned `build` closure at the
+     new factory's exported function(s),
    - update `referenceImage` if the reference photo changed,
    - set `status: 'final'`.
 3. Add the reference image to `public/references/`.
