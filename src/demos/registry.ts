@@ -120,6 +120,66 @@ const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
 const authored: CatalogEntry[] = [
   {
+    id: 'monster-tree',
+    title: 'Groot — Heart of the Forest',
+    subjectClass: 'character',
+    blurb:
+      'Enter a moonlit forest as Groot. Move with WASD, hold Shift to run and cast with 1–0. '
+      + 'Grounded fighting stances, layered moving casts and original living-wood effects meet '
+      + 'dark woodland, shafts of moonlight and lantern spirits that follow and illuminate your path.',
+    referenceImage: `${BASE}references/monster-tree/front.jpg`,
+    sourcePath: 'src/demos/monster-tree/createMonsterTreeModel.ts',
+    sourceUrl: `${REPO}/src/demos/monster-tree/createMonsterTreeModel.ts`,
+    generatedWith: 'img2threejs v1.5.2 \u00b7 20 retargeted FBX clips \u00b7 pooled toxic-bark VFX',
+    prompt:
+      'Rebuild every public animation for Groot: smooth articulated joints, expressive protective '
+      + 'and playful actions, rooted botanical powers, golden spores and a forest of flying spirits. '
+      + 'Bake native quaternion clips, measure their stops through AnimationMixer, and schedule pooled VFX.',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'final',
+    updatedAt: '2026-09-05',
+    // A true three-quarter front. The former +Z-heavy camera presented the animation almost in
+    // profile, overlapping a two-hand slam and foreshortening the crown into the torso.
+    // Leave headroom for the supplied airborne Rootfall, not just the standing bind pose.
+    cameraPosition: [5.1, 2.6, 5.1],
+    cameraTarget: [0.48, 1.35, 0.02],
+    cameraFov: 36,
+    accent: '#bccea5',
+    backgroundGradient: { inner: '#0c1722', outer: '#02060b' },
+    exposure: 0.98,
+    environmentIntensity: 0.16,
+    toneMapping: 'aces',
+    defaultAnimation: 'grove-idle',
+    loadRuntime: async () => {
+      const [
+        {
+          createMonsterTreeModel,
+          createMonsterTreeLookDevLights,
+          makeMonsterTreeBackground,
+          prewarmMonsterTree,
+        },
+        three,
+      ] = await Promise.all([
+        import('./monster-tree/createMonsterTreeModel'),
+        import('three'),
+      ]);
+      return {
+        prewarm: prewarmMonsterTree,
+        installLights: (scene) => {
+          scene.add(createMonsterTreeLookDevLights());
+          scene.environment = makeMonsterTreeBackground();
+          scene.fog = new three.Fog('#030910', 6, 20);
+        },
+        build: (scene) => {
+          const group = createMonsterTreeModel({ castShadow: true, receiveShadow: true });
+          scene.add(group);
+          return group;
+        },
+      };
+    },
+  },
+  {
     id: 'raz',
     updatedAt: '2026-09-03',
     title: 'Raz — Detonating Strike VFX',

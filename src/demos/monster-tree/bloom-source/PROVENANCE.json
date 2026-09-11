@@ -1,0 +1,48 @@
+{
+  "archive": "/Users/nhonh/Desktop/groot-skin-2.zip",
+  "sha256": "4d2f830346c32d67350094af01bf034394409feb43de0262247ddd2c876067c3",
+  "identity": "Bloom Groot",
+  "rig": "unrigged source; Original driver, independently calibrated T-pose binding",
+  "levels": {
+    "high": {
+      "member": "3e742c5a-8205-493c-9b44-05f836f6b517-threejs/src/surfaceData.high.ts",
+      "memberSha256": "210962f1dce64bff153450b42a0e9f98e2b3a233b33fbfacc24121e60c8f7205",
+      "streamSha256": "279cff775ef7f603881071000207ecc8f0ee3e604033702691dddc9542658b4c",
+      "vertices": 170161,
+      "triangles": 280094,
+      "parts": 123,
+      "quantization": {
+        "origin": [
+          -0.11526255309581757,
+          0,
+          -0.5
+        ],
+        "extent": [
+          0.23052510619163513,
+          0.9504317045211792,
+          1
+        ]
+      }
+    },
+    "medium": {
+      "member": "3e742c5a-8205-493c-9b44-05f836f6b517-threejs/src/surfaceData.medium.ts",
+      "memberSha256": "3843d7bec23208c12c34096c15c28b6959e0ed6f823e0b111107dfe00d300dd5",
+      "streamSha256": "f5a0e7710a6108c7fe6a22d287953d36efa3afdcd32ae3f0d116a37717e8a284",
+      "vertices": 83011,
+      "triangles": 111916,
+      "parts": 123,
+      "quantization": {
+        "origin": [
+          -0.11526255309581757,
+          0,
+          -0.5
+        ],
+        "extent": [
+          0.23052510619163513,
+          0.9504317045211792,
+          0.9997795522212982
+        ]
+      }
+    }
+  }
+}
