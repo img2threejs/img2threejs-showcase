@@ -12,7 +12,10 @@
     "new-demo": "node scripts/new-showcase.mjs",
     "qa:export:list": "node scripts/qa-export-matrix.mjs --list",
     "qa:export:matrix": "node scripts/qa-export-matrix.mjs",
-    "star-history": "node scripts/generate-star-history.mjs"
+    "star-history": "node scripts/generate-star-history.mjs",
+    "dev:iphone-duo": "vite --config vite.iphone-duo.config.ts",
+    "build:iphone-duo": "tsc --noEmit -p tsconfig.iphone-duo.json && vite build --config vite.iphone-duo.config.ts",
+    "preview:iphone-duo": "vite preview --config vite.iphone-duo.config.ts"
   },
   "dependencies": {
     "meshoptimizer": "~0.18.1",

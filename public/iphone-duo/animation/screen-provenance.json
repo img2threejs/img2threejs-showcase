@@ -1,0 +1,71 @@
+[
+  {
+    "source": "work/iphone-duo/revision/reference-audit/video-frames/06-frame-01.png",
+    "sourceSha256": "e789c53fa8308255dca24dba38e42facc144892934369243408ff680a8a06206",
+    "cropXYXY": [
+      487,
+      153,
+      769,
+      562
+    ],
+    "file": "/iphone-duo/animation/cover-release.png",
+    "sha256": "3b6222bb8fdbebc0a056ea7c2cbc0bf1e7d8a2544a24f1a1cddfbd32974554c3",
+    "purpose": "Original release screen pixels; emissive mapping avoids adding another diffuse lighting pass; source reflections/blur remain from video.",
+    "sourceFrameIndex": 3,
+    "sourceTimeSeconds": 0.1
+  },
+  {
+    "source": "work/iphone-duo/revision/reference-audit/video-frames/06-frame-12.png",
+    "sourceSha256": "b2fe8368c0a3d29d147fec6b15b2ffed843c5b7897ff1d7975c6ad8c5312c35d",
+    "cropXYXY": [
+      343,
+      158,
+      911,
+      557
+    ],
+    "file": "/iphone-duo/animation/inner-release.png",
+    "sha256": "63c422514531f95da746af3c7ac3ecd9b697b8b26b00637b26ce10790f09216b",
+    "purpose": "Original release screen pixels; emissive mapping avoids adding another diffuse lighting pass; source reflections/blur remain from video.",
+    "sourceFrameIndex": 86,
+    "sourceTimeSeconds": 2.8666666666666667
+  },
+  {
+    "source": "work/iphone-duo/white-animation-audit/evidence/reference-001.png",
+    "sourceFrameIndex": 0,
+    "sourceTimeSeconds": 0,
+    "sourceSha256": "acd3d7e3c487b04205447589553b9955c272d473c11cb004f48a6f570de93482",
+    "cropXYXY": [
+      487,
+      153,
+      769,
+      562
+    ],
+    "file": "/iphone-duo/animation/cover-sharp.png",
+    "sha256": "255673258d105637644f422eff20626a0e8e12a8baef1ad9694a5d38e17ef1a8",
+    "purpose": "Sharp cover at the true initial frame; interpolate to the original soft crop during the first 0.1 seconds."
+  },
+  {
+    "source": "work/iphone-duo/finish-screen-revision/screen-reference/closed-spiral-inpaint.png",
+    "sourceSha256": "558ee4a18e0b7d95f60b100d71adcad92e4afbd9edb666e4b68cc1ea94ebcea5",
+    "sourceQuadPx": [[397, 283], [396, 816], [762, 816], [762, 283]],
+    "file": "/iphone-duo/animation/architecture-cover.png",
+    "sha256": "558ee4a18e0b7d95f60b100d71adcad92e4afbd9edb666e4b68cc1ea94ebcea5",
+    "sizePx": [366, 533],
+    "screen": "architecture",
+    "role": "closed cover",
+    "purpose": "Approved user reference 02 architecture artwork; measured projective crop with local punch-hole repair. Runtime derives a separate reveal blur texture."
+  },
+  {
+    "source": "work/iphone-duo/finish-screen-revision/screen-reference/unfolded-figure-led-cover.png",
+    "sourceSha256": "c42c944765df8d6748060c7b628765aa9047f64e825fd2817c42df5c8c0efb12",
+    "sourceQuadPx": [[1015, 169], [1014, 930], [1546, 930], [1546, 169]],
+    "sourceCropCanonicalPx": [0, 228, 532, 609],
+    "file": "/iphone-duo/animation/architecture-inner.png",
+    "sha256": "c42c944765df8d6748060c7b628765aa9047f64e825fd2817c42df5c8c0efb12",
+    "sizePx": [532, 381],
+    "screen": "architecture",
+    "role": "unfolded inner display",
+    "candidate": "figure-led",
+    "purpose": "Approved user reference 02 figure-led architecture artwork; preserves the upright person while fitting the measured landscape display. Runtime derives fine, medium, and wide blur textures."
+  }
+]

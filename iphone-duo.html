@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f3f1eb" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta
+      name="description"
+      content="An img2threejs showcase: from Apple reference analysis to interactive 3D, with Hyper3D MCP supporting an early model study."
+    />
+    <title>iPhone Duo — A whole new dimension</title>
+    <link rel="stylesheet" href="/src/iphone-duo/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="notice-bar">
+          <p><a href="./#/" aria-label="Back to img2threejs showcase">← img2threejs showcase</a></p>
+          <p class="notice-detail">Apple reference media · 10 Sep 2026</p>
+        </div>
+        <div class="nav-shell">
+          <a class="wordmark" href="#top" aria-label="iPhone Duo study home">Duo<span>/</span>01</a>
+          <nav class="primary-nav" aria-label="Primary navigation">
+            <a href="#explore">Explore</a>
+            <a href="#experience">Experience</a>
+            <a href="#process">How it was made</a>
+          </nav>
+          <p class="nav-note">The img2threejs workflow</p>
+        </div>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <section class="hero" id="top" aria-labelledby="product-title">
+          <div class="hero-intro">
+            <div class="hero-intro-top">
+              <p class="eyebrow">iPhone Duo <span aria-hidden="true">/</span> made interactive with img2threejs</p>
+              <p class="hero-index">01—05</p>
+            </div>
+            <h1 id="product-title">One iPhone.<br /><em>A whole new dimension.</em></h1>
+            <p class="hero-deck">
+              An img2threejs showcase built from close reference analysis, Apple source geometry, and custom motion, materials and interaction. Open the display, change the finish, and follow the process behind the result.
+            </p>
+          </div>
+
+          <div class="stage-card" id="explore">
+            <div class="stage-heading">
+              <p class="stage-label">Interactive object study</p>
+              <p class="stage-state" id="stage-state" aria-live="polite">Loading the Apple reference model…</p>
+            </div>
+            <div
+              class="stage-container"
+              id="duo-stage"
+              role="application"
+              aria-label="Interactive iPhone Duo 3D study. Drag to orbit."
+              tabindex="0"
+              aria-describedby="stage-keyboard-help"
+            >
+              <div class="stage-loading" id="stage-loading" role="status">
+                <span class="loading-mark" aria-hidden="true"></span>
+                <span>Loading the Apple reference model</span>
+              </div>
+              <div class="stage-error" id="stage-error" role="alert" hidden>
+                <strong>3D study unavailable</strong>
+                <span id="stage-error-message">WebGL could not be initialized.</span>
+                <button class="text-button" id="stage-retry" type="button">Try again</button>
+              </div>
+            </div>
+            <div class="stage-utility">
+            <p class="stage-caption" id="stage-caption">img2threejs interactive study · Apple source geometry</p>
+              <p class="drag-hint"><span aria-hidden="true">↔</span> Drag to orbit</p>
+            </div>
+            <p class="visually-hidden" id="stage-keyboard-help">
+              Use the left and right arrow keys to orbit. Press Home or Escape to reset. Press F for front
+              view and B for back view.
+            </p>
+          </div>
+
+          <div class="control-dock" aria-label="iPhone Duo controls">
+            <div class="control-group finish-group" aria-label="Device finish">
+              <p class="control-label">Finish</p>
+              <div class="finish-options" role="group" aria-label="Choose device finish">
+                <button type="button" class="finish-option is-active" data-finish="white" aria-label="White finish #F7F7F4" aria-pressed="true">
+                  <span class="finish-swatch finish-swatch-white" aria-hidden="true"></span><span class="finish-name">White</span><span class="finish-hex">#F7F7F4</span>
+                </button>
+                <button type="button" class="finish-option" data-finish="night" aria-label="Night finish #4C5560" aria-pressed="false">
+                  <span class="finish-swatch finish-swatch-night" aria-hidden="true"></span><span class="finish-name">Night</span><span class="finish-hex">#4C5560</span>
+                </button>
+                <button type="button" class="finish-option" data-finish="sage" aria-label="Sage study #7A8B72" aria-pressed="false">
+                  <span class="finish-swatch finish-swatch-sage" aria-hidden="true"></span><span class="finish-name">Sage study</span><span class="finish-hex">#7A8B72</span>
+                </button>
+                <button type="button" class="finish-option" data-finish="sand" aria-label="Sand study #CDB99B" aria-pressed="false">
+                  <span class="finish-swatch finish-swatch-sand" aria-hidden="true"></span><span class="finish-name">Sand study</span><span class="finish-hex">#CDB99B</span>
+                </button>
+                <button type="button" class="finish-option" data-finish="coral" aria-label="Coral study #C87568" aria-pressed="false">
+                  <span class="finish-swatch finish-swatch-coral" aria-hidden="true"></span><span class="finish-name">Coral study</span><span class="finish-hex">#C87568</span>
+                </button>
+                <button type="button" class="finish-option" data-finish="lavender" aria-label="Lavender study #8F84B3" aria-pressed="false">
+                  <span class="finish-swatch finish-swatch-lavender" aria-hidden="true"></span><span class="finish-name">Lavender study</span><span class="finish-hex">#8F84B3</span>
+                </button>
+              </div>
+            </div>
+            <div class="control-group screen-group" aria-label="Display artwork">
+              <p class="control-label">Screen</p>
+              <div class="screen-options" role="group" aria-label="Choose display artwork">
+                <button type="button" class="screen-option is-active" data-screen="desert" aria-pressed="true">
+                  <span class="screen-name">Desert</span><span class="screen-desc">Apple release</span>
+                </button>
+                <button type="button" class="screen-option" data-screen="architecture" aria-pressed="false">
+                  <span class="screen-name">Architecture</span><span class="screen-desc">Reference 02</span>
+                </button>
+              </div>
+            </div>
+            <div class="control-group view-group">
+              <p class="control-label">View</p>
+              <div class="view-options">
+                <button type="button" data-view="reset">Reset</button>
+                <button type="button" data-view="front">Front</button>
+                <button type="button" data-view="back">Back</button>
+                <button type="button" data-view="orbit">Orbit</button>
+              </div>
+            </div>
+            <div class="control-group release-group" aria-label="Apple release animation controls">
+              <div class="release-heading">
+                <p class="control-label">Apple release motion</p>
+                <output id="release-time" for="release-seek">0:00 / 0:03</output>
+              </div>
+              <div class="release-buttons">
+                <button type="button" class="release-button release-button-primary" id="release-play" aria-label="Play release sequence">Play</button>
+                <button type="button" class="release-button" id="release-replay">Replay</button>
+                <label class="release-check"><input type="checkbox" id="release-loop" /> Loop</label>
+                <button type="button" class="release-button is-active" id="release-vfx" aria-pressed="true">VFX on</button>
+              </div>
+              <input id="release-seek" type="range" min="0" max="3" step="0.001" value="0" aria-label="Release sequence time" />
+              <div class="release-sequences" role="group" aria-label="Release sequence">
+                <button type="button" class="is-active" data-sequence="display" aria-pressed="true">Display reveal</button>
+                <button type="button" data-sequence="hinge" aria-pressed="false">Titanium hinge</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-bottomline">
+            <p>Play the release sequence, then drag to explore the model.</p>
+            <a class="down-link" href="#experience" aria-label="Continue to experience section">Scroll to experience <span aria-hidden="true">↓</span></a>
+          </div>
+        </section>
+
+        <section class="experience-section" id="experience" aria-labelledby="experience-title">
+          <div class="section-intro">
+            <p class="eyebrow">The motion of an idea</p>
+            <h2 id="experience-title">A screen that<br /><em>changes its point of view.</em></h2>
+            <p>
+              The Duo is at its most expressive in transition: a compact object becoming a wide canvas,
+              with the hinge acting as the quiet line between the two.
+            </p>
+          </div>
+          <div class="film-grid">
+            <figure class="film-card film-card-large">
+              <div class="film-frame">
+                <video autoplay muted loop playsinline preload="metadata" poster="/iphone-duo/references/02-iphone-duo-folded-unfolded.jpg" aria-label="iPhone Duo display transition film">
+                  <source src="/iphone-duo/film/06-animation-display-transition.mp4" type="video/mp4" />
+                </video>
+                <span class="film-badge">Film 01 / transition</span>
+              </div>
+              <figcaption>One continuous display, from pocket to panorama.</figcaption>
+            </figure>
+            <figure class="film-card film-card-small">
+              <div class="film-frame">
+                <video autoplay muted loop playsinline preload="metadata" poster="/iphone-duo/references/01-iphone-duo-colors.jpg" aria-label="iPhone Duo hinge detail film">
+                  <source src="/iphone-duo/film/09-animation-titanium-hinge.mp4" type="video/mp4" />
+                </video>
+                <span class="film-badge">Film 02 / hinge</span>
+              </div>
+              <figcaption>The hinge carries the gesture with a measured resistance.</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section class="feature-section" aria-labelledby="feature-title">
+          <div class="feature-heading">
+            <p class="eyebrow">Designed around the crease</p>
+            <h2 id="feature-title">Small in the hand.<br /><em>Expansive when it matters.</em></h2>
+          </div>
+          <div class="feature-grid">
+            <article class="feature-card feature-card-dark">
+              <p class="feature-number">01</p>
+              <h3>One verified view.<br />Several supplied poses.</h3>
+              <p>Explore the Apple reference geometry in 3D. Compare the source White and Night finishes with four local color studies across closed and open poses.</p>
+              <div class="feature-rule" aria-hidden="true"></div>
+              <p class="feature-meta">Source asset <strong>Star White</strong></p>
+            </article>
+            <figure class="feature-card feature-card-image">
+              <img src="/iphone-duo/references/03-iphone-duo-netflix.jpg" alt="iPhone Duo open in landscape with a film playing" loading="lazy" />
+              <figcaption>Landscape viewing / supplied reference still</figcaption>
+            </figure>
+            <article class="feature-card feature-card-light">
+              <p class="feature-number">02</p>
+              <h3>Space for the<br />things between.</h3>
+              <p>Split the canvas for parallel work, or let one image carry across the whole opening.</p>
+              <a class="inline-link" href="#references">See the reference set <span aria-hidden="true">↗</span></a>
+            </article>
+          </div>
+        </section>
+
+        <section class="studies-section" id="process" aria-labelledby="process-title">
+          <span id="studies" aria-hidden="true"></span>
+          <div class="studies-header">
+            <div>
+              <p class="eyebrow">Behind the showcase / the img2threejs workflow</p>
+              <h2 id="process-title">From reference.<br /><em>To something you can explore.</em></h2>
+            </div>
+            <p class="studies-intro">img2threejs provides the core workflow: study the reference, assemble the model, author its behavior, and verify the result in the browser.</p>
+          </div>
+
+          <div class="process-core">
+            <p class="eyebrow">The core / img2threejs</p>
+            <p class="process-core-title">The model is the starting point.<br />The experience is built around it.</p>
+            <p>Model assembly, a continuous folding display, camera choreography, six finishes, two screen choices, lighting and interaction come together in this showcase. Each is refined against the reference and checked in motion.</p>
+          </div>
+
+          <ol class="process-steps" aria-label="How the showcase was made">
+            <li>
+              <p class="process-step-label">01 / Read the reference</p>
+              <h3>Start with the product story.</h3>
+              <p>Read and analyze <a href="https://www.apple.com/vn/iphone-duo/" target="_blank" rel="noreferrer">Apple’s iPhone Duo page</a>: the closed and open silhouettes, camera layout, White and Night finishes, screen transitions and titanium hinge. These observations define what the showcase needs to express.</p>
+            </li>
+            <li>
+              <p class="process-step-label">02 / Build the reference library</p>
+              <h3>Save the details worth returning to.</h3>
+              <p>Collect the supplied media set of four photographs and ten films, preserve the source links, and verify image sizes and video timing. Still crops and sampled film frames become the working references for color, screen artwork and motion.</p>
+              <a class="inline-link" href="#references">Explore the saved references <span aria-hidden="true">↓</span></a>
+            </li>
+            <li>
+              <p class="process-step-label">03 / Inspect and compare</p>
+              <h3>Turn observations into decisions.</h3>
+              <p>Study the body proportions, lens stack, display boundaries and hinge from multiple views. Compare candidate geometry with the reference before choosing the foundation for the interactive model.</p>
+              <aside class="process-assist" aria-label="Supporting Hyper3D MCP step">
+                <p class="process-assist-label">Optional reference study / Hyper3D MCP</p>
+                <p>Rodin generated a five-view study during this exploration. Its screen and camera details did not match closely enough for the final model. This was an optional reference experiment within the img2threejs workflow; its geometry is not used in the final articulated model.</p>
+              </aside>
+            </li>
+            <li>
+              <p class="process-step-label">04 / Assemble with img2threejs</p>
+              <h3>Build the interactive foundation.</h3>
+              <p>GLB models can be used as optional references. You can also build the geometry procedurally from images and measurements. This showcase retains measured Apple-source surfaces in code, then adds hinge controls and a connected display that follows the fold. No GLB file is needed to build or run it.</p>
+              <p class="process-source-note">Surface reference: Apple’s original model. Custom showcase assembly and behavior: the img2threejs workflow. GLB references and Hyper3D are optional tools.</p>
+            </li>
+            <li>
+              <p class="process-step-label">05 / Author the experience</p>
+              <h3>Give every detail a behavior.</h3>
+              <p>Reconstruct Display reveal and Titanium hinge from the films. Add screen blur, camera movement and local shadows; tune White and Night; introduce four custom finishes and Architecture artwork. Tie everything to playback, scrubbing and direct inspection.</p>
+            </li>
+            <li>
+              <p class="process-step-label">06 / Verify and refine</p>
+              <h3>Check the result while it moves.</h3>
+              <p>Review 48 finish, screen and pose captures and 12 live playback runs. Check the connected screen across 55 viewing angles, keyboard controls on mobile, repeated screen changes and graphics recovery. Visible reference differences remain part of the review.</p>
+              <a class="inline-link" href="#explore">Explore the finished showcase <span aria-hidden="true">↑</span></a>
+            </li>
+          </ol>
+
+          <details class="process-research">
+            <summary>Inside the supporting Hyper3D experiment</summary>
+            <p class="process-research-intro">Five consistent views of one closed device were rendered from the Apple source model and submitted through Hyper3D MCP. The resulting static Rodin study was evaluated during reference analysis. It does not contain the final folding, screen or finish behavior.</p>
+            <div class="provider-grid" role="group" aria-label="Inspect the supporting experiment">
+              <button class="provider-card is-active" type="button" data-provider="articulated" aria-pressed="true">
+                <span class="provider-index">Finished experience</span>
+                <span class="provider-name">img2threejs showcase</span>
+                <span class="provider-desc">Apple source geometry · custom motion, display and finishes</span>
+                <span class="provider-arrow" aria-hidden="true">↗</span>
+              </button>
+              <button class="provider-card" type="button" data-provider="hyper3d" aria-pressed="false">
+                <span class="provider-index">Supporting experiment</span>
+                <span class="provider-name">Hyper3D MCP / Rodin study</span>
+                <span class="provider-desc">Static multiview exploration · screen and camera details differ</span>
+                <span class="provider-arrow" aria-hidden="true">↗</span>
+              </button>
+            </div>
+          </details>
+          <div class="study-note" id="study-note" aria-live="polite">
+            <span class="study-note-mark" aria-hidden="true"></span>
+            <span>img2threejs showcase active · White finish.</span>
+            <a href="#explore">Return to canvas <span aria-hidden="true">↑</span></a>
+          </div>
+        </section>
+
+        <section class="references-section" id="references" aria-labelledby="references-title">
+          <div class="references-header">
+            <p class="eyebrow">Reference set</p>
+            <h2 id="references-title">The details that<br /><em>set the direction.</em></h2>
+            <p>Supplied photographic references guide the proportions, finish studies, and interaction cues. Custom colors are local studies, not official Apple finishes.</p>
+          </div>
+          <div class="reference-grid">
+            <figure>
+              <img src="/iphone-duo/references/01-iphone-duo-colors.jpg" alt="iPhone Duo in white and night finishes" loading="lazy" />
+              <figcaption><span>01</span> Finishes / white + night</figcaption>
+            </figure>
+            <figure>
+              <img src="/iphone-duo/references/02-iphone-duo-folded-unfolded.jpg" alt="iPhone Duo folded and unfolded in hand" loading="lazy" />
+              <figcaption><span>02</span> Gesture / folded + unfolded</figcaption>
+            </figure>
+            <figure>
+              <img src="/iphone-duo/references/04-iphone-duo-safari-siri.jpg" alt="iPhone Duo open with a split reading layout" loading="lazy" />
+              <figcaption><span>03</span> Split canvas / reading + making</figcaption>
+            </figure>
+          </div>
+          <p class="attribution">
+            Reference stills and films supplied from the iPhone Duo media set. Product references:
+            <a href="https://www.apple.com/vn/iphone-duo/" target="_blank" rel="noreferrer">Apple iPhone Duo</a>
+            and
+            <a href="https://www.apple.com/newsroom/2026/09/apple-unveils-iphone-duo/" target="_blank" rel="noreferrer">Apple Newsroom</a>.
+          </p>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-topline">
+          <p class="wordmark footer-wordmark">Duo<span>/</span>01</p>
+          <p>Interactive product study · 2026</p>
+          <a href="#top">Back to top <span aria-hidden="true">↑</span></a>
+        </div>
+        <div class="footer-bottomline">
+          <p>Showcase workflow, motion and interaction by img2threejs. Source geometry and reference media: Apple. Apple, iPhone, and related marks belong to Apple Inc.</p>
+          <p>Built with a local Three.js runtime · no remote assets</p>
+        </div>
+      </footer>
+    </div>
+
+    <script type="module" src="/src/iphone-duo/main.ts"></script>
+  </body>
+</html>
