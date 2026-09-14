@@ -25,6 +25,8 @@ export interface DemoMetadata {
   referenceKind?: 'image' | 'model';
   /** Where the reference itself can be inspected, when it is something a visitor can open. */
   referenceUrl?: string;
+  /** Optional label when the linked asset is an additional reference rather than the source. */
+  referenceLabel?: string;
   /** repo-relative path shown in UI */
   sourcePath: string;
   sourceUrl: string;
@@ -126,9 +128,13 @@ const authored: CatalogEntry[] = [
     blurb:
       'A source-preserving Ocean guitar measured from one Tripo v3.1 GLB surface, with the original '
       + 'vertex colours and PBR samples kept in code. Play the water and string actions to see the '
-      + 'measured blue finish flow while the complete assembly remains available in Model Parts.',
+      + 'measured blue finish flow while the complete assembly remains available in Model Parts. '
+      + 'The linked Hyper3D workspace is an additional model supplied by the creator; it is not '
+      + 'the measurement source for this displayed version.',
     referenceImage: `${BASE}references/prs-ocean.jpg`,
     referenceKind: 'model',
+    referenceUrl: 'https://hyper3d.ai/workspace/rodin/a1dddc68-f3dd-403a-bcae-483b94ea13ff',
+    referenceLabel: 'Additional Hyper3D Model',
     sourcePath: 'src/demos/prs-ocean/createPrsOceanModel.ts',
     sourceUrl: `${REPO}/src/demos/prs-ocean/createPrsOceanModel.ts`,
     generatedWith: 'img2threejs v1.5.2 · Tripo v3.1 GLB force-measured · embedded TypeScript surface',

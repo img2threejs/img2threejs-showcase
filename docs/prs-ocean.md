@@ -1,5 +1,10 @@
 # Ocean Blue PRS guitar
 
+The creator also supplied a [Hyper3D model workspace](https://hyper3d.ai/workspace/rodin/a1dddc68-f3dd-403a-bcae-483b94ea13ff).
+This additional model is linked for reference only. It has not replaced the embedded measurement
+data, and its GLB has not been compared with the displayed model. Geometry, appearance and motion
+remain unchanged.
+
 The showcase uses the measured surface route from a Tripo v3.1 generated GLB. The source surface is
 embedded as quantized TypeScript data and keeps its measured vertex colours, authored normals and
 sampled PBR values. The source mesh has 1,027,623 vertices and 1,972,917 triangles; its measurement
