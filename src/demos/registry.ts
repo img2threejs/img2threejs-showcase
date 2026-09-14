@@ -120,6 +120,49 @@ const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
 const authored: CatalogEntry[] = [
   {
+    id: 'prs-ocean',
+    title: 'Ocean Blue PRS Guitar — Measured Surface Flow',
+    subjectClass: 'object',
+    blurb:
+      'A source-preserving Ocean guitar measured from one Tripo v3.1 GLB surface, with the original '
+      + 'vertex colours and PBR samples kept in code. Play the water and string actions to see the '
+      + 'measured blue finish flow while the complete assembly remains available in Model Parts.',
+    referenceImage: `${BASE}references/prs-ocean.jpg`,
+    referenceKind: 'model',
+    sourcePath: 'src/demos/prs-ocean/createPrsOceanModel.ts',
+    sourceUrl: `${REPO}/src/demos/prs-ocean/createPrsOceanModel.ts`,
+    generatedWith: 'img2threejs v1.5.2 · Tripo v3.1 GLB force-measured · embedded TypeScript surface',
+    prompt:
+      'Preserve the measured Ocean guitar surface and source vertex appearance in a code-owned '
+      + 'Three.js showcase, then add opt-in water flow and six addressable string details without '
+      + 'shipping the source GLB or runtime texture maps.',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'final',
+    updatedAt: '2026-09-13',
+    cameraPosition: [3.25, 3.2, 7.4],
+    cameraTarget: [0, 2.55, 0],
+    cameraFov: 34,
+    accent: '#1ab9e8',
+    backgroundGradient: { inner: '#0b2635', outer: '#020811' },
+    exposure: 1.08,
+    environmentIntensity: 1.18,
+    toneMapping: 'aces',
+    loadRuntime: async () => {
+      const { createPrsOceanLookDevLights, createPrsOceanModel } = await import(
+        './prs-ocean/createPrsOceanModel'
+      );
+      return {
+        installLights: (scene) => scene.add(createPrsOceanLookDevLights()),
+        build: (scene) => {
+          const group = createPrsOceanModel();
+          scene.add(group);
+          return group;
+        },
+      };
+    },
+  },
+  {
     id: 'monster-tree',
     title: 'Groot — Heart of the Forest',
     subjectClass: 'character',
