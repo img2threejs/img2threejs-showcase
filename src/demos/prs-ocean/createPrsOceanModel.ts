@@ -133,7 +133,7 @@ function createPrsOceanAssembly(): {
   root.name = 'prs-ocean';
   root.add(measured);
 
-  // Orient the supplied Tripo frame so its +X face looks down the viewer's canonical +Z front
+  // Orient the supplied model frame so its +X face looks down the viewer's canonical +Z front
   // axis. Measure after strings are attached so the assembly is one consistent height.
   root.rotation.y = SOURCE_ROTATION_Y;
   root.updateMatrixWorld(true);
@@ -461,7 +461,7 @@ export function createPrsOceanModel(): THREE.Group {
       route: surfaceMeta.route,
       exactnessTier: 'force-measured',
       inferred: [
-        'The single Tripo v3.1 GLB mesh is preserved as one measured body, neck and hardware assembly.',
+        'The single measured GLB mesh is preserved as one measured body, neck and hardware assembly.',
         'The source +X face is presented through a -PI/2 Y orientation for the showcase front camera.',
         'Six string tubes are authored detail because the measured source has no complete string parts.',
         'Depth on hidden faces remains limited to what the single measured GLB view establishes.',

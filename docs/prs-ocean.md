@@ -1,6 +1,8 @@
 # Ocean Blue PRS guitar
 
-The showcase uses the measured surface route from a Tripo v3.1 generated GLB. The source surface is
+Exclusive reference: [Hyper3D workspace](https://hyper3d.ai/workspace/rodin/a1dddc68-f3dd-403a-bcae-483b94ea13ff).
+
+The showcase uses a measured GLB surface,
 embedded as quantized TypeScript data and keeps its measured vertex colours, authored normals and
 sampled PBR values. The source mesh has 1,027,623 vertices and 1,972,917 triangles; its measurement
 source SHA-256 is `1c1886fdb812bd83eed7384eb281c6705287f45be8e5707a813cf8a8b4129d74`.
