@@ -107,7 +107,7 @@ scroll to zoom, and read the reference photo it was rebuilt from.
 | [Crowned Loot Chest](https://img2threejs.io/#/demo/crown-chest)<br><sub>Purple-to-teal glossy enamel, eight gold brackets, emissive crown emblem.</sub> | object | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
 | [★ Talon Knife \| Doppler Ruby (Factory New)](https://img2threejs.io/#/demo/talon-doppler-ruby)<br><sub>Rendered under AgX, because ACES turns a clipped ruby pink. Looping 9s ring spin.</sub> | object | ✅ | [kokorolx](https://github.com/kokorolx) |
 | [Dual-Sword Warrior — Procedural Character](https://img2threejs.io/#/demo/girl-character-3)<br><sub>1,599,896 triangles, exact part for part; per-triangle UV transfer so irises and eyelids survive.</sub> | character | ✅ | [Hoai Nho](https://github.com/hoainho) |
-| [Sora — Kingdom Key Outfit Switch](https://img2threejs.io/#/demo/sora)<br><sub>Sora from Fortnite in his black-and-red adventurer outfit, with a white Kingdom Key alternate look and a luminous head-to-toe transformation. Effects inspired by his Blitz, Sliding Dash, and Finishing Leap abilities accompany his slashing, running, and jumping motions.</sub> | character | 🚧 | [Hoài Nhớ](https://github.com/hoainho) |
+
 This table is maintained by hand — when you add a demo, add a row here too.
 
 ## What makes these different
@@ -175,47 +175,6 @@ npm run star-history   # redraw the chart below (needs GITHUB_TOKEN)
 
 `vite.config.ts` sets `base: '/img2threejs-showcase/'` to match the GitHub Pages
 project-site path.
-
-### Sora FBX animation import
-
-`Run Backwards.fbx`, `Running Dive Roll.fbx`, `Strafe.fbx`, and `Turning.fbx`
-are retargeted offline onto both Sora skins. To regenerate those four clips:
-
-```bash
-node scripts/retarget-sora-fbx.mjs --source-dir /path/to/fbx --write
-node scripts/validate-sora-fbx.mjs --source-dir /path/to/fbx
-```
-
-Omit `--write` to inspect the import without modifying files. The importer
-preserves the existing bind skeleton, skin weights, and other 40 clips; no FBX
-is loaded at runtime. The viewer keeps horizontal travel in place, while the
-embedded clips retain scaled source hip motion. Finger channels cannot be
-transferred because the target rigs have no finger joints. Validation samples
-source motion and mesh deformation on both skins; it is not an exhaustive
-collision or cloth-stretch guarantee.
-
-### Sora surface detail recovery
-
-Both outfits retain the original 4096×4096 albedo, normal, and metallic/roughness
-maps with source UVs. The initial vertex-colour export blurred pupils, checker
-trim, seams, and buckles; applying the source textures restores their spatial
-detail without replacing the mesh or changing animation. Normal strength and
-non-metal gloss are reduced to match the less embossed, matte reference finish.
-
-```bash
-node scripts/restore-sora-materials.mjs /path/to/skin-a-rig.glb /path/to/skin-b-rig.glb
-```
-
-This offline command checks triangle-corner correspondence and UV seams before
-writing the two UV modules and six original JPEGs. Source hashes are recorded
-in the UV modules. The application loads only bundled images, never the GLBs
-or a provider API. This restores source detail; it does not make the generated
-head geometry or every source-painted feature an exact reconstruction of the photos.
-
-Ability motif references: [Blitz](https://www.khwiki.com/Blitz),
-[Sliding Dash](https://www.khwiki.com/Sliding_Dash), and
-[Finishing Leap](https://www.khwiki.com/Finishing_Leap). These are documentation
-citations, not runtime dependencies.
 
 ## Project layout
 
