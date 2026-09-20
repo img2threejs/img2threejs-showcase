@@ -216,6 +216,17 @@ export async function renderDemo(
                     <span class="mono">Performance Controls</span>
                     <p>Preview Motion, Effects, And Scene Behavior In Real Time.</p>
                   </div>
+                  <section class="demo-outfit-switch" id="demo-outfit-switch" hidden
+                    aria-labelledby="demo-outfit-switch-title">
+                    <div class="demo-animations-head">
+                      <span class="parts-title" id="demo-outfit-switch-title">Outfit transformation</span>
+                      <output class="demo-animation-status" id="demo-outfit-switch-status">Default</output>
+                    </div>
+                    <button class="btn demo-outfit-switch-btn" id="demo-outfit-switch-btn" type="button">
+                      <span class="demo-outfit-switch-label">Switch Skin (Outfit →)</span>
+                      <span class="demo-outfit-switch-hint">Head → toe</span>
+                    </button>
+                  </section>
                   <section class="demo-animations demo-motion" id="demo-animations" hidden aria-labelledby="demo-animations-title">
                     <div class="demo-animations-head">
                       <div>
@@ -485,16 +496,36 @@ export async function renderDemo(
     stop: () => void;
     subscribe: (listener: (active: string) => void) => () => void;
   };
-  const animationController = (
-    model.userData.sculptRuntime as { animationController?: AnimationController } | undefined
-  )?.animationController;
+  type OutfitState = {
+    skinId: string;
+    switching: boolean;
+  };
+  type OutfitController = {
+    readonly label: string;
+    readonly state: OutfitState;
+    switchSkin(): boolean;
+    subscribe(listener: (state: OutfitState) => void): () => void;
+  };
+  type SculptRuntime = {
+    animationController?: AnimationController;
+    outfitController?: OutfitController;
+  };
+  const sculptRuntime = model.userData.sculptRuntime as SculptRuntime | undefined;
+  const animationController = sculptRuntime?.animationController;
+  const outfitController = sculptRuntime?.outfitController;
   const animationSection = mount.querySelector<HTMLElement>('#demo-animations');
   const animationButtons = mount.querySelector<HTMLElement>('#demo-animation-buttons');
   const animationFooter = mount.querySelector<HTMLElement>('#demo-animation-footer');
   const animationStatus = mount.querySelector<HTMLOutputElement>('#demo-animation-status');
+  const outfitSection = mount.querySelector<HTMLElement>('#demo-outfit-switch');
+  const outfitButton = mount.querySelector<HTMLButtonElement>('#demo-outfit-switch-btn');
+  const outfitLabel = mount.querySelector<HTMLElement>('.demo-outfit-switch-label');
+  const outfitStatus = mount.querySelector<HTMLOutputElement>('#demo-outfit-switch-status');
   const animationButtonCleanups: Array<() => void> = [];
   let unsubscribeAnimation: (() => void) | undefined;
+  let unsubscribeOutfit: (() => void) | undefined;
   let mountedAnimationController: AnimationController | undefined;
+  let mountedOutfitController: OutfitController | undefined;
   /**
    * Mounted as a function, not inline, because a demo whose geometry arrives through `prewarm` has no
    * animation runtime yet when `build()` returns -- its rig ships inside the lazily imported payload,
@@ -569,6 +600,36 @@ export async function renderDemo(
       }
     });
   };
+  const mountOutfitControl = (controller: OutfitController | undefined): void => {
+    if (!controller || controller === mountedOutfitController) return;
+    if (!outfitSection || !outfitButton || !outfitLabel || capture) return;
+    mountedOutfitController = controller;
+    outfitSection.hidden = false;
+    enableInspectorSection('animation', true);
+    outfitLabel.textContent = controller.label;
+    const onSwitch = (): void => {
+      if (!controller.switchSkin()) return;
+      trackAnimationPlay(
+        demo.id,
+        { id: 'outfit-change', label: controller.label },
+        'viewer',
+      );
+    };
+    outfitButton.addEventListener('click', onSwitch);
+    animationButtonCleanups.push(() => outfitButton.removeEventListener('click', onSwitch));
+    unsubscribeOutfit = controller.subscribe((state) => {
+      outfitButton.disabled = state.switching;
+      outfitButton.classList.toggle('is-transforming', state.switching);
+      outfitButton.setAttribute('aria-busy', String(state.switching));
+      outfitLabel.textContent = state.switching ? 'Transforming outfit…' : controller.label;
+      if (outfitStatus) {
+        outfitStatus.value = state.switching
+          ? 'Head → toe'
+          : state.skinId === 'default' ? 'Default' : 'Kingdom Key';
+      }
+    });
+  };
+  mountOutfitControl(outfitController);
   mountAnimationPanel(animationController);
 
   /**
@@ -576,6 +637,7 @@ export async function renderDemo(
    * reason as the animation panel: the runtime arrives with the lazily imported payload.
    */
   type VfxRuntime = {
+    title?: string;
     elements: ReadonlyArray<{ id: string; label: string }>;
     current: string;
     setElement(id: string): void;
@@ -591,6 +653,8 @@ export async function renderDemo(
     vfxMounted = true;
     section.hidden = false;
     enableInspectorSection('animation', true);
+    const title = section.querySelector<HTMLElement>('#demo-vfx-title');
+    if (title && runtime.title) title.textContent = runtime.title;
     const buttons = new Map<string, HTMLButtonElement>();
     const select = (id: string): void => {
       runtime.setElement(id);
@@ -1304,6 +1368,9 @@ export async function renderDemo(
         (model.userData.sculptRuntime as { animationController?: AnimationController } | undefined)
           ?.animationController,
       );
+      mountOutfitControl(
+        (model.userData.sculptRuntime as SculptRuntime | undefined)?.outfitController,
+      );
       mountVfxPanel();
     });
   } else if (capture && refreshCompletedModel() && prepareCapture()) {
@@ -1450,6 +1517,7 @@ export async function renderDemo(
     for (const cleanup of inspectorCleanups) cleanup();
     mountedAnimationController?.stop();
     unsubscribeAnimation?.();
+    unsubscribeOutfit?.();
     for (const cleanup of animationButtonCleanups) cleanup();
     viewer.dispose();
     // If prewarm already bound the completed model, release the old scene's reference only after
