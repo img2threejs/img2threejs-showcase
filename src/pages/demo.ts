@@ -526,6 +526,7 @@ export async function renderDemo(
   let unsubscribeOutfit: (() => void) | undefined;
   let mountedAnimationController: AnimationController | undefined;
   let mountedOutfitController: OutfitController | undefined;
+  let refreshPartsAfterOutfit: (() => void) | undefined;
   /**
    * Mounted as a function, not inline, because a demo whose geometry arrives through `prewarm` has no
    * animation runtime yet when `build()` returns -- its rig ships inside the lazily imported payload,
@@ -627,6 +628,7 @@ export async function renderDemo(
           ? 'Head → toe'
           : state.skinId === 'default' ? 'Default' : 'Kingdom Key';
       }
+      if (!state.switching) refreshPartsAfterOutfit?.();
     });
   };
   mountOutfitControl(outfitController);
@@ -1287,6 +1289,12 @@ export async function renderDemo(
     });
 
     populateParts();
+    refreshPartsAfterOutfit = (): void => {
+      viewer.selectByName(null);
+      viewer.rebuildParts();
+      populateParts?.();
+      syncExplodeButton();
+    };
   }
 
   /**

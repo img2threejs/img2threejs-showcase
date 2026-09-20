@@ -15,6 +15,7 @@ import { buildRiggedModel, type RiggedModel } from './meshCodec';
 import { preserveSkinVolume } from './volumeSkinning';
 import { repairElbowSkinning } from './elbowSkinning';
 import { applySoraSurfaceAppearance } from './surfaceAppearance';
+import { disposeSoraSelectableParts, installSoraSelectableParts } from './soraParts';
 import { RIG as RIG_SKIN_A } from './rigData.skin-a';
 import { RIG as RIG_SKIN_B } from './rigData.skin-b';
 import {
@@ -26,7 +27,7 @@ import {
   SURFACE_STREAM as SURFACE_STREAM_B,
 } from './surfaceData.skin-b';
 import { SORA_ACTIONS, OUTFIT_CHANGE_ID } from './soraClips';
-import type { SoraSkinId } from './createSoraModel';
+import { SORA_PARTS, type SoraSkinId } from './createSoraModel';
 import { createSoraOutfitVfx } from './soraVfx';
 import { createSoraSkillVfx, SORA_SKILLS } from './soraSkillVfx';
 
@@ -75,6 +76,7 @@ function buildRig(skinId: SoraSkinId): BoundRig {
   delete rigged.group.userData.tick;
   const updateSkin = skinId === 'kingdom-key' ? preserveSkinVolume(rigged.mesh) : null;
   const updateElbows = skinId === 'kingdom-key' ? repairElbowSkinning(rigged.mesh) : null;
+  installSoraSelectableParts(rigged.mesh);
   const hip = rigged.mesh.skeleton.bones.find((bone) => bone.name === 'Hip')!;
   const placement = rigged.group.position.clone();
   const restHip = rigged.group.worldToLocal(hip.getWorldPosition(new THREE.Vector3()));
@@ -96,6 +98,7 @@ function buildRig(skinId: SoraSkinId): BoundRig {
 
 function disposeRig(bound: BoundRig): void {
   bound.rigged.mixer.stopAllAction();
+  disposeSoraSelectableParts(bound.rigged.mesh);
   bound.rigged.mixer.uncacheRoot(bound.rigged.mesh);
   bound.rigged.mesh.skeleton.dispose();
   bound.rigged.mesh.geometry.dispose();
@@ -325,6 +328,7 @@ export function createSoraShowcase(
     switchSkin: outfitController.switchSkin,
     currentSkin: (): SoraSkinId => outfitController.state.skinId,
     sora: true,
+    selectableParts: SORA_PARTS,
   };
 
   // Begin with a stationary pose and no combat effects.

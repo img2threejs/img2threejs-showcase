@@ -39,10 +39,26 @@ import {
 } from './surfaceData.skin-b';
 
 /**
- * Static and rigged models both report the same single part name; the
- * rig is what binds the parts together visually at runtime.
+ * Selectable anatomical regions derived from the shared rig's skin weights.
+ * The visible surface stays continuous; only triangle indices are partitioned.
  */
-export const SORA_PARTS = ['body-shell'] as const;
+export const SORA_PARTS = [
+  'head',
+  'torso',
+  'hips',
+  'left-upper-arm',
+  'left-forearm',
+  'left-hand',
+  'right-upper-arm',
+  'right-forearm',
+  'right-hand',
+  'left-thigh',
+  'left-lower-leg',
+  'left-foot',
+  'right-thigh',
+  'right-lower-leg',
+  'right-foot',
+] as const;
 export type SoraPart = (typeof SORA_PARTS)[number];
 
 /**
