@@ -122,6 +122,44 @@ const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
 const authored: CatalogEntry[] = [
   {
+    id: 'unplayed-stage',
+    updatedAt: '2026-09-14',
+    title: 'The Unplayed Stage',
+    subjectClass: 'object',
+    blurb:
+      'A fully procedural concert stage with piano, guitar, bass, and drums. Play Electric Gravity to watch the score drive the keys, strings, picks, sticks, cymbals, and pedal mechanics in one native viewer.',
+    referenceImage: `${BASE}references/unplayed-stage.jpg`,
+    referenceKind: 'image',
+    referenceLabel: 'Stage concept reference',
+    sourcePath: 'src/demos/unplayed-stage/createUnplayedStageModel.ts',
+    sourceUrl: `${REPO}/src/demos/unplayed-stage/createUnplayedStageModel.ts`,
+    generatedWith: 'img2threejs v1.5.1 · authored procedural stage adapter',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'final',
+    cameraPosition: [7.7, 4.3, 10.2],
+    cameraTarget: [0, 1.1, 0],
+    cameraFov: 38,
+    accent: '#d86e45',
+    backgroundGradient: { inner: '#1e1729', outer: '#05060c' },
+    exposure: 1.05,
+    environmentIntensity: 0.72,
+    toneMapping: 'aces',
+    turntable: false,
+    defaultAnimation: undefined,
+    loadRuntime: async () => {
+      const { createUnplayedStageModel, installUnplayedStageLights } = await import('./unplayed-stage/createUnplayedStageModel');
+      return {
+        installLights: installUnplayedStageLights,
+        build: (scene) => {
+          const group = createUnplayedStageModel(scene);
+          scene.add(group);
+          return group;
+        },
+      };
+    },
+  },
+  {
     id: 'prs-ocean',
     title: 'Ocean Blue PRS Guitar — Measured Surface Flow',
     subjectClass: 'object',
