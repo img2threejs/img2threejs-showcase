@@ -1560,7 +1560,7 @@ const authored: CatalogEntry[] = [
   {
     id: 'sora',
     updatedAt: '2026-09-18',
-    title: 'Sora — Kingdom Key Outfit Switch',
+    title: 'Sora — Dual Outfit Transformation',
     subjectClass: 'character',
     blurb:
       'Sora from Fortnite, recognizable by his spiky brown hair, bright blue '
