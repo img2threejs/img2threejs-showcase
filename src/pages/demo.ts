@@ -219,11 +219,11 @@ export async function renderDemo(
                   <section class="demo-outfit-switch" id="demo-outfit-switch" hidden
                     aria-labelledby="demo-outfit-switch-title">
                     <div class="demo-animations-head">
-                      <span class="parts-title" id="demo-outfit-switch-title">Outfit transformation</span>
-                      <output class="demo-animation-status" id="demo-outfit-switch-status">Default</output>
+                      <span class="parts-title" id="demo-outfit-switch-title">Character transformation</span>
+                      <output class="demo-animation-status" id="demo-outfit-switch-status">Sora</output>
                     </div>
                     <button class="btn demo-outfit-switch-btn" id="demo-outfit-switch-btn" type="button">
-                      <span class="demo-outfit-switch-label">Switch Skin (Outfit →)</span>
+                      <span class="demo-outfit-switch-label">Switch Character</span>
                       <span class="demo-outfit-switch-hint">Head → toe</span>
                     </button>
                   </section>
@@ -622,11 +622,11 @@ export async function renderDemo(
       outfitButton.disabled = state.switching;
       outfitButton.classList.toggle('is-transforming', state.switching);
       outfitButton.setAttribute('aria-busy', String(state.switching));
-      outfitLabel.textContent = state.switching ? 'Transforming outfit…' : controller.label;
+      outfitLabel.textContent = state.switching ? 'Transforming character…' : controller.label;
       if (outfitStatus) {
         outfitStatus.value = state.switching
           ? 'Head → toe'
-          : state.skinId === 'default' ? 'Default' : 'Kingdom Key';
+          : state.skinId === 'default' ? 'Sora' : 'Roxas';
       }
       if (!state.switching) refreshPartsAfterOutfit?.();
     });

@@ -173,7 +173,7 @@ export function createSoraShowcase(
   };
 
   const outfitController: SoraOutfitController = {
-    label: 'Switch Skin (Outfit →)',
+    label: 'Switch Character',
     get state(): SoraOutfitState {
       return outfitState();
     },

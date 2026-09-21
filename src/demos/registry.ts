@@ -1560,18 +1560,18 @@ const authored: CatalogEntry[] = [
   {
     id: 'sora',
     updatedAt: '2026-09-18',
-    title: 'Sora — Dual Outfit Transformation',
+    title: 'Sora ↔ Roxas',
     subjectClass: 'character',
     blurb:
-      'Sora from Fortnite, recognizable by his spiky brown hair, bright blue '
-      + 'eyes, oversized shoes, and black-and-red adventurer outfit. He can '
-      + 'switch into a white Kingdom Key outfit through a luminous transformation '
-      + 'that travels from his head to his feet, beginning slowly and accelerating '
-      + 'as the new look takes over. His complete animation collection includes '
-      + 'exploration, combat, sports, greetings, dances, and advanced movement '
-      + 'such as Running Dive Roll, Run Backwards, Strafe, and Turning. '
-      + 'His combat showcase draws on his own abilities: Blitz slashes, '
-      + 'Sliding Dash trails, and Finishing Leap bursts of light.',
+      'Sora and Roxas share one animated showcase with a luminous head-to-toe '
+      + 'character transformation between them. Sora keeps his spiky brown hair, '
+      + 'bright blue eyes, oversized shoes, and black-and-red adventurer outfit; '
+      + 'Roxas is distinguished by blond hair, a white jacket with checker trim, '
+      + 'grey trousers, and his own facial details. Their complete animation '
+      + 'collection includes exploration, combat, sports, greetings, dances, and '
+      + 'advanced movement such as Running Dive Roll, Run Backwards, Strafe, and '
+      + 'Turning, with Blitz slashes, Sliding Dash trails, and Finishing Leap '
+      + 'bursts of light in the combat presentation.',
     referenceImage: `${BASE}references/sora.png`,
     referenceKind: 'image',
     sourcePath: 'src/demos/sora/soraShowcase.ts',

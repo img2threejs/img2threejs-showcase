@@ -85,15 +85,15 @@ export const SORA_CLIPS: readonly SoraClipDescriptor[] = [
   namedClip('Turning', 'Turning', 1.2, 'locomotion'),
 ];
 
-/** Standalone outfit control; the showcase performs the transformation. */
+/** Standalone character control; the showcase performs the transformation. */
 export const OUTFIT_CHANGE_ID = 'outfit-change';
 
 export interface SoraActionDescriptor extends SoraClipDescriptor {
-  /** True for buttons that toggle the active skin instead of playing a clip. */
+  /** True for the button that changes the active character instead of playing a clip. */
   synthetic?: boolean;
 }
 
 export const SORA_ACTIONS: readonly SoraActionDescriptor[] = [
   ...SORA_CLIPS.map<SoraActionDescriptor>((c) => ({ ...c })),
-  { id: OUTFIT_CHANGE_ID, label: 'Switch Skin (Outfit →)', duration: 2.2, group: 'social', synthetic: true, oneShot: true },
+  { id: OUTFIT_CHANGE_ID, label: 'Switch Character', duration: 2.2, group: 'social', synthetic: true, oneShot: true },
 ];
