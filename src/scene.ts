@@ -96,6 +96,8 @@ export interface ProvenanceInfo {
 }
 
 const isMesh = (o: THREE.Object3D): o is THREE.Mesh => (o as THREE.Mesh).isMesh === true;
+const isSkinnedMesh = (o: THREE.Object3D): o is THREE.SkinnedMesh =>
+  (o as THREE.SkinnedMesh).isSkinnedMesh === true;
 
 /** A mesh that carries real geometry — i.e. not one of the inspector's own overlay clones. */
 function isRealMesh(o: THREE.Object3D): o is THREE.Mesh {
@@ -1047,13 +1049,29 @@ export class Viewer {
     if (!this.highlightMat) return;
     const targets: THREE.Mesh[] = [];
     node.traverse((c) => { if (isRealMesh(c)) targets.push(c); });
-    for (const t of targets) {
-      const glow = new THREE.Mesh(t.geometry, this.highlightMat);
+    for (const target of targets) {
+      let glow: THREE.Mesh;
+      let highlightParent: THREE.Object3D = target;
+      if (isSkinnedMesh(target)) {
+        const skinnedGlow = new THREE.SkinnedMesh(target.geometry, this.highlightMat);
+        skinnedGlow.position.copy(target.position);
+        skinnedGlow.quaternion.copy(target.quaternion);
+        skinnedGlow.scale.copy(target.scale);
+        skinnedGlow.bindMode = target.bindMode;
+        skinnedGlow.bind(target.skeleton, target.bindMatrix);
+        skinnedGlow.boundingBox = target.boundingBox?.clone() ?? null;
+        skinnedGlow.boundingSphere = target.boundingSphere?.clone() ?? null;
+        skinnedGlow.frustumCulled = false;
+        glow = skinnedGlow;
+        highlightParent = target.parent ?? target;
+      } else {
+        glow = new THREE.Mesh(target.geometry, this.highlightMat);
+      }
       glow.userData.isHighlight = true;
       // Never an explode part and never pickable — it is a tint, not geometry.
       glow.userData.explodeWithParent = true;
       glow.renderOrder = 999;
-      t.add(glow);
+      highlightParent.add(glow);
       this.highlightMeshes.push(glow);
     }
   }
@@ -1067,6 +1085,14 @@ export class Viewer {
     this.restoreHidden();
     const keep = new Set<THREE.Object3D>();
     this.selection!.object.traverse((o) => keep.add(o));
+    // A selectable skinned segment can live under a non-rendering shell that
+    // owns its shared skeleton. Keep that ownership chain alive while hiding
+    // sibling segments, otherwise isolating the segment hides its own bones.
+    let ancestor = this.selection!.object.parent;
+    while (ancestor && ancestor !== this.inspectRoot) {
+      keep.add(ancestor);
+      ancestor = ancestor.parent;
+    }
     this.inspectRoot!.traverse((o) => {
       if (!isRealMesh(o) || keep.has(o) || !o.visible) return;
       o.visible = false;
@@ -1088,9 +1114,23 @@ export class Viewer {
     this.hiddenByIsolate.length = 0;
   }
 
-  /** Ease the camera onto a part's bounding sphere. Remembers the pose to come back to. */
+  /** Ease the camera onto a part's current animated bounds. Remembers the pose to come back to. */
   private focusOn(node: THREE.Object3D): void {
-    const box = new THREE.Box3().setFromObject(node);
+    const box = new THREE.Box3().makeEmpty();
+    if (isSkinnedMesh(node)) {
+      node.updateWorldMatrix(true, false);
+      const index = node.geometry.getIndex();
+      const position = node.geometry.getAttribute('position');
+      const point = new THREE.Vector3();
+      const count = index?.count ?? position?.count ?? 0;
+      for (let offset = 0; offset < count; offset++) {
+        const vertex = index ? index.getX(offset) : offset;
+        node.getVertexPosition(vertex, point);
+        box.expandByPoint(point.applyMatrix4(node.matrixWorld));
+      }
+    } else {
+      box.setFromObject(node);
+    }
     if (box.isEmpty()) return;
     if (!this.camRest) {
       this.camRest = {

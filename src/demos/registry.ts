@@ -1557,7 +1557,55 @@ const authored: CatalogEntry[] = [
       };
     },
   },
-];
+  {
+    id: 'sora',
+    updatedAt: '2026-09-18',
+    title: 'Sora ↔ Roxas',
+    subjectClass: 'character',
+    blurb:
+      'Sora and Roxas share one animated showcase with a luminous head-to-toe '
+      + 'character transformation between them. Sora keeps his spiky brown hair, '
+      + 'bright blue eyes, oversized shoes, and black-and-red adventurer outfit; '
+      + 'Roxas is distinguished by blond hair, a white jacket with checker trim, '
+      + 'grey trousers, and his own facial details. Their complete animation '
+      + 'collection includes exploration, combat, sports, greetings, dances, and '
+      + 'advanced movement such as Running Dive Roll, Run Backwards, Strafe, and '
+      + 'Turning, with Blitz slashes, Sliding Dash trails, and Finishing Leap '
+      + 'bursts of light in the combat presentation.',
+    referenceImage: `${BASE}references/sora.png`,
+    referenceKind: 'image',
+    sourcePath: 'src/demos/sora/soraShowcase.ts',
+    sourceUrl: `${REPO}/src/demos/sora/soraShowcase.ts`,
+    generatedWith:
+      'img2threejs 1.5.2 · playground · Hyper3D MCP measurement · GLB fast lane · synthetic transformation VFX',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'placeholder',
+    cameraPosition: [1.7695, 1.045, 5.0558],
+    cameraTarget: [0, 0.95, 0],
+    cameraFov: 30,
+    accent: '#9adcff',
+    backgroundGradient: { inner: '#1b1322', outer: '#05060b' },
+    exposure: 1.0,
+    environmentIntensity: 0.9,
+    toneMapping: 'aces',
+    turntable: true,
+    loadRuntime: async () => {
+      const [{ createSoraShowcase }, { prewarmSora }] = await Promise.all([
+        import('./sora/soraShowcase'),
+        import('./sora/createSoraModel'),
+      ]);
+      return {
+        prewarm: () => prewarmSora().then(() => undefined),
+        build: (scene) => {
+          const group = createSoraShowcase();
+          scene.add(group);
+          return group;
+        },
+      };
+    },
+  },
+ ];
 
 /**
  * The gallery, newest first.

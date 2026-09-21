@@ -1994,6 +1994,12 @@ html[data-intro='pending'] .intro-word { animation: intro-word-in 430ms var(--ea
 
    The base `.badge` rules live here because the redesign dropped them while `demo.ts` still emits
    `class="badge"`, so every badge in the gallery was rendering as bare inline text. */
+.demo-meta .badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -2110,6 +2116,118 @@ html[data-intro='pending'] .intro-word { animation: intro-word-in 430ms var(--ea
 
 .demo-meta p {
   margin: 0;
+}
+
+@keyframes demo-outfit-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent),
+      0 0 1.2rem color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 75%, transparent),
+      0 0 2rem color-mix(in srgb, var(--accent) 42%, transparent);
+  }
+}
+
+.demo-outfit-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 72%, var(--border));
+  border-radius: 0.7rem;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--accent) 20%, rgba(0, 0, 0, 0.2)),
+      rgba(0, 0, 0, 0.28));
+  animation: demo-outfit-glow 2.4s ease-in-out infinite;
+}
+
+.demo-outfit-switch[hidden] {
+  display: none;
+}
+
+.demo-outfit-switch-btn {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  min-height: 3.35rem;
+  padding: 0.75rem 0.9rem;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--accent) 82%, white);
+  background: color-mix(in srgb, var(--accent) 24%, rgba(8, 11, 18, 0.96));
+  color: var(--text);
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
+.demo-outfit-switch-btn::before {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 20%,
+    color-mix(in srgb, white 38%, transparent) 48%,
+    transparent 76%
+  );
+  content: '';
+  opacity: 0.55;
+  transform: translateX(-120%);
+  transition: transform 0.55s ease;
+}
+
+.demo-outfit-switch-btn:hover:not(:disabled)::before {
+  transform: translateX(120%);
+}
+
+.demo-outfit-switch-btn:disabled {
+  cursor: wait;
+  opacity: 0.92;
+}
+
+.demo-outfit-switch-btn.is-transforming {
+  border-color: white;
+  background: color-mix(in srgb, var(--accent) 48%, rgba(8, 11, 18, 0.96));
+}
+
+.demo-outfit-switch-glyph {
+  position: relative;
+  z-index: 1;
+  color: white;
+  font-size: 1.25rem;
+  text-shadow: 0 0 0.8rem var(--accent);
+}
+
+.demo-outfit-switch-label,
+.demo-outfit-switch-hint {
+  position: relative;
+  z-index: 1;
+}
+
+.demo-outfit-switch-label {
+  text-align: left;
+}
+
+.demo-outfit-switch-hint {
+  color: color-mix(in srgb, var(--accent) 78%, white);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-outfit-switch {
+    animation: none;
+  }
+
+  .demo-outfit-switch-btn::before {
+    transition: none;
+  }
 }
 
 .demo-animations {
