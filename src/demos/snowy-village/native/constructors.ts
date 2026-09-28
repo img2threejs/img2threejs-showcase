@@ -52,6 +52,21 @@ export interface NativeModel {
   readonly ownership: NativeResourceOwnership;
 }
 
+const HYPER3D_MESH_PREFIX = 'hyper3d_mesh_';
+const PROCEDURAL_MESH_PREFIX = 'procedural-img2threejs_mesh_';
+// Preserve these two authored meshes; Three appends the primitive suffix (for example, :0).
+const PRESERVED_HYPER3D_MESH_NAMES = new Set([
+  'hyper3d_mesh_297a4bb9-ceab-4c9f-940d-fd78631b1cec',
+  'hyper3d_mesh_f5ae0d3a-9839-44ac-a100-c4761df806a5',
+]);
+
+function nativePrimitiveName(meshName: string, primitiveIndex: number): string {
+  const name = meshName.startsWith(HYPER3D_MESH_PREFIX) && !PRESERVED_HYPER3D_MESH_NAMES.has(meshName)
+    ? PROCEDURAL_MESH_PREFIX + meshName.slice(HYPER3D_MESH_PREFIX.length)
+    : meshName;
+  return name + ':' + primitiveIndex;
+}
+
 const COMPONENTS: Record<string, number> = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT2: 4, MAT3: 9, MAT4: 16 };
 type NumericArray = Int8Array | Uint8Array | Int16Array | Uint16Array | Uint32Array | Float32Array;
 type ArrayConstructor = { new (buffer: ArrayBuffer, byteOffset: number, length: number): NumericArray; BYTES_PER_ELEMENT: number };
@@ -265,7 +280,7 @@ export function createNativeModel(asset: NativeAsset, decodedImages: NativeDecod
           const material = matRec ? makeMaterial(asset, matRec, variant, decodedImages, materials, textures) : new MeshStandardMaterial();
           if (!matRec) materials.push(material);
           const primitiveObject = skinned ? new SkinnedMesh(geometry, material) : new Mesh(geometry, material);
-          primitiveObject.name = mesh.name ? `${mesh.name}:${primitive.sourceIndex}` : '';
+          primitiveObject.name = mesh.name ? nativePrimitiveName(String(mesh.name), primitive.sourceIndex as number) : '';
           (parent as Group).add(primitiveObject);
         }
       }

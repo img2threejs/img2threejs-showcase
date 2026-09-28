@@ -4,10 +4,22 @@ import {
   preloadNativeCampfire,
   type NativeCoreRole,
 } from "./prewarm";
+import { createNativeModel } from "./constructors";
 import type { NativeAsset } from "./schema";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
+}
+
+function meshObjectNames(role: NativeCoreRole): string[] {
+  const prepared = getPreparedNativeRole(role);
+  const model = createNativeModel(prepared.asset, prepared.images);
+  const names: string[] = [];
+  model.root.traverse((object) => {
+    if ((object as { isMesh?: boolean }).isMesh) names.push(object.name);
+  });
+  model.ownership.dispose();
+  return names;
 }
 
 // Runtime-selected imports intentionally exercise the generated role-module boundary used by prewarm.
@@ -59,6 +71,12 @@ for (const role of coreRoles) {
     assert(prepared.images[image.sourceIndex], `${role} image ${image.sourceIndex} must have a decoded bitmap`);
   }
 }
+const characterMeshNames = meshObjectNames("character");
+assert(characterMeshNames.includes("hyper3d_mesh_297a4bb9-ceab-4c9f-940d-fd78631b1cec:0"), "the named character mesh keeps its Hyper3D identity");
+const houseMeshNames = meshObjectNames("house");
+assert(houseMeshNames.includes("hyper3d_mesh_f5ae0d3a-9839-44ac-a100-c4761df806a5:0"), "the named house mesh keeps its Hyper3D identity");
+const rockMeshNames = meshObjectNames("rock");
+assert(rockMeshNames.length > 0 && rockMeshNames.every((name) => name.startsWith("procedural-img2threejs_mesh_")), "non-exempt native meshes receive procedural names");
 assert(decodedCount > 0, "the injected image decoder must be exercised");
 
 let campfireRejected = false;
@@ -75,6 +93,6 @@ assert(getPreparedNativeRole("character") === ready.character, "campfire failure
 
 failCampfire = false;
 const retriedCampfire = await preloadNativeCampfire();
-assert(retriedCampfire.asset === campfireAsset, "a rejected campfire preload must clear its cache for explicit retry");
+assert(await preloadNativeCampfire() === retriedCampfire, "a successful campfire retry must be cached");
 assert(getPreparedNativeRole("character") === ready.character, "campfire retry must not change core role readiness");
 console.log(`native prewarm smoke passed: ${coreRoles.length} core roles; ${decodedCount} images decoded; campfire failure isolated and retried`);
