@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { MeshBVH, acceleratedRaycast, disposeBoundsTree } from 'three-mesh-bvh';
 
 const FLAKE_COUNT = 240;
 const AREA_RADIUS = 6.3;
@@ -102,9 +103,31 @@ export function createSnowyVillageSnowfallVfx(parent: THREE.Object3D): SnowyVill
   parent.add(flakes);
 
   const raycaster = new THREE.Raycaster();
+  raycaster.firstHitOnly = true;
+
   const rayOrigin = new THREE.Vector3();
   const rayDirection = new THREE.Vector3();
   const intersections: THREE.Intersection[] = [];
+  const originalHouseRaycasts = new Map<THREE.Mesh, THREE.Mesh['raycast']>();
+  const houseBvhGeometries = new Set<THREE.BufferGeometry>();
+  let acceleratedHouseMesh: THREE.Object3D | null = null;
+  const prepareHouseRaycasts = (houseMesh: THREE.Object3D): void => {
+    if (acceleratedHouseMesh === houseMesh) return;
+    acceleratedHouseMesh = houseMesh;
+    houseMesh.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const geometry = object.geometry;
+      if (!geometry.boundsTree) {
+        geometry.boundsTree = new MeshBVH(geometry, { indirect: true, verbose: false });
+        houseBvhGeometries.add(geometry);
+      }
+      if (object.raycast !== acceleratedRaycast) {
+        originalHouseRaycasts.set(object, object.raycast);
+        object.raycast = acceleratedRaycast;
+      }
+    });
+  };
+
   let windX = 0;
   let windZ = 0;
   let targetWindX = 0;
@@ -132,6 +155,8 @@ export function createSnowyVillageSnowfallVfx(parent: THREE.Object3D): SnowyVill
   return {
     update(delta, elapsed, staticBounds, dynamicBounds, houseMesh, fireBounds): void {
       if (disposed) return;
+      if (houseMesh && houseMesh !== acceleratedHouseMesh) prepareHouseRaycasts(houseMesh);
+
       const dt = Math.min(0.05, Math.max(0, delta));
       gustTime -= dt;
       if (gustTime <= 0) {
@@ -239,6 +264,12 @@ export function createSnowyVillageSnowfallVfx(parent: THREE.Object3D): SnowyVill
     dispose(): void {
       if (disposed) return;
       disposed = true;
+      for (const [mesh, raycast] of originalHouseRaycasts) mesh.raycast = raycast;
+      for (const geometry of houseBvhGeometries) disposeBoundsTree.call(geometry);
+      originalHouseRaycasts.clear();
+      houseBvhGeometries.clear();
+      acceleratedHouseMesh = null;
+
       parent.remove(flakes);
       geometry.dispose();
       material.dispose();

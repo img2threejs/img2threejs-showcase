@@ -665,13 +665,14 @@ export function installSnowyVillageLights(scene: THREE.Scene): void {
   const sun = new THREE.DirectionalLight(0xffe5bd, 0.75);
   sun.position.set(-5, 9, 6);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(4096, 4096);
-  sun.shadow.camera.left = -160;
-  sun.shadow.camera.right = 160;
-  sun.shadow.camera.top = 160;
-  sun.shadow.camera.bottom = -160;
+  // A compact light-space volume keeps shadow texels dense and avoids a 320-unit shimmer grid.
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = -16;
+  sun.shadow.camera.right = 16;
+  sun.shadow.camera.top = 16;
+  sun.shadow.camera.bottom = -16;
   sun.shadow.camera.near = 0.1;
-  sun.shadow.camera.far = 384;
+  sun.shadow.camera.far = 256;
   sun.shadow.bias = -0.0001;
   sun.shadow.normalBias = 0.005;
   sun.shadow.radius = 0.5;

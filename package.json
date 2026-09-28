@@ -20,7 +20,8 @@
   },
   "dependencies": {
     "meshoptimizer": "~0.18.1",
-    "three": "^0.169.0"
+    "three": "^0.169.0",
+    "three-mesh-bvh": "^0.9.15"
   },
   "devDependencies": {
     "@types/three": "^0.169.0",
