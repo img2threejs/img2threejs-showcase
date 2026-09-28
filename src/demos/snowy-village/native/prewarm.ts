@@ -1,5 +1,15 @@
 import type { NativeAsset } from "./schema";
 import type { NativeDecodedImages } from "./constructors";
+import characterDataUrl from "./data/character.mjs?url";
+import gateDataUrl from "./data/gate.mjs?url";
+import houseDataUrl from "./data/house.mjs?url";
+import rockDataUrl from "./data/rock.mjs?url";
+import treeDataUrl from "./data/tree.mjs?url";
+import idleDataUrl from "./data/idle.mjs?url";
+import walkDataUrl from "./data/walk.mjs?url";
+import runDataUrl from "./data/run.mjs?url";
+import boxingDataUrl from "./data/boxing.mjs?url";
+import campfireDataUrl from "./data/campfire.mjs?url";
 
 export type NativeRole = "character" | "gate" | "house" | "rock" | "tree" | "idle" | "walk" | "run" | "boxing" | "campfire";
 export type NativeCoreRole = Exclude<NativeRole, "campfire">;
@@ -10,20 +20,27 @@ export interface PreparedNativeRole {
   readonly images: NativeDecodedImages;
 }
 
+type NativeRoleModule = Record<string, NativeAsset>;
 type RoleLoader = () => Promise<NativeAsset>;
 
-// Explicit dynamic imports keep each generated role payload in its own Vite chunk.
+async function importRoleAsset(url: string, exportName: string): Promise<NativeAsset> {
+  const module = await import(/* @vite-ignore */ url) as NativeRoleModule;
+  return module[exportName];
+}
+
+// URL imports leave each generated multi-megabyte payload out of Rollup's JavaScript transform;
+// each role module is still imported only when its existing loader is requested.
 const ROLE_LOADERS: Record<NativeRole, RoleLoader> = {
-  character: async () => (await import("./data/character.mjs") as { CHARACTER_DATA: NativeAsset }).CHARACTER_DATA,
-  gate: async () => (await import("./data/gate.mjs") as { GATE_DATA: NativeAsset }).GATE_DATA,
-  house: async () => (await import("./data/house.mjs") as { HOUSE_DATA: NativeAsset }).HOUSE_DATA,
-  rock: async () => (await import("./data/rock.mjs") as { ROCK_DATA: NativeAsset }).ROCK_DATA,
-  tree: async () => (await import("./data/tree.mjs") as { TREE_DATA: NativeAsset }).TREE_DATA,
-  idle: async () => (await import("./data/idle.mjs") as { IDLE_DATA: NativeAsset }).IDLE_DATA,
-  walk: async () => (await import("./data/walk.mjs") as { WALK_DATA: NativeAsset }).WALK_DATA,
-  run: async () => (await import("./data/run.mjs") as { RUN_DATA: NativeAsset }).RUN_DATA,
-  boxing: async () => (await import("./data/boxing.mjs") as { BOXING_DATA: NativeAsset }).BOXING_DATA,
-  campfire: async () => (await import("./data/campfire.mjs") as { CAMPFIRE_DATA: NativeAsset }).CAMPFIRE_DATA,
+  character: () => importRoleAsset(characterDataUrl, "CHARACTER_DATA"),
+  gate: () => importRoleAsset(gateDataUrl, "GATE_DATA"),
+  house: () => importRoleAsset(houseDataUrl, "HOUSE_DATA"),
+  rock: () => importRoleAsset(rockDataUrl, "ROCK_DATA"),
+  tree: () => importRoleAsset(treeDataUrl, "TREE_DATA"),
+  idle: () => importRoleAsset(idleDataUrl, "IDLE_DATA"),
+  walk: () => importRoleAsset(walkDataUrl, "WALK_DATA"),
+  run: () => importRoleAsset(runDataUrl, "RUN_DATA"),
+  boxing: () => importRoleAsset(boxingDataUrl, "BOXING_DATA"),
+  campfire: () => importRoleAsset(campfireDataUrl, "CAMPFIRE_DATA"),
 };
 
 const CORE_ROLES: readonly NativeCoreRole[] = ["character", "gate", "house", "rock", "tree", "idle", "walk", "run", "boxing"];
