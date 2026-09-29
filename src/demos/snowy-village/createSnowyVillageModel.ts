@@ -10,6 +10,18 @@ interface AnimationChoice {
   label: string;
   loop: boolean;
 }
+interface GatePassageMeasurement {
+  worldToLocal: THREE.Matrix4;
+  frameBounds: THREE.Box3;
+  lowPivot: THREE.Group;
+  highPivot: THREE.Group;
+  lowHingeX: number;
+  highHingeX: number;
+  lowLeafSpan: number;
+  highLeafSpan: number;
+  halfExtents: THREE.Vector3;
+  clearance: number;
+}
 
 const ACTIONS: readonly AnimationChoice[] = [
   { id: 'idle', label: 'Idle', loop: true },
@@ -483,13 +495,13 @@ interface SnowyVillageLightingController {
 
 const NIGHT_SKY = new THREE.Color(0x0a1020);
 const DUSK_SKY = new THREE.Color(0xbfc3e1);
-const DAY_SKY = new THREE.Color(0xdceaff);
+const DAY_SKY = new THREE.Color(0xcbd9e8);
 const NIGHT_GROUND = new THREE.Color(0x0c131f);
 const DUSK_GROUND = new THREE.Color(0xddd5e7);
-const DAY_GROUND = new THREE.Color(0xdce8f4);
+const DAY_GROUND = new THREE.Color(0xc8d2df);
 const NIGHT_BACKGROUND = [new THREE.Color(0x0e1727), new THREE.Color(0x05080f)];
 const DUSK_BACKGROUND = [new THREE.Color(0xbfc3e1), new THREE.Color(0xa5b0ce)];
-const DAY_BACKGROUND = [new THREE.Color(0xdceaff), new THREE.Color(0xb7c9e2)];
+const DAY_BACKGROUND = [new THREE.Color(0xcbdcf0), new THREE.Color(0xa9bad0)];
 function isCampfireNight(time: number): boolean {
   const hour = wrapDayTime(time);
   return hour >= 19 || hour < 5;
@@ -499,11 +511,11 @@ const GROUND_COLOR = new THREE.Color();
 const BACKGROUND_INNER = new THREE.Color();
 const BACKGROUND_OUTER = new THREE.Color();
 const SUN_WARM = new THREE.Color(0xffe5bd);
-const SUN_DAY = new THREE.Color(0xfff4dc);
+const SUN_DAY = new THREE.Color(0xffd796);
 const SUN_DUSK = new THREE.Color(0xd8cfff);
 const NIGHT_HEMISPHERE = 0.08;
 const DUSK_HEMISPHERE = 0.35;
-const DAY_HEMISPHERE = 1.05;
+const DAY_HEMISPHERE = 0.62;
 
 function wrapDayTime(time: number): number {
   return THREE.MathUtils.euclideanModulo(time, 24);
@@ -636,12 +648,14 @@ function applySnowyVillageLighting(controller: SnowyVillageLightingController, t
   controller.hemisphere.groundColor.copy(GROUND_COLOR);
   controller.hemisphere.intensity = THREE.MathUtils.lerp(NIGHT_HEMISPHERE, DAY_HEMISPHERE, daylight);
   controller.hemisphere.intensity = THREE.MathUtils.lerp(controller.hemisphere.intensity, DUSK_HEMISPHERE, twilight);
-  controller.sun.intensity = THREE.MathUtils.lerp(0.015, 1.65, daylight);
+  controller.sun.intensity = THREE.MathUtils.lerp(0.015, 1.15, daylight);
   controller.sun.intensity = THREE.MathUtils.lerp(controller.sun.intensity, 0.18, twilight);
   controller.sun.castShadow = controller.sun.intensity > 0.05;
   controller.sun.color.copy(SUN_WARM).lerp(SUN_DAY, daylight).lerp(SUN_DUSK, twilight);
-  controller.sun.position.set(-5 * Math.cos((hour / 24) * Math.PI * 2), 9, 6).multiplyScalar(16);
-  const environment = THREE.MathUtils.lerp(0.03, 0.82, daylight);
+  controller.sun.position.set(-5 * Math.cos((hour / 24) * Math.PI * 2), 9, 6)
+    .multiplyScalar(16)
+    .add(controller.sun.target.position);
+  const environment = THREE.MathUtils.lerp(0.03, 0.4, daylight);
   controller.sun.userData.environmentIntensity = THREE.MathUtils.lerp(environment, 0.1, twilight);
   const lampFactor = lampFactorForTime(hour);
   for (const emitter of controller.emitters) {
@@ -678,6 +692,8 @@ export function installSnowyVillageLights(scene: THREE.Scene): void {
   sun.shadow.radius = 0.5;
   sun.shadow.camera.updateProjectionMatrix();
   scene.add(sun);
+  sun.target.position.set(0.8, 2.1, -0.9);
+  scene.add(sun.target);
   const fogColor = scene.background instanceof THREE.Color ? scene.background : BACKGROUND_OUTER;
   const fog = scene.background === null ? null : new THREE.Fog(fogColor, 22, 88);
   if (fog) scene.fog = fog;
@@ -802,6 +818,7 @@ export function createSnowyVillageModel(scene: THREE.Scene): THREE.Group {
   const PLAYER_HALF_EXTENT = 0.17;
   const PLAYER_HEIGHT = SNOWY_VILLAGE_CHARACTER_HEIGHT;
   const PLAYER_STEP_HEIGHT = 0.18;
+  const GATE_PASSAGE_CLEARANCE = 0.04;
   const FIRE_SCALE = 0.25;
   const FIRE_HALF_EXTENT = 0.38;
   const fireListeners = new Set<(state: SnowyVillageCampfireState) => void>();
@@ -822,6 +839,8 @@ export function createSnowyVillageModel(scene: THREE.Scene): THREE.Group {
   const dynamicColliderBounds: THREE.Box3[] = [new THREE.Box3()];
   const dynamicColliderLabels: string[] = [houseRoot.name];
   const playerCollisionBounds = new THREE.Box3();
+  let gatePassage: GatePassageMeasurement | null = null;
+  const gatePassagePlayerCenter = new THREE.Vector3();
 
   const addStaticCollider = (object: THREE.Object3D): void => {
     object.updateWorldMatrix(true, true);
@@ -908,21 +927,41 @@ export function createSnowyVillageModel(scene: THREE.Scene): THREE.Group {
       dynamicColliderBounds[index].setFromObject(object);
     }
   };
+  const fitsOpenGatePassage = (x: number, z: number, bottom: number, top: number): boolean => {
+    const passage = gatePassage;
+    if (!gateOpen || !passage) return false;
+    gatePassagePlayerCenter.set(x, (bottom + top) * 0.5, z).applyMatrix4(passage.worldToLocal);
+    const lowerTipX = passage.lowHingeX + passage.lowLeafSpan * Math.cos(Math.abs(passage.lowPivot.rotation.y));
+    const upperTipX = passage.highHingeX - passage.highLeafSpan * Math.cos(Math.abs(passage.highPivot.rotation.y));
+    const minCenterX = lowerTipX + passage.halfExtents.x + passage.clearance;
+    const maxCenterX = upperTipX - passage.halfExtents.x - passage.clearance;
+    if (minCenterX > maxCenterX) return false;
+    const leafSweepDepth = Math.max(passage.lowLeafSpan, passage.highLeafSpan)
+      * Math.sin(Math.max(Math.abs(passage.lowPivot.rotation.y), Math.abs(passage.highPivot.rotation.y)));
+    const center = gatePassagePlayerCenter;
+    const half = passage.halfExtents;
+    return center.x >= minCenterX && center.x <= maxCenterX
+      && center.y - half.y >= passage.frameBounds.min.y - passage.clearance
+      && center.y + half.y <= passage.frameBounds.max.y + passage.clearance
+      && center.z + half.z >= passage.frameBounds.min.z - leafSweepDepth - passage.clearance
+      && center.z - half.z <= passage.frameBounds.max.z + leafSweepDepth + passage.clearance;
+  };
 
   const collidesAt = (x: number, z: number): boolean => {
     const bottom = characterRoot.position.y;
     const top = bottom + PLAYER_HEIGHT;
     playerCollisionBounds.min.set(x - PLAYER_HALF_EXTENT, bottom, z - PLAYER_HALF_EXTENT);
     playerCollisionBounds.max.set(x + PLAYER_HALF_EXTENT, top, z + PLAYER_HALF_EXTENT);
+    const canUseOpenGateGap = fitsOpenGatePassage(x, z, bottom, top);
     for (let index = 0; index < staticCollisionBounds.length; index += 1) {
-      
+      if (canUseOpenGateGap && staticCollisionLabels[index] === 'snow gate frame') continue;
       const bounds = staticCollisionBounds[index];
       if (bounds.max.y <= bottom + PLAYER_STEP_HEIGHT || bounds.min.y >= top) continue;
       if (playerCollisionBounds.intersectsBox(bounds)) return true;
     }
     for (let index = 0; index < dynamicColliderBounds.length; index += 1) {
       const object = dynamicColliderObjects[index];
-      if (gateOpen && (object === gateLeftPivot || object === gateRightPivot)) continue;
+      if (canUseOpenGateGap && (object === gateLeftPivot || object === gateRightPivot)) continue;
       const bounds = dynamicColliderBounds[index];
       if (bounds.max.y <= bottom + PLAYER_STEP_HEIGHT || bounds.min.y >= top) continue;
       if (playerCollisionBounds.intersectsBox(bounds)) return true;
@@ -1624,12 +1663,33 @@ export function createSnowyVillageModel(scene: THREE.Scene): THREE.Group {
     adapterGeometries.push(geometry);
   }
   panelMesh.visible = false;
+  gateModel.root.updateMatrixWorld(true);
+  const gateFrameLocalBounds = localBounds(gateModel.root);
   gatePlacement = placeSnowProp(root, gateModel.root, 'snow gate placement', -3.45, 0, 3.1);
   const gateMount = gatePlacement as unknown as THREE.Group;
   attachLampEmitter(gateMount, lighting, 'west gate lantern', new THREE.Vector3(-0.210, 1.050, 1.310), 0xffb85e, 1.55, 5.2, 1.7, 0.28, 0.22);
   attachLampEmitter(gateMount, lighting, 'east gate lantern', new THREE.Vector3(-0.160, 1.220, -1.600), 0xffb85e, 1.55, 5.2, 1.7, 0.28, 0.22);
   addDynamicCollider(leftPivot); addDynamicCollider(rightPivot);
   root.updateMatrixWorld(true); gateModel.root.updateWorldMatrix(true, true);
+  const gateWorldScale = gateModel.root.getWorldScale(new THREE.Vector3());
+  const lowPivot = leftPivot.position.x <= rightPivot.position.x ? leftPivot : rightPivot;
+  const highPivot = lowPivot === leftPivot ? rightPivot : leftPivot;
+  gatePassage = {
+    worldToLocal: gateModel.root.matrixWorld.clone().invert(),
+    frameBounds: gateFrameLocalBounds,
+    lowPivot,
+    highPivot,
+    lowHingeX: lowPivot.position.x,
+    highHingeX: highPivot.position.x,
+    lowLeafSpan: Math.abs(seamX - lowPivot.position.x),
+    highLeafSpan: Math.abs(highPivot.position.x - seamX),
+    halfExtents: new THREE.Vector3(
+      PLAYER_HALF_EXTENT / Math.abs(gateWorldScale.x),
+      PLAYER_HEIGHT / (2 * Math.abs(gateWorldScale.y)),
+      PLAYER_HALF_EXTENT / Math.abs(gateWorldScale.z),
+    ),
+    clearance: GATE_PASSAGE_CLEARANCE / Math.min(Math.abs(gateWorldScale.x), Math.abs(gateWorldScale.z)),
+  };
   for (const part of gateModel.root.children) {
     if (part === leftPivot || part === rightPivot || part === panelNode) continue;
     const bounds = new THREE.Box3().setFromObject(part);
