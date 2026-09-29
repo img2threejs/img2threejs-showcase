@@ -166,6 +166,11 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
   const camera = new THREE.PerspectiveCamera(36, 1, 0.05, 80);
   camera.position.set(0, 2.18, 4.05);
   const renderer = new WebGPURenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
+  // The built-in library keys by constructor.name, which production minification can rename.
+  const materialLibrary = renderer.nodes.library;
+  if (!materialLibrary.getMaterialNodeClass('MeshStandardMaterial')) {
+    materialLibrary.addType(THREE.MeshStandardNodeMaterial, 'MeshStandardMaterial', materialLibrary.materialNodes);
+  }
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.04;
