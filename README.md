@@ -60,7 +60,7 @@ of truth is [`src/demos/registry.ts`](src/demos/registry.ts).
 
 | Study | What to explore |
 | --- | --- |
-| [Man Robot · Segment Color Studio](https://img2threejs.io/#/demo/man-robot-studio) | A source-preserving 65-joint robot with six color regions, rigged clips, and an electric-green scan. |
+| [Man Robot · Segment Color Studio](https://img2threejs.io/#/demo/man-robot-studio) | A source-preserving 65-joint robot with six color regions, rigged clips, an electric-green scan, and a WebGPU-first renderer with an automatic WebGL2 fallback. |
 | [Ocean Blue PRS Guitar](https://img2threejs.io/#/demo/prs-ocean) | Measured vertex color and PBR samples preserved in code, six addressable strings, and opt-in water-flow actions. |
 | [Groot — Heart of the Forest](https://img2threejs.io/#/demo/monster-tree) | A navigable woodland scene with retargeted movement, grounded combat, living-wood effects, and lantern spirits. |
 | [Mars Cat](https://img2threejs.io/#/demo/mars-cat) | Seventeen measured regions streamed at three quality levels without shipping the reference GLB, textures, or UV atlas. |

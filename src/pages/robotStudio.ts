@@ -1,4 +1,5 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
+import { WebGPURenderer } from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import type { DemoEntry } from '../demos/registry';
@@ -164,16 +165,14 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(36, 1, 0.05, 80);
   camera.position.set(0, 2.18, 4.05);
-  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+  const renderer = new WebGPURenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.04;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.domElement.setAttribute('aria-label', 'Robot model. Drag to orbit and click a surface to select its segment.');
   renderer.domElement.tabIndex = 0;
-  renderer.domElement.className = 'robot-webgl-canvas';
+  renderer.domElement.className = 'robot-renderer-canvas';
   canvasMount.appendChild(renderer.domElement);
 
   const controls = new OrbitControls(camera, renderer.domElement);
@@ -202,9 +201,17 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
   const fillLight = new THREE.DirectionalLight(0xb4e9dc, 0.8);
   fillLight.position.set(4.2, 1.8, 3.2);
   scene.add(fillLight);
+  // ShadowMaterial's fragment pipeline is invalid under the pinned Three r169 WebGPU backend.
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(24, 24),
-    new THREE.ShadowMaterial({ color: '#05080a', opacity: 0.25 }),
+    new THREE.MeshStandardMaterial({
+      color: '#05080a',
+      roughness: 1,
+      metalness: 0,
+      opacity: 0.25,
+      transparent: true,
+      depthWrite: false,
+    }),
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.004;
@@ -213,6 +220,14 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
   scene.add(floor);
 
   let disposed = false;
+  let rendererReady = false;
+  let rendererDisposed = false;
+  let rendererFailureMessage: string | null = null;
+  const disposeRenderer = (): void => {
+    if (rendererDisposed) return;
+    rendererDisposed = true;
+    renderer.dispose();
+  };
   let frame = 0;
   let runtime: RobotRuntime | null = null;
   let displayRoot: THREE.Group | null = null;
@@ -234,7 +249,7 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
   const resize = (): void => {
     const width = Math.max(1, canvasMount.clientWidth);
     const height = Math.max(1, canvasMount.clientHeight);
-    renderer.setSize(width, height, false);
+    if (rendererReady) renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
   };
@@ -243,7 +258,7 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
   resize();
 
   const renderFrame = (): void => {
-    if (disposed) return;
+    if (disposed || !rendererReady) return;
     frame = requestAnimationFrame(renderFrame);
     const delta = Math.min(clock.getDelta(), 0.1);
     if (runtime) {
@@ -269,13 +284,37 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
     controls.update();
     renderer.render(scene, camera);
   };
-  frame = requestAnimationFrame(renderFrame);
 
   const setHeaderState = (text: string, state: 'loading' | 'ready' | 'error'): void => {
     headerState.dataset.state = state;
     const statusText = headerState.querySelector('span:last-child');
     if (statusText) statusText.textContent = text;
   };
+  const showRendererFailure = (error: unknown): void => {
+    rendererFailureMessage = error instanceof Error ? error.message : 'WebGPU and WebGL2 could not initialize.';
+    loading.hidden = false;
+    loading.classList.remove('is-complete');
+    loading.classList.add('is-error');
+    loadingTitle.textContent = '3D renderer unavailable';
+    loadingCopy.textContent = rendererFailureMessage;
+    setHeaderState('Renderer unavailable', 'error');
+  };
+  void renderer.init().then(() => {
+    if (disposed) {
+      disposeRenderer();
+      return;
+    }
+    rendererReady = true;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    renderer.domElement.dataset.rendererBackend = renderer.backend.constructor.name;
+    resize();
+    frame = requestAnimationFrame(renderFrame);
+  }).catch((error: unknown) => {
+    disposeRenderer();
+    if (disposed) return;
+    showRendererFailure(error);
+    console.error('Robot showcase renderer failed:', error);
+  });
 
   const segmentColor = (segment: RobotPaintTarget): string => robotSegmentColor(segment);
   const syncSegmentRows = (): void => {
@@ -626,6 +665,10 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
   void waitForRobotModel(displayRoot).then((loadedRuntime) => {
     if (disposed || !loadedRuntime) return;
     runtime = loadedRuntime;
+    if (rendererFailureMessage) {
+      showRendererFailure(new Error(rendererFailureMessage));
+      return;
+    }
     mountSegments(runtime);
     mountClips(runtime);
     meshCount.textContent = String(runtime.meshes.length);
@@ -648,7 +691,7 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
       if (!disposed) (window as unknown as { __IMG2THREEJS_READY__?: boolean }).__IMG2THREEJS_READY__ = true;
     });
   }).catch((error: unknown) => {
-    if (disposed) return;
+    if (disposed || rendererFailureMessage) return;
     const message = error instanceof Error ? error.message : 'The robot model could not be loaded.';
     loading.classList.add('is-error');
     loadingTitle.textContent = 'Source model could not be loaded';
@@ -674,7 +717,7 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
     window.removeEventListener('keydown', onKeyDown);
     if (runtime) runtime.mixer.removeEventListener('finished', onAnimationFinished);
     if (displayRoot) disposeRobotModel(displayRoot, runtime);
-    renderer.dispose();
+    if (rendererReady) disposeRenderer();
     renderer.domElement.remove();
     const globals = window as unknown as { __IMG2THREEJS_READY__?: boolean; __ROBOT_STUDIO__?: RobotStudioDebug };
     globals.__IMG2THREEJS_READY__ = false;

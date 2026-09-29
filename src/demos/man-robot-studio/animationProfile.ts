@@ -1,4 +1,4 @@
-import { AnimationClip, FileLoader, type AnimationClipJSON } from 'three';
+import { AnimationClip, FileLoader, type AnimationClipJSON } from 'three/webgpu';
 
 /** Measured with the img2threejs 1.5.2 sampler and clip_features.py; source SHA-256 bbf93dbfd845c1d4b15e4e6bf75135606e8c8566e26dcba8d78d8b6e9741d344. */
 export const ROBOT_ANIMATION_PROFILE = [

@@ -1,6 +1,25 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import type { AnimationClipJSON } from 'three';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
+import {
+  abs,
+  clamp,
+  dot,
+  exp,
+  float,
+  fract,
+  materialEmissive,
+  max,
+  mix,
+  positionGeometry,
+  pow,
+  sin,
+  smoothstep,
+  step,
+  texture,
+  uniform,
+  vec3,
+} from 'three/webgpu';
 import { assignRobotSegments, ROBOT_SEGMENTS, type RobotSegmentBucket, type RobotSegmentId, type RobotSegmentation } from './segments';
 import { getRobotAnimationProfile, loadRobotExportedAnimationClips, loadRobotGreetingClips, ROBOT_ANIMATION_PROFILE } from './animationProfile';
 export type { RobotSegmentId } from './segments';
@@ -184,60 +203,34 @@ function cloneMeshMaterials(mesh: THREE.SkinnedMesh): void {
 
 /** Adds a one-second electric-green scan only to green texels in the source albedo. */
 function attachRobotGreenEnergyVfx(mesh: THREE.SkinnedMesh): void {
-  const timeUniform = { value: 0 };
+  const timeUniform = uniform(0);
   let patched = false;
   for (const material of materialsOf(mesh)) {
     const standard = material as THREE.MeshStandardMaterial;
     if (!standard.isMeshStandardMaterial || !standard.map) continue;
-
-    const previousOnBeforeCompile = standard.onBeforeCompile;
-    standard.onBeforeCompile = (shader, renderer) => {
-      previousOnBeforeCompile.call(standard, shader, renderer);
-      shader.uniforms.uRobotGreenVfxTime = timeUniform;
-      shader.vertexShader = shader.vertexShader
-        .replace(
-          '#include <common>',
-          '#include <common>\nvarying vec3 vRobotGreenVfxPosition;',
-        )
-        .replace(
-          '#include <begin_vertex>',
-          '#include <begin_vertex>\nvRobotGreenVfxPosition = position;',
-        );
-      shader.fragmentShader = shader.fragmentShader
-        .replace(
-          '#include <common>',
-          '#include <common>\nuniform float uRobotGreenVfxTime;\nvarying vec3 vRobotGreenVfxPosition;',
-        )
-        .replace(
-          '#include <map_fragment>',
-          `#include <map_fragment>
-float robotGreenVfxMask = 0.0;
-#ifdef USE_MAP
-  float robotGreenVfxChroma = sampledDiffuseColor.g - max(sampledDiffuseColor.r, sampledDiffuseColor.b);
-  robotGreenVfxMask = smoothstep(0.055, 0.18, robotGreenVfxChroma)
-    * smoothstep(0.10, 0.30, sampledDiffuseColor.g);
-#endif`,
-        )
-        .replace(
-          '#include <emissivemap_fragment>',
-          `#include <emissivemap_fragment>
-float robotGreenVfxCycle = fract(uRobotGreenVfxTime);
-float robotGreenVfxProgress = 1.0 - (1.0 - robotGreenVfxCycle) * (1.0 - robotGreenVfxCycle);
-float robotGreenVfxScanY = mix(-0.06, 1.06, robotGreenVfxProgress);
-float robotGreenVfxHead = 1.0 - smoothstep(0.012, 0.075, abs(vRobotGreenVfxPosition.y - robotGreenVfxScanY));
-float robotGreenVfxTrail = exp(-max(robotGreenVfxScanY - vRobotGreenVfxPosition.y, 0.0) * 7.0)
-  * step(vRobotGreenVfxPosition.y, robotGreenVfxScanY);
-float robotGreenVfxArc = 0.5 + 0.5 * sin(dot(vRobotGreenVfxPosition, vec3(41.0, 63.0, 29.0))
-  - uRobotGreenVfxTime * 42.0 + sin(vRobotGreenVfxPosition.y * 39.0 + uRobotGreenVfxTime * 8.0));
-float robotGreenVfxSpark = pow(robotGreenVfxArc, 16.0);
-vec3 robotGreenVfxColor = mix(vec3(0.08, 0.52, 0.015), vec3(0.48, 1.45, 0.12),
-  clamp(robotGreenVfxHead + robotGreenVfxTrail * 0.55, 0.0, 1.0));
-totalEmissiveRadiance += robotGreenVfxMask * robotGreenVfxColor
-  * (0.08 + robotGreenVfxHead * 1.15 + robotGreenVfxTrail * 0.32 + robotGreenVfxSpark * 0.18);`,
-        );
-    };
-    const previousProgramCacheKey = standard.customProgramCacheKey;
-    standard.customProgramCacheKey = () => `${previousProgramCacheKey.call(standard)}|robot-green-energy-vfx-v1`;
+    const albedo = texture(standard.map);
+    const greenChroma = albedo.g.sub(max(albedo.r, albedo.b));
+    const mask = smoothstep(0.055, 0.18, greenChroma)
+      .mul(smoothstep(0.10, 0.30, albedo.g));
+    const cycle = fract(timeUniform);
+    const progress = float(1).sub(float(1).sub(cycle).mul(float(1).sub(cycle)));
+    const scanY = mix(float(-0.06), float(1.06), progress);
+    const head = float(1).sub(smoothstep(0.012, 0.075, abs(positionGeometry.y.sub(scanY))));
+    const trail = exp(max(scanY.sub(positionGeometry.y), 0).mul(-7))
+      .mul(step(positionGeometry.y, scanY));
+    const arc = float(0.5).add(sin(
+      dot(positionGeometry, vec3(41, 63, 29))
+        .sub(timeUniform.mul(42))
+        .add(sin(positionGeometry.y.mul(39).add(timeUniform.mul(8)))),
+    ).mul(0.5));
+    const spark = pow(arc, 16);
+    const color = mix(vec3(0.08, 0.52, 0.015), vec3(0.48, 1.45, 0.12),
+      clamp(head.add(trail.mul(0.55)), 0, 1));
+    const intensity = float(0.08)
+      .add(head.mul(1.15))
+      .add(trail.mul(0.32))
+      .add(spark.mul(0.18));
+    Object.assign(standard, { emissiveNode: materialEmissive.add(mask.mul(color).mul(intensity)) });
     standard.needsUpdate = true;
     patched = true;
   }
@@ -361,6 +354,17 @@ function updateVertexColors(runtime: RobotRuntime, mesh: THREE.SkinnedMesh): voi
   }
   attribute.needsUpdate = true;
 }
+function cloneRobotScene(source: THREE.Group): THREE.Group {
+  // SkeletonUtils imports the main Three bundle; rebind its clone to this WebGPU Skeleton class.
+  const model = cloneSkeleton(source) as THREE.Group;
+  model.traverse((object) => {
+    const mesh = object as THREE.SkinnedMesh;
+    if (!mesh.isSkinnedMesh) return;
+    const clonedSkeleton = mesh.skeleton;
+    mesh.bind(new THREE.Skeleton(clonedSkeleton.bones, clonedSkeleton.boneInverses), mesh.bindMatrix);
+  });
+  return model;
+}
 
 function createRuntime(
   displayRoot: THREE.Group,
@@ -369,7 +373,7 @@ function createRuntime(
   exportedClips: THREE.AnimationClip[],
   namasteReferenceBodyClip: THREE.AnimationClip,
 ): RobotRuntime {
-  const model = cloneSkeleton(gltf.scene) as THREE.Group;
+  const model = cloneRobotScene(gltf.scene);
   const meshes: THREE.SkinnedMesh[] = [];
   model.traverse((object) => {
     const candidate = object as THREE.SkinnedMesh;

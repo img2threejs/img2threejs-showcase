@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 
 export const ROBOT_SEGMENTS = [
   { id: 'head', label: 'Head & neck', code: '01' },

@@ -91,7 +91,7 @@
   pointer-events: none;
 }
 .robot-canvas-mount { position: absolute; inset: 0; z-index: 1; }
-.robot-webgl-canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; outline: none; }
+.robot-renderer-canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; outline: none; }
 .robot-stage-top,
 .robot-stage-caption { position: absolute; z-index: 3; right: 24px; left: 24px; display: flex; align-items: center; justify-content: space-between; pointer-events: none; }
 .robot-stage-top { top: 22px; color: #879693; font-size: 9px; font-weight: 700; letter-spacing: 0.17em; }
