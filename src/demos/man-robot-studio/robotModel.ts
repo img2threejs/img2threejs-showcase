@@ -70,10 +70,10 @@ export function loadRobotAsset(onProgress?: (progress: RobotLoadProgress) => voi
   if (loadedAsset) return Promise.resolve(loadedAsset);
   if (!assetPromise) {
     assetPromise = (async () => {
-      const fetchJson = async (url: string): Promise<{ payload: unknown; bytes: number }> => {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Could not load the encoded robot asset: HTTP ' + response.status + '.');
-        const buffer = await response.arrayBuffer();
+      const loadEncodedJson = async (url: string): Promise<{ payload: unknown; bytes: number }> => {
+        const buffer = await new THREE.FileLoader()
+          .setResponseType('arraybuffer')
+          .loadAsync(url) as ArrayBuffer;
         const encoded = new Uint8Array(buffer);
         const isGzip = encoded[0] === 0x1f && encoded[1] === 0x8b;
         const text = isGzip
@@ -83,8 +83,8 @@ export function loadRobotAsset(onProgress?: (progress: RobotLoadProgress) => voi
       };
 
       const [sceneFile, animationFile] = await Promise.all([
-        fetchJson(ROBOT_ASSET_URL),
-        fetchJson(ROBOT_SOURCE_ANIMATIONS_URL),
+        loadEncodedJson(ROBOT_ASSET_URL),
+        loadEncodedJson(ROBOT_SOURCE_ANIMATIONS_URL),
       ]);
       const scenePayload = sceneFile.payload as RobotEncodedScenePayload;
       const animationPayload = animationFile.payload as RobotEncodedAnimationPayload;
@@ -118,30 +118,32 @@ export function loadRobotAsset(onProgress?: (progress: RobotLoadProgress) => voi
 }
 function loadRobotNamasteReferenceBodyClip(): Promise<THREE.AnimationClip> {
   if (!namasteReferencePromise) {
-    namasteReferencePromise = fetch(NAMASTE_REFERENCE_BODY_URL).then(async (response) => {
-      if (!response.ok) throw new Error('Could not load the Namaste reference body clip: HTTP ' + response.status + '.');
-      const payload = await response.json() as {
-        formatVersion: number;
-        sourceDurationSeconds: number;
-        targetDurationSeconds: number;
-        timeScale: number;
-        clip: AnimationClipJSON;
-      };
-      if (payload.formatVersion !== 1 || payload.sourceDurationSeconds !== 5
-        || payload.targetDurationSeconds !== 4 || Math.abs(payload.timeScale - 0.8) > 1e-6) {
-        throw new Error('Namaste reference clip metadata does not match the retimed source profile.');
-      }
-      const clip = THREE.AnimationClip.parse(payload.clip);
-      const trackNames = new Set(clip.tracks.map((track) => track.name));
-      const wristPositionTracks = ['mixamorigLeftHand.position', 'mixamorigRightHand.position'];
-      if (clip.duration !== 4 || clip.tracks.length !== 71 || trackNames.size !== clip.tracks.length
-        || !wristPositionTracks.every((name) => trackNames.has(name))
-        || clip.tracks.some((track) => /^mixamorig(?:Left|Right)Hand/.test(track.name)
-          && !/^mixamorig(?:Left|Right)Hand\.position$/.test(track.name))
-        || !clip.validate()) {
-        throw new Error('Namaste reference clip must contain 69 body tracks and two wrist-position tracks.');
-      }
-      return clip;
+    namasteReferencePromise = new THREE.FileLoader()
+      .setResponseType('json')
+      .loadAsync(NAMASTE_REFERENCE_BODY_URL)
+      .then((data: unknown) => {
+        const payload = data as {
+          formatVersion: number;
+          sourceDurationSeconds: number;
+          targetDurationSeconds: number;
+          timeScale: number;
+          clip: AnimationClipJSON;
+        };
+        if (payload.formatVersion !== 1 || payload.sourceDurationSeconds !== 5
+          || payload.targetDurationSeconds !== 4 || Math.abs(payload.timeScale - 0.8) > 1e-6) {
+          throw new Error('Namaste reference clip metadata does not match the retimed source profile.');
+        }
+        const clip = THREE.AnimationClip.parse(payload.clip);
+        const trackNames = new Set(clip.tracks.map((track) => track.name));
+        const wristPositionTracks = ['mixamorigLeftHand.position', 'mixamorigRightHand.position'];
+        if (clip.duration !== 4 || clip.tracks.length !== 71 || trackNames.size !== clip.tracks.length
+          || !wristPositionTracks.every((name) => trackNames.has(name))
+          || clip.tracks.some((track) => /^mixamorig(?:Left|Right)Hand/.test(track.name)
+            && !/^mixamorig(?:Left|Right)Hand\.position$/.test(track.name))
+          || !clip.validate()) {
+          throw new Error('Namaste reference clip must contain 69 body tracks and two wrist-position tracks.');
+        }
+        return clip;
     }).catch((error: unknown) => {
       namasteReferencePromise = null;
       throw error;

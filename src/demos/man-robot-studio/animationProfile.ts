@@ -1,4 +1,4 @@
-import { AnimationClip, type AnimationClipJSON } from 'three';
+import { AnimationClip, FileLoader, type AnimationClipJSON } from 'three';
 
 /** Measured with the img2threejs 1.5.2 sampler and clip_features.py; source SHA-256 bbf93dbfd845c1d4b15e4e6bf75135606e8c8566e26dcba8d78d8b6e9741d344. */
 export const ROBOT_ANIMATION_PROFILE = [
@@ -42,36 +42,38 @@ let exportedAnimationPromise: Promise<AnimationClip[]> | null = null;
 /** Loads the offline-retargeted clips and their measured profiles once, independently of the source GLB contract. */
 export function loadRobotGreetingClips(): Promise<AnimationClip[]> {
   if (!greetingPromise) {
-    greetingPromise = fetch(import.meta.env.BASE_URL + 'robot/greetings.json').then(async (response) => {
-      if (!response.ok) throw new Error('Could not load robot greetings: HTTP ' + response.status + '.');
-      const data = await response.json() as { clips: AnimationClipJSON[]; profiles: RobotAnimationProfile[] };
-      if (!Array.isArray(data.clips) || !Array.isArray(data.profiles)
-        || data.clips.length !== greetingNames.length || data.profiles.length !== greetingNames.length) {
-        throw new Error('Robot greeting contract expected two clips and two measured profiles.');
-      }
-      const clips = data.clips.map((clip) => AnimationClip.parse(clip));
-      // AnimationMixer caches actions by UUID; missing or shared IDs play the wrong gesture.
-      if (clips.some((clip) => typeof clip.uuid !== 'string' || clip.uuid.length === 0)
-        || new Set(clips.map((clip) => clip.uuid)).size !== clips.length) {
-        throw new Error('Robot greeting clips require distinct, nonempty UUIDs.');
-      }
-      for (const name of greetingNames) {
-        const matchingClips = clips.filter((clip) => clip.name === name);
-        const matchingProfiles = data.profiles.filter((profile) => profile.sourceName === name);
-        const clip = matchingClips[0];
-        const profile = matchingProfiles[0];
-        if (matchingClips.length !== 1 || matchingProfiles.length !== 1 || !clip || !profile
-          || profile.label !== name || profile.loop !== false || profile.motionClass !== 'in-place'
-          || !Number.isFinite(profile.duration) || profile.duration <= 0
-          || Math.abs(clip.duration - profile.duration) > 0.000001
-          || !Number.isInteger(profile.tracks) || profile.tracks <= 0 || clip.tracks.length !== profile.tracks
-          || ![profile.poseReturnDegrees, profile.hipReturnH, profile.scaleDelta].every((value) => Number.isFinite(value) && value >= 0)
-          || !clip.validate()) {
-          throw new Error('Greeting ' + name + ' does not match its measured playback profile.');
+    greetingPromise = new FileLoader()
+      .setResponseType('json')
+      .loadAsync(import.meta.env.BASE_URL + 'robot/greetings.json')
+      .then((payload: unknown) => {
+        const data = payload as { clips: AnimationClipJSON[]; profiles: RobotAnimationProfile[] };
+        if (!Array.isArray(data.clips) || !Array.isArray(data.profiles)
+          || data.clips.length !== greetingNames.length || data.profiles.length !== greetingNames.length) {
+          throw new Error('Robot greeting contract expected two clips and two measured profiles.');
         }
-      }
-      greetingProfiles = data.profiles;
-      return clips;
+        const clips = data.clips.map((clip) => AnimationClip.parse(clip));
+        // AnimationMixer caches actions by UUID; missing or shared IDs play the wrong gesture.
+        if (clips.some((clip) => typeof clip.uuid !== 'string' || clip.uuid.length === 0)
+          || new Set(clips.map((clip) => clip.uuid)).size !== clips.length) {
+          throw new Error('Robot greeting clips require distinct, nonempty UUIDs.');
+        }
+        for (const name of greetingNames) {
+          const matchingClips = clips.filter((clip) => clip.name === name);
+          const matchingProfiles = data.profiles.filter((profile) => profile.sourceName === name);
+          const clip = matchingClips[0];
+          const profile = matchingProfiles[0];
+          if (matchingClips.length !== 1 || matchingProfiles.length !== 1 || !clip || !profile
+            || profile.label !== name || profile.loop !== false || profile.motionClass !== 'in-place'
+            || !Number.isFinite(profile.duration) || profile.duration <= 0
+            || Math.abs(clip.duration - profile.duration) > 0.000001
+            || !Number.isInteger(profile.tracks) || profile.tracks <= 0 || clip.tracks.length !== profile.tracks
+            || ![profile.poseReturnDegrees, profile.hipReturnH, profile.scaleDelta].every((value) => Number.isFinite(value) && value >= 0)
+            || !clip.validate()) {
+            throw new Error('Greeting ' + name + ' does not match its measured playback profile.');
+          }
+        }
+        greetingProfiles = data.profiles;
+        return clips;
     }).catch((error: unknown) => {
       greetingPromise = null;
       throw error;
@@ -83,42 +85,44 @@ export function loadRobotGreetingClips(): Promise<AnimationClip[]> {
 /** Loads the six animation clips exported from the matching rig without reloading its duplicate mesh/texture. */
 export function loadRobotExportedAnimationClips(): Promise<AnimationClip[]> {
   if (!exportedAnimationPromise) {
-    exportedAnimationPromise = fetch(import.meta.env.BASE_URL + 'robot/exported-robot-animations.json').then(async (response) => {
-      if (!response.ok) throw new Error('Could not load exported robot animations: HTTP ' + response.status + '.');
-      const data = await response.json() as {
-        formatVersion: number;
-        clipCount: number;
-        clips: AnimationClipJSON[];
-        profiles: RobotAnimationProfile[];
-      };
-      if (data.formatVersion !== 1 || data.clipCount !== 6
-        || !Array.isArray(data.clips) || data.clips.length !== data.clipCount
-        || !Array.isArray(data.profiles) || data.profiles.length !== data.clipCount) {
-        throw new Error('Exported robot animation pack must contain six clips and six profiles.');
-      }
-      const clips = data.clips.map((clip) => AnimationClip.parse(clip));
-      if (clips.some((clip) => typeof clip.uuid !== 'string' || clip.uuid.length === 0)
-        || new Set(clips.map((clip) => clip.uuid)).size !== clips.length) {
-        throw new Error('Exported robot animations require distinct, nonempty UUIDs.');
-      }
-      const sourceNames = new Set<string>();
-      const labels = new Set<string>();
-      for (let index = 0; index < clips.length; index++) {
-        const clip = clips[index];
-        const profile = data.profiles[index];
-        if (!clip || !profile || sourceNames.has(clip.name) || labels.has(profile.label)
-          || profile.sourceName !== clip.name || !profile.label.trim()
-          || !Number.isFinite(profile.duration) || Math.abs(clip.duration - profile.duration) > 1e-6
-          || !Number.isInteger(profile.tracks) || profile.tracks !== clip.tracks.length
-          || clip.tracks.length !== 195 || !clip.validate()
-          || ![profile.poseReturnDegrees, profile.hipReturnH, profile.scaleDelta].every((value) => Number.isFinite(value) && value >= 0)) {
-          throw new Error('Exported robot animation ' + (clip?.name ?? index) + ' does not match its playback profile.');
+    exportedAnimationPromise = new FileLoader()
+      .setResponseType('json')
+      .loadAsync(import.meta.env.BASE_URL + 'robot/exported-robot-animations.json')
+      .then((payload: unknown) => {
+        const data = payload as {
+          formatVersion: number;
+          clipCount: number;
+          clips: AnimationClipJSON[];
+          profiles: RobotAnimationProfile[];
+        };
+        if (data.formatVersion !== 1 || data.clipCount !== 6
+          || !Array.isArray(data.clips) || data.clips.length !== data.clipCount
+          || !Array.isArray(data.profiles) || data.profiles.length !== data.clipCount) {
+          throw new Error('Exported robot animation pack must contain six clips and six profiles.');
         }
-        sourceNames.add(clip.name);
-        labels.add(profile.label);
-      }
-      exportedProfiles = data.profiles;
-      return clips;
+        const clips = data.clips.map((clip) => AnimationClip.parse(clip));
+        if (clips.some((clip) => typeof clip.uuid !== 'string' || clip.uuid.length === 0)
+          || new Set(clips.map((clip) => clip.uuid)).size !== clips.length) {
+          throw new Error('Exported robot animations require distinct, nonempty UUIDs.');
+        }
+        const sourceNames = new Set<string>();
+        const labels = new Set<string>();
+        for (let index = 0; index < clips.length; index++) {
+          const clip = clips[index];
+          const profile = data.profiles[index];
+          if (!clip || !profile || sourceNames.has(clip.name) || labels.has(profile.label)
+            || profile.sourceName !== clip.name || !profile.label.trim()
+            || !Number.isFinite(profile.duration) || Math.abs(clip.duration - profile.duration) > 1e-6
+            || !Number.isInteger(profile.tracks) || profile.tracks !== clip.tracks.length
+            || clip.tracks.length !== 195 || !clip.validate()
+            || ![profile.poseReturnDegrees, profile.hipReturnH, profile.scaleDelta].every((value) => Number.isFinite(value) && value >= 0)) {
+            throw new Error('Exported robot animation ' + (clip?.name ?? index) + ' does not match its playback profile.');
+          }
+          sourceNames.add(clip.name);
+          labels.add(profile.label);
+        }
+        exportedProfiles = data.profiles;
+        return clips;
     }).catch((error: unknown) => {
       exportedAnimationPromise = null;
       throw error;
