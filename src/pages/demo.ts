@@ -450,6 +450,7 @@ export async function renderDemo(
     cameraPosition,
     cameraTarget: demo.cameraTarget,
     cameraFov: demo.cameraFov,
+    orbitLimits: demo.cameraOrbit,
     backgroundGradient: demo.backgroundGradient,
     exposure: demo.exposure,
     environmentIntensity: demo.environmentIntensity,

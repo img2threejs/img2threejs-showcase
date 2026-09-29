@@ -1,5 +1,5 @@
 import type * as THREE from 'three';
-import type { PinnedCaptureCamera } from '../scene';
+import type { CameraOrbitLimits, PinnedCaptureCamera } from '../scene';
 
 export interface DemoMetadata {
   /** route id, e.g. 'crown-chest' */
@@ -60,6 +60,7 @@ export interface DemoMetadata {
   cameraPosition: [number, number, number];
   cameraTarget: [number, number, number];
   cameraFov: number;
+  cameraOrbit?: CameraOrbitLimits;
   /** Optional per-demo accent (hex) — themes the panel to the object's signature colour. */
   accent?: string;
   /** Optional radial-gradient backdrop (inner→outer hex) for a themed hero stage. */
@@ -121,6 +122,49 @@ const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
 const authored: CatalogEntry[] = [
+  {
+    id: 'snowy-village',
+    updatedAt: '2026-09-28',
+    title: 'Snowbound Crossing — Mini Game',
+    subjectClass: 'object',
+    blurb:
+      'A playable isometric winter village built from hash-pinned GLB data exported to native Three.js modules. '
+      + 'WASD or arrows move the character; Shift runs; E opens the nearby gate; M plus arrows moves the house.',
+    referenceImage: BASE + 'references/snowy-village/overview.png',
+    referenceKind: 'image',
+    sourcePath: 'src/demos/snowy-village/createSnowyVillageModel.ts',
+    sourceUrl: REPO + '/src/demos/snowy-village/createSnowyVillageModel.ts',
+    generatedWith:
+      'Hyper3D · native Three.js role modules · original PBR image bytes retained · '
+      + 'game-specific placement and interactions adapted at runtime',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'final',
+    cameraPosition: [7, 11.2, 9.3],
+    cameraTarget: [0, 1.25, 0],
+    cameraFov: 36,
+    cameraOrbit: {
+      minPolarAngle: 0.36,
+      maxPolarAngle: 0.95,
+      minDistance: 9,
+      maxDistance: 34,
+      enablePan: false,
+    },
+    defaultAnimation: 'idle',
+    accent: '#c9daf7',
+    backgroundGradient: { inner: '#bfc3e1', outer: '#a5b0ce' },
+    exposure: 1,
+    environmentIntensity: 0.48,
+    loadRuntime: async () => {
+      const { createSnowyVillageModel, installSnowyVillageLights, prewarmSnowyVillage } =
+        await import('./snowy-village/createSnowyVillageModel');
+      return {
+        prewarm: prewarmSnowyVillage,
+        installLights: installSnowyVillageLights,
+        build: createSnowyVillageModel,
+      };
+    },
+  },
   {
     id: 'prs-ocean',
     title: 'Ocean Blue PRS Guitar — Measured Surface Flow',

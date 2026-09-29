@@ -9,6 +9,7 @@ export interface ViewerOptions {
   cameraPosition?: [number, number, number];
   cameraTarget?: [number, number, number];
   cameraFov?: number;
+  orbitLimits?: CameraOrbitLimits;
   background?: number;
   /** Radial gradient backdrop (inner→outer hex) — a premium themed stage for hero props. */
   backgroundGradient?: { inner: string; outer: string };
@@ -36,6 +37,14 @@ export interface ViewerOptions {
   turntable?: boolean;
   /** Turntable rate in degrees per second (default 15, so a full revolution in 24 s). */
   turntableSpeed?: number;
+}
+
+export interface CameraOrbitLimits {
+  minPolarAngle?: number;
+  maxPolarAngle?: number;
+  minDistance?: number;
+  maxDistance?: number;
+  enablePan?: boolean;
 }
 
 /** An explicit review camera: geometry-independent, so a pass is measured rather than reframed. */
@@ -347,6 +356,14 @@ export class Viewer {
     // Freeze the camera in capture mode so evaluation renders are deterministic.
     this.controls.enableDamping = !this.capture;
     this.controls.enabled = !this.capture;
+    if (!this.capture && options.orbitLimits) {
+      const limits = options.orbitLimits;
+      if (limits.minPolarAngle !== undefined) this.controls.minPolarAngle = limits.minPolarAngle;
+      if (limits.maxPolarAngle !== undefined) this.controls.maxPolarAngle = limits.maxPolarAngle;
+      if (limits.minDistance !== undefined) this.controls.minDistance = limits.minDistance;
+      if (limits.maxDistance !== undefined) this.controls.maxDistance = limits.maxDistance;
+      if (limits.enablePan !== undefined) this.controls.enablePan = limits.enablePan;
+    }
     const [tx, ty, tz] = options.cameraTarget ?? [0, 0, 0];
     this.controls.target.set(tx, ty, tz);
     this.controls.update();

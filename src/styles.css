@@ -3055,3 +3055,80 @@ html[data-intro='pending'] .intro-word { animation: intro-word-in 430ms var(--ea
     display: none;
   }
 }
+
+/* Snowy Village time control: warm, high-contrast track with a keyboard-visible thumb. */
+.snowy-village-time-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 26px;
+  margin: 8px 0 0;
+  padding: 0;
+  border-radius: 999px;
+  background: transparent;
+  accent-color: #f2c27e;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+.snowy-village-time-slider::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f2c27e 0 var(--time-progress, 75%), rgba(255,255,255,0.24) var(--time-progress, 75%) 100%);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.35);
+}
+
+.snowy-village-time-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5.5px;
+  border: 2px solid #fff8ee;
+  border-radius: 50%;
+  background: #e8a552;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.snowy-village-time-slider::-moz-range-track {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.24);
+}
+
+.snowy-village-time-slider::-moz-range-progress {
+  height: 5px;
+  border-radius: 999px;
+  background: #f2c27e;
+}
+
+.snowy-village-time-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff8ee;
+  border-radius: 50%;
+  background: #e8a552;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.snowy-village-time-slider:focus-visible {
+  outline: 2px solid #ffe0ad;
+  outline-offset: 5px;
+}
+
+.snowy-village-fire-button:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.snowy-village-fire-button:focus-visible {
+  outline: 2px solid #ffe0ad;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snowy-village-fire-button {
+    transition: none;
+  }
+}
+
