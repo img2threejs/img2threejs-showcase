@@ -1406,6 +1406,39 @@ const authored: CatalogEntry[] = [
     },
   },
   {
+    id: 'falchion-sapphire',
+    updatedAt: '2026-10-05',
+    title: '★ Falchion Knife | Doppler Sapphire (Factory New)',
+    subjectClass: 'object',
+    blurb:
+      'A Factory New ★ Falchion Knife with the Doppler Sapphire finish — a recurve clip-point blade with marbled blue/sapphire iridescent pattern and gunmetal pivot housing, finger-grooved handle scales, solid pommel, and a blackened-steel rear pocket clip. Rebuilt in code from a single CS:GO inventory screenshot.',
+    referenceImage: `${BASE}references/falchion-sapphire.png`,
+    sourcePath: 'src/demos/falchion-sapphire/createFalchionSapphireModel.ts',
+    sourceUrl: `${REPO}/src/demos/falchion-sapphire/createFalchionSapphireModel.ts`,
+    generatedWith: 'img2threejs v2.0.0',
+    author: 'kokorolx',
+    authorUrl: 'https://github.com/kokorolx',
+    status: 'placeholder',
+    cameraPosition: [0, 0, 5.5],
+    cameraTarget: [0, 0, 0],
+    cameraFov: 30,
+    loadRuntime: async () => {
+      const { createFalchionSapphireModel, createFalchionSapphireLookDevLights, makeStudioBackground } = await import(
+        './falchion-sapphire/createFalchionSapphireModel'
+      );
+      return {
+        build: (scene) => {
+          scene.background = makeStudioBackground();
+          const group = createFalchionSapphireModel({ castShadow: true, receiveShadow: true, textureSize: 1024, qualityPriority: 'reference-fidelity' });
+          scene.add(group);
+          const lights = createFalchionSapphireLookDevLights();
+          scene.add(lights);
+          return group;
+        },
+      };
+    },
+  },
+  {
     id: 'crown-chest',
     updatedAt: '2026-07-16',
     title: 'Crowned Loot Chest',
