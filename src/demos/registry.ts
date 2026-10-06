@@ -1423,7 +1423,7 @@ const authored: CatalogEntry[] = [
     cameraTarget: [0, 0, 0],
     cameraFov: 45,
     exposure: 1.0,
-    environmentIntensity: 0.6,
+    environmentIntensity: 0.3,
     loadRuntime: async () => {
       const { createFalchionKnifeDopplerSapphireModel } = await import(
         './falchion-sapphire/createFalchionSapphireModel'

@@ -90,8 +90,8 @@ function buildFalchionBlade(
   // Copy UV1 to UV2 so aoMap/iridescenceMap (which default to UV2) can sample the texture
   geo.setAttribute('uv2', new THREE.Float32BufferAttribute(geo.attributes.uv.array, 2));
 
-  const mat = physMat(0x1b2d8a, {
-    metalness: 0.6, roughness: 0.30, iridescence: 0.3, clearcoat: 0.5,
+  const mat = physMat(0x4a78d4, {  // sapphire blue base color, multiplies with texture
+    metalness: 0.4, roughness: 0.35, iridescence: 0.2, clearcoat: 0.3,
     map: dopplerMap, normalMap, roughnessMap,
   });
   mat.aoMap = aoMap;
