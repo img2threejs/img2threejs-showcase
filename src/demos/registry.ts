@@ -1419,20 +1419,21 @@ const authored: CatalogEntry[] = [
     author: 'kokorolx',
     authorUrl: 'https://github.com/kokorolx',
     status: 'placeholder',
-    cameraPosition: [0, 0, 5.5],
+    cameraPosition: [8.0, 3.5, 9.0],
     cameraTarget: [0, 0, 0],
-    cameraFov: 30,
+    cameraFov: 32,
     loadRuntime: async () => {
-      const { createFalchionSapphireModel, createFalchionSapphireLookDevLights, makeStudioBackground } = await import(
+      const { createFalchionKnifeDopplerSapphireModel, createFalchionKnifeDopplerSapphireLookDevLights } = await import(
         './falchion-sapphire/createFalchionSapphireModel'
       );
       return {
-        build: (scene) => {
-          scene.background = makeStudioBackground();
-          const group = createFalchionSapphireModel({ castShadow: true, receiveShadow: true, textureSize: 1024, qualityPriority: 'reference-fidelity' });
-          scene.add(group);
-          const lights = createFalchionSapphireLookDevLights();
+        installLights: (scene) => {
+          const lights = createFalchionKnifeDopplerSapphireLookDevLights();
           scene.add(lights);
+        },
+        build: (scene) => {
+          const group = createFalchionKnifeDopplerSapphireModel({ castShadow: true, receiveShadow: true, textureSize: 1024, qualityPriority: 'reference-fidelity' });
+          scene.add(group);
           return group;
         },
       };
