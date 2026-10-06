@@ -1419,7 +1419,7 @@ const authored: CatalogEntry[] = [
     author: 'kokorolx',
     authorUrl: 'https://github.com/kokorolx',
     status: 'placeholder',
-    cameraPosition: [8.0, 3.5, 9.0],
+    cameraPosition: [4.0, 3.0, 14.0],
     cameraTarget: [0, 0, 0],
     cameraFov: 32,
     loadRuntime: async () => {
