@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import type { CameraOrbitLimits, PinnedCaptureCamera } from '../scene';
 
 export interface DemoMetadata {
@@ -1418,20 +1418,33 @@ const authored: CatalogEntry[] = [
     generatedWith: 'img2threejs v2.0.0',
     author: 'kokorolx',
     authorUrl: 'https://github.com/kokorolx',
-    status: 'placeholder',
-    cameraPosition: [4.0, 3.0, 14.0],
+    status: 'final',
+    cameraPosition: [2.5, 1.5, 9.0],
     cameraTarget: [0, 0, 0],
-    cameraFov: 32,
+    cameraFov: 45,
+    exposure: 1.0,
+    environmentIntensity: 0.6,
     loadRuntime: async () => {
-      const { createFalchionKnifeDopplerSapphireModel, createFalchionKnifeDopplerSapphireLookDevLights } = await import(
+      const { createFalchionKnifeDopplerSapphireModel } = await import(
         './falchion-sapphire/createFalchionSapphireModel'
       );
       return {
-        installLights: (scene) => {
-          const lights = createFalchionKnifeDopplerSapphireLookDevLights();
-          scene.add(lights);
-        },
-        build: (scene) => {
+        installLights: (scene: THREE.Scene) => {
+              // 1 key + 1 fill + ambient
+              const hemi = new THREE.HemisphereLight(0xffffff, 0xffffff, 1.5);
+              scene.add(hemi);
+              const key = new THREE.DirectionalLight(0xffffff, 1.8);
+              key.position.set(3, 5, 8);
+              key.target.position.set(0, 0, 0);
+              scene.add(key);
+              scene.add(key.target);
+              const fill = new THREE.DirectionalLight(0xc8d8ff, 0.8);
+              fill.position.set(-5, 2, 6);
+              scene.add(fill);
+              const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+              scene.add(ambient);
+            },
+        build: (scene: THREE.Scene) => {
           const group = createFalchionKnifeDopplerSapphireModel({ castShadow: true, receiveShadow: true, textureSize: 1024, qualityPriority: 'reference-fidelity' });
           scene.add(group);
           return group;

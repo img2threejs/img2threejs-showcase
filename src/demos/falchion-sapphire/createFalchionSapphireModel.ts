@@ -16,7 +16,7 @@ export type ProceduralModelRuntime = {
   group: THREE.Group;
 };
 
-const TEXTURE_BASE = '/textures/';
+const TEXTURE_BASE = '/img2threejs/assets/textures/';
 
 function loadAlbedo(url: string, anisotropy = 8): THREE.Texture {
   const tex = new THREE.TextureLoader().load(url);
@@ -56,7 +56,7 @@ function physMat(color: number | string, opts: {
 
 function buildFalchionBlade(
   dopplerMap: THREE.Texture,
-  iriMap: THREE.Texture,
+  _iriMap: THREE.Texture,
   aoMap: THREE.Texture,
   normalMap?: THREE.Texture,
   roughnessMap?: THREE.Texture,
@@ -87,15 +87,16 @@ function buildFalchionBlade(
   });
   geo.translate(0, 0, -0.09);
   geo.computeVertexNormals();
+  // Copy UV1 to UV2 so aoMap/iridescenceMap (which default to UV2) can sample the texture
+  geo.setAttribute('uv2', new THREE.Float32BufferAttribute(geo.attributes.uv.array, 2));
 
   const mat = physMat(0x1b2d8a, {
-    metalness: 1.0, roughness: 0.12, iridescence: 0.85, clearcoat: 0.6,
+    metalness: 0.6, roughness: 0.30, iridescence: 0.3, clearcoat: 0.5,
     map: dopplerMap, normalMap, roughnessMap,
   });
-  mat.iridescenceMap = iriMap;
   mat.aoMap = aoMap;
-  mat.aoMapIntensity = 1.0;
-  mat.iridescenceIOR = 1.45; // sapphire IOR
+  mat.aoMapIntensity = 0.6;
+  mat.iridescenceIOR = 1.3;
   const mesh = new THREE.Mesh(geo, mat);
   mesh.castShadow = true; mesh.receiveShadow = true;
   return mesh;
