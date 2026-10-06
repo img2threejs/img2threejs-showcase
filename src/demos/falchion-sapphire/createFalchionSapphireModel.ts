@@ -16,7 +16,7 @@ export type ProceduralModelRuntime = {
   group: THREE.Group;
 };
 
-const TEXTURE_BASE = '/img2threejs/assets/textures/';
+const TEXTURE_BASE = '/textures/';
 
 function loadAlbedo(url: string, anisotropy = 8): THREE.Texture {
   const tex = new THREE.TextureLoader().load(url);
@@ -56,6 +56,8 @@ function physMat(color: number | string, opts: {
 
 function buildFalchionBlade(
   dopplerMap: THREE.Texture,
+  iriMap: THREE.Texture,
+  aoMap: THREE.Texture,
   normalMap?: THREE.Texture,
   roughnessMap?: THREE.Texture,
 ): THREE.Mesh {
@@ -87,9 +89,13 @@ function buildFalchionBlade(
   geo.computeVertexNormals();
 
   const mat = physMat(0x1b2d8a, {
-    metalness: 1.0, roughness: 0.12, iridescence: 0.7, clearcoat: 0.5,
+    metalness: 1.0, roughness: 0.12, iridescence: 0.85, clearcoat: 0.6,
     map: dopplerMap, normalMap, roughnessMap,
   });
+  mat.iridescenceMap = iriMap;
+  mat.aoMap = aoMap;
+  mat.aoMapIntensity = 1.0;
+  mat.iridescenceIOR = 1.45; // sapphire IOR
   const mesh = new THREE.Mesh(geo, mat);
   mesh.castShadow = true; mesh.receiveShadow = true;
   return mesh;
@@ -140,6 +146,8 @@ export function createFalchionKnifeDopplerSapphireModel(_options: ProceduralMode
   const dopplerMap = loadAlbedo(TEXTURE_BASE + 'doppler-blade.png', 16);
   const normalMap = loadLinear(TEXTURE_BASE + 'doppler-normal.png', 16);
   const roughnessMap = loadLinear(TEXTURE_BASE + 'doppler-roughness.png', 16);
+  const iriMap = loadLinear(TEXTURE_BASE + 'doppler-iri.png', 16);
+  const aoMap = loadLinear(TEXTURE_BASE + 'doppler-ao.png', 16);
 
   const nodes: Record<string, THREE.Object3D> = {};
   const meshes: Record<string, THREE.Mesh> = {};
@@ -154,7 +162,7 @@ export function createFalchionKnifeDopplerSapphireModel(_options: ProceduralMode
 
   // Blade (extruded curved profile)
   // Bolster spans x=-1.10 to +1.10, so blade root sits at +1.10
-  const blade = buildFalchionBlade(dopplerMap, normalMap, roughnessMap);
+  const blade = buildFalchionBlade(dopplerMap, iriMap, aoMap, normalMap, roughnessMap);
   addNode("blade", blade, 1.10, 0, 0);
 
   // Cutting-edge bevel — follows the curved edge profile
