@@ -1649,7 +1649,37 @@ const authored: CatalogEntry[] = [
       };
     },
   },
- ];
+  {
+    id: 'man-robot-studio',
+    updatedAt: '2026-09-29',
+    title: 'Man Robot · Segment Color Studio',
+    subjectClass: 'character',
+    blurb:
+      'A source-preserving 66,251-vertex robot studio with six tintable regions, measured motion clips, and an animated green-accent energy scan.',
+    referenceImage: `${BASE}references/man-robot-studio.webp`,
+    referenceKind: 'model',
+    sourcePath: 'src/demos/man-robot-studio/robotModel.ts',
+    sourceUrl: `${REPO}/src/demos/man-robot-studio/robotModel.ts`,
+    generatedWith: 'img2threejs 1.5.2 · Three.js ObjectLoader · source scene serialized offline',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'final',
+    cameraPosition: [0, 2.18, 4.05],
+    cameraTarget: [0, 1.03, 0],
+    cameraFov: 36,
+    accent: '#75e8c8',
+    backgroundGradient: { inner: '#172124', outer: '#0c1114' },
+    exposure: 1.04,
+    environmentIntensity: 1,
+    loadRuntime: async () => {
+      const { createRobotModel, prewarmRobotModel } = await import('./man-robot-studio/robotModel');
+      return {
+        prewarm: () => prewarmRobotModel(),
+        build: (scene) => createRobotModel(scene),
+      };
+    },
+  },
+];
 
 /**
  * The gallery, newest first.
