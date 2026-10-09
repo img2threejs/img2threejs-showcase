@@ -2923,6 +2923,17 @@ html[data-intro='pending'] .intro-word { animation: intro-word-in 430ms var(--ea
   transition: opacity 0.5s ease;
 }
 
+.hint.hint-island {
+  white-space: normal;
+  max-width: calc(100vw - 2rem);
+  border-radius: 12px;
+}
+
+.hint-island .hint-state,
+.hint-island .hint-divider {
+  display: none;
+}
+
 .hint.is-gone {
   opacity: 0;
   pointer-events: none;

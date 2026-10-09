@@ -60,6 +60,7 @@ of truth is [`src/demos/registry.ts`](src/demos/registry.ts).
 
 | Study | What to explore |
 | --- | --- |
+| [Tropical Island — code-only measured study](src/demos/tropical-island/createTropicalIslandModel.ts) | Ten force-measured TypeScript surfaces, procedural terrain/water/foliage, 27 selectable parts, and no runtime GLB or source texture maps. |
 | [Ocean Blue PRS Guitar](https://img2threejs.io/#/demo/prs-ocean) | Measured vertex color and PBR samples preserved in code, six addressable strings, and opt-in water-flow actions. |
 | [Groot — Heart of the Forest](https://img2threejs.io/#/demo/monster-tree) | A navigable woodland scene with retargeted movement, grounded combat, living-wood effects, and lantern spirits. |
 | [Mars Cat](https://img2threejs.io/#/demo/mars-cat) | Seventeen measured regions streamed at three quality levels without shipping the reference GLB, textures, or UV atlas. |
@@ -166,6 +167,56 @@ npm run star-history   # regenerate the chart below; requires GITHUB_TOKEN
 
 The gallery uses hash routes (`#/` and `#/demo/:id`) so direct navigation remains compatible
 with static hosting.
+
+### Tropical Island — code-only diorama
+
+Open `#/demo/tropical-island`. The demo has 27 selectable parts, a coupled
+shallow-water simulation, moored boat buoyancy, wind-driven foliage, a day/night
+cycle and procedural fire, smoke and water-entry effects. Click/tap clear deep
+sea to drop a rock, drag to orbit, and press **R** to repeat at the last water
+point. Strong shore impacts extinguish the campfire; click its retained wood or
+stone to relight it. Reduced motion holds the scene and disables physical drops.
+
+The ten prop surfaces in [`measured/`](src/demos/tropical-island/measured/)
+follow the img2threejs force-measured route: u16 positions, octahedral 8+8-bit
+normals, sampled vertex colors and lossless indices decoded into ordinary
+Three.js geometry. These are surface buffers, **not a base64-wrapped GLB**.
+Runtime uses no GLB/GLTF/BIN, GLTF/DRACO loader, source texture image or UV atlas.
+The reference WebP is a gallery thumbnail, not a model texture.
+
+[The measurement manifest](pipelines/tropical-island/measured-surfaces.json)
+records source hashes, topology, transforms and sampling conventions. Across ten
+source meshes, 708,881 vertices and 1,145,710 triangles retain their original
+index order before the existing palm/fire cleanup. Independent local parity
+checks measured maximum position error of `7.62939453125e-6` in source mesh
+units and nonzero-normal error below `0.95°`.
+
+**Fidelity limit:** base color is sampled at vertices; roughness and metalness
+use measured sampled medians. Sub-vertex texture detail and source normal maps
+are not retained, so this is not pixel-identical PBR texture shading.
+
+`npm run build` checks island source/public assets before building and checks
+`dist/` afterward. Focused physics and interaction regression tests:
+
+```bash
+node --test pipelines/tropical-island/*.test.mjs
+npm run check:tropical-island
+npm run build
+```
+
+The offline encoder and independent verifier are retained as code in
+`pipelines/tropical-island/`. Regeneration requires Python 3 with Pillow and the
+original GLBs under the gitignored `work/tropical-island/reference-models/`:
+
+```bash
+python3 pipelines/tropical-island/encode-surfaces.py
+node pipelines/tropical-island/verify-surfaces.mjs
+```
+
+Normal builds do not need Python or the offline GLBs. Original models, temporary
+state/specs, generation logs and historical QA images/videos are not part of
+this showcase submission. Optional inspector GLB **export** remains available;
+static exports do not bake the simulation, wind or volumetric effects.
 
 ## Repository map
 

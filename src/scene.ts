@@ -108,9 +108,9 @@ const isMesh = (o: THREE.Object3D): o is THREE.Mesh => (o as THREE.Mesh).isMesh 
 const isSkinnedMesh = (o: THREE.Object3D): o is THREE.SkinnedMesh =>
   (o as THREE.SkinnedMesh).isSkinnedMesh === true;
 
-/** A mesh that carries real geometry — i.e. not one of the inspector's own overlay clones. */
+/** Model geometry, excluding inspector overlays and procedural effect render bounds. */
 function isRealMesh(o: THREE.Object3D): o is THREE.Mesh {
-  return isMesh(o) && !!o.geometry && !o.userData.isHighlight;
+  return isMesh(o) && !!o.geometry && !o.userData.isHighlight && !o.userData.isRuntimeEffect;
 }
 
 function triangleCount(root: THREE.Object3D): number {
@@ -1017,7 +1017,8 @@ export class Viewer {
     this.raycaster.setFromCamera(this.ndc, this.camera);
     const out: THREE.Object3D[] = [];
     for (const hit of this.raycaster.intersectObject(this.inspectRoot, true)) {
-      if (hit.object.userData.isHighlight || !this.visibleUpTo(hit.object)) continue;
+      if (hit.object.userData.isHighlight || hit.object.userData.isRuntimeEffect
+        || hit.object.userData.isPointerTransparent || !this.visibleUpTo(hit.object)) continue;
       const node = this.resolveOwner(hit.object);
       if (node && !out.includes(node)) out.push(node);
     }

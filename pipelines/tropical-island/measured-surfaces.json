@@ -1,0 +1,1496 @@
+{
+  "schemaVersion": 1,
+  "kind": "tropical-island-force-measured",
+  "generatedAt": 1791544718883,
+  "encoder": "pipelines/tropical-island/encode-surfaces.py",
+  "encoderVersion": 2,
+  "quantization": {
+    "position": "u16 per axis over per-mesh origin/extent",
+    "normal": "octahedral 8x8 with reserved (0,0)=zero and (255,255)=-Z corner",
+    "index": "zigzag varint (lossless)",
+    "color": "sRGB byte sampled at the vertex UV with KHR_texture_transform + wrap honored, multiplied by the linear material factor and converted back to sRGB"
+  },
+  "roles": [
+    {
+      "role": "house",
+      "glbPath": "work/tropical-island/reference-models/house.glb",
+      "sourceSha256": "956e1e541af5551660b34255a1df30e81db10581e366192e70da55da47e69aea",
+      "sourceBytes": 7218544,
+      "sourceVertexCount": 73722,
+      "sourceTriangleCount": 112250,
+      "sourceBounds": {
+        "min": [
+          -0.3771716356277466,
+          -0.3914947211742401,
+          -0.49989429116249084
+        ],
+        "max": [
+          0.3771213889122009,
+          0.39156678318977356,
+          0.4999983310699463
+        ],
+        "extent": [
+          0.7542930245399475,
+          0.7830615043640137,
+          0.9998926222324371
+        ]
+      },
+      "sourceNodeChain": [
+        {
+          "name": "tripo_node_e3775a29-6a5b-4702-bf96-bf8600342791",
+          "matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0,
+            0.0,
+            1.0,
+            0.0,
+            0,
+            0.0,
+            0.0,
+            1.0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            1
+          ],
+          "isMeshNode": true
+        }
+      ],
+      "meshNodeWorldMatrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "sourceMeshName": "tripo_mesh_e3775a29-6a5b-4702-bf96-bf8600342791",
+      "sourceMaterialName": "tripo_material_e3775a29-6a5b-4702-bf96-bf8600342791",
+      "material": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "roughnessFactor": 1.0,
+        "metalnessFactor": 1.0,
+        "alphaMode": "OPAQUE",
+        "alphaCutoff": 0.5,
+        "doubleSided": false,
+        "emissiveFactor": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maps": {
+          "baseColorTexture": {
+            "image": 0,
+            "sampler": 0,
+            "width": 2048,
+            "height": 2048,
+            "mimeType": "image/jpeg"
+          },
+          "hasMetallicRoughnessTexture": true,
+          "hasNormalTexture": true,
+          "hasOcclusionTexture": false,
+          "hasEmissiveTexture": false
+        },
+        "baseColorTextureTransform": {
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "baseColorWrapS": 10497,
+        "baseColorWrapT": 10497,
+        "baseColorMinFilter": 9987,
+        "baseColorMagFilter": 9729,
+        "samplerFlipY": false
+      },
+      "measured": {
+        "medianBaseColor": [
+          81,
+          53,
+          39
+        ],
+        "medianRoughness": 0.8588235294117647,
+        "medianMetalness": 0.023529411764705882,
+        "medianMethod": "upper median of every eighth ORM texel on each axis, multiplied by the linear material factor; base colour is the per-vertex texel median"
+      },
+      "codecHashes": {
+        "position": "54c626fb490a6cbec991fe6dbad18f32bb1c7d0dcdb879f8e0d397a00199f1a4",
+        "normal": "fa61590cda659bc3c17c0c8df422cef72761ca6f6b7c8c39b1d5894814641416",
+        "colour": "d67a56b2ab9e082a4c3dc94237f9d1068e54f28a658420af15da49785e1750dc",
+        "index": "89b6edbb8ff68646ab27a7376afa58a623b4d4fbdce0f8f63ffc3d8251d753fd",
+        "stream": "2ecce7dc243b832dd994c9047362b8be40583bc88fa5cc88364451e67846c6f7",
+        "base64": "3eeaf197b60044191c3b976c11d9055843af18f74ba828cbd5035ae20fe60c67"
+      },
+      "codecSizes": {
+        "positions": 442332,
+        "normals": 147444,
+        "colors": 221166,
+        "indices": 567420,
+        "total": 1378362,
+        "base64": 1837816
+      },
+      "triangleClassSummary": null,
+      "glassBounds": null
+    },
+    {
+      "role": "palm",
+      "glbPath": "work/tropical-island/reference-models/palm.glb",
+      "sourceSha256": "e3908cb03976d41c388214badd6410fcd8f5bf6071dfc88c4c313eadfe75a2fd",
+      "sourceBytes": 6180440,
+      "sourceVertexCount": 77650,
+      "sourceTriangleCount": 119106,
+      "sourceBounds": {
+        "min": [
+          -0.31554070115089417,
+          -0.4998939037322998,
+          -0.3127378821372986
+        ],
+        "max": [
+          0.315603107213974,
+          0.49997588992118835,
+          0.3127638101577759
+        ],
+        "extent": [
+          0.6311438083648682,
+          0.9998697936534882,
+          0.6255016922950745
+        ]
+      },
+      "sourceNodeChain": [
+        {
+          "name": "tripo_node_57788bef-a711-421d-81d0-4ce277efd75d",
+          "matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0,
+            0.0,
+            1.0,
+            0.0,
+            0,
+            0.0,
+            0.0,
+            1.0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            1
+          ],
+          "isMeshNode": true
+        }
+      ],
+      "meshNodeWorldMatrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "sourceMeshName": "tripo_mesh_57788bef-a711-421d-81d0-4ce277efd75d",
+      "sourceMaterialName": "tripo_material_57788bef-a711-421d-81d0-4ce277efd75d",
+      "material": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "roughnessFactor": 1.0,
+        "metalnessFactor": 1.0,
+        "alphaMode": "OPAQUE",
+        "alphaCutoff": 0.5,
+        "doubleSided": false,
+        "emissiveFactor": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maps": {
+          "baseColorTexture": {
+            "image": 0,
+            "sampler": 0,
+            "width": 2048,
+            "height": 2048,
+            "mimeType": "image/jpeg"
+          },
+          "hasMetallicRoughnessTexture": true,
+          "hasNormalTexture": true,
+          "hasOcclusionTexture": false,
+          "hasEmissiveTexture": false
+        },
+        "baseColorTextureTransform": {
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "baseColorWrapS": 10497,
+        "baseColorWrapT": 10497,
+        "baseColorMinFilter": 9987,
+        "baseColorMagFilter": 9729,
+        "samplerFlipY": false
+      },
+      "measured": {
+        "medianBaseColor": [
+          39,
+          70,
+          14
+        ],
+        "medianRoughness": 0.9686274509803922,
+        "medianMetalness": 0.011764705882352941,
+        "medianMethod": "upper median of every eighth ORM texel on each axis, multiplied by the linear material factor; base colour is the per-vertex texel median"
+      },
+      "codecHashes": {
+        "position": "fdb8ec1509f4ccc382c73bb6ded4c62e78b65d47587ac727a808497f7a7b1a1e",
+        "normal": "8ccd90a31281b8aa5202118581d799a9deefd1d195af3c23bf7f97092b3c37ae",
+        "colour": "fd27f57dbd2a90a5745c13a7d2a7bc3aaa6326325dc75c925c64828abc63214a",
+        "index": "c4780925b60150e237c68fb52ae767fe8ac6a1c33beba67ea32ccbb5283de820",
+        "stream": "5f17073e83080f078b22f41d6a58e554e08e092b31adb6b80812a1b310d99b34",
+        "base64": "2327f1714dd63c574dc8e218411988fd12b8415dc73607bd39285c6631d6fd63"
+      },
+      "codecSizes": {
+        "positions": 465900,
+        "normals": 155300,
+        "colors": 232950,
+        "indices": 627995,
+        "total": 1482145,
+        "base64": 1976196
+      },
+      "triangleClassSummary": {
+        "warmOrLeaf": 111216,
+        "darkWood": 0,
+        "total": 119106
+      },
+      "glassBounds": null
+    },
+    {
+      "role": "dock",
+      "glbPath": "work/tropical-island/reference-models/dock.glb",
+      "sourceSha256": "3af0c9d3d91caa79eb37650430622923c6bab9b4fd8ed77d4f08428a19001125",
+      "sourceBytes": 6624684,
+      "sourceVertexCount": 72375,
+      "sourceTriangleCount": 115624,
+      "sourceBounds": {
+        "min": [
+          -0.24169932305812836,
+          -0.17111438512802124,
+          -0.49990713596343994
+        ],
+        "max": [
+          0.24167057871818542,
+          0.17117421329021454,
+          0.49997082352638245
+        ],
+        "extent": [
+          0.4833699017763138,
+          0.3422885984182358,
+          0.9998779594898224
+        ]
+      },
+      "sourceNodeChain": [
+        {
+          "name": "tripo_node_39d9865a-9ce6-4e18-b9ca-bef4e79daf08",
+          "matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0,
+            0.0,
+            1.0,
+            0.0,
+            0,
+            0.0,
+            0.0,
+            1.0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            1
+          ],
+          "isMeshNode": true
+        }
+      ],
+      "meshNodeWorldMatrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "sourceMeshName": "tripo_mesh_39d9865a-9ce6-4e18-b9ca-bef4e79daf08",
+      "sourceMaterialName": "tripo_material_39d9865a-9ce6-4e18-b9ca-bef4e79daf08",
+      "material": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "roughnessFactor": 1.0,
+        "metalnessFactor": 1.0,
+        "alphaMode": "OPAQUE",
+        "alphaCutoff": 0.5,
+        "doubleSided": false,
+        "emissiveFactor": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maps": {
+          "baseColorTexture": {
+            "image": 0,
+            "sampler": 0,
+            "width": 2048,
+            "height": 2048,
+            "mimeType": "image/jpeg"
+          },
+          "hasMetallicRoughnessTexture": true,
+          "hasNormalTexture": true,
+          "hasOcclusionTexture": false,
+          "hasEmissiveTexture": false
+        },
+        "baseColorTextureTransform": {
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "baseColorWrapS": 10497,
+        "baseColorWrapT": 10497,
+        "baseColorMinFilter": 9987,
+        "baseColorMagFilter": 9729,
+        "samplerFlipY": false
+      },
+      "measured": {
+        "medianBaseColor": [
+          135,
+          83,
+          50
+        ],
+        "medianRoughness": 0.9568627450980393,
+        "medianMetalness": 0.00784313725490196,
+        "medianMethod": "upper median of every eighth ORM texel on each axis, multiplied by the linear material factor; base colour is the per-vertex texel median"
+      },
+      "codecHashes": {
+        "position": "354e7d4484c6320daad986946a0e35614685c00b294ff887229bf3c062ddeb1e",
+        "normal": "9d6db6f5f3abeba24eb001f58da75bdee2fa8465e744cfc96cc67e91245a4fd4",
+        "colour": "8f46456ca5445aaa9f5bbb4e2f1e2b313e818e743ea3242f0fdd1c5d407e09c3",
+        "index": "c0a0e53acf3cbd4c2d808ae7321a31117cba8e01af49a420cb15b73a35970797",
+        "stream": "9e1978ae5733f5ea427d359ad89b204142d0f6ccd30c88cd217e31272a3ae205",
+        "base64": "1c744a0edfcc3ac5961b75077277e199dd98026a6b5802b5ec0e161c467319b6"
+      },
+      "codecSizes": {
+        "positions": 434250,
+        "normals": 144750,
+        "colors": 217125,
+        "indices": 556804,
+        "total": 1352929,
+        "base64": 1803908
+      },
+      "triangleClassSummary": null,
+      "glassBounds": null
+    },
+    {
+      "role": "boat",
+      "glbPath": "work/tropical-island/reference-models/boat.glb",
+      "sourceSha256": "7e21ec18aea6567df796d892f0dbdde637a8af7cdf6b179b195c0a319890bf4a",
+      "sourceBytes": 6279996,
+      "sourceVertexCount": 70538,
+      "sourceTriangleCount": 116566,
+      "sourceBounds": {
+        "min": [
+          -0.49998554587364197,
+          -0.14462386071681976,
+          -0.24213875830173492
+        ],
+        "max": [
+          0.5,
+          0.14469090104103088,
+          0.24209700524806976
+        ],
+        "extent": [
+          0.999985545873642,
+          0.28931476175785065,
+          0.4842357635498047
+        ]
+      },
+      "sourceNodeChain": [
+        {
+          "name": "tripo_node_4530fae6-8941-4b51-93b1-b90592e62826",
+          "matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0,
+            0.0,
+            1.0,
+            0.0,
+            0,
+            0.0,
+            0.0,
+            1.0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            1
+          ],
+          "isMeshNode": true
+        }
+      ],
+      "meshNodeWorldMatrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "sourceMeshName": "tripo_mesh_4530fae6-8941-4b51-93b1-b90592e62826",
+      "sourceMaterialName": "tripo_material_4530fae6-8941-4b51-93b1-b90592e62826",
+      "material": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "roughnessFactor": 1.0,
+        "metalnessFactor": 1.0,
+        "alphaMode": "OPAQUE",
+        "alphaCutoff": 0.5,
+        "doubleSided": false,
+        "emissiveFactor": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maps": {
+          "baseColorTexture": {
+            "image": 0,
+            "sampler": 0,
+            "width": 2048,
+            "height": 2048,
+            "mimeType": "image/jpeg"
+          },
+          "hasMetallicRoughnessTexture": true,
+          "hasNormalTexture": true,
+          "hasOcclusionTexture": false,
+          "hasEmissiveTexture": false
+        },
+        "baseColorTextureTransform": {
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "baseColorWrapS": 10497,
+        "baseColorWrapT": 10497,
+        "baseColorMinFilter": 9987,
+        "baseColorMagFilter": 9729,
+        "samplerFlipY": false
+      },
+      "measured": {
+        "medianBaseColor": [
+          94,
+          58,
+          34
+        ],
+        "medianRoughness": 0.9411764705882353,
+        "medianMetalness": 0.01568627450980392,
+        "medianMethod": "upper median of every eighth ORM texel on each axis, multiplied by the linear material factor; base colour is the per-vertex texel median"
+      },
+      "codecHashes": {
+        "position": "df4724a778d5bdea5f1177b1e72be169c6487724f727d19e5dbc8fb979c86550",
+        "normal": "9c7f571bc1e8c7b46b745fab78b6ad0f5f6d2a500948a6fe82a2c2a398f2999b",
+        "colour": "7e32fa64eb7e04627a7042dafa9858747a2c00337f2976e1a895921c8b2ae048",
+        "index": "486af8ee4df65db027e140c25871b639d6e982ce72dd80e5f5f05c7386c412cc",
+        "stream": "8451afe0a778a17cf9e6027a1368542cfb150667a91cae5ba7f5e173b285072e",
+        "base64": "892dbce8bb2c197a7725805330ae885fdae93b75a919d0936f1ab05c6c284ff6"
+      },
+      "codecSizes": {
+        "positions": 423228,
+        "normals": 141076,
+        "colors": 211614,
+        "indices": 611637,
+        "total": 1387555,
+        "base64": 1850076
+      },
+      "triangleClassSummary": null,
+      "glassBounds": null
+    },
+    {
+      "role": "rocks",
+      "glbPath": "work/tropical-island/reference-models/rocks.glb",
+      "sourceSha256": "e8c2e87d5d85e8d13d42595bd900478f774793fa83e64dd95d0826b0e7dfdf51",
+      "sourceBytes": 5538568,
+      "sourceVertexCount": 69385,
+      "sourceTriangleCount": 118002,
+      "sourceBounds": {
+        "min": [
+          -0.49999380111694336,
+          -0.3210357427597046,
+          -0.4125976860523224
+        ],
+        "max": [
+          0.49995526671409607,
+          0.32111361622810364,
+          0.4126393496990204
+        ],
+        "extent": [
+          0.9999490678310394,
+          0.6421493589878082,
+          0.8252370357513428
+        ]
+      },
+      "sourceNodeChain": [
+        {
+          "name": "tripo_node_e01b1b41-3e0c-4689-9873-b803f55c2222",
+          "matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0,
+            0.0,
+            1.0,
+            0.0,
+            0,
+            0.0,
+            0.0,
+            1.0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            1
+          ],
+          "isMeshNode": true
+        }
+      ],
+      "meshNodeWorldMatrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "sourceMeshName": "tripo_mesh_e01b1b41-3e0c-4689-9873-b803f55c2222",
+      "sourceMaterialName": "tripo_material_e01b1b41-3e0c-4689-9873-b803f55c2222",
+      "material": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "roughnessFactor": 1.0,
+        "metalnessFactor": 1.0,
+        "alphaMode": "OPAQUE",
+        "alphaCutoff": 0.5,
+        "doubleSided": false,
+        "emissiveFactor": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maps": {
+          "baseColorTexture": {
+            "image": 0,
+            "sampler": 0,
+            "width": 2048,
+            "height": 2048,
+            "mimeType": "image/jpeg"
+          },
+          "hasMetallicRoughnessTexture": true,
+          "hasNormalTexture": true,
+          "hasOcclusionTexture": false,
+          "hasEmissiveTexture": false
+        },
+        "baseColorTextureTransform": {
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "baseColorWrapS": 10497,
+        "baseColorWrapT": 10497,
+        "baseColorMinFilter": 9987,
+        "baseColorMagFilter": 9729,
+        "samplerFlipY": false
+      },
+      "measured": {
+        "medianBaseColor": [
+          92,
+          102,
+          118
+        ],
+        "medianRoughness": 0.44313725490196076,
+        "medianMetalness": 0.00784313725490196,
+        "medianMethod": "upper median of every eighth ORM texel on each axis, multiplied by the linear material factor; base colour is the per-vertex texel median"
+      },
+      "codecHashes": {
+        "position": "57bc63d53f534710ca2a785caa362af684329bf6c31ea6cbcc6a2f5452c23288",
+        "normal": "229a5f9041d09701c4613a6f496044eecfb4dc2a41b9c45cd0b039a04d5a31c0",
+        "colour": "065c8816c7e59bd50f30d7ea988bc8eeff9a884cf6f08a0fab7bec756677a8b8",
+        "index": "488c2a097a9d6b5d60163516874d7a272c0a4dd0d0b609b74bf38c039807c7a2",
+        "stream": "f0d43e4103c7ede3255e41a3d4e9f452d54f1e8735f8274d63477aa47fc31027",
+        "base64": "ec78026cd6551bf8e79e70d32733fcabeaf7a0096f2f388241927ecd4eb1f421"
+      },
+      "codecSizes": {
+        "positions": 416310,
+        "normals": 138770,
+        "colors": 208155,
+        "indices": 603885,
+        "total": 1367120,
+        "base64": 1822828
+      },
+      "triangleClassSummary": null,
+      "glassBounds": null
+    },
+    {
+      "role": "redRock",
+      "glbPath": "work/tropical-island/reference-models/red-rock.glb",
+      "sourceSha256": "9fe79668f4ff83dfa46da2e787533a91acc4b9955b975e240fba6fd2a1b178a1",
+      "sourceBytes": 6081824,
+      "sourceVertexCount": 71879,
+      "sourceTriangleCount": 114846,
+      "sourceBounds": {
+        "min": [
+          -0.4369051158428192,
+          -0.3455451428890228,
+          -0.4999937415122986
+        ],
+        "max": [
+          0.43677085638046265,
+          0.34554654359817505,
+          0.5
+        ],
+        "extent": [
+          0.8736759722232819,
+          0.6910916864871979,
+          0.9999937415122986
+        ]
+      },
+      "sourceNodeChain": [
+        {
+          "name": "tripo_node_81fa628a-8692-498d-9be9-b64fd107d6a5",
+          "matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0,
+            0.0,
+            1.0,
+            0.0,
+            0,
+            0.0,
+            0.0,
+            1.0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            1
+          ],
+          "isMeshNode": true
+        }
+      ],
+      "meshNodeWorldMatrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "sourceMeshName": "tripo_mesh_81fa628a-8692-498d-9be9-b64fd107d6a5",
+      "sourceMaterialName": "tripo_material_81fa628a-8692-498d-9be9-b64fd107d6a5",
+      "material": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "roughnessFactor": 1.0,
+        "metalnessFactor": 1.0,
+        "alphaMode": "OPAQUE",
+        "alphaCutoff": 0.5,
+        "doubleSided": false,
+        "emissiveFactor": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maps": {
+          "baseColorTexture": {
+            "image": 0,
+            "sampler": 0,
+            "width": 2048,
+            "height": 2048,
+            "mimeType": "image/jpeg"
+          },
+          "hasMetallicRoughnessTexture": true,
+          "hasNormalTexture": true,
+          "hasOcclusionTexture": false,
+          "hasEmissiveTexture": false
+        },
+        "baseColorTextureTransform": {
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "baseColorWrapS": 10497,
+        "baseColorWrapT": 10497,
+        "baseColorMinFilter": 9987,
+        "baseColorMagFilter": 9729,
+        "samplerFlipY": false
+      },
+      "measured": {
+        "medianBaseColor": [
+          122,
+          52,
+          43
+        ],
+        "medianRoughness": 0.9764705882352941,
+        "medianMetalness": 0.00392156862745098,
+        "medianMethod": "upper median of every eighth ORM texel on each axis, multiplied by the linear material factor; base colour is the per-vertex texel median"
+      },
+      "codecHashes": {
+        "position": "ad9c119de5b2dff12eeab322c8f4b192c5084ed49ad9d304231d709e8d6d75f4",
+        "normal": "2aa497edc5cd2652c63c064309b41f182dfe37c287dc6df52cce043cb205c2d7",
+        "colour": "419218cdf0536c88cce46166cb4972b478149e3cfc3581d53424a4868e249d56",
+        "index": "89afd7b1eefd6f828903ca791e739c10e6e86d4dc228e4d47aa16a453c4691f2",
+        "stream": "b3e172f305a042c8c8c4162874cfa0a20f16fd89fc549df8a298e08271e57bc6",
+        "base64": "dee53b333bca7c50470ff74def70d7779a4944353299336c0f51ea416a4acdef"
+      },
+      "codecSizes": {
+        "positions": 431274,
+        "normals": 143758,
+        "colors": 215637,
+        "indices": 590759,
+        "total": 1381428,
+        "base64": 1841904
+      },
+      "triangleClassSummary": null,
+      "glassBounds": null
+    },
+    {
+      "role": "crate",
+      "glbPath": "work/tropical-island/reference-models/crate.glb",
+      "sourceSha256": "c55ca44df8f6f96ddf108b52cc60ff0cc4769ef647ea8596126732f9c4135135",
+      "sourceBytes": 7046400,
+      "sourceVertexCount": 72307,
+      "sourceTriangleCount": 113734,
+      "sourceBounds": {
+        "min": [
+          -0.4999729096889496,
+          -0.4663911461830139,
+          -0.485787570476532
+        ],
+        "max": [
+          0.5,
+          0.46630576252937317,
+          0.4857209324836731
+        ],
+        "extent": [
+          0.9999729096889496,
+          0.9326969087123871,
+          0.9715085029602051
+        ]
+      },
+      "sourceNodeChain": [
+        {
+          "name": "tripo_node_c56046a4-77c5-47a1-8f5f-fa941c38fc25",
+          "matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0,
+            0.0,
+            1.0,
+            0.0,
+            0,
+            0.0,
+            0.0,
+            1.0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            1
+          ],
+          "isMeshNode": true
+        }
+      ],
+      "meshNodeWorldMatrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "sourceMeshName": "tripo_mesh_c56046a4-77c5-47a1-8f5f-fa941c38fc25",
+      "sourceMaterialName": "tripo_material_c56046a4-77c5-47a1-8f5f-fa941c38fc25",
+      "material": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "roughnessFactor": 1.0,
+        "metalnessFactor": 1.0,
+        "alphaMode": "OPAQUE",
+        "alphaCutoff": 0.5,
+        "doubleSided": false,
+        "emissiveFactor": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maps": {
+          "baseColorTexture": {
+            "image": 0,
+            "sampler": 0,
+            "width": 2048,
+            "height": 2048,
+            "mimeType": "image/jpeg"
+          },
+          "hasMetallicRoughnessTexture": true,
+          "hasNormalTexture": true,
+          "hasOcclusionTexture": false,
+          "hasEmissiveTexture": false
+        },
+        "baseColorTextureTransform": {
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "baseColorWrapS": 10497,
+        "baseColorWrapT": 10497,
+        "baseColorMinFilter": 9987,
+        "baseColorMagFilter": 9729,
+        "samplerFlipY": false
+      },
+      "measured": {
+        "medianBaseColor": [
+          155,
+          98,
+          56
+        ],
+        "medianRoughness": 0.6235294117647059,
+        "medianMetalness": 0.00784313725490196,
+        "medianMethod": "upper median of every eighth ORM texel on each axis, multiplied by the linear material factor; base colour is the per-vertex texel median"
+      },
+      "codecHashes": {
+        "position": "e1331ee81d7039102760c6eb29dcdc5d0e3831c5247ca448733dc66037b78381",
+        "normal": "6fd11ee4b5763ee16d7c370c293dfdcbe2c57539435873b6ca18346f54224d60",
+        "colour": "91cdd5b491dbb879c79a6b2536e1917d24500e11547f0acafcb1c81a8e86a450",
+        "index": "2d98833fac35edcc5be3036d7ed00813c33af6cbd6ed76202850ac623ab6fb60",
+        "stream": "c80d85b01dab1db027ac7cbf284168c1084f5480d1d6bfc6a7689e7fe28e40c4",
+        "base64": "828bf3fb356254eff25ccd6b1063b415a155be3c3ff44412438ff5e33da005eb"
+      },
+      "codecSizes": {
+        "positions": 433842,
+        "normals": 144614,
+        "colors": 216921,
+        "indices": 589971,
+        "total": 1385348,
+        "base64": 1847132
+      },
+      "triangleClassSummary": null,
+      "glassBounds": null
+    },
+    {
+      "role": "barrel",
+      "glbPath": "work/tropical-island/reference-models/barrel.glb",
+      "sourceSha256": "4a7badad31ae9fa28c89e723937d4002ab6b5d2edc8a467ea612a09ee1533c3f",
+      "sourceBytes": 7050616,
+      "sourceVertexCount": 59759,
+      "sourceTriangleCount": 104480,
+      "sourceBounds": {
+        "min": [
+          -0.4306849241256714,
+          -0.313181072473526,
+          -0.024313749745488167
+        ],
+        "max": [
+          0.100847527384758,
+          0.369564414024353,
+          0.4999982714653015
+        ],
+        "extent": [
+          0.5315324515104294,
+          0.682745486497879,
+          0.5243120212107897
+        ]
+      },
+      "sourceNodeChain": [
+        {
+          "name": null,
+          "matrix": [
+            2.9764106921968465,
+            0,
+            0,
+            0,
+            0,
+            2.9764106921968465,
+            0,
+            0,
+            0,
+            0,
+            2.9764106921968465,
+            0,
+            -0.0001727952965617785,
+            1.1000245266424535,
+            -9.74412901811883e-05,
+            1
+          ],
+          "isMeshNode": false
+        },
+        {
+          "name": "tripo_node_10b972dc-231a-44fd-b995-cba8a138224b",
+          "matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0,
+            0.0,
+            1.0,
+            0.0,
+            0,
+            0.0,
+            0.0,
+            1.0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            1
+          ],
+          "isMeshNode": true
+        }
+      ],
+      "meshNodeWorldMatrix": [
+        2.9764106921968465,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.9764106921968465,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.9764106921968465,
+        0.0,
+        -0.0001727952965617785,
+        1.1000245266424535,
+        -9.74412901811883e-05,
+        1.0
+      ],
+      "sourceMeshName": null,
+      "sourceMaterialName": "tripo_material_10b972dc-231a-44fd-b995-cba8a138224b",
+      "material": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "roughnessFactor": 1.0,
+        "metalnessFactor": 1.0,
+        "alphaMode": "OPAQUE",
+        "alphaCutoff": 0.5,
+        "doubleSided": false,
+        "emissiveFactor": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maps": {
+          "baseColorTexture": {
+            "image": 1,
+            "sampler": 1,
+            "width": 2048,
+            "height": 2048,
+            "mimeType": "image/jpeg"
+          },
+          "hasMetallicRoughnessTexture": true,
+          "hasNormalTexture": true,
+          "hasOcclusionTexture": false,
+          "hasEmissiveTexture": false
+        },
+        "baseColorTextureTransform": {
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "baseColorWrapS": 10497,
+        "baseColorWrapT": 10497,
+        "baseColorMinFilter": 9987,
+        "baseColorMagFilter": 9729,
+        "samplerFlipY": false
+      },
+      "measured": {
+        "medianBaseColor": [
+          107,
+          74,
+          36
+        ],
+        "medianRoughness": 0.9176470588235294,
+        "medianMetalness": 0.01568627450980392,
+        "medianMethod": "upper median of every eighth ORM texel on each axis, multiplied by the linear material factor; base colour is the per-vertex texel median"
+      },
+      "codecHashes": {
+        "position": "929cf576de68e8f5715bed79af49449c5564e967f6da38a117733e96e615358e",
+        "normal": "6b285b62f7c2c5a7331abf705b74ded3eb2cda6e5873aa4b7b5bd151e0c8277a",
+        "colour": "92a7e8084c503fb8a636542bb41595c8031917b5e4b6dd166daebfd0ef990726",
+        "index": "1879e9ac2217042455ff5555afefeeb9d8059c5e6d3c76369ecf7ff1ca28abff",
+        "stream": "09c3d34cdea798c403234f6fa00c2277518394747b9e2310f958cde0bdbbc4d4",
+        "base64": "4f8daa61e5b0bdb9706b720aac82c464c27acfee2e4bc9e566d33c7a2627c73a"
+      },
+      "codecSizes": {
+        "positions": 358554,
+        "normals": 119518,
+        "colors": 179277,
+        "indices": 541451,
+        "total": 1198800,
+        "base64": 1598400
+      },
+      "triangleClassSummary": null,
+      "glassBounds": null
+    },
+    {
+      "role": "campfire",
+      "glbPath": "work/tropical-island/reference-models/campfire.glb",
+      "sourceSha256": "e866fcc4fe02b602d7a0cbafd510fadbdbf216cfd00389a3bffa7b8ae58af860",
+      "sourceBytes": 6115156,
+      "sourceVertexCount": 75679,
+      "sourceTriangleCount": 116809,
+      "sourceBounds": {
+        "min": [
+          -0.49984872341156006,
+          -0.41760289669036865,
+          -0.49417179822921753
+        ],
+        "max": [
+          0.5,
+          0.4176647663116455,
+          0.49419328570365906
+        ],
+        "extent": [
+          0.9998487234115601,
+          0.8352676630020142,
+          0.9883650839328766
+        ]
+      },
+      "sourceNodeChain": [
+        {
+          "name": "tripo_node_0b0ef092-ebeb-44e9-a12b-0ea44729c24b",
+          "matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0,
+            0.0,
+            1.0,
+            0.0,
+            0,
+            0.0,
+            0.0,
+            1.0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            1
+          ],
+          "isMeshNode": true
+        }
+      ],
+      "meshNodeWorldMatrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "sourceMeshName": "tripo_mesh_0b0ef092-ebeb-44e9-a12b-0ea44729c24b",
+      "sourceMaterialName": "tripo_material_0b0ef092-ebeb-44e9-a12b-0ea44729c24b",
+      "material": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "roughnessFactor": 1.0,
+        "metalnessFactor": 1.0,
+        "alphaMode": "OPAQUE",
+        "alphaCutoff": 0.5,
+        "doubleSided": false,
+        "emissiveFactor": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maps": {
+          "baseColorTexture": {
+            "image": 0,
+            "sampler": 0,
+            "width": 2048,
+            "height": 2048,
+            "mimeType": "image/jpeg"
+          },
+          "hasMetallicRoughnessTexture": true,
+          "hasNormalTexture": true,
+          "hasOcclusionTexture": false,
+          "hasEmissiveTexture": false
+        },
+        "baseColorTextureTransform": {
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "baseColorWrapS": 10497,
+        "baseColorWrapT": 10497,
+        "baseColorMinFilter": 9987,
+        "baseColorMagFilter": 9729,
+        "samplerFlipY": false
+      },
+      "measured": {
+        "medianBaseColor": [
+          131,
+          83,
+          38
+        ],
+        "medianRoughness": 0.9686274509803922,
+        "medianMetalness": 0.00392156862745098,
+        "medianMethod": "upper median of every eighth ORM texel on each axis, multiplied by the linear material factor; base colour is the per-vertex texel median"
+      },
+      "codecHashes": {
+        "position": "df7e98d7abd0a36c13d77a2b321f79f434439dffc05765a3636c6aac9d732d8b",
+        "normal": "d87d9254b794e1eb52fcb9889ede4f8ddb7f97e0f859600b6a2593dc108d2470",
+        "colour": "374da75e35e7608740f58a91f3bae3ed85e635a3df070331ed0e071a5c6ae606",
+        "index": "747ccc3ff747d5abfb8fe730d2ea55d42a036e52e30352d924942fd515fe7b47",
+        "stream": "6355153d9ff355b4a36a28738a49956a30e9ee7a4d1e64103e20b67c14f8de05",
+        "base64": "fe2df65e88e9a529af165eeb9807f24871bb0b1fc358f7105afed07e146f28f4"
+      },
+      "codecSizes": {
+        "positions": 454074,
+        "normals": 151358,
+        "colors": 227037,
+        "indices": 611380,
+        "total": 1443849,
+        "base64": 1925132
+      },
+      "triangleClassSummary": {
+        "warmOrLeaf": 13362,
+        "darkWood": 51523,
+        "total": 116809
+      },
+      "glassBounds": null
+    },
+    {
+      "role": "lamp",
+      "glbPath": "work/tropical-island/reference-models/lamp.glb",
+      "sourceSha256": "9dd173d356df749c40cd31f8c650250aaebd8ced3f079326a0d249e6750381e8",
+      "sourceBytes": 5625640,
+      "sourceVertexCount": 65587,
+      "sourceTriangleCount": 114293,
+      "sourceBounds": {
+        "min": [
+          -0.10976848006248474,
+          -0.4999987483024597,
+          -0.328327476978302
+        ],
+        "max": [
+          0.10978613048791885,
+          0.4999907314777374,
+          0.3283344507217407
+        ],
+        "extent": [
+          0.2195546105504036,
+          0.9999894797801971,
+          0.6566619277000427
+        ]
+      },
+      "sourceNodeChain": [
+        {
+          "name": "tripo_node_1053a718-3693-48c5-8808-a6d1f8fa0a17",
+          "matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0,
+            0.0,
+            1.0,
+            0.0,
+            0,
+            0.0,
+            0.0,
+            1.0,
+            0,
+            0.0,
+            0.0,
+            0.0,
+            1
+          ],
+          "isMeshNode": true
+        }
+      ],
+      "meshNodeWorldMatrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "sourceMeshName": "tripo_mesh_1053a718-3693-48c5-8808-a6d1f8fa0a17",
+      "sourceMaterialName": "tripo_material_1053a718-3693-48c5-8808-a6d1f8fa0a17",
+      "material": {
+        "baseColorFactor": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "roughnessFactor": 1.0,
+        "metalnessFactor": 1.0,
+        "alphaMode": "OPAQUE",
+        "alphaCutoff": 0.5,
+        "doubleSided": false,
+        "emissiveFactor": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maps": {
+          "baseColorTexture": {
+            "image": 0,
+            "sampler": 0,
+            "width": 2048,
+            "height": 2048,
+            "mimeType": "image/jpeg"
+          },
+          "hasMetallicRoughnessTexture": true,
+          "hasNormalTexture": true,
+          "hasOcclusionTexture": false,
+          "hasEmissiveTexture": false
+        },
+        "baseColorTextureTransform": {
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "baseColorWrapS": 10497,
+        "baseColorWrapT": 10497,
+        "baseColorMinFilter": 9987,
+        "baseColorMagFilter": 9729,
+        "samplerFlipY": false
+      },
+      "measured": {
+        "medianBaseColor": [
+          126,
+          76,
+          37
+        ],
+        "medianRoughness": 0.6235294117647059,
+        "medianMetalness": 0.011764705882352941,
+        "medianMethod": "upper median of every eighth ORM texel on each axis, multiplied by the linear material factor; base colour is the per-vertex texel median"
+      },
+      "codecHashes": {
+        "position": "059a8454a420b14e2d966594e1ce34e522d9922898a900cfcb256f0a9a193166",
+        "normal": "1b69449d30805735c201314db2ae10cf624fcddd1214a42fce8f51c38a32ddc8",
+        "colour": "ac1d4cb18ede579c517a3e9efd6c25e8da52afc32fb32497bcff08601050fe75",
+        "index": "01270e6bff12c30c8584d428ded43fcdb5aec29d42244afc8345f2444d890c3f",
+        "stream": "445cd8bfff3277ac560d59844895d94510b84b0e6f9ca2004aec2c2d40ff9a3d",
+        "base64": "bf6b54f64e63edc499a5b94730f90bffb982faf6c5e74e4ec27e94f8d4b5fc16"
+      },
+      "codecSizes": {
+        "positions": 393522,
+        "normals": 131174,
+        "colors": 196761,
+        "indices": 555335,
+        "total": 1276792,
+        "base64": 1702392
+      },
+      "triangleClassSummary": null,
+      "glassBounds": {
+        "min": [
+          -0.034670066088438034,
+          -0.06874559074640274,
+          -0.26398974657058716
+        ],
+        "max": [
+          0.07850680500268936,
+          0.06681890040636063,
+          -0.15675269067287445
+        ]
+      }
+    }
+  ]
+}
