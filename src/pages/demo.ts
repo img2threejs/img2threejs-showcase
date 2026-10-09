@@ -333,11 +333,15 @@ export async function renderDemo(
           </div>
         </div>
       </section>
-      <div class="hint" id="demo-hint">
+      <div class="hint${id === 'tropical-island' ? ' hint-island' : ''}" id="demo-hint">
         <span class="hint-state"><i aria-hidden="true"></i> Interactive</span>
         <span class="hint-divider" aria-hidden="true"></span>
-        <span class="hint-pointer">Drag To Orbit &middot; Scroll To Zoom &middot; Select A Part</span>
-        <span class="hint-touch">Drag To Orbit &middot; Pinch To Zoom &middot; Tap A Part</span>
+        <span class="hint-pointer">${id === 'tropical-island'
+          ? 'Click Sea: Drop Rock &middot; Drag: Orbit &middot; R: Drop Again &middot; Click Fire: Relight'
+          : 'Drag To Orbit &middot; Scroll To Zoom &middot; Select A Part'}</span>
+        <span class="hint-touch">${id === 'tropical-island'
+          ? 'Tap Sea: Drop Rock &middot; Drag: Orbit &middot; Pinch: Zoom &middot; Tap Fire: Relight'
+          : 'Drag To Orbit &middot; Pinch To Zoom &middot; Tap A Part'}</span>
       </div>
     </div>
   `;
