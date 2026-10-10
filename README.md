@@ -32,8 +32,8 @@ running live in the browser.
 
 This repository is the public gallery for [img2threejs](https://github.com/img2threejs/img2threejs).
 Each study pairs its reference with a reviewable TypeScript implementation, catalog metadata,
-and a live Three.js scene. The result is not a sealed render: it is code you can inspect,
-diff, animate, and extend.
+and a live Three.js scene or a dedicated PixiJS 2D artboard. The result is not a sealed render:
+it is code you can inspect, diff, animate, and extend.
 
 <table>
 <tr>
@@ -61,6 +61,7 @@ of truth is [`src/demos/registry.ts`](src/demos/registry.ts).
 | Study | What to explore |
 | --- | --- |
 | [Tropical Island — code-only measured study](src/demos/tropical-island/createTropicalIslandModel.ts) | Ten force-measured TypeScript surfaces, procedural terrain/water/foliage, 27 selectable parts, and no runtime GLB or source texture maps. |
+| [Moonlight Cafe — PixiJS 2D study](src/demos/coffee-house/scene.ts) | Source-derived café layers, ambient sky/water/boats, the approved seated cat with tail-only sway, and a collapsible description/reference panel at `#/demo/coffee-house`. |
 | [Ocean Blue PRS Guitar](https://img2threejs.io/#/demo/prs-ocean) | Measured vertex color and PBR samples preserved in code, six addressable strings, and opt-in water-flow actions. |
 | [Groot — Heart of the Forest](https://img2threejs.io/#/demo/monster-tree) | A navigable woodland scene with retargeted movement, grounded combat, living-wood effects, and lantern spirits. |
 | [Mars Cat](https://img2threejs.io/#/demo/mars-cat) | Seventeen measured regions streamed at three quality levels without shipping the reference GLB, textures, or UV atlas. |
@@ -139,9 +140,10 @@ node scripts/check-showcase-safety.mjs --base main
 
 A submission must:
 
-- build its runtime geometry in code without fetching remote meshes, textures, fonts, or scripts;
-- include a reference image you have the right to use (`.png`, `.jpg`, `.jpeg`, or `.webp`, at most 800 KB);
-- use a unique kebab-case id and complete every required registry field;
+- for Three.js studies, build geometry in code without fetching remote meshes, textures, fonts or scripts;
+  owner-reviewed source-derived PixiJS studies use the dedicated local-asset path documented below;
+- include a catalog reference image you have the right to use (`.png`, `.jpg`, `.jpeg` or `.webp`, at most 800 KiB);
+- use a kebab-case id unique across both catalogs and complete the selected renderer's required fields;
 - set `status: 'final'` once the real implementation replaces the scaffold;
 - pass both the production build and the same safety scan used by CI.
 
@@ -167,6 +169,42 @@ npm run star-history   # regenerate the chart below; requires GITHUB_TOKEN
 
 The gallery uses hash routes (`#/` and `#/demo/:id`) so direct navigation remains compatible
 with static hosting.
+
+### Moonlight Cafe — dedicated PixiJS 2D demo
+
+This checkout includes **Moonlight Cafe** at `#/demo/coffee-house`, discoverable in the
+archive's Objects filter and the **Find a Study** command palette. It is an integrated gallery
+demo, not a separate HTML entry or a Three.js group with invented camera metadata.
+
+- `src/demos/coffee-house/` contains the migrated scene, animation modules and bundled JSON
+  manifests. Seven scene implementation files and five assets/manifests matched the approved
+  source byte-for-byte. The source-derived mattes and hidden-background reconstruction remain
+  authored approximations; this migration does not claim artist-alpha reconstruction.
+- `src/pixi/registry.ts` owns 2D metadata and runtime-selected renderer/artwork plugins.
+  `src/pages/pixi-demo.ts` owns the hash-route shell and serialized atlas leases;
+  `src/pixi/showcase.ts` owns the Application, uniform artboard fit, ambient clock and cleanup.
+  The existing Three.js registry, cameras, inspector and exporters remain separate.
+- The panel contains only the description and original reference. Desktop starts expanded;
+  mobile starts folded. **Info / Hide**, Enter and Escape control it; folded content is inert
+  and the expanded mobile panel scrolls independently. Reduced motion stops scene playback.
+  Painting modes, Zoom/pan, Explore, part selection and 3D inspector/export tabs are absent.
+- Runtime atlases and the byte-identical original PNG are local assets in `public/coffee-house/`;
+  manifests are static imports, with no direct factory `fetch` or external asset service.
+  The gallery thumbnail at `public/references/coffee-house.webp` is 189,598 bytes, below the
+  existing 800 KiB reference limit. The full artboard and reference are not cropped.
+- The scoped safety scan and full production build passed on the isolated branch with
+  `NODE_OPTIONS=--max-old-space-size=8192 npm run build`. The default-heap build still hits an
+  inherited Node heap limit; the same failure is recorded in the earlier Tropical Island
+  [PR #82 CI job](https://github.com/img2threejs/img2threejs-showcase/actions/runs/37933451797/job/113829571902).
+  This study does not change the repository's build script or CI heap configuration.
+- **35 native browser checks** cover archive/palette entry through `#/x/crown-chest`,
+  desktop/mobile and keyboard behavior, ambient/reduced motion, unchanged artwork under
+  camera gestures, in-flight route replacement, asset-failure recovery and existing Three.js
+  viewer/export regression. A direct `#/` archive-filter click timed out after 30 seconds;
+  no Island runtime or startup-performance fixes are included. Results and screenshots:
+  `verification/coffee-house/acceptance.json`; build context:
+  `verification/coffee-house/build-context.json`. No public deployment is claimed.
+
 
 ### Tropical Island — code-only diorama
 
@@ -287,13 +325,17 @@ src/
   main.ts                 application bootstrap and route mounting
   content.ts              editorial copy for the gallery shell
   site-data.ts            canonical links, release, sponsor, and roadmap data
-  pages/demo.ts           study viewer and information panel
+  pages/demo.ts           Three.js study viewer and information panel
+  pages/pixi-demo.ts      dedicated PixiJS route shell and serialized asset lifecycle
   pages/workbench.ts      inspection and export workbench
   scene.ts                renderer, camera, controls, lighting, and disposal
   exporters.ts            browser-side export flows
-  demos/registry.ts       catalog metadata and lazy runtime loaders
+  demos/registry.ts       Three.js catalog metadata and lazy runtime loaders
+  pixi/registry.ts        PixiJS 2D catalog and runtime-selected plugins
+  pixi/showcase.ts        PixiJS artboard, description/reference panel, clock and cleanup
   demos/<id>/             one implementation folder per study
-public/references/         local source references used by the catalog
+public/references/         bounded local catalog reference images
+public/coffee-house/       local café atlases and full original reference
 scripts/
   new-showcase.mjs         contributor scaffold
   check-showcase-safety.mjs static pull-request safety gate
@@ -303,8 +345,8 @@ scripts/
 ### Quality gates
 
 Pull requests targeting `main` run the shared Node 20 quality workflow. The repository adds
-showcase-specific checks for unsafe network access, reference formats and sizes, catalog ids,
-and contribution boundaries. Merged changes are deployed automatically.
+showcase-specific checks for unsafe network access, reference formats and sizes, unique ids
+across both renderer catalogs, and contribution boundaries. Merged changes are deployed automatically.
 
 ## Community
 

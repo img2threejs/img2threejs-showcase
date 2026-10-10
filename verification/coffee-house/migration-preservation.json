@@ -1,0 +1,54 @@
+{
+  "files": [
+    {
+      "path": "src/demos/coffee-house/cat-puppet.ts",
+      "unchanged": true
+    },
+    {
+      "path": "src/demos/coffee-house/scene.ts",
+      "unchanged": true
+    },
+    {
+      "path": "src/demos/coffee-house/sky.ts",
+      "unchanged": true
+    },
+    {
+      "path": "src/demos/coffee-house/foliage.ts",
+      "unchanged": true
+    },
+    {
+      "path": "src/demos/coffee-house/boats.ts",
+      "unchanged": true
+    },
+    {
+      "path": "src/demos/coffee-house/water.ts",
+      "unchanged": true
+    },
+    {
+      "path": "src/demos/coffee-house/waves.ts",
+      "unchanged": true
+    },
+    {
+      "path": "public/coffee-house/atlas.png",
+      "unchanged": true
+    },
+    {
+      "path": "public/coffee-house/motion-atlas.png",
+      "unchanged": true
+    },
+    {
+      "path": "public/coffee-house/reference.png",
+      "unchanged": true
+    },
+    {
+      "path": "src/demos/coffee-house/manifest.json",
+      "unchanged": true
+    },
+    {
+      "path": "src/demos/coffee-house/motion-manifest.json",
+      "unchanged": true
+    }
+  ],
+  "allPreserved": true,
+  "observedAt": "Before runtime smoke and removal of the provisional source-workspace reference copy."
+}

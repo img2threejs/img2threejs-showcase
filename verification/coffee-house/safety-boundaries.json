@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Distinct 2D/3D ids and metadata URL are accepted",
+    "passed": true,
+    "status": 0,
+    "output": "check-showcase-safety: no violations found."
+  },
+  {
+    "name": "Cross-renderer duplicate ids are rejected",
+    "passed": true,
+    "status": 1,
+    "output": "FAIL src/pixi/registry.ts — registry id \"three-study\" is duplicated\n\ncheck-showcase-safety: 1 violation(s) found."
+  },
+  {
+    "name": "Direct fetch in Pixi host is rejected",
+    "passed": true,
+    "status": 1,
+    "output": "FAIL src/pixi/unsafe.ts:1 — network call (fetch) is not allowed in a demo factory\n\ncheck-showcase-safety: 1 violation(s) found."
+  },
+  {
+    "name": "Oversized catalog reference is rejected",
+    "passed": true,
+    "status": 1,
+    "output": "FAIL public/references/oversize.webp — reference image is 800 KB, over the 800 KB cap\n\ncheck-showcase-safety: 1 violation(s) found."
+  }
+]

@@ -1,0 +1,56 @@
+{
+  "ready": true,
+  "sharedLifecycle": {
+    "textureAlive": true,
+    "otherConsumerAlive": true,
+    "disposedNodesRemoved": true
+  },
+  "snapshot": {
+    "time": 0,
+    "night": 0,
+    "ambient": true,
+    "paused": false,
+    "markers": false,
+    "selected": null,
+    "settings": {
+      "playbackSpeed": 1,
+      "effects": {
+        "clouds": {
+          "enabled": true,
+          "amount": 1
+        },
+        "boats": {
+          "enabled": true,
+          "amount": 1
+        },
+        "foliage": {
+          "enabled": true,
+          "amount": 1
+        },
+        "water": {
+          "enabled": true,
+          "amount": 1
+        },
+        "cat": {
+          "enabled": true,
+          "amount": 1
+        },
+        "lamps": {
+          "enabled": true,
+          "amount": 1
+        },
+        "fireflies": {
+          "enabled": true,
+          "amount": 1
+        }
+      }
+    },
+    "camera": {
+      "zoom": 1,
+      "x": 0,
+      "y": 0
+    },
+    "renderer": "webgl"
+  },
+  "pageErrors": []
+}
