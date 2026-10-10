@@ -2,7 +2,8 @@
 // Parity verifier for the force-measured tropical-island surfaces.
 //
 // Compares, per role:
-//   1. The bundled TS decoder's numeric output
+//   1. The bundled TS decoder's numeric output (after awaiting
+//      preloadMeasuredProps + the per-role loadRoleBytes)
 //   2. The committed summary JSON (measured values + hashes recorded at encode time)
 //   3. An independently re-decoded GLB measurement (sha / bytes / vertex count /
 //      triangle count / bounds / indices / material / node transforms)
@@ -14,6 +15,11 @@
 // / sRGB / varint), so a re-encode-and-decode round-trip self-comparison would
 // be a guaranteed pass; this verifier hashes against the recorded values and
 // the per-vertex/per-triangle bytes are checked independently of the encoder.
+//
+// The runtime payload is now a gzip-compressed, <=192 KiB-segmented blob under
+// measured/chunks/. The data_ROLE modules are loaded via the runtime's
+// preloadMeasuredProps(); the bytes used here come from the awaited
+// loadRoleBytes() — the canonical stream the decoder ultimately sees.
 //
 // Usage:
 //   node pipelines/tropical-island/verify-surfaces.mjs [--source-dir DIR]
@@ -187,7 +193,7 @@ async function buildBundle() {
     const entry = join(tmp, 'entry.mjs');
     const reExports = ROLES.map(r =>
       `export * as ${r} from ${JSON.stringify(join(MEASURED_DIR, 'data_' + r + '.ts'))};`);
-    reExports.push(`export { createMeasuredProp } from ${JSON.stringify(join(MEASURED_DIR, 'props.ts'))};`);
+    reExports.push(`export { preloadMeasuredProps, createMeasuredProp } from ${JSON.stringify(join(MEASURED_DIR, 'props.ts'))};`);
     writeFileSync(entry, reExports.join('\n') + '\n');
     const out = join(tmp, 'bundle.mjs');
     await esbuild.build({
@@ -203,8 +209,16 @@ async function buildBundle() {
 // ----- helpers -----
 
 
-function decodeBase64ToBuffer(b64) {
-  return Buffer.from(b64, 'base64');
+// The runtime exposes `loadRoleBytes()` which returns the canonical
+// decompressed stream after the chunk -> base64 -> gzip pipeline has run.
+// The verifier uses it directly to hash the stream sections against the
+// recorded codecHashes.* values without re-running the encoder.
+async function readCanonicalStreamFromChunks(bundle, role) {
+  const data = bundle[role];
+  if (data && typeof data.loadRoleBytes === 'function') {
+    return Buffer.from(await data.loadRoleBytes());
+  }
+  throw new Error(`${role}: no loadRoleBytes in bundle (legacy surfaceBase64 not supported)`);
 }
 
 // ----- per-role gate -----
@@ -249,11 +263,12 @@ async function verifyRole(role, bundle, independent, summary, args) {
     throw new CheckFailed(`${role} decoded.index length`);
   }
 
-  // 4) Hash the encoded stream sections and compare to recorded hashes. The encoded
-  // base64 -> bytes -> [positions, normals, colours, indices] split is the SAME
-  // arithmetic the bundled decoder performs. A re-encode/decode self-roundtrip is
-  // NOT a pass: the recorded hashes come from a different file (the JSON).
-  const streamBytes = decodeBase64ToBuffer(data.surfaceBase64);
+  // 4) Hash the encoded stream sections and compare to recorded hashes. The
+  // canonical stream is reached via the runtime's loadRoleBytes(): it returns
+  // the decompressed Uint8Array after the chunk -> base64 -> gzip pipeline
+  // runs. A re-encode/decode self-roundtrip is NOT a pass: the recorded
+  // hashes come from a different file (the JSON).
+  const streamBytes = await readCanonicalStreamFromChunks(bundle, role);
   const sizes = data.surfaceMeta.bytes;
   const total = sizes[0] + sizes[1] + sizes[2] + sizes[3];
   if (total !== streamBytes.length) {
@@ -555,6 +570,13 @@ async function main() {
   const summaryByRole = new Map(summary.roles.map(r => [r.role, r]));
 
   const bundle = await buildBundle();
+  // The runtime contract requires preloadMeasuredProps() to have resolved
+  // before any buildRole call. The verifier is a stricter caller: it needs
+  // the per-role decompressed bytes to hash the encoded stream sections
+  // against the recorded codecHashes values. Awaiting preloadMeasuredProps
+  // runs every prepareRole in parallel and settles the module-scope byte
+  // slots, which loadRoleBytes then returns synchronously-fast.
+  await bundle.preloadMeasuredProps();
 
   let failures = 0;
   const results = [];

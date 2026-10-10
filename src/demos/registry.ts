@@ -158,8 +158,13 @@ const authored: CatalogEntry[] = [
     toneMapping: 'aces',
     loadRuntime: async () => {
       // Runtime-selected exhibit plugins stay lazy; static imports load them on unrelated routes.
-      const { createTropicalIslandModel } = await import('./tropical-island/createTropicalIslandModel');
-      const { installTropicalIslandLights } = await import('./tropical-island/environment');
+      const [{ createTropicalIslandModel }, { installTropicalIslandLights }, { preloadMeasuredProps }] = await Promise.all([
+        import('./tropical-island/createTropicalIslandModel'),
+        import('./tropical-island/environment'),
+        import('./tropical-island/measured/props'),
+      ]);
+      // Finish bounded, asynchronous numeric-data loading before the synchronous factory runs.
+      await preloadMeasuredProps();
       return {
         installLights: installTropicalIslandLights,
         build: (scene) => {

@@ -35,6 +35,19 @@ function seedCounterWaves(flow, left, right) {
   }
 }
 
+test('body contact samples see propagated water before the next render upload', () => {
+  const flow = new ShallowWater(() => -1.4);
+  seedCounterWaves(flow, 0.01, 0);
+  flow.advance(0.03);
+  const live = { x: 0, y: 0, z: 0 };
+  flow.sample(-1.1, 0, live);
+  assert.ok(live.x > 0.005 && live.x < 0.011, 'contact must see the moving crest, not the previous GPU frame');
+  flow.pack();
+  const uploaded = { x: 0, y: 0, z: 0 };
+  flow.sample(-1.1, 0, uploaded);
+  assert.deepEqual(live, uploaded, 'render upload cannot change the physical contact surface or its slopes');
+});
+
 test('a variable-depth lake at rest does not invent waves or foam, including dry terrain', () => {
   const flow = new ShallowWater((x, z) => Math.max(-1.4, 0.8 - Math.hypot(x, z) * 0.3));
   const before = flow.depth.slice();
@@ -327,4 +340,29 @@ test('shoreImpulse arrays are zeroed on every advance, including advance(0) and 
   flow.advance(-1);
   assert.equal(maxAbs(flow.shoreImpulseX), 0, 'advance(negative) must clear without replaying');
   assert.equal(maxAbs(flow.shoreImpulseZ), 0, 'advance(negative) must clear without replaying');
+});
+
+test('independent water fields retain their own bed and state when another scene advances', () => {
+  const active = new ShallowWater(() => -1.4);
+  const resting = new ShallowWater(() => -0.7);
+  const before = {
+    bed: resting.bed.slice(),
+    depth: resting.depth.slice(),
+    momentumX: resting.momentumX.slice(),
+    momentumZ: resting.momentumZ.slice(),
+  };
+  active.addImpulse(2, 0, 1);
+  active.advance(0.1);
+  assert.ok(active.depth.some(h => Math.abs(h - 1.4) > 0.01), 'the active field must actually evolve');
+  for (const [field, values] of Object.entries(before)) {
+    assert.deepEqual(resting[field], values, `${field} leaked between scene instances`);
+  }
+  resting.advance(0.1);
+  assert.ok(resting.depth.every((h, i) => Math.abs(h - before.depth[i]) < 1e-10), 'the second scene must remain a lake at rest');
+});
+
+test('nonfinite water state is reported rather than clamped into apparently valid water', () => {
+  const flow = new ShallowWater(() => -1.4);
+  flow.depth[flow.size * (flow.size >> 1) + (flow.size >> 1)] = NaN;
+  assert.throws(() => flow.advance(1 / 60), /Shallow-water positivity failure at cell \d+: NaN/);
 });

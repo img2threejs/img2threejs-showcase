@@ -51,6 +51,7 @@ import math
 import struct
 import sys
 import time
+import zlib
 from pathlib import Path
 from typing import Any
 
@@ -670,6 +671,12 @@ def measure_role(role: str, glb_path: Path) -> dict[str, Any]:
     b64 = _b64lib.b64encode(stream).decode('ascii')
     b64_hash = hashlib.sha256(b64.encode('ascii')).hexdigest()
 
+    # Compress the canonical stream once, deterministically, with mtime=0 and
+    # level 9. The compressed blob is what the runtime ships in chunks and
+    # decompresses via DecompressionStream('gzip').
+    compressed = gzip_m0_level9(stream)
+    compressed_hash = hashlib.sha256(compressed).hexdigest()
+
     # ----- node chain: each entry becomes a TS array entry. The mesh-bearing
     # node is the LAST entry and contains the actual mesh. The factory wraps the
     # whole chain in an outer mutable identity group.
@@ -750,6 +757,7 @@ def measure_role(role: str, glb_path: Path) -> dict[str, Any]:
             'index': idx_hash,
             'stream': stream_hash,
             'base64': b64_hash,
+            'compressed': compressed_hash,
         },
         'codecSizes': {
             'positions': len(pos_stream),
@@ -758,6 +766,7 @@ def measure_role(role: str, glb_path: Path) -> dict[str, Any]:
             'indices': len(idx_stream),
             'total': len(stream),
             'base64': len(b64),
+            'compressed': len(compressed),
         },
         'triangleClassSummary': None,
         'glassBounds': glass_bounds,
@@ -813,10 +822,14 @@ def measure_role(role: str, glb_path: Path) -> dict[str, Any]:
                 'index': idx_hash,
                 'stream': stream_hash,
                 'base64': b64_hash,
+                'compressed': compressed_hash,
             },
+            'compressedBytes': len(compressed),
         },
         'surfaceEvidence': surface_evidence,
         'base64': b64,
+        'stream': stream,
+        'compressed': compressed,
     }
 
 
@@ -825,6 +838,60 @@ def measure_role(role: str, glb_path: Path) -> dict[str, Any]:
 def chunk_b64(s: str) -> str:
     """One literal avoids a deep concatenation AST; atob ignores line breaks."""
     return '`\n' + '\n'.join(s[i:i + 120] for i in range(0, len(s), 120)) + '\n`'
+
+
+# ----- gzip + chunked payload (deterministic, level 9, mtime 0) ----------------
+
+# Raw compressed bytes per chunk file. The runtime reads each segment
+# independently through loadCompressedSurface -> DecompressionStream('gzip').
+CHUNK_RAW_BYTES = 192 * 1024  # 192 KiB raw compressed bytes per chunk
+
+
+def gzip_m0_level9(data: bytes) -> bytes:
+    """Deterministic gzip: level 9, mtime 0, XFL=2 (matches the highest
+    compression the encoder produces), no original name, no comment, no extra
+    field. Header bytes are pinned to make the output byte-identical across
+    runs, encoder versions, and platforms."""
+    # CompressBody (raw deflate, level 9) via zlib; build a canonical gzip
+    # container with mtime = 0 and XFL = 2.
+    co = zlib.compressobj(level=9, wbits=-15)  # raw deflate, no header
+    body = co.compress(data) + co.flush()
+    crc = zlib.crc32(data) & 0xFFFFFFFF
+    isize = len(data) & 0xFFFFFFFF
+    header = bytes((0x1F, 0x8B, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xFF))
+    trailer = struct.pack('<II', crc, isize)
+    return header + body + trailer
+
+
+def split_compressed_segments(gz: bytes, seg_bytes: int = CHUNK_RAW_BYTES) -> list[bytes]:
+    return [gz[off:off + seg_bytes] for off in range(0, len(gz), seg_bytes)]
+
+
+def chunk_module_text(segment: bytes) -> str:
+    """Render one segment as a TypeScript module that default-exports the
+    base64 string of the segment. Each chunk is independently importable."""
+    b64 = _b64lib.b64encode(segment).decode('ascii')
+    lines = [b64[i:i + 120] for i in range(0, len(b64), 120)]
+    return (
+        '// Auto-generated chunk: gzip level 9, mtime 0, base64 segment.\n'
+        'export default (\n'
+        '`\n' + '\n'.join(lines) + '\n'
+        '`\n);\n'
+    )
+
+
+def write_role_chunks(role: str, compressed: bytes, chunks_dir: Path) -> list[str]:
+    """Write each compressed segment as its own chunk module under chunks/.
+    Returns the list of chunk filenames (in load order) to be referenced by
+    the data_ROLE module's CHUNK_LOADERS array."""
+    chunks_dir.mkdir(parents=True, exist_ok=True)
+    segs = split_compressed_segments(compressed)
+    names: list[str] = []
+    for i, seg in enumerate(segs):
+        name = f'island-surface-{role}-{i}.ts'
+        (chunks_dir / name).write_text(chunk_module_text(seg), encoding='utf-8')
+        names.append(name)
+    return names
 
 
 def ts_float_list(values: list[float], indent: str = '  ') -> str:
@@ -845,14 +912,28 @@ def ts_float_list(values: list[float], indent: str = '  ') -> str:
     return ('\n' + indent).join(out)
 
 
-def write_role_module(role: str, record: dict, out_dir: Path) -> None:
+def write_role_module(
+    role: str,
+    record: dict,
+    out_dir: Path,
+    chunk_names: list[str],
+) -> None:
+    """Emit the per-role data module in the chunked-payload contract:
+    - surfaceMeta + surfaceEvidence retained verbatim.
+    - No surfaceBase64 export.
+    - prepareRole() loads the chunk modules dynamically, passes them to
+      loadCompressedSurface, caches the decompressed Uint8Array in a
+      module-scope slot. On failure, the pending promise is cleared so a
+      later call retries.
+    - loadRoleBytes() returns the cached buffer (after prepareRole resolves).
+    - decodeRoleSurface() and buildRole() are synchronous and throw a clear
+      error if the role has not been prepared.
+    - The runtime decoder receives the decompressed Uint8Array; the
+      base64 -> bytes boundary lives only in surfaceCodec's chunk decoder.
+    """
     meta = record['meta']
     evidence = record['surfaceEvidence']
-    byte_import = 'bytesFromBase64, ' if 'triangleClasses' in evidence else ''
-    base64 = record['base64']
     friendly = FRIENDLY_NAME[role]
-
-    chunked = chunk_b64(base64)
 
     parts: list[str] = []
     parts.append('  sourceVertexCount: ' + str(evidence['sourceVertexCount']) + ',')
@@ -897,16 +978,51 @@ def write_role_module(role: str, record: dict, out_dir: Path) -> None:
     route = meta['route']
     bytes_arr = '[' + ','.join(str(b) for b in meta['bytes']) + ']'
 
-    # nodeChain: emit each node as {name, matrix, isMeshNode}.
     chain_parts = []
     for nd in meta['nodeChain']:
         chain_parts.append('    { name: ' + json.dumps(nd['name']) + ', matrix: ' + fmt_list(nd['matrix']) + ', isMeshNode: ' + ('true' if nd['isMeshNode'] else 'false') + ' },')
     chain_str = '[\n' + '\n'.join(chain_parts) + '\n  ]'
     world_m = fmt_list(meta['meshNodeWorldMatrix'])
 
+    # Imported symbols: bytesFromBase64 is only needed for the triangleClasses
+    # evidence path (campfire, palm). For the other eight roles we do not pull
+    # it in.
+    if 'triangleClasses' in evidence:
+        import_block = (
+            "import {\n"
+            "  buildMeasuredSurface,\n"
+            "  bytesFromBase64,\n"
+            "  decodeSurface,\n"
+            "  loadCompressedSurface,\n"
+            "  type DecodedSurface,\n"
+            "  type SurfaceEvidence,\n"
+            "  type SurfaceMeta,\n"
+            "} from './surfaceCodec';"
+        )
+    else:
+        import_block = (
+            "import {\n"
+            "  buildMeasuredSurface,\n"
+            "  decodeSurface,\n"
+            "  loadCompressedSurface,\n"
+            "  type DecodedSurface,\n"
+            "  type SurfaceEvidence,\n"
+            "  type SurfaceMeta,\n"
+            "} from './surfaceCodec';"
+        )
+
+    loader_lines = '\n'.join(
+        f"    () => import('./chunks/{n[:-3] if n.endswith('.ts') else n}')," for n in chunk_names
+    )
+    # The runtime guard checks `buf.byteLength !== STREAM_BYTES` against the
+    # post-decompression buffer. The decompressed buffer is the canonical
+    # stream (pos + nrm + srgb + idx), so its length is the stream length.
+    stream_bytes = len(record['stream'])
+
     text = f"""// Auto-generated by pipelines/tropical-island/encode-surfaces.py
 // Source: {GLB_NAMES[role]}  sha256={sha}  bytes={src_bytes}
-import {{ buildMeasuredSurface, {byte_import}decodeSurface, type DecodedSurface, type SurfaceEvidence, type SurfaceMeta }} from './surfaceCodec';
+import * as THREE from 'three';
+{import_block}
 
 export const surfaceMeta: SurfaceMeta = {{
   version: 1,
@@ -952,46 +1068,52 @@ export const surfaceMeta: SurfaceMeta = {{
 
 export const surfaceEvidence: SurfaceEvidence = {evidence_str};
 
-export const surfaceBase64: string = (
-{chunked}
-);
+const STREAM_BYTES: number = {stream_bytes};
 
-export function decodeRoleSurface(): DecodedSurface {{ return decodeSurface(surfaceMeta, surfaceBase64); }}
+const CHUNK_LOADERS: ReadonlyArray<() => Promise<{{ default: string }}>> = [
+{loader_lines}
+];
 
-export function buildRole(): import('three').Group {{
-  return buildMeasuredSurface(surfaceMeta, surfaceBase64, surfaceEvidence, {json.dumps(friendly)});
+let __bytes: Uint8Array | null = null;
+let __prepare: Promise<void> | null = null;
+
+export async function prepareRole(): Promise<void> {{
+  if (__bytes) return;
+  if (__prepare) return __prepare;
+  const p = (async () => {{
+    const buf = await loadCompressedSurface(CHUNK_LOADERS);
+    if (buf.byteLength !== STREAM_BYTES) {{
+      throw new Error(`tropical-island/measured/{role}: decompressed byteLength ${{buf.byteLength}} != expected ${{STREAM_BYTES}}`);
+    }}
+    __bytes = buf;
+  }})();
+  __prepare = p;
+  try {{ await p; }}
+  catch (e) {{ __prepare = null; throw e; }}
+}}
+
+export async function loadRoleBytes(): Promise<Uint8Array> {{
+  await prepareRole();
+  if (!__bytes) throw new Error('tropical-island/measured/{role}: bytes unavailable after prepare');
+  return __bytes;
+}}
+
+export function decodeRoleSurface(): DecodedSurface {{
+  if (!__bytes) throw new Error('tropical-island/measured/{role}: not prepared; call prepareRole() first');
+  return decodeSurface(surfaceMeta, __bytes);
+}}
+
+export function buildRole(): THREE.Group {{
+  if (!__bytes) throw new Error('tropical-island/measured/{role}: not prepared; call prepareRole() first');
+  return buildMeasuredSurface(surfaceMeta, __bytes, surfaceEvidence, {json.dumps(friendly)});
 }}
 """
     (out_dir / f'data_{role}.ts').write_text(text, encoding='utf-8')
 
 
-def write_props_module(out_dir: Path) -> None:
-    """Scene-owned prop factory: a single typed role -> build table."""
-    imports = []
-    for r in ROLES:
-        imports.append(f"import {{ buildRole as build_{r} }} from './data_{r}';")
-
-    text = """// Auto-generated by pipelines/tropical-island/encode-surfaces.py
-// Scene-owned prop factory. Each call constructs a fresh THREE.Group with measured
-// geometry / material; no GLB / texture / UV is read at runtime.
-import type * as THREE from 'three';
-
-""" + '\n'.join(imports) + """
-
-export type IslandPropRole = 'house' | 'palm' | 'dock' | 'boat' | 'rocks' | 'redRock' | 'crate' | 'barrel' | 'campfire' | 'lamp';
-
-const ROLE_BUILD: Record<IslandPropRole, () => THREE.Group> = {
-""" + '\n'.join(f"  {r}: build_{r}," for r in ROLES) + """
-};
-
-/** Build a fresh measured prop for the requested role. */
-export function createMeasuredProp(role: IslandPropRole): THREE.Group {
-  const build = ROLE_BUILD[role];
-  if (!build) throw new Error(`tropical-island/measured/props: unknown role ${String(role)}`);
-  return build();
-}
-"""
-    (out_dir / 'props.ts').write_text(text, encoding='utf-8')
+# props.ts is hand-owned: it carries the async preloadMeasuredProps + the
+# createMeasuredProp role->build table. The encoder does not emit it; main
+# owns regeneration and the runtime contract is documented in props.ts.
 
 
 def write_measured_surfaces_json(roles_data: list[dict], out_path: Path) -> None:
@@ -1000,7 +1122,7 @@ def write_measured_surfaces_json(roles_data: list[dict], out_path: Path) -> None
         'kind': 'tropical-island-force-measured',
         'generatedAt': int(time.time() * 1000),
         'encoder': 'pipelines/tropical-island/encode-surfaces.py',
-        'encoderVersion': 2,
+        'encoderVersion': 3,
         'quantization': {
             'position': 'u16 per axis over per-mesh origin/extent',
             'normal': 'octahedral 8x8 with reserved (0,0)=zero and (255,255)=-Z corner',
@@ -1039,9 +1161,14 @@ def main() -> int:
         record = measure_role(role, glb_path)
         roles_data.append(record)
 
+    chunks_dir = out_dir / 'chunks'
     for r in roles_data:
-        write_role_module(r['role'], r, out_dir)
-    write_props_module(out_dir)
+        chunk_names = write_role_chunks(r['role'], r['compressed'], chunks_dir)
+        r['_chunkNames'] = chunk_names
+    for r in roles_data:
+        write_role_module(r['role'], r, out_dir, r['_chunkNames'])
+    # props.ts is hand-owned (chunks-aware preloadMeasuredProps + createMeasuredProp).
+    # The encoder no longer emits it; the contract is documented in props.ts.
 
     summary_path = Path('pipelines/tropical-island/measured-surfaces.json')
     summary_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1059,6 +1186,8 @@ def main() -> int:
             f"idx={report['codecSizes']['indices']:<7d} "
             f"total={report['codecSizes']['total']:<7d} "
             f"b64={report['codecSizes']['base64']:<7d} "
+            f"gz={report['codecSizes']['compressed']:<7d} "
+            f"segs={len(r['_chunkNames']):<2d} "
             f"src={report['sourceBytes']}",
             file=sys.stderr,
         )

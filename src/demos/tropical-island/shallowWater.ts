@@ -13,25 +13,11 @@ const WET_DRY_TAU = 12;
 /** Permeable above-sea-level soil; bounded infiltration, metres per second. */
 const SOIL_INFILTRATION_SPEED = 0.0015;
 
-/** Depth-driven saturation, independent of the retained moisture history. */
-function wetnessTargetForDepth(depth: number): number {
-  if (!Number.isFinite(depth) || depth <= WET_FILM_DEPTH) return 0;
-  if (depth >= WET_DEPTH_WET) return 1;
-  const span = WET_DEPTH_WET - WET_FILM_DEPTH;
-  const t = (depth - WET_FILM_DEPTH) / span;
-  return t * t * (3 - 2 * t);
-}
-
-/** Fast wetting and slower drying; exponential weights preserve [0, 1]. */
-function updateWetness(
-  current: number, depth: number, rise: number, fall: number,
-): number {
-  const target = wetnessTargetForDepth(depth);
-  return current + (target - current) * (target > current ? rise : fall);
-}
 
 import { sampleIncidentWave } from './incidentWaves';
 import type { EntryWater } from './waterEntryDynamics';
+import { createKernel } from './waterKernel';
+import type { KernelViews } from './waterKernel';
 
 /** Live water parcel withdrawn by takeWater. Volume is the actual cubic
  *  metres of water pulled from the field; momentum is kg·m/s (rho·V·u),
@@ -52,37 +38,45 @@ export interface WaterParcel {
 
 /** Nonuniform finite-volume shallow water: limited MUSCL free-surface/velocity
  * reconstruction, hydrostatic HLL flux, SSP-RK2 time integration. Wet/dry faces
- * fall back to first order; bottom drag and breaking foam are closures. */
+ * fall back to first order; bottom drag and breaking foam are closures.
+ *
+ * RK stages use strict float64 WebAssembly with per-instance field views;
+ * drag, forcing, foam and source coupling operate on the same memory. */
 export class ShallowWater {
   static readonly size = SIZE;
   readonly size = SIZE;
-  readonly axis = new Float32Array(SIZE);
-  readonly cellWidths = new Float64Array(SIZE);
-  readonly bed = new Float64Array(SIZE * SIZE);
-  readonly depth = new Float64Array(SIZE * SIZE);
-  readonly momentumX = new Float64Array(SIZE * SIZE);
-  readonly momentumZ = new Float64Array(SIZE * SIZE);
-  readonly foam = new Float64Array(SIZE * SIZE);
-  readonly wetness = new Float64Array(SIZE * SIZE);
+  /** Shared nonuniform physical axis. Typed-array view over the kernel memory. */
+  readonly axis: Float32Array;
+  /** Per-column / per-row cell width on the physical axis (metres). */
+  readonly cellWidths: Float64Array;
+  /** Static bed elevation (metres) at every cell centre. */
+  readonly bed: Float64Array;
+  /** Live water depth (metres). Nonnegative, dry cells clamped to 0. */
+  readonly depth: Float64Array;
+  /** Live x / z momentum densities (m²/s × rho = kg/(m·s)). */
+  readonly momentumX: Float64Array;
+  readonly momentumZ: Float64Array;
+  /** Optional tracer concentrations and shore impulse. */
+  readonly foam: Float64Array;
+  readonly wetness: Float64Array;
   /** Cubic metres transferred from surface water into the soil. */
   absorbedVolume = 0;
   readonly surfaceData = new Float32Array(SIZE * SIZE * 4);
   readonly flowData = new Float32Array(SIZE * SIZE * 4);
   /** Nonzero unit shoreward normals only on the sloping beach band. */
-  private readonly shoreNormalX = new Float64Array(SIZE * SIZE);
-  private readonly shoreNormalZ = new Float64Array(SIZE * SIZE);
+  private readonly shoreNormalX: Float64Array;
+  private readonly shoreNormalZ: Float64Array;
   /** Directional shore impulse integrated over the most recent advance(). */
-  readonly shoreImpulseX = new Float64Array(SIZE * SIZE);
-  readonly shoreImpulseZ = new Float64Array(SIZE * SIZE);
-  private readonly deltaDepth = new Float64Array(SIZE * SIZE);
-  private readonly deltaX = new Float64Array(SIZE * SIZE);
-  private readonly deltaZ = new Float64Array(SIZE * SIZE);
-  private readonly slopeEta = new Float64Array(SIZE * SIZE);
-  private readonly slopeU = new Float64Array(SIZE * SIZE);
-  private readonly slopeV = new Float64Array(SIZE * SIZE);
-  private readonly saveDepth = new Float64Array(SIZE * SIZE);
-  private readonly saveX = new Float64Array(SIZE * SIZE);
-  private readonly saveZ = new Float64Array(SIZE * SIZE);
+  readonly shoreImpulseX: Float64Array;
+  readonly shoreImpulseZ: Float64Array;
+  /** Private kernel scratch lives in the WASM linear memory; the JS-side
+   *  references for the field API are typed-array views on the same buffer. */
+  private readonly kernel: KernelViews;
+  /** Internal velocity views (set by `updateVelocities` / `computeStage`). */
+  private readonly velocityX: Float64Array;
+  private readonly velocityZ: Float64Array;
+  private readonly foamOffsetX: Float64Array;
+  private readonly foamOffsetZ: Float64Array;
   // Touched-cell scratch for incremental source APIs. Indices and weights are
   // filled in by each call; allocations are reused across callers.
   private readonly touchedIndices = new Int32Array(SIZE * SIZE);
@@ -93,16 +87,6 @@ export class ShallowWater {
   private readonly touchedRadialZ = new Float64Array(SIZE * SIZE);
   private touchedCount = 0;
 
-  private readonly velocityX = new Float64Array(SIZE * SIZE);
-  private readonly velocityZ = new Float64Array(SIZE * SIZE);
-  private readonly foamNext = new Float64Array(SIZE * SIZE);
-  private readonly foamOffsetX = new Float64Array(SIZE * SIZE);
-  private readonly foamOffsetZ = new Float64Array(SIZE * SIZE);
-  private readonly offsetNextX = new Float64Array(SIZE * SIZE);
-  private readonly offsetNextZ = new Float64Array(SIZE * SIZE);
-  private transportedFoam = 0;
-  private transportedOffsetX = 0;
-  private transportedOffsetZ = 0;
   private readonly ambient: boolean;
   private time = 0;
   // Preallocated cubic B-spline scratch space for sample(). Reused across calls
@@ -121,8 +105,33 @@ export class ShallowWater {
   // no per-call allocation.
   private readonly sampleKinematicsTarget = { x: 0, y: 0, z: 0 };
 
-  constructor(bedAt: (x: number, z: number) => number, options?: { ambient?: boolean }) {
+  /** Synchronous constructor. The wasm module is compiled lazily on the
+   *  first ShallowWater construction (cached thereafter) and a fresh
+   *  instance with its own linear memory is allocated for every lake
+   *  so two ShallowWater objects never share state. */
+  constructor(
+    bedAt: (x: number, z: number) => number,
+    options?: { ambient?: boolean },
+  ) {
     this.ambient = options?.ambient ?? false;
+    this.kernel = createKernel();
+    this.axis = this.kernel.axis;
+    this.cellWidths = this.kernel.cellWidths;
+    this.bed = this.kernel.bed;
+    this.depth = this.kernel.depth;
+    this.momentumX = this.kernel.momentumX;
+    this.momentumZ = this.kernel.momentumZ;
+    this.velocityX = this.kernel.velocityX;
+    this.velocityZ = this.kernel.velocityZ;
+    this.foam = this.kernel.foam;
+    this.wetness = this.kernel.wetness;
+    this.foamOffsetX = this.kernel.foamOffsetX;
+    this.foamOffsetZ = this.kernel.foamOffsetZ;
+    this.shoreNormalX = this.kernel.shoreNormalX;
+    this.shoreNormalZ = this.kernel.shoreNormalZ;
+    this.shoreImpulseX = this.kernel.shoreImpulseX;
+    this.shoreImpulseZ = this.kernel.shoreImpulseZ;
+
     // Symmetric geometric outer cells retain the original +/-100 sea extent
     // without sacrificing the ~0.292-cell shoreline resolution.
     let lower = 1, upper = 1.5;
@@ -189,33 +198,19 @@ export class ShallowWater {
     return this.axis[k]!;
   }
 
-  /** Regularized van-Albada slopes retain linear superposition for gentle
-   * waves; steep fronts approach the monotone limiter instead. */
-  private limitedSlope(a: number, b: number, smoothScale: number): number {
-    const epsilon = smoothScale * smoothScale;
-    return (a + b) * (0.5 * epsilon + Math.max(0, a * b)) / (a * a + b * b + epsilon);
-  }
-
-  advance(seconds: number): void {
+  advance(seconds: number, afterStep?: (dt: number) => void): void {
     this.shoreImpulseX.fill(0);
     this.shoreImpulseZ.fill(0);
     if (!Number.isFinite(seconds) || seconds <= 0) return;
     let remaining = seconds;
     while (remaining > 1e-12) {
-      let signalX = 0, signalZ = 0;
-      for (let i = 0; i < this.depth.length; i += 1) {
-        const h = this.depth[i]!;
-        const u = h > DRY_DEPTH ? this.momentumX[i]! / h : 0;
-        const v = h > DRY_DEPTH ? this.momentumZ[i]! / h : 0;
-        const c = Math.sqrt(GRAVITY * h);
-        // Include the two-celerity wet/dry rarefaction fan in the CFL bound.
-        signalX = Math.max(signalX, Math.abs(u) + 2 * c);
-        signalZ = Math.max(signalZ, Math.abs(v) + 2 * c);
-      }
-      const dt = Math.min(remaining, 0.05, 0.4 * CENTRAL_WIDTH / Math.max(signalX + signalZ, 1e-12));
+      const signal = this.kernel.cflSignal();
+      const dt = Math.min(remaining, 0.05, 0.4 * CENTRAL_WIDTH / Math.max(signal, 1e-12));
       this.step(dt);
       this.time += dt;
       remaining -= dt;
+      // Body/parcel sources must reach the field before the next CFL scan.
+      afterStep?.(dt);
     }
   }
 
@@ -234,36 +229,16 @@ export class ShallowWater {
   }
 
   private updateVelocities(): void {
-    for (let i = 0; i < this.depth.length; i += 1) {
-      const h = this.depth[i]!;
-      this.velocityX[i] = h > DRY_DEPTH ? this.momentumX[i]! / h : 0;
-      this.velocityZ[i] = h > DRY_DEPTH ? this.momentumZ[i]! / h : 0;
-    }
+    this.kernel.updateVelocities();
   }
 
   private step(dt: number): void {
     this.drag(dt * 0.5);
-    this.saveDepth.set(this.depth);
-    this.saveX.set(this.momentumX);
-    this.saveZ.set(this.momentumZ);
+    this.kernel.snapshotState();
     // U1 = U0 + dt L(U0); U2 = U1 + dt L(U1); Unext = (U0 + U2)/2.
     this.computeStage(dt);
     this.computeStage(dt);
-    const infiltration = SOIL_INFILTRATION_SPEED * dt;
-    for (let i = 0; i < this.depth.length; i += 1) {
-      this.depth[i] = 0.5 * (this.saveDepth[i]! + this.depth[i]!);
-      this.momentumX[i] = 0.5 * (this.saveX[i]! + this.momentumX[i]!);
-      this.momentumZ[i] = 0.5 * (this.saveZ[i]! + this.momentumZ[i]!);
-      if (this.bed[i]! > 0 && this.depth[i]! > 0) {
-        const h = this.depth[i]!;
-        const next = Math.max(0, h - infiltration);
-        const retained = next / h;
-        this.absorbedVolume += (h - next) * this.cellWidths[i % SIZE]! * this.cellWidths[(i / SIZE) | 0]!;
-        this.depth[i] = next;
-        this.momentumX[i] *= retained;
-        this.momentumZ[i] *= retained;
-      }
-    }
+    this.absorbedVolume = this.kernel.blendState(SOIL_INFILTRATION_SPEED * dt, this.absorbedVolume);
     this.drag(dt * 0.5);
     if (this.ambient) this.forceIncident(dt);
     this.updateVelocities();
@@ -271,105 +246,7 @@ export class ShallowWater {
   }
 
   private computeStage(dt: number): void {
-    this.deltaDepth.fill(0);
-    this.deltaX.fill(0);
-    this.deltaZ.fill(0);
-    this.updateVelocities();
-    this.reconstructStates(true);
-    for (let z = 0; z < SIZE; z += 1) {
-      for (let x = 0; x < SIZE - 1; x += 1) this.face(z * SIZE + x, z * SIZE + x + 1, true, dt);
-    }
-    this.reconstructStates(false);
-    for (let z = 0; z < SIZE - 1; z += 1) {
-      for (let x = 0; x < SIZE; x += 1) this.face(z * SIZE + x, (z + 1) * SIZE + x, false, dt);
-    }
-    // Transmissive boundaries, with the same cell-centre pressure baseline
-    // removed as on internal faces.
-    for (let k = 0; k < SIZE; k += 1) {
-      for (let side = 0; side < 4; side += 1) {
-        const isX = side < 2;
-        const i = side === 0 ? k * SIZE : side === 1 ? k * SIZE + SIZE - 1
-          : side === 2 ? k : (SIZE - 1) * SIZE + k;
-        const scale = (side % 2 === 0 ? 1 : -1) * dt / this.cellWidths[side % 2 === 0 ? 0 : SIZE - 1]!;
-        const q = isX ? this.momentumX[i]! : this.momentumZ[i]!;
-        this.deltaDepth[i] += scale * q;
-        this.deltaX[i] += scale * q * this.velocityX[i]!;
-        this.deltaZ[i] += scale * q * this.velocityZ[i]!;
-      }
-    }
-    for (let i = 0; i < this.depth.length; i += 1) {
-      const h = this.depth[i]! + this.deltaDepth[i]!;
-      if (!Number.isFinite(h) || h < -1e-10) throw new Error(`Shallow-water positivity failure at cell ${i}: ${h}`);
-      this.depth[i] = Math.max(0, h); // floating-point roundoff only
-      this.momentumX[i] = h > DRY_DEPTH ? this.momentumX[i]! + this.deltaX[i]! : 0;
-      this.momentumZ[i] = h > DRY_DEPTH ? this.momentumZ[i]! + this.deltaZ[i]! : 0;
-    }
-  }
-
-  private reconstructStates(isX: boolean): void {
-    const stride = isX ? 1 : SIZE;
-    const normal = isX ? this.velocityX : this.velocityZ;
-    const tangent = isX ? this.velocityZ : this.velocityX;
-    for (let i = 0; i < this.depth.length; i += 1) {
-      const k = isX ? i % SIZE : Math.floor(i / SIZE);
-      const prev = i - stride, next = i + stride;
-      if (k === 0 || k === SIZE - 1 || this.depth[i]! <= DRY_DEPTH
-        || this.depth[prev]! <= DRY_DEPTH || this.depth[next]! <= DRY_DEPTH) {
-        this.slopeEta[i] = this.slopeU[i] = this.slopeV[i] = 0;
-        continue;
-      }
-      const before = this.axis[k]! - this.axis[k - 1]!;
-      const after = this.axis[k + 1]! - this.axis[k]!;
-      const half = this.cellWidths[k]! * 0.5;
-      const eta = this.depth[i]! + this.bed[i]!;
-      const delta = this.limitedSlope(half * (eta - this.depth[prev]! - this.bed[prev]!) / before,
-        half * (this.depth[next]! + this.bed[next]! - eta) / after, 0.005 * this.depth[i]!);
-      // Positivity limits the reconstructed polynomial, not the cell's water volume.
-      this.slopeEta[i] = Math.sign(delta) * Math.min(Math.abs(delta), this.depth[i]!);
-      const velocityScale = 0.005 * Math.sqrt(GRAVITY * this.depth[i]!);
-      this.slopeU[i] = this.limitedSlope(half * (normal[i]! - normal[prev]!) / before,
-        half * (normal[next]! - normal[i]!) / after, velocityScale);
-      this.slopeV[i] = this.limitedSlope(half * (tangent[i]! - tangent[prev]!) / before,
-        half * (tangent[next]! - tangent[i]!) / after, velocityScale);
-    }
-  }
-
-  private face(left: number, right: number, isX: boolean, dt: number): void {
-    const hL = Math.max(0, this.depth[left]! + this.slopeEta[left]!);
-    const hR = Math.max(0, this.depth[right]! - this.slopeEta[right]!);
-    const bed = Math.max(this.bed[left]!, this.bed[right]!);
-    const a = Math.max(0, hL + this.bed[left]! - bed);
-    const b = Math.max(0, hR + this.bed[right]! - bed);
-    const normal = isX ? this.velocityX : this.velocityZ;
-    const tangent = isX ? this.velocityZ : this.velocityX;
-    const uL = a > DRY_DEPTH ? normal[left]! + this.slopeU[left]! : 0;
-    const uR = b > DRY_DEPTH ? normal[right]! - this.slopeU[right]! : 0;
-    const vL = a > DRY_DEPTH ? tangent[left]! + this.slopeV[left]! : 0;
-    const vR = b > DRY_DEPTH ? tangent[right]! - this.slopeV[right]! : 0;
-    const cL = Math.sqrt(GRAVITY * a), cR = Math.sqrt(GRAVITY * b);
-    const sL = Math.min(0, a <= DRY_DEPTH ? uR - 2 * cR : Math.min(uL - cL, uR - cR));
-    const sR = Math.max(0, b <= DRY_DEPTH ? uL + 2 * cL : Math.max(uL + cL, uR + cR));
-    const inv = sR > sL ? 1 / (sR - sL) : 0;
-    const mass = (sR * a * uL - sL * b * uR + sL * sR * (b - a)) * inv;
-    const pressureFlux = (sR * (a * uL * uL + 0.5 * GRAVITY * a * a)
-      - sL * (b * uR * uR + 0.5 * GRAVITY * b * b)
-      + sL * sR * (b * uR - a * uL)) * inv;
-    const transverse = (sR * a * uL * vL - sL * b * uR * vR
-      + sL * sR * (b * vR - a * vL)) * inv;
-    // Each side gets its own hydrostatic correction. Subtracting the centre
-    // pressure here also supplies the within-cell topographic source balance.
-    const normL = pressureFlux + 0.5 * GRAVITY * (hL * hL - a * a - this.depth[left]! ** 2);
-    const normR = pressureFlux + 0.5 * GRAVITY * (hR * hR - b * b - this.depth[right]! ** 2);
-    const scaleL = dt / this.cellWidths[isX ? left % SIZE : Math.floor(left / SIZE)]!;
-    const scaleR = dt / this.cellWidths[isX ? right % SIZE : Math.floor(right / SIZE)]!;
-    this.deltaDepth[left] -= scaleL * mass;
-    this.deltaDepth[right] += scaleR * mass;
-    const deltaNormal = isX ? this.deltaX : this.deltaZ;
-    const deltaTangent = isX ? this.deltaZ : this.deltaX;
-    deltaNormal[left] -= scaleL * normL;
-    deltaNormal[right] += scaleR * normR;
-    deltaTangent[left] -= scaleL * transverse;
-    deltaTangent[right] += scaleR * transverse;
+    this.kernel.computeStage(dt);
   }
 
   private forceIncident(dt: number): void {
@@ -400,93 +277,33 @@ export class ShallowWater {
 
   private updateFoam(dt: number): void {
     const decay = Math.exp(-dt / 3);
-    // Bounded exponential approach to the depth-driven target. Wetting and
-    // drying share the same 1 - exp(-dt/τ) step but use τ from the side we
-    // approach, so rising tide saturates quickly while a retreating wave
-    // leaves a long subvisual film that decays on the existing 12 s memory.
     const wetRise = 1 - Math.exp(-dt / WET_TAU);
     const wetFall = 1 - Math.exp(-dt / WET_DRY_TAU);
-    for (let z = 0; z < SIZE; z += 1) {
+    const kernel = this.kernel;
+    const count = kernel.prepareFoamSources();
+    // Keep JS hypot/exp rounding, but evaluate only native-selected shore cells.
+    for (let candidate = 0; candidate < count; candidate++) {
+      const i = kernel.foamCandidates[candidate]!;
+      const x = i % SIZE, z = (i / SIZE) | 0;
+      const lowerX = Math.max(0, x - 1), upperX = Math.min(SIZE - 1, x + 1);
       const lowerZ = Math.max(0, z - 1), upperZ = Math.min(SIZE - 1, z + 1);
+      const left = z * SIZE + lowerX, right = z * SIZE + upperX;
+      const lower = lowerZ * SIZE + x, upper = upperZ * SIZE + x;
+      const spanX = this.axis[upperX]! - this.axis[lowerX]!;
       const spanZ = this.axis[upperZ]! - this.axis[lowerZ]!;
-      for (let x = 0; x < SIZE; x += 1) {
-        const lowerX = Math.max(0, x - 1), upperX = Math.min(SIZE - 1, x + 1);
-        const spanX = this.axis[upperX]! - this.axis[lowerX]!;
-        const i = z * SIZE + x;
-        const left = z * SIZE + lowerX, right = z * SIZE + upperX;
-        const lower = lowerZ * SIZE + x, upper = upperZ * SIZE + x;
-        const h = this.depth[i]!;
-        const u = this.velocityX[i]!, v = this.velocityZ[i]!;
-        const compression = Math.max(0, -(this.velocityX[right]! - this.velocityX[left]!) / spanX
-          - (this.velocityZ[upper]! - this.velocityZ[lower]!) / spanZ);
-        const eta = h + this.bed[i]!;
-        const slope = Math.hypot((this.depth[right]! + this.bed[right]! - this.depth[left]! - this.bed[left]!) / spanX,
-          (this.depth[upper]! + this.bed[upper]! - this.depth[lower]! - this.bed[lower]!) / spanZ);
-        const froude = h > DRY_DEPTH ? Math.hypot(u, v) / Math.sqrt(GRAVITY * Math.max(h, 0.005)) : 0;
-        const relativeCrest = 2 * Math.max(0, eta) / Math.max(0.05, -this.bed[i]!);
-        const nx = this.shoreNormalX[i]!, nz = this.shoreNormalZ[i]!;
-        const incomingShore = u * nx + v * nz;
-        const inShoreBand = nx !== 0 || nz !== 0;
-        // A closure, NOT a universal 0.78*depth amplitude cap. Compression plus
-        // steepness/relative crest/Froude distinguish bores from linear crossings.
-        const source = h > DRY_DEPTH && compression > 0.08
-          && (slope > 0.12 || relativeCrest > 0.6 || froude > 0.65)
-          && inShoreBand && incomingShore > 0.03 && eta > 0.025
-          ? Math.min(6, compression * 2.5) : 0;
-        if (h > DRY_DEPTH && inShoreBand && incomingShore > 0.03 && eta > 0.06) {
-          const restingDepth = Math.max(0, -this.bed[i]!);
-          const load = 0.5 * GRAVITY * Math.max(0, h * h - restingDepth * restingDepth)
-            + h * incomingShore * incomingShore;
-          this.shoreImpulseX[i] += load * dt * nx;
-          this.shoreImpulseZ[i] += load * dt * nz;
-        }
-        let transported = this.foam[i]!;
-        let offsetX = this.foamOffsetX[i]!, offsetZ = this.foamOffsetZ[i]!;
-        if (h > DRY_DEPTH && (u !== 0 || v !== 0)) {
-          // CFL displacement is smaller than one cell. Skip the lookup entirely
-          // where the entire neighbouring tracer stencil is exactly empty.
-          if (transported !== 0 || this.foam[left] !== 0 || this.foam[right] !== 0
-            || this.foam[lower] !== 0 || this.foam[upper] !== 0
-            || this.foam[lowerZ * SIZE + lowerX] !== 0 || this.foam[lowerZ * SIZE + upperX] !== 0
-            || this.foam[upperZ * SIZE + lowerX] !== 0 || this.foam[upperZ * SIZE + upperX] !== 0) {
-            this.transportFoam(this.axis[x]! - u * dt, this.axis[z]! - v * dt);
-            transported = this.transportedFoam;
-            offsetX = this.transportedOffsetX - u * dt;
-            offsetZ = this.transportedOffsetZ - v * dt;
-          }
-        }
-        const residual = transported * decay;
-        const concentration = residual + (1 - residual) * (1 - Math.exp(-source * dt));
-        this.foamNext[i] = concentration;
-        // Freshly entrained bubbles start at the current location; residual
-        // material coordinates move/stretch with their transported concentration.
-        const retained = concentration > 1e-6 ? residual / concentration : 0;
-        this.offsetNextX[i] = offsetX * retained;
-        this.offsetNextZ[i] = offsetZ * retained;
-        this.wetness[i] = updateWetness(this.wetness[i]!, h, wetRise, wetFall);
-      }
+      const h = this.depth[i]!, eta = h + this.bed[i]!;
+      const u = this.velocityX[i]!, v = this.velocityZ[i]!;
+      const slope = Math.hypot((this.depth[right]! + this.bed[right]! - this.depth[left]! - this.bed[left]!) / spanX,
+        (this.depth[upper]! + this.bed[upper]! - this.depth[lower]! - this.bed[lower]!) / spanZ);
+      const froude = Math.hypot(u, v) / Math.sqrt(GRAVITY * Math.max(h, 0.005));
+      const relativeCrest = 2 * Math.max(0, eta) / Math.max(0.05, -this.bed[i]!);
+      const source = slope > 0.12 || relativeCrest > 0.6 || froude > 0.65
+        ? Math.min(6, kernel.foamCompression[candidate]! * 2.5) : 0;
+      kernel.foamSourceStep[i] = source === 0 ? 0 : 1 - Math.exp(-source * dt);
     }
-    this.foam.set(this.foamNext);
-    this.foamOffsetX.set(this.offsetNextX);
-    this.foamOffsetZ.set(this.offsetNextZ);
+    kernel.updateFoam(dt, decay, wetRise, wetFall, WET_FILM_DEPTH, WET_DEPTH_WET);
   }
 
-  private transportFoam(x: number, z: number): void {
-    const ix = this.bracket(x), iz = this.bracket(z);
-    const fx = Math.min(1, Math.max(0, (x - this.axis[ix]!) / (this.axis[ix + 1]! - this.axis[ix]!)));
-    const fz = Math.min(1, Math.max(0, (z - this.axis[iz]!) / (this.axis[iz + 1]! - this.axis[iz]!)));
-    const i = iz * SIZE + ix;
-    const a = this.foam[i]! * (1 - fx) * (1 - fz);
-    const b = this.foam[i + 1]! * fx * (1 - fz);
-    const c = this.foam[i + SIZE]! * (1 - fx) * fz;
-    const d = this.foam[i + SIZE + 1]! * fx * fz;
-    const total = a + b + c + d;
-    this.transportedFoam = total;
-    this.transportedOffsetX = total > 1e-12 ? (a * this.foamOffsetX[i]! + b * this.foamOffsetX[i + 1]!
-      + c * this.foamOffsetX[i + SIZE]! + d * this.foamOffsetX[i + SIZE + 1]!) / total : 0;
-    this.transportedOffsetZ = total > 1e-12 ? (a * this.foamOffsetZ[i]! + b * this.foamOffsetZ[i + 1]!
-      + c * this.foamOffsetZ[i + SIZE]! + d * this.foamOffsetZ[i + SIZE + 1]!) / total : 0;
-  }
 
   addImpulse(x: number, z: number, strength: number): void {
     if (!Number.isFinite(x) || !Number.isFinite(z) || !Number.isFinite(strength)
@@ -817,6 +634,12 @@ export class ShallowWater {
   }
 
   private bracket(value: number): number {
+    // Most tracer/sample lookups lie in the dense uniform centre. Validate
+    // against the stored Float32 axis so rounding and exact knots retain the
+    // binary search's strict lower / inclusive upper interval convention.
+    const central = OUTER_CELLS + Math.floor((value + 14) / CENTRAL_WIDTH - 0.5);
+    if (central >= OUTER_CELLS && central < SIZE - OUTER_CELLS - 1
+      && this.axis[central]! < value && value <= this.axis[central + 1]!) return central;
     let low = 0, high = SIZE - 1;
     for (let iteration = 0; iteration < 8; iteration += 1) {
       const middle = (low + high) >> 1;
@@ -925,29 +748,34 @@ export class ShallowWater {
     derivZ[1] = 3 * ABz * invDaZ - 3 * BBz * invEbZ;
     derivZ[2] = 3 * BBz * invEbZ - 3 * CBz * invFcZ;
     derivZ[3] = 3 * CBz * invFcZ;
-    // 4x4 separable combine; dry-neighbor gating per knot so dry land never
-    // lifts the rendered water surface. No per-call heap, only typed scratch.
+    // Sample live conserved state: bodies run between GPU uploads. Float32
+    // rounding mirrors pack()/GLSL without repacking the full grid per contact.
+    // 4x4 separable combine; dry-neighbor gating keeps dry land out of the sea.
     let eta = 0, gx = 0, gz = 0;
     for (let j = 0; j < 4; j += 1) {
       const rowOffset = knotZ[j]! * SIZE;
       const wj = weightZ[j]!, dwj = derivZ[j]!;
       let wetEta = 0, wetDu = 0;
-      let p = (rowOffset + knotX[0]!) * 4;
-      const g0 = this.surfaceData[p + 3]! > DRY_DEPTH ? 1 : 0;
-      wetEta += g0 * weightX[0]! * this.surfaceData[p]!;
-      wetDu += g0 * derivX[0]! * this.surfaceData[p]!;
-      p = (rowOffset + knotX[1]!) * 4;
-      const g1 = this.surfaceData[p + 3]! > DRY_DEPTH ? 1 : 0;
-      wetEta += g1 * weightX[1]! * this.surfaceData[p]!;
-      wetDu += g1 * derivX[1]! * this.surfaceData[p]!;
-      p = (rowOffset + knotX[2]!) * 4;
-      const g2 = this.surfaceData[p + 3]! > DRY_DEPTH ? 1 : 0;
-      wetEta += g2 * weightX[2]! * this.surfaceData[p]!;
-      wetDu += g2 * derivX[2]! * this.surfaceData[p]!;
-      p = (rowOffset + knotX[3]!) * 4;
-      const g3 = this.surfaceData[p + 3]! > DRY_DEPTH ? 1 : 0;
-      wetEta += g3 * weightX[3]! * this.surfaceData[p]!;
-      wetDu += g3 * derivX[3]! * this.surfaceData[p]!;
+      let p = rowOffset + knotX[0]!;
+      const g0 = Math.fround(this.depth[p]!) > DRY_DEPTH ? 1 : 0;
+      const eta0 = Math.fround(this.depth[p]! + this.bed[p]!);
+      wetEta += g0 * weightX[0]! * eta0;
+      wetDu += g0 * derivX[0]! * eta0;
+      p = rowOffset + knotX[1]!;
+      const g1 = Math.fround(this.depth[p]!) > DRY_DEPTH ? 1 : 0;
+      const eta1 = Math.fround(this.depth[p]! + this.bed[p]!);
+      wetEta += g1 * weightX[1]! * eta1;
+      wetDu += g1 * derivX[1]! * eta1;
+      p = rowOffset + knotX[2]!;
+      const g2 = Math.fround(this.depth[p]!) > DRY_DEPTH ? 1 : 0;
+      const eta2 = Math.fround(this.depth[p]! + this.bed[p]!);
+      wetEta += g2 * weightX[2]! * eta2;
+      wetDu += g2 * derivX[2]! * eta2;
+      p = rowOffset + knotX[3]!;
+      const g3 = Math.fround(this.depth[p]!) > DRY_DEPTH ? 1 : 0;
+      const eta3 = Math.fround(this.depth[p]! + this.bed[p]!);
+      wetEta += g3 * weightX[3]! * eta3;
+      wetDu += g3 * derivX[3]! * eta3;
       eta += wj * wetEta;
       gx += wj * wetDu;
       gz += dwj * wetEta;
