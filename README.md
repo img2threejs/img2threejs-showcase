@@ -280,6 +280,63 @@ state/specs, generation logs and historical QA images/videos are not part of
 this showcase submission. Optional inspector GLB **export** remains available;
 static exports do not bake the simulation, wind or volumetric effects.
 
+## Download a showcase's Three.js source
+
+Open a Three.js study, choose **Export**, then **Download source code** under
+**Export a 3D Asset / From Stage**. The `<showcase-id>-source.zip` contains only
+that showcase's runtime dependency graph, not the entire gallery. Source download
+is independent of asset export scope, isolation and the current pose.
+
+Unlike GLB/glTF asset export, the source ZIP retains the original TypeScript factories,
+all reachable quality/data modules, animation controllers, shaders, procedural VFX,
+lighting and stage interaction hooks. Required textures and JSON assets are included;
+their URLs resolve within the downloaded package, including after a subpath production
+build. No `.glb`/`.gltf` model file or `GLTFLoader` dependency is allowed in these packages.
+Static studies remain static: downloading source does not invent animation.
+
+Each ZIP includes `package.json`, `manifest.json`, an executable browser example and
+integration instructions:
+
+```sh
+npm install
+npm run dev
+# Production example:
+npm run build
+```
+
+To reuse it, copy **both `src/` and `assets/`**, preserving their relative layout, into
+a TypeScript-aware, asset-aware Three.js project. Install the ZIP's declared dependencies
+and share a compatible Three.js instance with the host.
+
+```ts
+import { mountShowcase } from './downloaded-showcase/src/index';
+
+const asset = await mountShowcase(container);
+const animation = asset.runtime?.animationController;
+const action = animation?.actions[0];
+if (action) animation.play(action.id);
+// On unmount:
+asset.dispose();
+```
+
+Use `createShowcase(scene)` for an existing scene and advance its `update(dt, elapsed)`
+and `prepareRender()` from your own loop. Do not advance these again with `mountShowcase`;
+its included Viewer already does so. Camera-dependent game interactions require the
+included Viewer or an adaptation to the host engine. The package README explains both
+integration paths and resource ownership. Existing provenance/attribution remains;
+downloading does not grant new rights to third-party references or textures.
+
+Archives are generated from the selected registry entry and its actual imports by
+`scripts/source-archives.mjs`. `npm run build` writes all Three.js archives to
+`dist/source/`; development serves them on demand. Deploy that directory along with
+the gallery. After building, validate all packages in isolated consumers with:
+
+```sh
+node scripts/check-source-archives.mjs
+# Or specific studies:
+node scripts/check-source-archives.mjs leesin tropical-island
+```
+
 ## Repository map
 
 ```text

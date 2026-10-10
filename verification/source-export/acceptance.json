@@ -1,0 +1,28 @@
+{
+  "feature": "selected-showcase-source-download",
+  "date": "2026-10-10",
+  "archiveConsumers": {
+    "command": "node scripts/check-source-archives.mjs",
+    "passed": 29,
+    "isolation": "Extracted to temporary projects; only npm dependencies linked, no gallery source or assets linked",
+    "checks": ["Every extracted source package typechecks", "Manifest file inventory matches archive", "No GLB or glTF files"]
+  },
+  "ui": {
+    "observedDownloads": ["crown-chest-source.zip", "sony-wf1000xm3-source.zip"],
+    "desktop": "1440x1000",
+    "mobile": "390x844 emulated viewport, keyboard Enter activation",
+    "checks": ["Current showcase ZIP saved", "Six original formats retained", "503 response reports error and allows retry", "HTML fallback rejected instead of saved as ZIP", "Shared export busy state disables source and asset exports", "Navigation abort prevents stale download", "No mobile document horizontal overflow"]
+  },
+  "sourceRuntime": {
+    "leesin": {"boneCount": 42, "skeletonMotion": true, "elements": ["wind", "fire", "water", "thunder"], "visibleShaderMeshesPerElement": 6},
+    "awp-medusa-v2": {"productionBase": "/portable/", "textureRequests": 3, "allTexturesServedByIndependentConsumer": true, "noGLBOrGalleryRequests": true},
+    "tropical-island": {"modelChildren": 27, "originalWaterInteractionLabelInstalled": true, "keyboardRockDropProducedVisibleFallingRock": true, "environmentCycleObserved": true},
+    "snowy-village": {"meshes": 259, "actions": ["idle", "walk", "run", "boxing"], "nativeModuleResourceEntries": 20, "noGLBOrGalleryRequests": true}
+  },
+  "consumerBuilds": ["Downloaded crown-chest ZIP: npm run build -- --base /portable/ passed", "AWP source ZIP: npm run build -- --base /portable/ passed"],
+  "integratedBuild": {"command": "npm run build", "passed": true, "generatedSourceArchives": 29, "postbuildTropicalIslandCodeOnlyGate": "passed", "warning": "Vite reports large chunks"},
+  "developmentLifecycle": {"serveCloseBundleSkipsArchiveGeneration": true},
+  "regression": {"existingGLBExportRoundTripValidated": true, "meshCount": 66},
+  "uiDetector": {"command": "impeccable detect --json src/pages/demo.ts", "findings": []},
+  "limits": ["Runtime visual/interaction smoke covered the four listed showcases, not every action of all 29", "Mobile evidence is Chromium viewport/keyboard emulation, not a physical-device test", "No deployment performed"]
+}

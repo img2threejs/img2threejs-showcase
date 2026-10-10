@@ -14,6 +14,7 @@ import {
   type ExportModelScope,
   type ExportReport,
 } from '../exporters';
+import { downloadShowcaseSource } from '../source-download';
 import {
   resetExhibitOnceKeys,
   trackAnimationPlay,
@@ -319,6 +320,13 @@ export async function renderDemo(
                       <span>
                         <strong>Export all formats</strong>
                         <small>Current scope · 6 validated assets + manifest</small>
+                      </span>
+                      <span class="demo-export-zip" aria-hidden="true">.ZIP &darr;</span>
+                    </button>
+                    <button class="demo-export-all demo-export-source" id="demo-export-source" type="button">
+                      <span>
+                        <strong>Download source code</strong>
+                        <small>Editable TypeScript · animation + VFX preserved · no GLB dependency</small>
                       </span>
                       <span class="demo-export-zip" aria-hidden="true">.ZIP &darr;</span>
                     </button>
@@ -749,6 +757,15 @@ export async function renderDemo(
   const exportScopeNote = mount.querySelector<HTMLElement>('#demo-export-scope-note');
   const exportAllButton = mount.querySelector<HTMLButtonElement>('#demo-export-all');
   const exportAllNote = exportAllButton?.querySelector<HTMLElement>('small');
+  const exportSourceButton = mount.querySelector<HTMLButtonElement>('#demo-export-source');
+  const exportSourceNote = exportSourceButton?.querySelector<HTMLElement>('small');
+  const sourceAbortController = new AbortController();
+  const abortSourceDownload = (): void => {
+    if (!sourceAbortController.signal.aborted) sourceAbortController.abort();
+  };
+  if (exportStatus && !exportStatus.hasAttribute('aria-live')) {
+    exportStatus.setAttribute('aria-live', 'polite');
+  }
   const exportInfoButtons = [...mount.querySelectorAll<HTMLButtonElement>('[data-export-info]')];
   const exportButtonCleanups: Array<() => void> = [];
   let declaredExportModels: ExportModelScope[] = [];
@@ -891,6 +908,7 @@ export async function renderDemo(
     exportBusy = busy;
     for (const candidate of exportButtons) candidate.disabled = busy;
     if (exportAllButton) exportAllButton.disabled = busy;
+    if (exportSourceButton) exportSourceButton.disabled = busy;
     if (exportScopeSelect) exportScopeSelect.disabled = busy;
   };
   const showBundleReport = (
@@ -1048,6 +1066,52 @@ export async function renderDemo(
       };
       exportAllButton.addEventListener('click', onExportAll);
       exportButtonCleanups.push(() => exportAllButton.removeEventListener('click', onExportAll));
+    }
+
+    if (exportSourceButton) {
+      const onExportSource = async (): Promise<void> => {
+        if (exportBusy) return;
+        // Source download is independent of geometry scope/pose and does not require prewarm.
+        // The shared controller is aborted by route cleanup below; we read the live signal here
+        // so a single in-flight fetch can be cancelled if the user navigates away.
+        const signal = sourceAbortController.signal;
+        setExportBusy(true);
+        exportSourceButton.classList.add('is-exporting');
+        exportReport?.setAttribute('hidden', '');
+        if (exportStatus) {
+          exportStatus.value = 'Fetching source archive';
+          exportStatus.dataset.state = 'busy';
+        }
+        try {
+          const result = await downloadShowcaseSource(demo.id, signal);
+          if (!routeIsActive() || signal.aborted) return;
+          saveBlob(result.blob, result.filename);
+          if (exportStatus) {
+            exportStatus.value = 'Source archive ready';
+            exportStatus.dataset.state = 'success';
+          }
+          if (exportReport && exportSummary && exportWarnings) {
+            exportSummary.textContent =
+              `${result.filename} · ${readableBytes(result.blob.size)} · animation + VFX preserved · no GLB loader in archive`;
+            exportWarnings.replaceChildren();
+            exportWarnings.hidden = true;
+            exportReport.hidden = false;
+          }
+          if (exportSourceNote) {
+            exportSourceNote.textContent = 'Source ready · animation + VFX preserved · no GLB dependency';
+          }
+        } catch (error) {
+          if (!routeIsActive() || signal.aborted) return;
+          showExportError(error, 'source');
+        } finally {
+          if (routeIsActive()) {
+            exportSourceButton.classList.remove('is-exporting');
+            setExportBusy(false);
+          }
+        }
+      };
+      exportSourceButton.addEventListener('click', onExportSource);
+      exportButtonCleanups.push(() => exportSourceButton.removeEventListener('click', onExportSource));
     }
   }
   // QA capture scripts may place a diagnostic camera on a named socket. This
@@ -1509,6 +1573,7 @@ export async function renderDemo(
     // Flip lifecycle state before any teardown so already-queued promise continuations become inert.
     disposed = true;
     signalDisposed();
+    abortSourceDownload();
     window.clearTimeout(hintTimer);
     window.cancelAnimationFrame(resizeFrame);
     bar.removeEventListener('click', onBarClick);
