@@ -2,6 +2,7 @@ import { currentRoute, onRouteChange, type DrawerKey, type Route } from './route
 import { dismissPendingIntro, hasPendingIntro, runIntro } from './intro';
 import { isCaptureRun } from './capture-run';
 import { initAnalytics, reportableLocation, trackPageView } from './analytics';
+import { getPixiDemo } from './pixi/registry';
 
 const app = document.getElementById('app')!;
 
@@ -41,15 +42,18 @@ function escapeHtml(value: string): string {
 /** A route-aware document that remains useful when a page chunk is slow or unavailable. */
 function renderRouteFallback(route: Route): void {
   const isDemo = route.name === 'demo';
+  const pixi = isDemo ? getPixiDemo(route.id) : undefined;
   const subject = isDemo
-    ? readableId(route.id)
+    ? pixi?.title ?? readableId(route.id)
     : route.name === 'drawer'
       ? readableId(route.key)
       : 'Procedural Three.js models rebuilt from one reference image.';
-  const kicker = isDemo ? 'Loading live model inspector' : 'Open-source image-to-3D studies';
-  const description = isDemo
-    ? 'The inspector shell is ready. Its live Three.js scene and model controls are loading now.'
-    : 'Explore live objects and characters written in TypeScript. Inspect their geometry, separate named parts, play available animations and read the source behind each model.';
+  const kicker = pixi ? 'Loading live 2D showcase' : isDemo ? 'Loading live model inspector' : 'Open-source image-to-3D studies';
+  const description = pixi
+    ? 'The PixiJS artwork and its description/reference panel are loading now.'
+    : isDemo
+      ? 'The inspector shell is ready. Its live Three.js scene and model controls are loading now.'
+      : 'Explore live objects and characters written in TypeScript. Inspect their geometry, separate named parts, play available animations and read the source behind each model.';
 
   app.setAttribute('aria-busy', 'true');
   app.innerHTML = `
@@ -123,7 +127,10 @@ async function mountRoute(route: Route, generation: number): Promise<void> {
 
   try {
     if (route.name === 'demo') {
-      const { renderDemo } = await loadDemoPage();
+      const pixi = getPixiDemo(route.id);
+      const renderDemo = pixi
+        ? (await pixi.loadRenderer()).renderPixiDemo
+        : (await loadDemoPage()).renderDemo;
       if (generation !== routeGeneration) return;
       const cleanup = await renderDemo(app, route.id, () => generation === routeGeneration);
       if (generation !== routeGeneration) {

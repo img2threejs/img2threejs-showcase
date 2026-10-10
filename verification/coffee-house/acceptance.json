@@ -1,0 +1,157 @@
+{
+  "checks": [
+    {
+      "name": "Coffee is a real 2D archive entry",
+      "passed": true
+    },
+    {
+      "name": "Coffee runtime atlases stay lazy on the gallery",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "Character filter excludes Coffee",
+      "passed": true
+    },
+    {
+      "name": "Object filter includes Coffee",
+      "passed": true
+    },
+    {
+      "name": "Coffee is discoverable by name in command palette",
+      "passed": true
+    },
+    {
+      "name": "PixiJS is discoverable in command palette",
+      "passed": true
+    },
+    {
+      "name": "Palette opens actual dedicated 2D route",
+      "passed": true
+    },
+    {
+      "name": "Approved description and original reference render",
+      "passed": true
+    },
+    {
+      "name": "No Painting modes, zoom/pan, Explore or 3D tabs",
+      "passed": true
+    },
+    {
+      "name": "Desktop panel starts expanded",
+      "passed": true
+    },
+    {
+      "name": "Ambient scene actually animates",
+      "passed": true
+    },
+    {
+      "name": "Reduced motion stops scene time",
+      "passed": true
+    },
+    {
+      "name": "Wheel, drag and +/- do not zoom or pan the artwork",
+      "passed": true
+    },
+    {
+      "name": "Keyboard folds panel and removes hidden content from focus",
+      "passed": true
+    },
+    {
+      "name": "Folding panel expands canvas fit",
+      "passed": true
+    },
+    {
+      "name": "Escape folds panel and returns focus to toggle",
+      "passed": true
+    },
+    {
+      "name": "Superseded render guard resolves instead of deadlocking",
+      "passed": true,
+      "detail": "resolved"
+    },
+    {
+      "name": "Back returns to gallery without leaking Pixi UI",
+      "passed": true
+    },
+    {
+      "name": "Gallery card re-entry reacquires atlas leases",
+      "passed": true
+    },
+    {
+      "name": "Existing Three.js viewer and inspector remain intact",
+      "passed": true
+    },
+    {
+      "name": "Existing Three.js export panel works",
+      "passed": true
+    },
+    {
+      "name": "Three to Pixi cutover returns to a single real canvas",
+      "passed": true
+    },
+    {
+      "name": "Mobile starts with unobstructed folded panel",
+      "passed": true
+    },
+    {
+      "name": "Mobile layout fits viewport with accessible controls",
+      "passed": true
+    },
+    {
+      "name": "Mobile panel exposes full source reference by scrolling",
+      "passed": true
+    },
+    {
+      "name": "Superseded in-flight atlas load cannot destroy the replacement",
+      "passed": true
+    },
+    {
+      "name": "Asset failure is visible without losing metadata panel",
+      "passed": true
+    },
+    {
+      "name": "Description/reference panel remains usable after load failure",
+      "passed": true
+    },
+    {
+      "name": "Navigation after asset failure fully recovers a real renderer",
+      "passed": true
+    },
+    {
+      "name": "Built production deep link renders Pixi canvas and original reference",
+      "passed": true
+    },
+    {
+      "name": "Production source image preserves approved bytes",
+      "passed": true
+    },
+    {
+      "name": "Gallery thumbnail stays inside existing 800 KiB limit",
+      "passed": true,
+      "detail": 189598
+    },
+    {
+      "name": "Production existing Three route still renders",
+      "passed": true
+    },
+    {
+      "name": "No uncaught runtime errors across desktop/mobile/races/failure/production",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "No unexpected browser console errors",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "passed": 35,
+  "pageErrors": [],
+  "consoleErrors": [],
+  "dev": "http://127.0.0.1:5211",
+  "production": "http://127.0.0.1:5212",
+  "galleryEntryRoute": "#/x/crown-chest",
+  "defaultGalleryLimit": "A direct #/ archive-filter click hit a 30-second native timeout. The same archive and palette interactions passed through #/x/crown-chest; no Island code was changed.",
+  "sourcePreservation": "Seven implementation files plus five assets/manifests matched source SHA-256 byte-for-byte before smoke."
+}

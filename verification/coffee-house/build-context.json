@@ -1,0 +1,26 @@
+{
+  "baseCommit": "22acfd5450dd0ea99f5ae9f8a7a5aef07590a111",
+  "nodeVersion": "22.22.3",
+  "npmCi": "passed",
+  "defaultHeapBuild": {
+    "result": "failed",
+    "exitCode": 134,
+    "phase": "Vite rendering chunks",
+    "error": "Reached heap limit Allocation failed - JavaScript heap out of memory"
+  },
+  "explicitHeapBuild": {
+    "command": "NODE_OPTIONS=--max-old-space-size=8192 npm run build",
+    "result": "passed",
+    "includes": ["donate integrity", "iPhone Duo no-GLB", "Tropical Island code-only", "TypeScript", "Vite production build", "Tropical Island dist guard"]
+  },
+  "scopedSafetyScan": "passed",
+  "buildScriptChanged": false,
+  "upstreamEvidence": {
+    "pullRequest": "https://github.com/img2threejs/img2threejs-showcase/pull/82",
+    "failedJob": "https://github.com/img2threejs/img2threejs-showcase/actions/runs/37933451797/job/113829571902",
+    "nodeVersion": "20.20.2",
+    "failedStep": "npm run build",
+    "error": "Reached heap limit Allocation failed - JavaScript heap out of memory",
+    "exitCode": 134
+  }
+}

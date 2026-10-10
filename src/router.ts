@@ -4,11 +4,11 @@
  * - `home`      → the workbench (`#/`), the landing experience.
  * - `workbench` → the workbench focused on one exhibit (`#/x/:id`), so an exhibit is shareable
  *                 without leaving the workbench.
- * - `demo`      → the dedicated full-screen inspector (`#/demo/:id`). The headless review
- *                 harness (`scripts/capture-*.mjs`) loads this route and reads the
- *                 `__IMG2THREEJS_VIEWER__` / `__IMG2THREEJS_RUNTIME__` / `__IMG2THREEJS_PARTS__`
- *                 globals that `pages/demo.ts` publishes, and README links point here. Routing it
- *                 anywhere else would silently break the capture gate, so it keeps its own page.
+ * - `demo`      → a dedicated full-screen study (`#/demo/:id`). Three.js entries use the
+ *                 inspector and capture globals published by `pages/demo.ts`:
+ *                 `__IMG2THREEJS_VIEWER__` / `__IMG2THREEJS_RUNTIME__` / `__IMG2THREEJS_PARTS__`.
+ *                 PixiJS entries use `pages/pixi-demo.ts`, without Three.js camera/capture
+ *                 contracts. Both keep independent pages rather than workbench state.
  */
 /**
  * The content pages are routes, not just drawer state, because people link to them: a privacy or
