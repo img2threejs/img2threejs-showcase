@@ -176,6 +176,11 @@ cycle and procedural fire, smoke and water-entry effects. Click/tap clear deep
 sea to drop a rock, drag to orbit, and press **R** to repeat at the last water
 point. Strong shore impacts extinguish the campfire; click its retained wood or
 stone to relight it. Reduced motion holds the scene and disables physical drops.
+Eligible, unobstructed water shows a gold aim cursor with a dark outline. Hover
+uses the same depth, solid-prop, occupied-column and pool-capacity admission as
+clicks. The native 32×32 SVG cursor has a centered hotspot, falls back to
+`crosshair`, adds no animation loop, and clears on dragging, leaving the canvas,
+blur or a click/**R** drop.
 
 The ten prop surfaces in [`measured/`](src/demos/tropical-island/measured/)
 follow the img2threejs force-measured route: u16 positions, octahedral 8+8-bit
@@ -194,6 +199,63 @@ units and nonzero-normal error below `0.95°`.
 **Fidelity limit:** base color is sampled at vertices; roughness and metalness
 use measured sampled medians. Sub-vertex texture detail and source normal maps
 are not retained, so this is not pixel-identical PBR texture shading.
+Surface streams load asynchronously as 60 bounded TypeScript chunks before the
+synchronous model factory runs. Raw positions, normals, sampled colors and
+index order are preserved; the split removes the monolithic parser workload.
+The complete island payload remains about 11.04 MB gzip. Build guards enforce
+512 KiB runtime/metadata chunks, 300 KiB numeric chunks and 11 MiB aggregate gzip.
+Vite receives an 8 GiB Node heap ceiling for full-gallery builds; this is not a
+browser allocation or a quality setting.
+
+**Numerical runtime.** MUSCL/HLL reconstruction and face fluxes use a generated
+11,810-byte WebAssembly SIMD kernel with strict float64 arithmetic. Each water
+instance owns its memory, and typed-array views avoid per-step copying.
+Neighboring-cell foam lookups retain binary-search fallback for longer travel;
+incident-wave dispersion is cached by exact depth. Regeneration uses the retained
+C sources and `node pipelines/tropical-island/water-kernel/build-water-kernel.mjs`
+(LLVM clang with wasm32 support and `wasm-ld` required). Normal builds use the
+checked-in `waterKernelCode.ts`, with no compiler or external `.wasm` download.
+Runtime requires WebAssembly SIMD and `DecompressionStream`.
+
+Body and parcel sources now enter the field after every existing CFL substep,
+before the next CFL scan. Contact sampling reads live water instead of the last
+GPU upload; visual effects and texture uploads remain once per render frame.
+This fixes uneven-frame feedback that could eject a submerged rock and make
+the solver's CFL speed signal explode. The repeating schedule
+`1/60, 0.05, 1/120, 0.026` seconds previously reached 31,784; the corrected real
+scene completed 6.026 physical seconds with a maximum of 30.59 and a submerged
+rock. Coastal-jitter and stale-contact regressions both failed before their fixes.
+No geometry/effects were removed; no velocity clamp, FPS cap, simulation-clock
+slowdown, LOD, decimation or busy worker was introduced.
+
+**Verification.** All 95 island tests passed. With identical source scheduling,
+116 frames across still water, incident waves, prescribed impacts and mixed
+wet/dry lanes were byte-identical to the original solver across 16 fields.
+Physical clocks, soil absorption and non-finite errors matched; four full-grid
+foam-transport cases also matched, including long backtraces and signed zero.
+The body-coupling fix deliberately changes source scheduling rather than
+preserving the unstable trajectory.
+
+**Process CPU measurement:** Chrome 154 / Apple M1 Metal, headless 1280×960 at
+DPR 1, production assets, the same executable and a dedicated profile. Each
+default-scene run lasted 40 seconds; values average the final 30 seconds.
+CDP per-process CPU-time deltas use **100% for one CPU core**, not the whole
+machine. No profiler, build or test job ran during capture.
+
+| Measurement | Previous runtime | Optimized |
+| --- | ---: | ---: |
+| Total Chrome-process CPU | 107.4% | 79.8% |
+| Renderer-process CPU | 85.6% | 57.7% |
+| Main-thread occupancy | 81.2% | 52.6% |
+| Observed FPS | 42.8 | 40.6 |
+| Mean scene tick CPU per frame | 17.25 ms | 11.18 ms |
+
+A trusted click and eight seconds of impact/settling averaged 84.0% total Chrome
+CPU. These are measured workload results, not locked-60-FPS or other-hardware
+guarantees. Browser checks covered sinking, boat response, fire extinction and
+mesh-click relight, keyboard repeat, orbit cancellation, reduced motion, eligible
+and blocked cursor states, full-pool rejection and native portrait touch.
+
 
 `npm run build` checks island source/public assets before building and checks
 `dist/` afterward. Focused physics and interaction regression tests:

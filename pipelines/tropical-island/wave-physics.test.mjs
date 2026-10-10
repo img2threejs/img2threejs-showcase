@@ -3,6 +3,7 @@ import test from 'node:test';
 import { loadPhysicsModule } from './load-physics.mjs';
 
 const { ShallowWater } = await loadPhysicsModule('shallowWater');
+const { sampleIncidentWave } = await loadPhysicsModule('incidentWaves');
 const gravity = 9.81;
 const RHO = 1000;
 
@@ -52,6 +53,29 @@ function applyImpact(flow, x, z, radius, verticalSpeed) {
     + RHO * gravity * displacedVolume * radius;
   flow.coupleBody(x, z, radius, displacedVolume, 0, 0, work);
 }
+
+test('incident-wave dispersion follows depth without leaking another sample history', () => {
+  const sample = (depth, time = 1.25) => {
+    const target = { height: 1, momentumX: 2, momentumZ: 3 };
+    sampleIncidentWave(1.25, -12, time, depth, target);
+    return target;
+  };
+  const deepAtZero = sample(5, 0);
+  const shallowAtZero = sample(0.8, 0);
+  assert.equal(deepAtZero.height, shallowAtZero.height,
+    'at t=0 dispersion must not change the prescribed surface phase');
+  assert.notEqual(deepAtZero.momentumZ, shallowAtZero.momentumZ,
+    'finite-depth phase speed must change the incident momentum');
+  const expected = new Map([5, 0.8, 1.7].map(depth => [depth, sample(depth)]));
+  for (const depth of [5, 5, 0.8, 1.7, 0.8, 0.8, 5]) {
+    assert.deepEqual(sample(depth), expected.get(depth),
+      `interleaved depth ${depth} changed a deterministic wave sample`);
+  }
+  for (const depth of [NaN, Infinity, -Infinity, 0, -0, -1]) {
+    assert.deepEqual(sample(depth), { height: 0, momentumX: 0, momentumZ: 0 });
+  }
+  assert.deepEqual(sample(5), expected.get(5), 'invalid inputs must not poison later waves');
+});
 
 test('a weak travelling crest propagates at the linear long-wave speed without flattening', () => {
   const amplitude = 0.001;

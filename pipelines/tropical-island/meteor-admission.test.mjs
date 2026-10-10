@@ -6,8 +6,8 @@ import { loadPhysicsModule } from './load-physics.mjs';
 const { ShallowWater } = await loadPhysicsModule('shallowWater');
 const { createRockDrops } = await loadPhysicsModule('rockDrops');
 
-function fixture(t, bed = () => -5) {
-  const simulation = new ShallowWater(bed);
+function fixture(t, bed = () => -5, options) {
+  const simulation = new ShallowWater(bed, options);
   const root = new THREE.Group();
   const owned = [];
   function mesh(parent = root) {
@@ -25,6 +25,10 @@ function fixture(t, bed = () => -5) {
     acknowledge: () => {},
   };
   const drops = createRockDrops(ocean, root, terrain);
+  const afterStep = dt => {
+    ocean.uniforms.islandTime.value += dt;
+    drops.advance();
+  };
   t.after(() => {
     drops.dispose();
     for (const object of owned) {
@@ -35,10 +39,9 @@ function fixture(t, bed = () => -5) {
   return {
     root, ocean, simulation, drops, mesh, owned,
     step(dt = 1 / 60) {
-      simulation.advance(dt);
+      simulation.advance(dt, afterStep);
       simulation.pack();
-      ocean.uniforms.islandTime.value += dt;
-      drops.tick();
+      drops.render();
     },
   };
 }
@@ -142,7 +145,7 @@ test('reduced motion never launches a body and cancellation releases its reserve
   assert.ok(rocks.every(rock => !rock.visible));
   assert.equal(fx.drops.drop(8, 1), true);
   assert.equal(fx.drops.canDrop(8, 1), false);
-  fx.drops.tick(true);
+  fx.drops.render(true);
   assert.ok(rocks.every(rock => !rock.visible));
   assert.equal(fx.drops.canDrop(8, 1), true);
 });
@@ -179,4 +182,43 @@ test('one vertical trajectory descends, submerges, rests above the bed and retir
   assert.ok(grounded, 'rock actually reaches the bed');
   assert.ok(retired, 'settled column is released');
   assert.equal(fx.drops.drop(8, 1), true, 'retired slot can be reused');
+});
+
+test('uneven frames cannot launch a submerged rock or collapse the coastal CFL timestep', t => {
+  // A shallow, irregular shelf reflects the entry wave back toward the body.
+  // Flat deep water does not expose frame-batched body/field feedback.
+  const radial = [1.05, 1.18, 1.28, 1.22, 1.06, 0.92, 0.86, 0.92,
+    1.06, 1.16, 1.18, 1.06, 0.94, 0.86, 0.88, 0.96];
+  const smooth = (a, b, value) => {
+    const t = Math.max(0, Math.min(1, (value - a) / (b - a)));
+    return t * t * (3 - 2 * t);
+  };
+  const bed = (x, z) => {
+    const tau = Math.PI * 2;
+    const theta = ((Math.atan2(z / 0.85, x) % tau) + tau) % tau;
+    const f = theta / tau * radial.length, i = Math.floor(f), t = f - i;
+    const radius = 4 * (radial[i] + (radial[(i + 1) % radial.length] - radial[i]) * t * t * (3 - 2 * t));
+    const q = Math.hypot(x, z / 0.85) / radius;
+    const shore = 0.53 - 0.38 * smooth(0.52, 0.84, q)
+      - 0.16 * smooth(0.88, 1, q) - 0.55 * smooth(1, 1.18, q);
+    const mix = smooth(1.18, 1.7, q);
+    return shore * (1 - mix) - 5 * mix;
+  };
+  const fx = fixture(t, bed, { ambient: true });
+  const schedule = [1 / 60, 0.05, 1 / 120, 0.026];
+  let rock, launchY, elapsed = 0, frame = 0;
+  while (elapsed < 6) {
+    if (!rock && elapsed >= 0.9) {
+      assert.equal(fx.drops.drop(7.999999397963979, 1.0000000994658436), true);
+      rock = fx.drops.group.children.find(object => object.name === 'Falling rock' && object.visible);
+      launchY = rock.position.y;
+    }
+    const dt = schedule[frame++ % schedule.length];
+    fx.step(dt);
+    elapsed += dt;
+    assert.ok(fx.simulation.kernel.cflSignal() < 100, 'entry must not create a runaway fluid velocity');
+    if (rock) assert.ok(rock.position.y <= launchY + 0.5, 'water cannot eject the rock above its launch');
+  }
+  assert.ok(rock.position.y < -3, 'rock sinks to the offshore bed');
+  assert.equal(rock.visible, false, 'submerged rock is no longer visible');
 });

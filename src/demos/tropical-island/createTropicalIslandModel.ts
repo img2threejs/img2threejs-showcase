@@ -580,6 +580,7 @@ export function createTropicalIslandModel(): THREE.Group {
   root.userData.stageOcean = ocean.mesh;
   Object.defineProperty(root.userData, 'ocean', { value: ocean });
   const rockDrops = createRockDrops(ocean, root, beach.mesh);
+  ocean.onSubstep = rockDrops.advance;
   Object.defineProperty(root.userData, 'rockDrops', { value: rockDrops });
   const shoreResponse = new ShoreResponse(ocean.simulation);
   Object.defineProperty(root.userData, 'shoreResponse', { value: shoreResponse });
@@ -921,7 +922,7 @@ export function createTropicalIslandModel(): THREE.Group {
     ocean.uniforms.islandDaylight.value = daylight;
     (ocean.mesh.material as THREE.MeshPhysicalMaterial).envMapIntensity = 0.08 + daylight * 0.72;
     ocean.tick(elapsed, reduced);
-    rockDrops.tick(reduced);
+    rockDrops.render(reduced);
     const shoreTime = ocean.uniforms.islandTime.value;
     const shoreDt = shoreTime - previousShoreTime;
     previousShoreTime = shoreTime;

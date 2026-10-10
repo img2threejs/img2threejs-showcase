@@ -12,6 +12,12 @@ const SHEET_POINTS = SECTORS * ROWS;
 const STRIDE = 10;
 const AERATION_POINTS = 80;
 const TAU = Math.PI * 2;
+const SECTOR_COSINES = new Float64Array(SECTORS);
+const SECTOR_SINES = new Float64Array(SECTORS);
+for (let s = 0; s < SECTORS; s++) {
+  SECTOR_COSINES[s] = Math.cos(s * TAU / SECTORS);
+  SECTOR_SINES[s] = Math.sin(s * TAU / SECTORS);
+}
 // Entrainment and unresolved energy partition are reduced-order closures. The
 // actual volume/work comes from immersion and hydrodynamic work, not impact age.
 const ENTRAINMENT = 0.06;
@@ -138,7 +144,7 @@ export class EntrySplash {
   /** Return represented water before cancelling an active entry. */
   reset(refund: boolean): void {
     if (refund) {
-      for (let i = 0; i < SHEET_POINTS; i++) {
+      for (let i = 0; i < this.rows * SECTORS; i++) {
         if (this.state[i] !== 1 && this.state[i] !== 2) continue;
         const p = i * STRIDE;
         this.ocean.simulation.returnWater(this.originX, this.originZ, this.width,
@@ -199,7 +205,7 @@ export class EntrySplash {
       for (let raw = Math.ceil(Math.min(angle1, angle2) * SECTORS / TAU);
         raw <= Math.floor(Math.max(angle1, angle2) * SECTORS / TAU); raw++) {
         const s = (raw % SECTORS + SECTORS) % SECTORS;
-        const cosine = Math.cos(s * TAU / SECTORS), sine = Math.sin(s * TAU / SECTORS);
+        const cosine = SECTOR_COSINES[s]!, sine = SECTOR_SINES[s]!;
         const denominator = cosine * dz - sine * dx;
         if (Math.abs(denominator) < 1e-9) continue;
         const radius = (x1 * dz - z1 * dx) / denominator;
@@ -250,7 +256,7 @@ export class EntrySplash {
     const capRadius = body.radius * Math.sqrt(Math.max(0, 1 - ((water.height - body.y) / body.radius) ** 2));
     for (let s = 0; s < SECTORS; s++) {
       const id = row * SECTORS + s, p = id * STRIDE;
-      const cosine = Math.cos(s * TAU / SECTORS), sine = Math.sin(s * TAU / SECTORS);
+      const cosine = SECTOR_COSINES[s]!, sine = SECTOR_SINES[s]!;
       const radius = Math.max(0.05, this.collar[s]!, capRadius * 0.6) + 0.015;
       const x = body.x + cosine * radius, z = body.z + sine * radius;
       this.ocean.simulation.takeWater(x, z, Math.max(0.2, body.radius * 0.4), requested, this.parcel);
@@ -321,8 +327,9 @@ export class EntrySplash {
 
   advance(dt: number): void {
     this.age += dt;
+    if (this.airborne === 0) return;
     const d = this.data;
-    for (let i = 0; i < SHEET_POINTS; i++) {
+    for (let i = 0; i < this.rows * SECTORS; i++) {
       if (this.state[i] !== 1 && this.state[i] !== 2) continue;
       const p = i * STRIDE, radius = d[p + 7]!;
       const oldVy = d[p + 4]!;
@@ -394,6 +401,12 @@ export class EntrySplash {
   render(): void {
     const dt = this.age - this.renderedAge;
     this.renderedAge = this.age;
+    // Clear the last visible parcel frame before skipping settled geometry.
+    // Aeration and both clocks still advance after every parcel has returned.
+    if (this.airborne === 0 && !this.sheet.visible && !this.drops.visible) {
+      this.renderAeration();
+      return;
+    }
     const d = this.data, p = this.sheet.geometry.getAttribute('position') as THREE.BufferAttribute;
     const indices = this.sheet.geometry.getIndex()!;
     this.linked.fill(0);
@@ -450,7 +463,7 @@ export class EntrySplash {
     this.sheet.visible = count > 0;
     if (count > 0) normals(this.sheet.geometry);
     let visible = 0;
-    for (let i = 0; i < SHEET_POINTS; i++) {
+    for (let i = 0; i < this.rows * SECTORS; i++) {
       const q = i * STRIDE;
       if (this.state[i] !== 2) { this.drops.setMatrixAt(i, this.hidden); continue; }
       const radius = d[q + 7]!;

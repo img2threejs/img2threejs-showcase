@@ -77,7 +77,10 @@ export interface RockDrops {
   readonly group: THREE.Group;
   canDrop(x: number, z: number): boolean;
   drop(x: number, z: number, reducedMotion?: boolean): boolean;
-  tick(reducedMotion?: boolean): void;
+  /** Advance body/parcel physics at the ocean's current CFL-substep clock. */
+  advance(): void;
+  /** Update visible effects once per render frame; cancel if motion is reduced. */
+  render(reducedMotion?: boolean): void;
   dispose(): void;
 }
 
@@ -330,11 +333,12 @@ export function createRockDrops(
   const beginEntry = (slot: Slot, age: number, clock: number): void => {
     const tA = slot.previousAge, tB = age;
     let lo = tA, hi = tB;
+    // The field and launch coordinates stay fixed throughout this bisection.
+    const sea = seaY(slot.launchX, slot.launchZ);
     for (let i = 0; i < 14; i++) {
       const mid = (lo + hi) * 0.5;
       pose(slot, mid);
       const rockBottom = slot.startY - flightDistance(mid) + slot.bottom;
-      const sea = seaY(slot.launchX, slot.launchZ);
       if (rockBottom <= sea) hi = mid; else lo = mid;
     }
     const contactAge = (lo + hi) * 0.5;
@@ -355,7 +359,7 @@ export function createRockDrops(
     slot.born = clock - (age - contactAge);
     slot.state = 2;
     slot.integratedAge = 0;
-    slot.wetLevel = seaY(body.x, body.z);
+    slot.wetLevel = sea;
     slot.splash.begin(body.x, body.z, RADIUS);
     slot.steam.begin(body.x, slot.wetLevel, body.z, RADIUS);
   };
@@ -365,7 +369,7 @@ export function createRockDrops(
     while (slot.integratedAge < age - 1e-9) {
       const dt = Math.min(PHYSICS_STEP, age - slot.integratedAge);
       ocean.simulation.sampleKinematics(body.x, body.z, water);
-      bounds(slot, slot.rock.quaternion);
+      // beginEntry or the preceding substep already bounded this quaternion.
       stepWaterEntry(body, water, slot.bottom, slot.top, dt, step);
       spinAxis.set(body.wx, body.wy, body.wz);
       const spin = spinAxis.length();
@@ -389,13 +393,11 @@ export function createRockDrops(
     }
   };
 
-  const tick = (reducedMotion = false): void => {
+  const advance = (): void => {
     if (disposed) return;
     const clock = ocean.uniforms.islandTime.value;
-    let changed = false;
     for (const slot of slots) {
       if (slot.state === 0) continue;
-      if (reducedMotion) { cancel(slot); changed = true; continue; }
       if (slot.state === 1) {
         const age = Math.max(0, clock - slot.born);
         pose(slot, age);
@@ -409,17 +411,28 @@ export function createRockDrops(
           slot.rock.position.y = centre;
           slot.rock.quaternion.copy(rotation);
           slot.previousAge = age;
-          slot.meteor.tick(age, centre, water, Math.min(1, seaMaterial.envMapIntensity / 0.8));
         }
       }
-      if (slot.state !== 2) continue;
+      if (slot.state === 2) integrate(slot, Math.max(0, clock - slot.born));
+    }
+  };
+
+  const render = (reducedMotion = false): void => {
+    if (disposed) return;
+    const clock = ocean.uniforms.islandTime.value;
+    const daylight = Math.min(1, seaMaterial.envMapIntensity / 0.8);
+    let cancelled = false;
+    for (const slot of slots) {
+      if (slot.state === 0) continue;
+      if (reducedMotion) { cancel(slot); cancelled = true; continue; }
       const age = Math.max(0, clock - slot.born);
-      integrate(slot, age);
-      changed = true;
+      if (slot.state === 1) {
+        slot.meteor.tick(age, slot.rock.position.y, seaY(slot.launchX, slot.launchZ), daylight);
+        continue;
+      }
       const water = seaY(slot.body.x, slot.body.z);
-      slot.meteor.tick(slot.flightAge + age, slot.contactCentre, Math.max(slot.wetLevel, water),
-        Math.min(1, seaMaterial.envMapIntensity / 0.8));
-      slot.steam.tick(age, Math.min(1, seaMaterial.envMapIntensity / 0.8));
+      slot.meteor.tick(slot.flightAge + age, slot.contactCentre, Math.max(slot.wetLevel, water), daylight);
+      slot.steam.tick(age, daylight);
       slot.splash.render();
       const submergence = water - (slot.body.y + slot.top);
       const settledFade = slot.splash.finished && slot.steam.finished
@@ -431,7 +444,7 @@ export function createRockDrops(
       slot.rock.material.roughness = 0.85 - wet * 0.25;
       if (slot.splash.finished && slot.steam.finished && slot.resting > 1) cancel(slot, false);
     }
-    if (changed) ocean.sync();
+    if (cancelled) ocean.sync();
   };
 
   const dispose = (): void => {
@@ -447,5 +460,5 @@ export function createRockDrops(
     steams.dispose();
     slots.length = 0;
   };
-  return { group, canDrop, drop, tick, dispose };
+  return { group, canDrop, drop, advance, render, dispose };
 }

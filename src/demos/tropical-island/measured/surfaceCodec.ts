@@ -46,6 +46,7 @@ export interface SurfaceMeta {
   sourceSha256: string;
   sourceBytes: number;
   route: string;
+  /** Canonical section hashes, including the re-derivable original base64 form. */
   codecHashes: { position: string; normal: string; colour: string; index: string; stream: string; base64: string };
 }
 
@@ -58,26 +59,54 @@ export interface DecodedSurface {
   index: Uint32Array;
 }
 
-/** Inline base64 -> Uint8Array. */
-export function bytesFromBase64(b64: string): Uint8Array {
+/** Inline base64 -> Uint8Array. Used for chunk decode and triangleClasses. */
+export function bytesFromBase64(b64: string): Uint8Array<ArrayBuffer> {
   const raw = atob(b64);
   const out = new Uint8Array(raw.length);
   for (let i = 0; i < raw.length; i += 1) out[i] = raw.charCodeAt(i);
   return out;
 }
 
+/** Decode bounded imports with backpressure; yield between chunks for UI input. */
+export async function loadCompressedSurface(
+  chunks: ReadonlyArray<() => Promise<{ default: string }>>,
+): Promise<Uint8Array> {
+  if (chunks.length === 0) {
+    throw new Error('Tropical Island compressed surface: empty chunk list');
+  }
+  let index = 0;
+  const compressed = new ReadableStream<Uint8Array<ArrayBuffer>>({
+    async pull(controller): Promise<void> {
+      try {
+        const mod = await chunks[index]();
+        controller.enqueue(bytesFromBase64(mod.default));
+        index += 1;
+        if (index >= chunks.length) controller.close();
+        else await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      } catch (err) {
+        controller.error(err);
+      }
+    },
+  });
+  const inflated = compressed.pipeThrough(new DecompressionStream('gzip'));
+  const response = new Response(inflated);
+  const buffer = await response.arrayBuffer();
+  if (buffer.byteLength === 0) {
+    throw new Error('Tropical Island compressed surface: empty after gunzip');
+  }
+  return new Uint8Array(buffer);
+}
 
-/** Decode one role's measured stream. */
-export function decodeSurface(meta: SurfaceMeta, base64: string): DecodedSurface {
+/** Decode one role's measured stream from a pre-decompressed byte buffer. */
+export function decodeSurface(meta: SurfaceMeta, stream: Uint8Array): DecodedSurface {
   if (meta.version !== 1) throw new Error('Unsupported Tropical Island surface version');
-  const stream = bytesFromBase64(base64);
-  const view = new DataView(stream.buffer);
+  const view = new DataView(stream.buffer, stream.byteOffset, stream.byteLength);
   const n = meta.vertexCount;
   const sizes = meta.bytes;
   const expectedTotal = sizes[0] + sizes[1] + sizes[2] + sizes[3];
   if (sizes.length !== 4 || sizes[0] !== n * 6 || sizes[1] !== n * 2
-    || sizes[2] !== n * 3 || expectedTotal !== stream.length) {
-    throw new Error(`Tropical Island surface size mismatch (sections ${sizes.join('+')} = ${expectedTotal}, stream ${stream.length})`);
+    || expectedTotal !== stream.byteLength) {
+    throw new Error(`Tropical Island surface size mismatch (sections ${sizes.join('+')} = ${expectedTotal}, stream ${stream.byteLength})`);
   }
   const position = new Float32Array(n * 3);
   for (let i = 0; i < position.length; i += 1) {
@@ -116,7 +145,7 @@ export function decodeSurface(meta: SurfaceMeta, base64: string): DecodedSurface
     let value = 0;
     let multiplier = 1;
     for (let count = 0; ; count += 1) {
-      if (nc >= stream.length || count > 4) throw new Error('Tropical Island index varint runaway');
+      if (nc >= stream.byteLength || count > 4) throw new Error('Tropical Island index varint runaway');
       const byte = stream[nc++];
       value += (byte & 127) * multiplier;
       if (!(byte & 128)) break;
@@ -126,18 +155,18 @@ export function decodeSurface(meta: SurfaceMeta, base64: string): DecodedSurface
     if (previous < 0 || previous >= n) throw new Error(`Tropical Island index out of range (${previous} >= ${n})`);
     index[i] = previous;
   }
-  if (nc !== stream.length) throw new Error(`Tropical Island index section consumed ${nc} of ${stream.length} bytes`);
+  if (nc !== stream.byteLength) throw new Error(`Tropical Island index section consumed ${nc} of ${stream.byteLength} bytes`);
   return { position, normal, colour, colourBytes, index };
 }
 
 /** Build a measured Group for a single role. Materials and geometry are fresh per call. */
 export function buildMeasuredSurface(
   meta: SurfaceMeta,
-  base64: string,
+  stream: Uint8Array,
   evidence: SurfaceEvidence,
   groupName: string,
 ): THREE.Group {
-  const data = decodeSurface(meta, base64);
+  const data = decodeSurface(meta, stream);
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(data.position, 3));
   geometry.setAttribute('normal', new THREE.BufferAttribute(data.normal, 3));

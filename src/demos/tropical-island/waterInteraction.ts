@@ -3,6 +3,15 @@ import type { Viewer } from '../../scene';
 import type { OceanPlane } from './ocean';
 import type { CampfireVfx } from './campfire';
 
+// Native cursor: high-contrast aim marker, with no DOM overlay or animation loop.
+const DROP_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">'
+  + '<defs><path id="aim" d="M16 3v6m0 14v6M3 16h6m14 0h6M23 16a7 7 0 1 1-14 0a7 7 0 1 1 14 0"/></defs>'
+  + '<g fill="none" stroke-linecap="round"><use href="#aim" stroke="#17242a" stroke-width="4"/>'
+  + '<use href="#aim" stroke="#ffd477" stroke-width="2"/>'
+  + '</g><circle cx="16" cy="16" r="1.5" fill="#fff"/></svg>',
+)}") 16 16, crosshair`;
+
 /**
  * Click/tap drops a boulder into clear, deep water; drag anywhere is native OrbitControls;
  * R repeats at the last eligible sea point. The campfire keeps its
@@ -25,6 +34,7 @@ export function mountWaterInteraction(
   const surface = new THREE.Vector3();
   const lastSea = new THREE.Vector3(8, ocean.mesh.position.y, 1);
   const solids: THREE.Object3D[] = [];
+  const campfireSolids: THREE.Object3D[] = [];
   const hits: THREE.Intersection[] = [];
   const touches = new Set<number>();
   let bounds = canvas.getBoundingClientRect();
@@ -79,6 +89,15 @@ export function mountWaterInteraction(
     raycaster.setFromCamera(pointer, viewer.camera);
     solids.length = 0;
     root.traverse(collectSolid);
+    // A non-fire ray cannot relight anything; keep the full nearest-hit query
+    // only for rays that actually intersect the original campfire geometry.
+    campfireSolids.length = 0;
+    for (const solid of solids) {
+      if (findVisibleCampfireAncestor(solid)) campfireSolids.push(solid);
+    }
+    hits.length = 0;
+    raycaster.intersectObjects(campfireSolids, false, hits);
+    if (!hits.length) return false;
     hits.length = 0;
     raycaster.intersectObjects(solids, false, hits);
     if (!hits.length) return false;
@@ -107,7 +126,13 @@ export function mountWaterInteraction(
       solids.length = 0;
       root.traverse(collectSolid);
       hits.length = 0;
-      raycaster.intersectObjects(solids, false, hits);
+      const previousFar = raycaster.far;
+      raycaster.far = distance - 0.02;
+      try {
+        raycaster.intersectObjects(solids, false, hits);
+      } finally {
+        raycaster.far = previousFar;
+      }
       if (hits.length && hits[0]!.distance < distance - 0.02) return false;
     }
     lastSea.copy(point);
@@ -162,8 +187,11 @@ export function mountWaterInteraction(
   };
 
   const onHover = (event: PointerEvent): void => {
-    if (event.buttons || event.pointerType === 'touch' || pendingPointer !== null) return;
-    canvas.style.cursor = seaAt(event, true) ? 'crosshair' : '';
+    if (event.buttons || event.pointerType === 'touch' || pendingPointer !== null || !viewer.controls.enabled) {
+      canvas.style.cursor = '';
+      return;
+    }
+    canvas.style.cursor = seaAt(event, true) ? DROP_CURSOR : '';
   };
 
   const onUp = (event: PointerEvent): void => {
@@ -202,6 +230,7 @@ export function mountWaterInteraction(
   const onBlur = (): void => {
     touches.clear();
     abortPending();
+    canvas.style.cursor = '';
   };
 
   const onKey = (event: KeyboardEvent): void => {
@@ -210,12 +239,14 @@ export function mountWaterInteraction(
     // Shift has no behavioural effect — R always uses its own single-shot drop.
     event.preventDefault();
     dropRock(lastSea.x, lastSea.z);
+    canvas.style.cursor = '';
   };
 
   canvas.addEventListener('pointerdown', onDown, true);
   canvas.addEventListener('pointermove', onMove, { capture: true, passive: false });
   canvas.addEventListener('pointermove', onHover);
   canvas.addEventListener('pointerup', onUp, true);
+  canvas.addEventListener('pointerleave', onBlur);
   canvas.addEventListener('pointercancel', onCancel, true);
   canvas.addEventListener('lostpointercapture', onCancel);
   canvas.addEventListener('keydown', onKey);
@@ -230,6 +261,7 @@ export function mountWaterInteraction(
     canvas.removeEventListener('pointermove', onMove, true);
     canvas.removeEventListener('pointermove', onHover);
     canvas.removeEventListener('pointerup', onUp, true);
+    canvas.removeEventListener('pointerleave', onBlur);
     canvas.removeEventListener('pointercancel', onCancel, true);
     canvas.removeEventListener('lostpointercapture', onCancel);
     canvas.removeEventListener('keydown', onKey);

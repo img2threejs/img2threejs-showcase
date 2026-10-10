@@ -23,6 +23,7 @@ async function compile(name) {
 
 // Runtime dependencies shared by the physics modules, in dependency order.
 for (const name of [
+  'waterKernelCode', 'waterKernel',
   'incidentWaves', 'waterEntryDynamics', 'entryWaterOptics',
   'entrySplash', 'meteorTrail', 'entrySteam',
 ]) compiled.set(name, await compile(name));

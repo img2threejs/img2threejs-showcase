@@ -47,6 +47,9 @@ const N = LAMBDA.length;
 const KX = new Float64Array(N);
 const KZ = new Float64Array(N);
 const K = new Float64Array(N);
+const GK = new Float64Array(N);
+const DIRECTION_X = new Float64Array(N);
+const DIRECTION_Z = new Float64Array(N);
 const AMPS = new Float64Array(N);
 const PHI = new Float64Array(N);
 {
@@ -57,10 +60,21 @@ const PHI = new Float64Array(N);
     K[i] = k;
     KX[i] = k * Math.sin(theta);
     KZ[i] = k * Math.cos(theta);
+    GK[i] = G * k;
+    // Preserve the original rounded k-component ratios, rather than substituting trig.
+    DIRECTION_X[i] = KX[i]! / k;
+    DIRECTION_Z[i] = KZ[i]! / k;
     AMPS[i] = AMPLITUDE[i]!;
     PHI[i] = PHASE_OFFSET[i]!;
   }
 }
+
+// Consecutive offshore cells normally share a resting depth. Cache only that
+// exact depth, so changing bathymetry or interleaving water instances cannot
+// reuse another depth's dispersion. No approximation or per-sample allocation.
+let dispersionDepth = NaN;
+const OMEGA = new Float64Array(N);
+const PHASE_SPEED = new Float64Array(N);
 
 /**
  * Sample the incident-wave field at (x, z) at simulation time `time` over local
@@ -86,20 +100,27 @@ export function sampleIncidentWave(
     return;
   }
 
+  if (depth !== dispersionDepth) {
+    for (let i = 0; i < N; i += 1) {
+      const k = K[i]!;
+      const kh = k * depth;
+      const tanhKh = Math.tanh(kh);
+      const omega = Math.sqrt(GK[i]! * tanhKh);
+      OMEGA[i] = omega;
+      PHASE_SPEED[i] = omega / k;
+    }
+    dispersionDepth = depth;
+  }
+
   let etaSum = 0;
   let qxSum = 0;
   let qzSum = 0;
 
   for (let i = 0; i < N; i += 1) {
-    const k = K[i]!;
     const kx = KX[i]!;
     const kz = KZ[i]!;
-    // Finite-depth linear dispersion. One tanh + one sqrt per component;
-    // depth is fixed for this call, so no per-cell cross-component work.
-    const kh = k * depth;
-    const tanhKh = Math.tanh(kh);
-    const omega = Math.sqrt(G * k * tanhKh);
-    const c = omega / k;
+    const omega = OMEGA[i]!;
+    const c = PHASE_SPEED[i]!;
 
     // Traveling-wave phase: cos(k·r − ω·t + φ). Sign convention is the
     // physically consistent one for +k propagation; with θ ≈ 0 the wave
@@ -110,10 +131,10 @@ export function sampleIncidentWave(
     etaSum += eta;
     // Linear-wave momentum flux q' = h̄·u ≈ c·η along the propagation
     // direction. Decomposed into world axes: qx = c·η·sin(θ), qz = c·η·cos(θ).
-    // kx/k = sin(θ), kz/k = cos(θ) by construction above — no trig needed.
+    // kx/k and kz/k are precomputed above — no per-sample trig or direction division.
     const qComp = c * eta;
-    qxSum += qComp * (kx / k);
-    qzSum += qComp * (kz / k);
+    qxSum += qComp * DIRECTION_X[i]!;
+    qzSum += qComp * DIRECTION_Z[i]!;
   }
 
   target.height = etaSum;

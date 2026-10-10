@@ -7,7 +7,7 @@
     "check:donate": "node scripts/check-donate-integrity.mjs",
     "prebuild": "npm run check:donate && npm run check:iphone-duo && npm run check:tropical-island",
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && node --max-old-space-size=8192 node_modules/vite/bin/vite.js build",
     "postbuild": "npm run check:tropical-island -- --dist",
     "preview": "vite preview",
     "new-demo": "node scripts/new-showcase.mjs",

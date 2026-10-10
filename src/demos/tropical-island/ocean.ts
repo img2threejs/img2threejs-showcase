@@ -76,6 +76,8 @@ export interface OceanPlane {
   mesh: THREE.Mesh;
   uniforms: WaterUniforms;
   tick: (elapsed: number, reducedMotion?: boolean) => void;
+  /** Exchange body/parcel sources after each CFL substep, before the next one. */
+  onSubstep?: () => void;
   sampleSurface: (x: number, z: number, target: THREE.Vector3) => void;
   /** Opacity-only acknowledgement for a dropped rock. Validates the
    *  coordinate lands on a wet cell and paints the same blue-feedback ring
@@ -83,9 +85,8 @@ export interface OceanPlane {
    *  dry / non-finite) coordinates no-op so the rock layer can broadcast
    *  every click without guarding its own routing. */
   acknowledge: (x: number, z: number) => void;
-  /** Re-upload the solver's packed surfaceData / flowData after main has
-   *  finished a batch of body / parcel exchanges, so the GPU textures
-   *  reflect the latest physics before the next tick(). */
+  /** Re-upload out-of-band exchanges, such as cancelling airborne parcels
+   *  while reduced motion has frozen the normal simulation tick. */
   sync: () => void;
   isWater: (x: number, z: number) => boolean;
   dispose: () => void;
@@ -625,6 +626,11 @@ export function buildOceanPlane(shape: OceanShape): OceanPlane {
     oceanFlowTexture.needsUpdate = true;
   };
 
+  const afterStep = (dt: number): void => {
+    uniforms.islandTime.value += dt;
+    plane.onSubstep?.();
+  };
+
   const tick = (elapsed: number, reducedMotion = false): void => {
     if (disposed || !Number.isFinite(elapsed)) return;
     const dt = previousElapsed === undefined || elapsed < previousElapsed ? 0 : elapsed - previousElapsed;
@@ -636,9 +642,8 @@ export function buildOceanPlane(shape: OceanShape): OceanPlane {
       // Shader compilation or a slow frame must not create an ever-growing
       // catch-up loop. Water, falling rocks and body loads share this clock.
       const simulatedDt = Math.min(dt, 0.05);
-      simulation.advance(simulatedDt);
+      simulation.advance(simulatedDt, afterStep);
       uploadState();
-      uniforms.islandTime.value += simulatedDt;
     }
     lastReduced = reducedMotion;
     feedbackRemaining = Math.max(0, feedbackRemaining - dt);
@@ -657,9 +662,8 @@ export function buildOceanPlane(shape: OceanShape): OceanPlane {
     if (disposed) return;
     if (!Number.isFinite(x) || !Number.isFinite(z)) return;
     if (!isWater(x, z)) return;
-    // Opacity-only blue acknowledgement. Solver state is never mutated here;
-    // the rock layer owns the actual body / parcel exchanges and calls sync()
-    // once its batch is complete so the GPU textures reflect the result.
+    // Opacity-only blue acknowledgement; body/parcel sources enter the solver
+    // through onSubstep and are uploaded once at the end of the ocean tick.
     feedbackAlpha = 0.32;
     feedbackRemaining = FEEDBACK_FADE;
     uniforms.oceanLocal.value.set(x, z, feedbackAlpha, 0.6);
@@ -681,11 +685,12 @@ export function buildOceanPlane(shape: OceanShape): OceanPlane {
   const dispose = (): void => {
     if (disposed) return;
     disposed = true;
+    plane.onSubstep = undefined;
     oceanStateTexture.dispose();
     oceanFlowTexture.dispose();
   };
 
-  return {
+  const plane: OceanPlane = {
     mesh,
     uniforms,
     tick,
@@ -696,6 +701,7 @@ export function buildOceanPlane(shape: OceanShape): OceanPlane {
     dispose,
     simulation,
   };
+  return plane;
 }
 
 export function buildFoamRing(shape: OceanShape, uniforms: WaterUniforms): THREE.Mesh {
