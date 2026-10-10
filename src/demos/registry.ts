@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import type { CameraOrbitLimits, PinnedCaptureCamera } from '../scene';
 
 export interface DemoMetadata {
@@ -1458,6 +1458,53 @@ const authored: CatalogEntry[] = [
           scene.add(group);
           const lights = createWarHaulerLookDevLights();
           scene.add(lights);
+          return group;
+        },
+      };
+    },
+  },
+  {
+    id: 'falchion-sapphire',
+    updatedAt: '2026-10-05',
+    title: '★ Falchion Knife | Doppler Sapphire (Factory New)',
+    subjectClass: 'object',
+    blurb:
+      'A Factory New ★ Falchion Knife with the Doppler Sapphire finish — a recurve clip-point blade with marbled blue/sapphire iridescent pattern and gunmetal pivot housing, finger-grooved handle scales, solid pommel, and a blackened-steel rear pocket clip. Rebuilt in code from a single CS:GO inventory screenshot.',
+    referenceImage: `${BASE}references/falchion-sapphire.png`,
+    sourcePath: 'src/demos/falchion-sapphire/createFalchionSapphireModel.ts',
+    sourceUrl: `${REPO}/src/demos/falchion-sapphire/createFalchionSapphireModel.ts`,
+    generatedWith: 'img2threejs v2.0.0',
+    author: 'kokorolx',
+    authorUrl: 'https://github.com/kokorolx',
+    status: 'final',
+    cameraPosition: [2.5, 1.5, 9.0],
+    cameraTarget: [0, 0, 0],
+    cameraFov: 45,
+    exposure: 1.0,
+    environmentIntensity: 0.3,
+    loadRuntime: async () => {
+      const { createFalchionKnifeDopplerSapphireModel } = await import(
+        './falchion-sapphire/createFalchionSapphireModel'
+      );
+      return {
+        installLights: (scene: THREE.Scene) => {
+              // 1 key + 1 fill + ambient
+              const hemi = new THREE.HemisphereLight(0xffffff, 0xffffff, 1.5);
+              scene.add(hemi);
+              const key = new THREE.DirectionalLight(0xffffff, 1.8);
+              key.position.set(3, 5, 8);
+              key.target.position.set(0, 0, 0);
+              scene.add(key);
+              scene.add(key.target);
+              const fill = new THREE.DirectionalLight(0xc8d8ff, 0.8);
+              fill.position.set(-5, 2, 6);
+              scene.add(fill);
+              const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+              scene.add(ambient);
+            },
+        build: (scene: THREE.Scene) => {
+          const group = createFalchionKnifeDopplerSapphireModel({ castShadow: true, receiveShadow: true, textureSize: 1024, qualityPriority: 'reference-fidelity' });
+          scene.add(group);
           return group;
         },
       };
