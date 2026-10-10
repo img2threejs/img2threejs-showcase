@@ -1,0 +1,27 @@
+import { mountShowcase } from './src/index';
+
+async function main() {
+  const asset = await mountShowcase(document.querySelector<HTMLElement>('#stage')!);
+  const controls = document.querySelector<HTMLElement>('#actions')!;
+  function button(label: string, run: () => void) {
+    const element = document.createElement('button');
+    element.textContent = label;
+    element.type = 'button';
+    element.onclick = run;
+    controls.append(element);
+  }
+  const animation = asset.runtime?.animationController;
+  for (const action of animation?.actions ?? []) button(action.label, () => animation.play(action.id));
+  if (animation) button('Stop', () => animation.stop());
+  const vfx = asset.runtime?.strikeVfx;
+  for (const element of vfx?.elements ?? []) button(element.label, () => vfx.setElement(element.id));
+  const outfit = asset.runtime?.outfitController;
+  if (outfit) button(outfit.label, () => outfit.switchSkin());
+  window.addEventListener('pagehide', () => asset.dispose(), { once: true });
+}
+
+void main().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  document.querySelector<HTMLElement>('#actions')!.textContent = message;
+  console.error(error);
+});
