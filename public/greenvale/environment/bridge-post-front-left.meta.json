@@ -1,0 +1,22 @@
+{
+  "status": "ready",
+  "src": "environment/bridge-post-front-left-derived.png",
+  "sha256": "0094733962e9a4bd5b9190947567410b4802596cbafd4e8472a52e723deebd36",
+  "referenceHash": "d071abc0d2308b515e02e3be027b2e420734122408c58038e0c7512d4e9a133b",
+  "crop": [
+    1024,
+    339,
+    20,
+    52
+  ],
+  "originalWidth": 20,
+  "originalHeight": 52,
+  "width": 20,
+  "height": 52,
+  "trimOffset": [
+    0,
+    0
+  ],
+  "mask": "environment/masks/bridge-post-front-left.png",
+  "maskHash": "45b490fc368c4e648de3c8f045c8cbe976ea311cbb7aed0538229cc982e87671"
+}

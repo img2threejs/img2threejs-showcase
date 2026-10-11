@@ -28,6 +28,54 @@ running live in the browser.
 
 ---
 
+## Greenvale — img2pixi2D experiment
+
+**Experimental, review-only contribution; not production-ready or approved for merge.**
+This study ports the existing Greenvale 2D game into a standalone `/greenvale.html`
+entry, alongside the existing standalone iPhone Duo page. It does not register a
+Three.js model, modify the gallery router, or depend on the separate Moonlight Cafe PR.
+
+```sh
+npm ci
+npm run dev -- --host 127.0.0.1
+# Open /greenvale.html on the URL printed by Vite.
+npm run test:greenvale
+```
+
+- Native PixiJS 8.22.0 containers, source-derived sprite layers, editable actor rigs,
+  native HUD text/graphics, lighting, water, smoke and skill VFX; no 3D runtime.
+- WASD/arrows walk; Shift runs; E interacts. 1/2/3 cast Heal/Ice/Fire;
+  J/K/L/U/I/O trigger Slash/Combo/Thrust/Spin/Dash/Ground Strike.
+- Touch devices receive a joystick, hold-to-run, interaction and all nine skill buttons.
+  The first click/tap requests fullscreen where supported; F toggles fullscreen,
+  P pauses and R resets. No outer settings panel or header.
+- The 1536×1024 artboard keeps its proportions. Portrait screens have substantial
+  letterboxing; landscape touch controls can overlap the map.
+
+Implementation: [`src/greenvale/`](src/greenvale/).
+Bundled artwork, per-layer manifests/provenance and fonts:
+[`public/greenvale/`](public/greenvale/).
+The host owns the Pixi Application, ticker, input and resource lifetime;
+`scene.ts` owns the reusable scene.
+
+**Provenance and limits:** artwork derives from a user-supplied flattened Greenvale
+reference. Hidden ground/joints and actor background plates are inferred, not recovered
+original layers. Mirrored front-view poses are not true side/rear sprite sheets.
+Attack effects are visual actions, not an enemy/damage combat system. Artwork is not
+relicensed by this experiment; redistribution rights still require maintainer confirmation.
+Bundled Be Vietnam Pro fonts retain their [SIL OFL](public/greenvale/fonts/OFL.txt).
+
+**Verification:** four gameplay regression tests pass. Production-page Chromium checks
+cover keyboard and native multitouch walk/run (25/47 px per 0.2 s), all nine skills,
+pause/reset, fullscreen entry, scene recreation and a visible missing-asset failure.
+[Screenshots and measured results](verification/greenvale/verification.json) are retained
+under `verification/greenvale/`. Physical-device and Safari checks were not performed.
+`npm run build` passes TypeScript and emits page bundles, but then fails during the
+existing source-ZIP generator's recursive AST traversal with
+`RangeError: Maximum call stack size exceeded` in `scripts/source-archives.mjs`.
+The complete build is **not** reported as passing; that unrelated script is unchanged.
+
+
 ## About the showcase
 
 This repository is the public gallery for [img2threejs](https://github.com/img2threejs/img2threejs).

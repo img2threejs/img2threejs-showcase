@@ -1,0 +1,699 @@
+{
+  "date": "2026-10-11",
+  "scope": "Greenvale 2D img2pixi2D experiment; no new artwork or gameplay changes",
+  "route": "/greenvale.html",
+  "copiedSourceAndAssets": {
+    "count": 105,
+    "totalBytes": 4948540,
+    "identicalToOriginal": true,
+    "files": [
+      {
+        "path": "src/greenvale/pixel-skill.ts",
+        "bytes": 1866,
+        "sha256": "8973396dc28c4321568e00124e25e296cc5742af51fcccc8078e0fcd6953dd28"
+      },
+      {
+        "path": "src/greenvale/attack-icons.ts",
+        "bytes": 2169,
+        "sha256": "33c469e41831a20619b57d856a1c4285a6f041dca67ef44fc321c0693ae23029"
+      },
+      {
+        "path": "src/greenvale/actors.ts",
+        "bytes": 18026,
+        "sha256": "18ab28a37e1e16403383ce17fb6607e1d346e8744db60db18c13db865f32d38c"
+      },
+      {
+        "path": "src/greenvale/resources.ts",
+        "bytes": 7724,
+        "sha256": "1816548fa1cb8485ad262ed84275b6ee94c0209f613682c3d575e27b5c8ea2c6"
+      },
+      {
+        "path": "src/greenvale/hud.ts",
+        "bytes": 32225,
+        "sha256": "cc9009cd2fdfad83f1a606e9de9ffcfe25b4d7e231bc93b9e83185f2a7f9eb9b"
+      },
+      {
+        "path": "src/greenvale/character.ts",
+        "bytes": 4958,
+        "sha256": "fda3600a35b8c34e7abc800b3dd4be32db0d4027c7f71784652d585a2125eea8"
+      },
+      {
+        "path": "src/greenvale/input.ts",
+        "bytes": 11696,
+        "sha256": "cf44584582e09990ef7b51218590642739ccee2c3c319e8e0e73b27a738588c0"
+      },
+      {
+        "path": "src/greenvale/chimney-smoke.ts",
+        "bytes": 6244,
+        "sha256": "83cab4cf0a746f5f6592557a6ad010dbef53f0c08e5bacf91c897548dee3ff1b"
+      },
+      {
+        "path": "src/greenvale/hero-poses.ts",
+        "bytes": 8772,
+        "sha256": "dfebf9a2cce7478ca3bfd595922ce8e0d07af2cd0d5599169e5bc25d914e217d"
+      },
+      {
+        "path": "src/greenvale/types.ts",
+        "bytes": 3859,
+        "sha256": "e355c986f34ebb9a3c4854d094c21eab2f3d3430cd2e3f2a226d35fdebc6bce8"
+      },
+      {
+        "path": "src/greenvale/font.ts",
+        "bytes": 6282,
+        "sha256": "0728e5d5579d9d74d81d789f210acafee7d25ab4db8e907a7e912030a16afc29"
+      },
+      {
+        "path": "src/greenvale/scene.ts",
+        "bytes": 4323,
+        "sha256": "61371015a73d9d6660b62d2efca73b111bc1825a65c363db12df41449bb16d0f"
+      },
+      {
+        "path": "src/greenvale/style.css",
+        "bytes": 3481,
+        "sha256": "766796e302009817e9100ae7210cbea63b9c24a1e2ae50944aced037e8c83b6e"
+      },
+      {
+        "path": "src/greenvale/host.ts",
+        "bytes": 17001,
+        "sha256": "17e90d5c8b7c1b24144bc7205d4f65d6c0aa649ff2f6448619103bb63199345e"
+      },
+      {
+        "path": "src/greenvale/water-flow.ts",
+        "bytes": 38771,
+        "sha256": "3fed5ae6b54bbe2fe9cf76d449aec0ee30b6742705ba0e1fd80901c331e65223"
+      },
+      {
+        "path": "src/greenvale/heal-vfx.ts",
+        "bytes": 15056,
+        "sha256": "c27aeab732ecf7c7c24a58f66835db49e46e0ac06d1c8442fcdc9f7778d8330e"
+      },
+      {
+        "path": "src/greenvale/skill-projectile.ts",
+        "bytes": 10488,
+        "sha256": "04dc1aed6a561fea6c7fe617968188d676f946bc6b047f92e05d7f77b0e65334"
+      },
+      {
+        "path": "src/greenvale/world.ts",
+        "bytes": 17662,
+        "sha256": "6c8fdb324e2c270560f9d6a17d4d870272110ffb2559f808b66ba30b19194b03"
+      },
+      {
+        "path": "src/greenvale/attack-vfx.ts",
+        "bytes": 37742,
+        "sha256": "21b62d5f32c050a02bd4feaa838153eabf858008c1997b015c4fa90dfd4a9462"
+      },
+      {
+        "path": "src/greenvale/effects.ts",
+        "bytes": 28418,
+        "sha256": "b683a5f44cfd198179b07d2ddc584c643f4de06f6c8b4dc20865932809a5eacb"
+      },
+      {
+        "path": "public/greenvale/fonts/be-vietnam-pro-600-lat.woff2",
+        "bytes": 13428,
+        "sha256": "14950d0af319bbc1f7a26ed08bf1ba7a9e18324111056bb0c81eef0983a931c0"
+      },
+      {
+        "path": "public/greenvale/fonts/be-vietnam-pro-700-ext.woff2",
+        "bytes": 7164,
+        "sha256": "f446d28e986c5695283afcb13a7719dabd9f2cec28ab49ecb43a328efa009f05"
+      },
+      {
+        "path": "public/greenvale/fonts/be-vietnam-pro-400-vi.woff2",
+        "bytes": 4720,
+        "sha256": "b0d9b8aec7f47207ce4065be34286203e0741c8329be6d05986b149f991f84c1"
+      },
+      {
+        "path": "public/greenvale/fonts/be-vietnam-pro-400-ext.woff2",
+        "bytes": 6880,
+        "sha256": "c2ae124f149371e1b6209cbba234852310caeee3c32990a56ccb93ac1c7edb9a"
+      },
+      {
+        "path": "public/greenvale/fonts/be-vietnam-pro-500-lat.woff2",
+        "bytes": 13324,
+        "sha256": "0336df67f25be86ea38a6f37b11ffb4901c1ed65ce06ba99d6a304913e997e52"
+      },
+      {
+        "path": "public/greenvale/fonts/be-vietnam-pro-600-vi.woff2",
+        "bytes": 5124,
+        "sha256": "843908240371827470dd178e284ffbbeb85f1563bf47e5b9c9db58526fb7f6e0"
+      },
+      {
+        "path": "public/greenvale/fonts/be-vietnam-pro-500-vi.woff2",
+        "bytes": 5100,
+        "sha256": "e83829fe40a88cff1c6ee213801661468bfed922771d1c382b4c1fdc269a5648"
+      },
+      {
+        "path": "public/greenvale/fonts/be-vietnam-pro-600-ext.woff2",
+        "bytes": 7152,
+        "sha256": "90c10a1f4fdd8aa634b70bfc22ca991f12bba15b1661ea2390443e31888e1f5b"
+      },
+      {
+        "path": "public/greenvale/fonts/be-vietnam-pro-700-lat.woff2",
+        "bytes": 13348,
+        "sha256": "cf841d2b615f068e77a918114f44c17d51d0b73314fdff81eae95f528387c391"
+      },
+      {
+        "path": "public/greenvale/fonts/OFL.txt",
+        "bytes": 4397,
+        "sha256": "6b7f8f73609a25ea78c891e34cf37b06f8a676b7ea986e941e43b009110f2a85"
+      },
+      {
+        "path": "public/greenvale/fonts/be-vietnam-pro-700-vi.woff2",
+        "bytes": 5132,
+        "sha256": "141f6c45010274d7d3625d0554476ec1161274d9eb09a38135977ea1b2b84895"
+      },
+      {
+        "path": "public/greenvale/fonts/be-vietnam-pro-400-lat.woff2",
+        "bytes": 12908,
+        "sha256": "d25f70ff7404fddbeb150c9c687bf37069468a5cdf59117b2a30226d1ebfa5c0"
+      },
+      {
+        "path": "public/greenvale/fonts/be-vietnam-pro-500-ext.woff2",
+        "bytes": 7184,
+        "sha256": "83b86791eb0ebfca23daa3f70ee179f13638c69441b69a6d2deb6b96a95385ea"
+      },
+      {
+        "path": "public/greenvale/character/hero-mask.png",
+        "bytes": 2154,
+        "sha256": "4b3dd130d884c0c2e15caa083c8f05fd3f6506ff362d936872ad595f8c702646"
+      },
+      {
+        "path": "public/greenvale/character/provenance.json",
+        "bytes": 7663,
+        "sha256": "f801874c0aaf271b97b4658f1e5c15e6938260908a17a7f01a0594e7cdf7fd4a"
+      },
+      {
+        "path": "public/greenvale/character/manifest.json",
+        "bytes": 3171,
+        "sha256": "ef2d59706bc48133f58e33b8b20ef9c826ef3a177f3f05b5d7626af51fae2ae4"
+      },
+      {
+        "path": "public/greenvale/character/parts/arm-left.png",
+        "bytes": 1132,
+        "sha256": "d6b7ecfc715b10af974897f7fe467039ed18529dc5dc120dcba7e4db286dee30"
+      },
+      {
+        "path": "public/greenvale/character/parts/sword.png",
+        "bytes": 1094,
+        "sha256": "4a0c3f888b21f2f753dea1360a51beaef11a7fd43ebe48c733031acd38a8e305"
+      },
+      {
+        "path": "public/greenvale/character/parts/head.png",
+        "bytes": 5775,
+        "sha256": "d7ca239131eca8d26c67dcdb306b5b64ff08fe10291ab5b6bd1d621e4ccf9755"
+      },
+      {
+        "path": "public/greenvale/character/parts/arm-right.png",
+        "bytes": 850,
+        "sha256": "8e1dad2995507d4b66ec70a37fcc21924c609d7e802eb4b76c0f9689b941f9e7"
+      },
+      {
+        "path": "public/greenvale/character/parts/leg-left.png",
+        "bytes": 1152,
+        "sha256": "7b3c89bee828dbeab9a01a37e1f8a15b7893413a9c8b9a2be85368fac4d7a12f"
+      },
+      {
+        "path": "public/greenvale/character/parts/torso.png",
+        "bytes": 2207,
+        "sha256": "5c47b7e7821072642564f3f3d0c18ba7992f0ab7d9ac3ade9a8d5832da873692"
+      },
+      {
+        "path": "public/greenvale/character/parts/leg-right.png",
+        "bytes": 1113,
+        "sha256": "48de53158b6f9fb2bf9518071bbc06a1996556dc48341f0bc3c1a364b4a64c5b"
+      },
+      {
+        "path": "public/greenvale/environment/bridge-post-front-right.meta.json",
+        "bytes": 557,
+        "sha256": "fe0ce65aef249026b146440edd8a020f78519a8db91f3509768a536925657f58"
+      },
+      {
+        "path": "public/greenvale/environment/terrain.png",
+        "bytes": 3293387,
+        "sha256": "753fbd5d872b6a728ffff4842ee0049abc49db2b470987e800fe81dbd0ec57ed"
+      },
+      {
+        "path": "public/greenvale/environment/central-tree.png",
+        "bytes": 67047,
+        "sha256": "cd77229f1e0a055d21b3a3a91dd343cf020a453f8ebe36d1efedd13dcff5400e"
+      },
+      {
+        "path": "public/greenvale/environment/smith.png",
+        "bytes": 195008,
+        "sha256": "68e0f2965a4145602e131238d38653e4576f0c06f7b813638c04decab4b5ac48"
+      },
+      {
+        "path": "public/greenvale/environment/fountain.meta.json",
+        "bytes": 531,
+        "sha256": "cebcaee53f2be0e79dc335a6b76426c9b4b4b738fecda36366de99d910034b70"
+      },
+      {
+        "path": "public/greenvale/environment/bridge-post-back-left.png",
+        "bytes": 2936,
+        "sha256": "7ad37a0604f414d553fecd9d1194c9ed5c0b64624c58b37a1724c3402d18dcb0"
+      },
+      {
+        "path": "public/greenvale/environment/bridge.png",
+        "bytes": 92230,
+        "sha256": "96b01975f7ed7d5c3bb9363dafe90d7621717a09f983878fe94702389403deed"
+      },
+      {
+        "path": "public/greenvale/environment/bridge-post-front-right.png",
+        "bytes": 2580,
+        "sha256": "f2dee32f54c3bd79f04805afc07d79a06a1806730cc6006945df3ffdeec67e27"
+      },
+      {
+        "path": "public/greenvale/environment/bridge-post-front-left.meta.json",
+        "bytes": 555,
+        "sha256": "47c2c156d86791375a1af18aee3b5e109dd02d3c228047431bb2cae58e01e674"
+      },
+      {
+        "path": "public/greenvale/environment/dock.png",
+        "bytes": 156667,
+        "sha256": "76f0b6f8b01db6ab356247cf332ac92f676e17c78b305b4ec42d32196cffff90"
+      },
+      {
+        "path": "public/greenvale/environment/signpost.png",
+        "bytes": 74896,
+        "sha256": "d98da76cc18aa6f007f692ec0bdfbf6c6418c4a348ac5537631137c2c7ca0cc9"
+      },
+      {
+        "path": "public/greenvale/environment/bridge-post-back-right.meta.json",
+        "bytes": 555,
+        "sha256": "cef1f7729da2248889e7102abbbb9a97402e55dc0565dff9bccc82670d88570f"
+      },
+      {
+        "path": "public/greenvale/environment/market.meta.json",
+        "bytes": 811,
+        "sha256": "e72c608e234588e71fe6f259198dbe4cd1351d9bca0c63bfbdb13b8f6bc8f95c"
+      },
+      {
+        "path": "public/greenvale/environment/fountain.png",
+        "bytes": 70618,
+        "sha256": "b5cc952f750a67d9081813299aa42307e0463079157a0fe227166890ca191167"
+      },
+      {
+        "path": "public/greenvale/environment/house.png",
+        "bytes": 284630,
+        "sha256": "82981e3effaf41b7f9491d0ebd7821d1adef29f99f9e1b2c260773551279d389"
+      },
+      {
+        "path": "public/greenvale/environment/smith.meta.json",
+        "bytes": 807,
+        "sha256": "7d3839b9484d14bdea165a1a76295d3b0942aa967bb1f775f6f1b5615232bc65"
+      },
+      {
+        "path": "public/greenvale/environment/dock.meta.json",
+        "bytes": 524,
+        "sha256": "8556d5affc23e0a3baf3d7134592e7ae77c49af3bbf67e84c562c62e676bd754"
+      },
+      {
+        "path": "public/greenvale/environment/bridge-post-front-left.png",
+        "bytes": 2564,
+        "sha256": "0094733962e9a4bd5b9190947567410b4802596cbafd4e8472a52e723deebd36"
+      },
+      {
+        "path": "public/greenvale/environment/central-tree.meta.json",
+        "bytes": 540,
+        "sha256": "439e1de8b0d2297f64a2368a90cfdcece00856288c7bc3b17f219eed590c8694"
+      },
+      {
+        "path": "public/greenvale/environment/manifest.json",
+        "bytes": 3958,
+        "sha256": "522e8bdcaa68d893d1ca9b79bbac2ed51b0ed9cc51deb639d6c00355cdb298cb"
+      },
+      {
+        "path": "public/greenvale/environment/bridge-post-back-left.meta.json",
+        "bytes": 553,
+        "sha256": "8efe38c283c1cd57f19903c9279f136312457eb5a6e0a8195c86a7a08fa7d10f"
+      },
+      {
+        "path": "public/greenvale/environment/market.png",
+        "bytes": 83912,
+        "sha256": "5325eaeeb41cf5e9720c7beaac5c385c197f243b8a93845403011988234694d7"
+      },
+      {
+        "path": "public/greenvale/environment/terrain.meta.json",
+        "bytes": 925,
+        "sha256": "aaff9e5fbbc8a631d9e53a6d9fd7f4067967909926bfa881dd175a2bd16428ee"
+      },
+      {
+        "path": "public/greenvale/environment/signpost.meta.json",
+        "bytes": 531,
+        "sha256": "e3990327b81f527139e6ebf191b1e68e8d7a476641f5b8da8a7db5a1a2432c3c"
+      },
+      {
+        "path": "public/greenvale/environment/house.meta.json",
+        "bytes": 805,
+        "sha256": "08cd8a31d5f65238b8bf27da671aff304215eb6900c174ad14642ef942e49fe4"
+      },
+      {
+        "path": "public/greenvale/environment/bridge-post-back-right.png",
+        "bytes": 2764,
+        "sha256": "3c755ca0483518ae38eef8b5d817b4262b0d92f637b1caee0127bda052b3a172"
+      },
+      {
+        "path": "public/greenvale/environment/bridge.meta.json",
+        "bytes": 529,
+        "sha256": "ed47d9dc195b0a108183fe3c5a763cd3d16f88af2e25f93a5e796687873f1fea"
+      },
+      {
+        "path": "public/greenvale/actors/boat-plate.png",
+        "bytes": 19944,
+        "sha256": "602b6c58642554096392795b29d1ab23a042454f94938fbf450b669767b4800a"
+      },
+      {
+        "path": "public/greenvale/actors/blacksmith-arm.png",
+        "bytes": 1779,
+        "sha256": "a3e03256ecdc96733b02868474eb202f31bb43d6211157829cd1d7ab52d092cd"
+      },
+      {
+        "path": "public/greenvale/actors/guard-plate.png",
+        "bytes": 15094,
+        "sha256": "103b962365ad33b43bb585623559eb87b5857f79f4a1ffa3d1d38f42c3eb57d2"
+      },
+      {
+        "path": "public/greenvale/actors/guard-spear.png",
+        "bytes": 3093,
+        "sha256": "bda64b9090e893d86c91850eaed1c0855b3cfe74e9969dd427181f383d433860"
+      },
+      {
+        "path": "public/greenvale/actors/dog-plate.png",
+        "bytes": 6571,
+        "sha256": "f7e835c5bc239dc5785c5c9f55b243ab5ca78f43294ee9f537df4e5d0e31850e"
+      },
+      {
+        "path": "public/greenvale/actors/blacksmith-upper.png",
+        "bytes": 9534,
+        "sha256": "23a9bbc04be6985ab0fdfb48224a1b6f5044644d1fcc6f18135edb8f1019f49a"
+      },
+      {
+        "path": "public/greenvale/actors/merchant-plate.png",
+        "bytes": 7207,
+        "sha256": "a7bd80d5e97314e47ba03eaaa4eba52653fab79861889df1376391878890c16b"
+      },
+      {
+        "path": "public/greenvale/actors/dog-body.png",
+        "bytes": 2496,
+        "sha256": "304992ae312e7763a65340850036abe04ce0b5ec0a45e4266ec291d158dbce71"
+      },
+      {
+        "path": "public/greenvale/actors/farmer-upper.png",
+        "bytes": 10762,
+        "sha256": "ad2b36a5986fa358a88fc1a9cfcb197d73b3d91287d05b910e352443fc20a787"
+      },
+      {
+        "path": "public/greenvale/actors/merchant-blink.png",
+        "bytes": 305,
+        "sha256": "f571612074311f2698c55d2c5b2d35bf4761191342633a20bb172b41f3d6c62e"
+      },
+      {
+        "path": "public/greenvale/actors/merchant-body.png",
+        "bytes": 4750,
+        "sha256": "de3d6e95926fbc471f78b76984879c453fe0e2db21a65d1546826f1b337f0848"
+      },
+      {
+        "path": "public/greenvale/actors/dog-blink.png",
+        "bytes": 165,
+        "sha256": "d640d9ee4eca4f3cec9d0c15545921c6b34706825ef4018e9ccaa7588b16cc2a"
+      },
+      {
+        "path": "public/greenvale/actors/guard-blink.png",
+        "bytes": 227,
+        "sha256": "212afe194886b332d37da57cb31a3c66a99b72bcb1af718c805a92d4b4a214d8"
+      },
+      {
+        "path": "public/greenvale/actors/blacksmith-legs.png",
+        "bytes": 4571,
+        "sha256": "d08b39c6af89e02c8b99cc9ad570ae68916111b4c47a5b3557bee3f02d08714e"
+      },
+      {
+        "path": "public/greenvale/actors/merchant-head.png",
+        "bytes": 4180,
+        "sha256": "798072b797255b58fc6cc068e6255db11543da7e754f15b424039e0d8c49cad9"
+      },
+      {
+        "path": "public/greenvale/actors/manifest.json",
+        "bytes": 16942,
+        "sha256": "5e06b8f1ee7261ef16a53e5c8de103da4bfefeec74a500c1bdf7a27c53abbe1f"
+      },
+      {
+        "path": "public/greenvale/actors/farmer-blink.png",
+        "bytes": 305,
+        "sha256": "d6804fcebf4680e1bb55f71a6e624a04d98774a08d15668b8509344e6bf2c52e"
+      },
+      {
+        "path": "public/greenvale/actors/blacksmith-hammer.png",
+        "bytes": 512,
+        "sha256": "6a0279fcc984f7ac27b106180155e043874a0f17c884f558b97e28a212581839"
+      },
+      {
+        "path": "public/greenvale/actors/blacksmith-blink.png",
+        "bytes": 203,
+        "sha256": "8f8d90426c14cd787eaac8f260fdc934da17a1a120eaf1caad9b8269b97e38a9"
+      },
+      {
+        "path": "public/greenvale/actors/guard-legs.png",
+        "bytes": 2203,
+        "sha256": "e79eb6c7f17efe6d06165d61b190295f95c47c4c2294b7ff647144afce5d7a52"
+      },
+      {
+        "path": "public/greenvale/actors/boat-hull.png",
+        "bytes": 21550,
+        "sha256": "d311b68fbe5220e7363dc19a266d7e6bc1b05075836aa1fac4358f398026697f"
+      },
+      {
+        "path": "public/greenvale/actors/dog-head.png",
+        "bytes": 3435,
+        "sha256": "938e758da5d270c77126ceb04e1bbe9d5be8c3c317f0facbf1445fe71b1d8e8e"
+      },
+      {
+        "path": "public/greenvale/actors/farmer-arm.png",
+        "bytes": 1598,
+        "sha256": "22ec429895c0f2c79ffd664e8030314d6a6097a8d62b1f23a5c514032dec56e2"
+      },
+      {
+        "path": "public/greenvale/actors/dog-tail.png",
+        "bytes": 879,
+        "sha256": "d41551a76e2768811d5f655a485396d1168ea9c969b8003676c386f39ae50a70"
+      },
+      {
+        "path": "public/greenvale/actors/blacksmith-plate.png",
+        "bytes": 17630,
+        "sha256": "7d90b515a20aba41e1832034a6b891c527b326adac94973c266498fb25a3ebe8"
+      },
+      {
+        "path": "public/greenvale/actors/farmer-legs.png",
+        "bytes": 2382,
+        "sha256": "1bf082a9f1fe4f60bfc2f3d7cb35c9a195354fd89fe866c44433af8f8e5deac3"
+      },
+      {
+        "path": "public/greenvale/actors/farmer-plate.png",
+        "bytes": 18142,
+        "sha256": "d933aa7c0906084fe4129d4201394d63b8d20641d80c6bfe3e51e749e42569f7"
+      },
+      {
+        "path": "public/greenvale/actors/guard-upper.png",
+        "bytes": 9278,
+        "sha256": "967cabf26701b3ccd8d9c853d0f6203a90e0fa95f31d76620343139f7043418d"
+      },
+      {
+        "path": "public/greenvale/character/masks/arm-left.png",
+        "bytes": 1758,
+        "sha256": "d1f7167f66d7319e9e0975156d9ddbb00968a6b93f97d2d7e376e5d1fe5ffcbb"
+      },
+      {
+        "path": "public/greenvale/character/masks/sword.png",
+        "bytes": 1818,
+        "sha256": "363c6cd9bd14584fa53a13d006e628e42f558e86f507d045d3c4c566caaea230"
+      },
+      {
+        "path": "public/greenvale/character/masks/head.png",
+        "bytes": 1920,
+        "sha256": "9a8191915108546cf6b823dae629a483fd52d2c6c97481ca3036237fbc4a5f1d"
+      },
+      {
+        "path": "public/greenvale/character/masks/arm-right.png",
+        "bytes": 1720,
+        "sha256": "2ae7a7cc49d16531690a75549509c82282a66e5a69ae3821012021b393046978"
+      },
+      {
+        "path": "public/greenvale/character/masks/leg-left.png",
+        "bytes": 1733,
+        "sha256": "bf49358b25c1c08f937a7105c9912d2eab110ec82c167b05ad5460bf1aba6a29"
+      },
+      {
+        "path": "public/greenvale/character/masks/torso.png",
+        "bytes": 1785,
+        "sha256": "db7741a919bd79656432e8f9675156169afb7779675dc8339e28d041b0a23c39"
+      },
+      {
+        "path": "public/greenvale/character/masks/leg-right.png",
+        "bytes": 1714,
+        "sha256": "69101ce324709b410a24129a997115d5663458180c656e53beb2709122d44c96"
+      }
+    ]
+  },
+  "tests": {
+    "command": "npm run test:greenvale",
+    "passed": 4,
+    "failed": 0
+  },
+  "build": {
+    "command": "npm run build",
+    "result": "failed",
+    "typescript": "passed",
+    "vitePageBundles": "emitted",
+    "failure": "RangeError: Maximum call stack size exceeded in recursive visit() in scripts/source-archives.mjs during source ZIP generation",
+    "postbuild": "not reached",
+    "unrelatedCodeChanged": false
+  },
+  "desktop": {
+    "walk": {
+      "delta": 25,
+      "gait": "walk"
+    },
+    "run": {
+      "delta": 47,
+      "gait": "run"
+    },
+    "skills": [
+      {
+        "id": "heal",
+        "action": "heal"
+      },
+      {
+        "id": "ice",
+        "action": "ice"
+      },
+      {
+        "id": "fire",
+        "action": "fire"
+      },
+      {
+        "id": "slash",
+        "action": "slash"
+      },
+      {
+        "id": "combo",
+        "action": "combo"
+      },
+      {
+        "id": "thrust",
+        "action": "thrust"
+      },
+      {
+        "id": "spin",
+        "action": "spin"
+      },
+      {
+        "id": "dash",
+        "action": "dash"
+      },
+      {
+        "id": "ground",
+        "action": "ground"
+      }
+    ],
+    "paused": true,
+    "reset": {
+      "paused": false,
+      "x": 768
+    },
+    "layout": {
+      "fullscreen": true,
+      "scaleX": 0.87890625,
+      "scaleY": 0.87890625,
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440
+    }
+  },
+  "mobile": {
+    "walk": {
+      "delta": 25,
+      "movement": {
+        "x": 1,
+        "y": 0,
+        "run": false
+      }
+    },
+    "run": {
+      "delta": 47,
+      "movement": {
+        "x": 1,
+        "y": 0,
+        "run": true
+      }
+    },
+    "released": {
+      "x": 0,
+      "y": 0,
+      "run": false
+    },
+    "skills": [
+      {
+        "id": "heal",
+        "action": "heal"
+      },
+      {
+        "id": "ice",
+        "action": "ice"
+      },
+      {
+        "id": "fire",
+        "action": "fire"
+      },
+      {
+        "id": "slash",
+        "action": "slash"
+      },
+      {
+        "id": "combo",
+        "action": "combo"
+      },
+      {
+        "id": "thrust",
+        "action": "thrust"
+      },
+      {
+        "id": "spin",
+        "action": "spin"
+      },
+      {
+        "id": "dash",
+        "action": "dash"
+      },
+      {
+        "id": "ground",
+        "action": "ground"
+      }
+    ],
+    "portrait": {
+      "mobile": "true",
+      "width": 390,
+      "scrollWidth": 390,
+      "scaleX": 0.25390625,
+      "scaleY": 0.25390625
+    }
+  },
+  "lifecycle": {
+    "recreation": {
+      "oldDestroyed": true,
+      "x": 774.25,
+      "canvasCount": 1
+    }
+  },
+  "missingAsset": {
+    "visible": true,
+    "message": "Unable to load Greenvale resources: Error: [Loader.load] Failed to load http://127.0.0.1:5207/greenvale/environment/terrain.png.\nTypeError: Failed to fetch",
+    "canvasCount": 0
+  },
+  "normalRuntimeErrors": [],
+  "limits": [
+    "Physical devices and Safari not tested",
+    "Fresh full fidelity/ownership acceptance not claimed; source and artwork are unchanged",
+    "Portrait view preserves the whole 3:2 map with large letterbox areas; landscape touch controls overlap part of the map",
+    "Source image redistribution rights have not been independently verified"
+  ]
+}

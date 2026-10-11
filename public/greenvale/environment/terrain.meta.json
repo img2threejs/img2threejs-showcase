@@ -1,0 +1,21 @@
+{
+  "status": "ready",
+  "src": "../../public/greenvale/environment/terrain.png",
+  "sha256": "753fbd5d872b6a728ffff4842ee0049abc49db2b470987e800fe81dbd0ec57ed",
+  "referenceHash": "d071abc0d2308b515e02e3be027b2e420734122408c58038e0c7512d4e9a133b",
+  "crop": [
+    0,
+    0,
+    1536,
+    1024
+  ],
+  "originalWidth": 1536,
+  "originalHeight": 1024,
+  "width": 1536,
+  "height": 1024,
+  "trimOffset": [
+    0,
+    0
+  ],
+  "inference": "Exclusive static underlay = source RGBA inside white-mask minus HUD rects minus owner footprints. The hero bbox is NOT punched; instead a per-pixel remove mask (hero union \u222a fragment cleanup polygons \u222a observed shadow \u222a 1-px seam) replaces exactly those source pixels with a tiled same-image clean-dirt donor (36x25 patch from source-ground at [780, 575, 816, 600]). Every other source pixel in the bbox, including hair-right grass and cape, stays exactly as the source."
+}

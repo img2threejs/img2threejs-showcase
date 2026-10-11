@@ -1,0 +1,22 @@
+{
+  "status": "ready",
+  "src": "environment/bridge-derived.png",
+  "sha256": "96b01975f7ed7d5c3bb9363dafe90d7621717a09f983878fe94702389403deed",
+  "referenceHash": "d071abc0d2308b515e02e3be027b2e420734122408c58038e0c7512d4e9a133b",
+  "crop": [
+    1000,
+    257,
+    214,
+    199
+  ],
+  "originalWidth": 214,
+  "originalHeight": 199,
+  "width": 214,
+  "height": 199,
+  "trimOffset": [
+    0,
+    0
+  ],
+  "mask": "environment/masks/bridge.png",
+  "maskHash": "05b65df2f59832ad9b240d6499730bf7c22cef66e6ea079858b6264c5a5e3be8"
+}

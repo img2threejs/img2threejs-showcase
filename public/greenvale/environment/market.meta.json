@@ -1,0 +1,28 @@
+{
+  "status": "ready",
+  "src": "environment/market-derived.png",
+  "sha256": "5325eaeeb41cf5e9720c7beaac5c385c197f243b8a93845403011988234694d7",
+  "referenceHash": "d071abc0d2308b515e02e3be027b2e420734122408c58038e0c7512d4e9a133b",
+  "crop": [
+    1171,
+    391,
+    211,
+    179
+  ],
+  "originalWidth": 211,
+  "originalHeight": 179,
+  "width": 211,
+  "height": 179,
+  "trimOffset": [
+    0,
+    0
+  ],
+  "mask": "environment/masks/market.png",
+  "maskHash": "929f703090a773f95ad90ee48604b7e5927cf6067490d071b2a815cc18fab504",
+  "actorHoles": {
+    "mask": "actors/masks/market-actor-holes.png",
+    "maskHash": "df4fb6d0e70530dfc87ea37722371b41aff9570a00de9b803a28214d8b4dccf0",
+    "pixels": 3414,
+    "note": "Pixels owned by animated actors are cleared to alpha 0; actor plates supply the underlay."
+  }
+}

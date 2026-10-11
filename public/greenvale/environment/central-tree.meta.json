@@ -1,0 +1,22 @@
+{
+  "status": "ready",
+  "src": "environment/central-tree-derived.png",
+  "sha256": "cd77229f1e0a055d21b3a3a91dd343cf020a453f8ebe36d1efedd13dcff5400e",
+  "referenceHash": "d071abc0d2308b515e02e3be027b2e420734122408c58038e0c7512d4e9a133b",
+  "crop": [
+    463,
+    497,
+    168,
+    186
+  ],
+  "originalWidth": 168,
+  "originalHeight": 186,
+  "width": 168,
+  "height": 186,
+  "trimOffset": [
+    0,
+    0
+  ],
+  "mask": "environment/masks/central-tree.png",
+  "maskHash": "a659491b2df9aa736fdb4c138746a0e905601cd654d2a9e853da5bfc91bdbbbb"
+}

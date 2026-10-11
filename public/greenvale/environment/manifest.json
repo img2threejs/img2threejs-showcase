@@ -1,0 +1,119 @@
+{
+  "layers": [
+    {
+      "id": "terrain",
+      "file": "/greenvale/environment/terrain.png",
+      "x": 0,
+      "y": 0,
+      "width": 1536,
+      "height": 1024
+    },
+    {
+      "id": "house",
+      "file": "/greenvale/environment/house.png",
+      "x": 0,
+      "y": 117,
+      "width": 424,
+      "height": 306
+    },
+    {
+      "id": "fountain",
+      "file": "/greenvale/environment/fountain.png",
+      "x": 644,
+      "y": 92,
+      "width": 145,
+      "height": 208
+    },
+    {
+      "id": "market",
+      "file": "/greenvale/environment/market.png",
+      "x": 1171,
+      "y": 391,
+      "width": 211,
+      "height": 179
+    },
+    {
+      "id": "smith",
+      "file": "/greenvale/environment/smith.png",
+      "x": 1252,
+      "y": 575,
+      "width": 284,
+      "height": 312
+    },
+    {
+      "id": "signpost",
+      "file": "/greenvale/environment/signpost.png",
+      "x": 906,
+      "y": 82,
+      "width": 188,
+      "height": 182
+    },
+    {
+      "id": "bridge",
+      "file": "/greenvale/environment/bridge.png",
+      "x": 1000,
+      "y": 257,
+      "width": 214,
+      "height": 199
+    },
+    {
+      "id": "dock",
+      "file": "/greenvale/environment/dock.png",
+      "x": 681,
+      "y": 744,
+      "width": 325,
+      "height": 241
+    },
+    {
+      "id": "central-tree",
+      "file": "/greenvale/environment/central-tree.png",
+      "x": 463,
+      "y": 497,
+      "width": 168,
+      "height": 186
+    },
+    {
+      "id": "bridge-post-back-left",
+      "file": "/greenvale/environment/bridge-post-back-left.png",
+      "x": 1025,
+      "y": 254,
+      "width": 22,
+      "height": 53
+    },
+    {
+      "id": "bridge-post-back-right",
+      "file": "/greenvale/environment/bridge-post-back-right.png",
+      "x": 1172,
+      "y": 254,
+      "width": 21,
+      "height": 53
+    },
+    {
+      "id": "bridge-post-front-left",
+      "file": "/greenvale/environment/bridge-post-front-left.png",
+      "x": 1024,
+      "y": 339,
+      "width": 20,
+      "height": 52
+    },
+    {
+      "id": "bridge-post-front-right",
+      "file": "/greenvale/environment/bridge-post-front-right.png",
+      "x": 1185,
+      "y": 339,
+      "width": 20,
+      "height": 52
+    }
+  ],
+  "referenceHash": "d071abc0d2308b515e02e3be027b2e420734122408c58038e0c7512d4e9a133b",
+  "inference": [
+    "House, fountain, market, smith, signpost, bridge, dock and central-tree silhouettes are physical-contour traces from main-supplied source landmarks. No color or material threshold was used anywhere.",
+    "Four image-guided wood-post mattes are separated from the paved bridge for foot-depth occlusion; no post pixels are duplicated in the floor or terrain. Flattened-source boundary contours are inferred, not artist alpha.",
+    "House mask subtracts the guard-overlap rectangle x354..413 y382..473 so the in-foreground guard stays in the terrain layer. Bridge mask subtracts the arch water-hole rectangle x1053..1175 y385..450 so the river water under the arch stays visible. Smith mask subtracts the foreground blacksmith rectangle x1290..1368 y783..885.",
+    "Terrain is the exclusive static underlay outside the four HUD rectangles and separated owner silhouettes; the hero bbox is never punched out.",
+    "Only registered hero/shadow/fringe-removal pixels are replaced with a native-resolution tiled clean-dirt donor from source rect (780,575,816,600). Observed pixels outside that mask remain unchanged.",
+    "Character union/shadow masks are required and checked against their provenance hashes. The inferred removal mask additionally covers traced source fringes and a local 1px seam, without rectangle substitution.",
+    "All assets are exposed at /greenvale/environment/*.png with width/height === actual PNG size (trimmed).",
+    "Unseparated foliage remains in terrain; central-tree is independently owned. The observed grass/ground contact shared by broad bridge/market contours is returned exclusively to terrain."
+  ]
+}

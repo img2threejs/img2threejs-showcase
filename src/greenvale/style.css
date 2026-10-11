@@ -1,0 +1,136 @@
+/* Game-only Greenvale surface; the host preserves the 3:2 artboard via fitStage. */
+body.greenvale-page {
+  margin: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #080d12;
+  color: #f4ecd6;
+  font-family: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+}
+.greenvale-page :focus-visible { outline: 2px solid #e6ba69; outline-offset: 2px; }
+.greenvale-main, .greenvale-play, .greenvale-stage {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.greenvale-main { height: 100dvh; }
+.greenvale-stage { touch-action: none; }
+.greenvale-canvas { display: block; width: 100%; height: 100%; }
+.greenvale-loading {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.greenvale-sr-only, .greenvale-touch__help {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.greenvale-touch { display: none; }
+.greenvale-page[data-mobile="true"] .greenvale-touch {
+  position: absolute;
+  left: max(8px, env(safe-area-inset-left));
+  right: max(8px, env(safe-area-inset-right));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+}
+.greenvale-touch__movement {
+  width: 112px;
+  flex: none;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+.greenvale-joystick {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  box-sizing: border-box;
+  border: 2px solid #8793a2;
+  border-radius: 50%;
+  background: rgb(24 37 50 / 85%);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto;
+}
+.greenvale-joystick__thumb {
+  position: absolute;
+  left: calc(50% - 22px);
+  top: calc(50% - 22px);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #e6ba69;
+  pointer-events: none;
+}
+.greenvale-joystick[data-pressed="true"] { border-color: #e6ba69; cursor: grabbing; }
+.greenvale-touch__utilities { display: flex; gap: 4px; width: 100%; }
+.greenvale-touch__utilities button { flex: 1; }
+.greenvale-touch__skills {
+  width: min(192px, calc(100vw - 144px));
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+.greenvale-touch__skill {
+  min-width: 0;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 2px;
+  border-radius: 8px;
+  border: 1px solid #8793a2;
+  background: rgb(24 37 50 / 92%);
+  color: #f4ecd6;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto;
+}
+.greenvale-touch__skill[data-pressed="true"] { background: #59472b; border-color: #e6ba69; }
+.greenvale-touch__skill .greenvale-skill-icon { width: 18px; height: 18px; flex: none; }
+.greenvale-touch__skill kbd { font: inherit; font-size: 9px; color: #e6ba69; }
+.greenvale-error {
+  position: fixed;
+  inset: 16px 16px auto;
+  padding: 16px;
+  border: 1px solid #dc6450;
+  border-radius: 12px;
+  background: #301818;
+  color: #f9d7c8;
+}
+.greenvale-error h2 { margin: 0 0 8px; font-size: 16px; }
+.greenvale-error button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #f9d7c8;
+  border-radius: 8px;
+  background: #301818;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
