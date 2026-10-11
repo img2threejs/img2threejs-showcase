@@ -72,9 +72,9 @@ function buildShell(): DocumentFragment {
             </div>
           </div>
           <div class="greenvale-touch__skills" role="group" aria-label="Touch skills">
-            <button type="button" class="greenvale-touch__skill" data-greenvale-touch="heal">${SKILL_LABELS.heal}<kbd>1</kbd></button>
-            <button type="button" class="greenvale-touch__skill" data-greenvale-touch="ice">${SKILL_LABELS.ice}<kbd>2</kbd></button>
-            <button type="button" class="greenvale-touch__skill" data-greenvale-touch="fire">${SKILL_LABELS.fire}<kbd>3</kbd></button>
+            <button type="button" class="greenvale-touch__skill" data-greenvale-touch="heal"><svg class="greenvale-spell-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6Z" fill="currentColor"/></svg>${SKILL_LABELS.heal}<kbd>1</kbd></button>
+            <button type="button" class="greenvale-touch__skill" data-greenvale-touch="ice"><svg class="greenvale-spell-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 7 10-7 10-7-10Z M12 2v20 M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>${SKILL_LABELS.ice}<kbd>2</kbd></button>
+            <button type="button" class="greenvale-touch__skill" data-greenvale-touch="fire"><svg class="greenvale-spell-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2c1 6 7 8 7 13a8 8 0 0 1-16 0c0-3 2-6 4-8 0 4 2 5 3 5 2-3 2-7 2-10Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 13c0 3-3 4-3 6a3 3 0 0 0 6 0c0-2-2-4-3-6Z" fill="currentColor"/></svg>${SKILL_LABELS.fire}<kbd>3</kbd></button>
             ${(Object.entries(ATTACKS) as [Attack, typeof ATTACKS[Attack]][]).map(([id, action]) =>
               `<button type="button" class="greenvale-touch__skill" data-greenvale-touch="${id}">${attackIconMarkup(id)}<span>${action.label}</span><kbd>${action.key}</kbd></button>`).join('')}
           </div>

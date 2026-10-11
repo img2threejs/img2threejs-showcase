@@ -1,0 +1,446 @@
+{
+  "walk": 25,
+  "run": 47,
+  "released": {
+    "x": 0,
+    "y": 0,
+    "run": false
+  },
+  "skills": [
+    {
+      "id": "heal",
+      "action": "heal"
+    },
+    {
+      "id": "ice",
+      "action": "ice"
+    },
+    {
+      "id": "fire",
+      "action": "fire"
+    },
+    {
+      "id": "slash",
+      "action": "slash"
+    },
+    {
+      "id": "combo",
+      "action": "combo"
+    },
+    {
+      "id": "thrust",
+      "action": "thrust"
+    },
+    {
+      "id": "spin",
+      "action": "spin"
+    },
+    {
+      "id": "dash",
+      "action": "dash"
+    },
+    {
+      "id": "ground",
+      "action": "ground"
+    }
+  ],
+  "layouts": [
+    {
+      "width": 568,
+      "height": 320,
+      "overflow": false,
+      "boxes": [
+        {
+          "id": "run",
+          "x": 22,
+          "y": 256,
+          "w": 48,
+          "h": 48,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "interact",
+          "x": 78,
+          "y": 256,
+          "w": 48,
+          "h": 48,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "heal",
+          "x": 160,
+          "y": 252,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "ice",
+          "x": 220,
+          "y": 252,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "fire",
+          "x": 280,
+          "y": 252,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "slash",
+          "x": 474,
+          "y": 228,
+          "w": 76,
+          "h": 76,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "combo",
+          "x": 408,
+          "y": 192,
+          "w": 60,
+          "h": 60,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "thrust",
+          "x": 490,
+          "y": 158,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "spin",
+          "x": 350,
+          "y": 196,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "dash",
+          "x": 424,
+          "y": 128,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "ground",
+          "x": 358,
+          "y": 136,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        }
+      ]
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "overflow": false,
+      "boxes": [
+        {
+          "id": "run",
+          "x": 22,
+          "y": 326,
+          "w": 48,
+          "h": 48,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "interact",
+          "x": 78,
+          "y": 326,
+          "w": 48,
+          "h": 48,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "heal",
+          "x": 436,
+          "y": 322,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "ice",
+          "x": 496,
+          "y": 322,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "fire",
+          "x": 556,
+          "y": 322,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "slash",
+          "x": 750,
+          "y": 298,
+          "w": 76,
+          "h": 76,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "combo",
+          "x": 684,
+          "y": 262,
+          "w": 60,
+          "h": 60,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "thrust",
+          "x": 766,
+          "y": 228,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "spin",
+          "x": 626,
+          "y": 266,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "dash",
+          "x": 700,
+          "y": 198,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "ground",
+          "x": 634,
+          "y": 206,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        }
+      ]
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overflow": false,
+      "boxes": [
+        {
+          "id": "run",
+          "x": 22,
+          "y": 704,
+          "w": 48,
+          "h": 48,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "interact",
+          "x": 78,
+          "y": 704,
+          "w": 48,
+          "h": 48,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "heal",
+          "x": 616,
+          "y": 700,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "ice",
+          "x": 676,
+          "y": 700,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "fire",
+          "x": 736,
+          "y": 700,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "slash",
+          "x": 930,
+          "y": 676,
+          "w": 76,
+          "h": 76,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "combo",
+          "x": 864,
+          "y": 640,
+          "w": 60,
+          "h": 60,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "thrust",
+          "x": 946,
+          "y": 606,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "spin",
+          "x": 806,
+          "y": 644,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "dash",
+          "x": 880,
+          "y": 576,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        },
+        {
+          "id": "ground",
+          "x": 814,
+          "y": 584,
+          "w": 52,
+          "h": 52,
+          "background": "rgba(12, 27, 32, 0.24)"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "boxes": [
+        {
+          "id": "run",
+          "x": 8,
+          "y": 788,
+          "w": 54,
+          "h": 48,
+          "background": "rgba(24, 37, 50, 0.92)"
+        },
+        {
+          "id": "interact",
+          "x": 66,
+          "y": 788,
+          "w": 54,
+          "h": 48,
+          "background": "rgba(24, 37, 50, 0.92)"
+        },
+        {
+          "id": "heal",
+          "x": 190,
+          "y": 654.84375,
+          "w": 61.328125,
+          "h": 48,
+          "background": "rgba(24, 37, 50, 0.92)"
+        },
+        {
+          "id": "ice",
+          "x": 255.328125,
+          "y": 654.84375,
+          "w": 61.328125,
+          "h": 48,
+          "background": "rgba(24, 37, 50, 0.92)"
+        },
+        {
+          "id": "fire",
+          "x": 320.65625,
+          "y": 654.84375,
+          "w": 61.328125,
+          "h": 48,
+          "background": "rgba(24, 37, 50, 0.92)"
+        },
+        {
+          "id": "slash",
+          "x": 190,
+          "y": 706.84375,
+          "w": 61.328125,
+          "h": 55.984375,
+          "background": "rgba(24, 37, 50, 0.92)"
+        },
+        {
+          "id": "combo",
+          "x": 255.328125,
+          "y": 706.84375,
+          "w": 61.328125,
+          "h": 55.984375,
+          "background": "rgba(24, 37, 50, 0.92)"
+        },
+        {
+          "id": "thrust",
+          "x": 320.65625,
+          "y": 706.84375,
+          "w": 61.328125,
+          "h": 55.984375,
+          "background": "rgba(24, 37, 50, 0.92)"
+        },
+        {
+          "id": "spin",
+          "x": 190,
+          "y": 766.828125,
+          "w": 61.328125,
+          "h": 69.171875,
+          "background": "rgba(24, 37, 50, 0.92)"
+        },
+        {
+          "id": "dash",
+          "x": 255.328125,
+          "y": 766.828125,
+          "w": 61.328125,
+          "h": 69.171875,
+          "background": "rgba(24, 37, 50, 0.92)"
+        },
+        {
+          "id": "ground",
+          "x": 320.65625,
+          "y": 766.828125,
+          "w": 61.328125,
+          "h": 69.171875,
+          "background": "rgba(24, 37, 50, 0.92)"
+        }
+      ]
+    }
+  ],
+  "desktop": {
+    "mobile": "false",
+    "delta": 6.25,
+    "controlsVisible": false
+  },
+  "errors": {
+    "entries": [],
+    "nextSeq": 10,
+    "dropped": 0
+  },
+  "build": "npm run build passed in local game project",
+  "uiDetector": [],
+  "limits": [
+    "Chromium emulation only; physical iOS/Android and Safari untested",
+    "Existing aspect-ratio letterboxing unchanged",
+    "These screenshots and touch measurements were captured in the local game project before transfer to PR #86"
+  ]
+}

@@ -114,6 +114,99 @@ body.greenvale-page {
 .greenvale-touch__skill[data-pressed="true"] { background: #59472b; border-color: #e6ba69; }
 .greenvale-touch__skill .greenvale-skill-icon { width: 18px; height: 18px; flex: none; }
 .greenvale-touch__skill kbd { font: inherit; font-size: 9px; color: #e6ba69; }
+.greenvale-spell-icon { display: none; }
+
+/* Landscape touch HUD: translucent thumb controls, not an opaque toolbar. */
+@media (orientation: landscape) {
+  .greenvale-page[data-mobile="true"] .greenvale-touch {
+    left: max(18px, env(safe-area-inset-left));
+    right: max(18px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .greenvale-touch__movement { gap: 12px; }
+  .greenvale-joystick {
+    border: 1px solid rgb(207 229 231 / 30%);
+    background: rgb(18 36 41 / 12%);
+    box-shadow: inset 0 0 0 8px rgb(203 229 227 / 4%);
+  }
+  .greenvale-joystick__thumb {
+    border: 1px solid rgb(218 237 232 / 58%);
+    box-sizing: border-box;
+    background: rgb(190 215 204 / 18%);
+    box-shadow: inset 0 0 0 4px rgb(226 239 227 / 7%);
+  }
+  .greenvale-joystick[data-pressed="true"] {
+    background: rgb(18 36 41 / 25%);
+    border-color: rgb(230 186 105 / 75%);
+  }
+  .greenvale-joystick[data-pressed="true"] .greenvale-joystick__thumb {
+    background: rgb(230 186 105 / 35%);
+    border-color: #e6ba69;
+  }
+  .greenvale-touch__skills {
+    position: relative;
+    display: block;
+    flex: none;
+    width: 390px;
+    height: 176px;
+  }
+  .greenvale-touch__skill {
+    --control-tint: 167 218 229;
+    width: 52px;
+    height: 52px;
+    min-height: 48px;
+    padding: 3px;
+    border-radius: 50%;
+    border: 1px solid rgb(var(--control-tint) / 58%);
+    background: rgb(12 27 32 / 24%);
+    color: #fff8e8;
+    box-shadow: inset 0 0 0 3px rgb(var(--control-tint) / 8%);
+    text-shadow: 0 1px 3px #071119, 0 1px 2px #071119;
+    font-size: 9px;
+    font-weight: 600;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .greenvale-touch__skill[data-pressed="true"] {
+    border-color: #fff0c2;
+    background: rgb(var(--control-tint) / 42%);
+    box-shadow: inset 0 0 0 3px rgb(255 240 194 / 28%);
+  }
+  .greenvale-touch__skill .greenvale-skill-icon { width: 25px; height: 25px; }
+  .greenvale-touch__skill .greenvale-spell-icon {
+    display: block;
+    width: 22px;
+    height: 22px;
+    flex: none;
+    color: rgb(var(--control-tint));
+  }
+  .greenvale-touch__skill kbd { display: none; }
+  .greenvale-touch__utilities { gap: 8px; justify-content: center; }
+  .greenvale-touch__utilities button { flex: none; width: 48px; height: 48px; }
+  .greenvale-touch__skills > button { position: absolute; }
+  .greenvale-touch__skills [data-greenvale-touch="heal"] {
+    --control-tint: 165 232 165; left: 0; bottom: 0;
+  }
+  .greenvale-touch__skills [data-greenvale-touch="ice"] {
+    --control-tint: 145 221 255; left: 60px; bottom: 0;
+  }
+  .greenvale-touch__skills [data-greenvale-touch="fire"] {
+    --control-tint: 255 185 115; left: 120px; bottom: 0;
+  }
+  .greenvale-touch__skills [data-greenvale-touch="slash"] {
+    right: 0; bottom: 0; width: 76px; height: 76px;
+    border-width: 2px; font-size: 10px;
+  }
+  .greenvale-touch__skills [data-greenvale-touch="slash"] .greenvale-skill-icon {
+    width: 34px; height: 34px;
+  }
+  .greenvale-touch__skills [data-greenvale-touch="combo"] {
+    right: 82px; bottom: 52px; width: 60px; height: 60px;
+  }
+  .greenvale-touch__skills [data-greenvale-touch="thrust"] { right: 8px; bottom: 94px; }
+  .greenvale-touch__skills [data-greenvale-touch="spin"] { right: 148px; bottom: 56px; }
+  .greenvale-touch__skills [data-greenvale-touch="dash"] { right: 74px; bottom: 124px; }
+  .greenvale-touch__skills [data-greenvale-touch="ground"] { right: 140px; bottom: 116px; }
+}
 .greenvale-error {
   position: fixed;
   inset: 16px 16px auto;

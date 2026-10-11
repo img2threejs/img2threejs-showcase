@@ -51,6 +51,10 @@ npm run test:greenvale
   P pauses and R resets. No outer settings panel or header.
 - The 1536×1024 artboard keeps its proportions. Portrait screens have substantial
   letterboxing; landscape touch controls can overlap the map.
+- Landscape controls use translucent circles (24% button fill, 12% joystick fill),
+  a larger Slash button, arc-arranged attacks and colored Heal/Ice/Fire symbols.
+  Held controls brighten; keyboard badges are hidden in landscape. Touch targets
+  remain at least 48px; portrait and desktop styling is preserved.
 
 Implementation: [`src/greenvale/`](src/greenvale/).
 Bundled artwork, per-layer manifests/provenance and fonts:
@@ -70,6 +74,11 @@ cover keyboard and native multitouch walk/run (25/47 px per 0.2 s), all nine ski
 pause/reset, fullscreen entry, scene recreation and a visible missing-asset failure.
 [Screenshots and measured results](verification/greenvale/verification.json) are retained
 under `verification/greenvale/`. Physical-device and Safari checks were not performed.
+The [landscape-control update](verification/greenvale/transparent-controls/verification.json)
+records native multitouch and all nine skills at 568×320, 844×390 and 1024×768,
+plus portrait and desktop checks in the local game project. Those screenshots
+supersede the original landscape appearance; the initial port's checksum record
+is historical for the two subsequently updated host/style files.
 `npm run build` passes TypeScript and emits page bundles, but then fails during the
 existing source-ZIP generator's recursive AST traversal with
 `RangeError: Maximum call stack size exceeded` in `scripts/source-archives.mjs`.
