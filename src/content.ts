@@ -373,14 +373,14 @@ function privacyDrawer(): string {
       anything.
     </p>
 
-    <h3 class="dr-h3">The exhibits themselves still make no requests</h3>
+    <h3 class="dr-h3">Most exhibits load no third-party assets</h3>
     <p class="dr-copy">
-      Worth separating from the above, because it is the claim this project actually stakes something
-      on: the models are code, and that code reaches the network never. The safety check that runs on
-      every contribution rejects <span class="mono">fetch</span>,
-      <span class="mono">XMLHttpRequest</span> and <span class="mono">WebSocket</span> in exhibit
-      code, and there are no imported meshes, no CDN and no remote fonts. The only third-party
-      request this site makes is the analytics script, and it is not involved in rendering anything.
+      Most models are code-generated and bundled with the site. The robot color studio is the explicit
+      asset-backed exception: it loads its original GLB from this site's own origin so the source
+      surface, skin binding and animation clips remain intact. The safety check still rejects
+      external <span class="mono">fetch</span>, <span class="mono">XMLHttpRequest</span> and
+      <span class="mono">WebSocket</span> calls in exhibit code; there are no CDN models or remote
+      fonts. The only third-party request is analytics, which is not involved in rendering.
     </p>
 
     <h3 class="dr-h3">Who processes it</h3>
@@ -494,12 +494,13 @@ function aboutDrawer(): string {
   return `
     <h2>About &amp; contact</h2>
     <p class="dr-lede">
-      Every model in this workbench is a TypeScript factory function. There are no imported meshes,
-      no downloaded art packs and no network call anywhere in the rendering path &mdash; the geometry
-      is executed in your browser from code that ${brand('img2threejs')} generated from a single
-      reference photo. The site's one third-party request is its analytics script, which renders
-      nothing; the <button type="button" class="dr-inline-link" data-drawer="privacy">privacy
-      page</button> covers it.
+      Most exhibits are TypeScript factory functions generated from reference inputs. The Man Robot
+      Color Studio is the explicit source-asset exception: it loads the bundled GLB from this site's
+      own origin to retain its surface, skin binding and original clips. Those source clips visibly
+      separate some parts in direct Three.js playback, so this page does not claim to repair them.
+      It makes no third-party asset requests; analytics is the site's only third-party request.
+      <button type="button" class="dr-inline-link" data-drawer="privacy">Privacy
+      page</button> covers site analytics details.
     </p>
 
     <h3 class="dr-h3">This is the official site</h3>

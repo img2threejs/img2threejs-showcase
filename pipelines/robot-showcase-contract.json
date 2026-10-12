@@ -1,0 +1,308 @@
+{
+  "name": "Man Robot — Interactive Segment Color Studio",
+  "pipeline": "img2threejs 1.5.2 · GLB-preserving showcase route",
+  "classification": {
+    "primaryDomain": "character",
+    "primaryType": "articulated humanoid robot",
+    "formLanguage": "mechanical",
+    "structureKind": "articulated assembly",
+    "motionPotential": "articulated",
+    "complexity": "complex",
+    "confidence": 0.96,
+    "evidence": "Corrected GLB metadata probe; 67 nodes, one 66,251-vertex skinned mesh, one 65-joint skin, and 17 clips."
+  },
+  "reference": {
+    "path": "/Users/nhonh/Desktop/man-robot/robot-3d-model.glb",
+    "sha256": "bbf93dbfd845c1d4b15e4e6bf75135606e8c8566e26dcba8d78d8b6e9741d344",
+    "bytes": 18682000,
+    "format": "glTF 2.0 binary",
+    "sceneCount": 1,
+    "nodeCount": 67,
+    "meshCount": 1,
+    "primitiveCount": 1,
+    "vertexCount": 66251,
+    "materialCount": 1,
+    "textureCount": 1,
+    "skinCount": 1,
+    "jointCount": 65,
+    "animationCount": 17,
+    "channelsPerClip": 195,
+    "channelsTargetingJoints": 3315,
+    "rigEvidence": ".img2threejs/robot-corrected-rig-reference.json",
+    "clipEvidence": ".img2threejs/robot-corrected-clip-features.json"
+  },
+  "surfacePolicy": {
+    "authority": "The corrected supplied GLB remains the rendered surface, texture, skin and animation source; Three.js loads it directly.",
+    "preserve": [
+      "all 66,251 source positions, normals, UVs, indices and the 65-joint skin binding",
+      "the source material and base-color texture",
+      "all 17 original animation clips and their source tracks"
+    ],
+    "allowedChanges": [
+      "clone the runtime geometry/material and add a COLOR attribute for segment tinting while preserving the texture map",
+      "add presentation-only camera, lights, floor, and UI"
+    ],
+    "forbidden": [
+      "replace or merge source geometry, change position/normal/UV/index/skin buffers, or retarget the rig",
+      "rewrite or remove source animation tracks"
+    ]
+  },
+  "segments": [
+    {
+      "id": "head",
+      "label": "Head & neck"
+    },
+    {
+      "id": "torso",
+      "label": "Torso"
+    },
+    {
+      "id": "left-arm",
+      "label": "Left arm"
+    },
+    {
+      "id": "right-arm",
+      "label": "Right arm"
+    },
+    {
+      "id": "left-leg",
+      "label": "Left leg"
+    },
+    {
+      "id": "right-leg",
+      "label": "Right leg"
+    },
+    {
+      "id": "details",
+      "label": "Other details"
+    }
+  ],
+  "segmentAssignment": {
+    "basis": "Aggregate JOINTS_0/WEIGHTS_0 by skin-joint segment and assign each source vertex to one dominant part. Color tinting is hard-owned by that part; soft boundary weights are not blended into neighboring part colors.",
+    "confidence": "All 66,251 source vertices map exactly once to six non-empty parts; hard-owner tint checks found zero changed non-owner vertices for each part.",
+    "counts": {
+      "head": 9945,
+      "torso": 8254,
+      "left-arm": 11305,
+      "right-arm": 11412,
+      "left-leg": 13297,
+      "right-leg": 12038,
+      "details": 0
+    },
+    "coverageEvidence": ".img2threejs/robot-evidence/corrected-segment-coverage.json",
+    "colorIsolationEvidence": [
+      ".img2threejs/robot-evidence/robot-corrected-color-left-leg.webp"
+    ],
+    "unknowns": [
+      "The GLB contains one continuous skinned primitive rather than separately named body meshes.",
+      "Per-part tinting uses exclusive dominant vertex ownership; the original base-color texture remains intact."
+    ]
+  },
+  "animationReview": {
+    "sourceRigProbe": {
+      "result": "pass",
+      "nodeCount": 67,
+      "meshCount": 1,
+      "skinCount": 1,
+      "jointCount": 65,
+      "clipCount": 17,
+      "channelsTargetingJoints": 3315,
+      "channelsTargetingTechnicalNodes": 0,
+      "structuralFailure": null,
+      "evidence": ".img2threejs/robot-corrected-rig-reference.json"
+    },
+    "clipMeasurements": {
+      "samplesPerClip": 25,
+      "figureHeight": 0.9995117485523224,
+      "tool": "img2threejs 1.5.2 stage5_rig/glb_rig_reference.py + clip_features.py",
+      "loopableSourceClips": [
+        "walk.001",
+        "box_03.001",
+        "box_01.001"
+      ],
+      "sourceScaleDeltaTripwire": {
+        "limit": 0,
+        "trippedClipCount": 17,
+        "maximumDelta": 0.00001144,
+        "skinWeightChanges": false,
+        "r2Applied": false
+      },
+      "evidence": ".img2threejs/robot-corrected-clip-features.json"
+    },
+    "directSourceObservation": {
+      "route": "Raw GLTFLoader source scene, no SkeletonUtils clone and no presentation wrapper",
+      "trigger": "greet_01.001 at 0.7 seconds",
+      "result": "The corrected continuous skinned mesh remains assembled. A 272-observation pixel-gap screen across all 17 clips, four normalized times, and four azimuths found zero interior gap pixels; this screen does not measure crease count.",
+      "sourceMetrics": {
+        "poseReturnDegrees": 18.656844,
+        "hipReturnFigureHeights": 0.003049
+      },
+      "attribution": "The corrected supplied GLB contains one 66,251-vertex skinned surface with 65 joints, one material, and one texture. The former multi-mesh separation issue is absent in direct-source playback.",
+      "gapScreenEvidence": ".img2threejs/robot-evidence/robot-corrected-gap-sweep.json",
+      "runtimeAuditEvidence": ".img2threejs/robot-evidence/corrected-clip-runtime-audit.json",
+      "evidence": ".img2threejs/robot-evidence/robot-corrected-source-greet-01.webp"
+    },
+    "playbackPolicy": "Preserve all 17 AnimationClips and their 195 tracks unchanged. Loop only walk.001, box_03.001, and box_01.001; play the other measured clips once. No autoplay. Apply runtime-only gesture/clearance pose overlays after mixer updates and restore saved bone poses before the next mixer update.",
+    "sharedRestPose": {
+      "referenceClip": "China — Traditional Gongshou Greeting",
+      "referenceFrame": "final frame at 4.0 seconds",
+      "runtimeBehavior": "Sample the source clip's final-frame bone transforms into a hidden runtime-only pose clip. Use that pose for initial idle and Stop/reset; cross-fade completed one-shot clips to it. Looping clips continue until Stop.",
+      "sourcePreservation": "The supplied GLB and its source animation tracks remain unchanged."
+    },
+    "supplementalGreetings": {
+      "asset": "public/robot/greetings.json",
+      "converter": "scripts/retarget-robot-greetings.mjs",
+      "clips": [
+        "Japan's Greeting",
+        "Shaking Hands"
+      ],
+      "runtimeClipCount": 23,
+      "profileAuthority": "The generated asset stores measured duration, pose-return, hip-return, scale-delta and track-count profiles beside the serialized AnimationClips and retarget provenance. The original 17-clip source contract remains separate and unchanged. The runtime total now also includes six separately serialized exported clips; the original 17 source clips remain unchanged. Japan's Greeting remains in the generated source pack for provenance but is excluded from the user-facing runtime library.",
+      "playbackPolicy": "Load and parse the supplemental JSON once alongside the source GLB; append Shaking Hands to the existing Motion Library and exclude Japan's Greeting as one-shot actions. Require distinct nonempty clip UUIDs so AnimationMixer never aliases the greetings. Pause, resume, replay, stop/reset and switching to source clips use the existing controls. Shaking Hands is the solo source gesture; no partner character is added. No runtime FBX parsing. The six exported clips are loaded from public/robot/exported-robot-animations.json as one-shots with unique clip UUIDs.",
+      "runtimeVisibleClips": [
+        "Shaking Hands"
+      ],
+      "excludedFromMotionLibrary": [
+        "Japan's Greeting"
+      ]
+    },
+    "motionContactReview": {
+      "result": "robot-texture-map-fallback-restored; namaste-reference-body-retargeted; namaste-thumb-axis-straightened; namaste-gentle-torso-bow-added; namaste-neck-to-fingertip-reach; namaste-head-bow-synchronized-to-contact; hand-reference-fidelity-not-achieved; user-kept-hand-approximation; vietnamese-greeting-excluded-from-current-library; japan-greeting-excluded-from-current-library; sampled-hand-overlap-remains; new-exported-animation-pack-integrated; requested-exported-animation-renames-applied",
+      "evidence": ".img2threejs/robot-evidence/animation-contact-after.json",
+      "gestureCriteria": [
+        "Gongshou hold reads as one curled right fist touching the open left palm at chest height.",
+        "Namaste acceptance requires visibly pressed opposing palms, eight straight grouped long fingers within 2 degrees of a shared axis, thumb shafts alongside the radial edges within 2 degrees of that axis at the hold, no sampled inter-hand crossings, a forward bow to the fixed fingertip cluster, and forearms diverging downward from the wrists. The current Spine bow is 5 degrees and the Neck pitches 45 degrees on the same 0.45–1.05s in / 2.4–3.05s out contact blend, producing 50 degrees total head pitch at 2.0s. The nearest head-to-right-middle-fingertip surface vertices are 1.212mm apart; fingertip displacement is zero and wrist/elbow displacement is below 0.00004mm. The 241-sample 60Hz hand screen reports zero crossings. The pose still FAILS reference pad fidelity: current full-hand 25-ray median/maximum gaps are 11.448/23.076mm and corresponding long-finger rays reach 22.294mm separation. A 0.497552mm minimum palm gap does not establish area contact.",
+        "Vietnamese Greeting is intentionally excluded from the current Motion Library; its earlier crossed-hand measurements remain historical. The separately exported VietNam's Greeting is a distinct one-shot clip.",
+        "Japan's Greeting is intentionally excluded from the current Motion Library; its prior thigh-contact measurements remain historical. The separately exported Japan's Greet is a new one-shot deep-kneeling motion.",
+        "Namaste overlays 69 reference body tracks plus two reference wrist-position tracks retimed from 5s to the source 4s window; 124 current hand/finger channels and current palm/finger corrections remain. The runtime adds a 5-degree Spine bow and a 45-degree Neck pitch at contact without changing the hand/arm pose; 195 track paths and the supplied GLB remain unchanged. The new compatible animation-only pack adds six 195-track clips without replacing the unchanged rendered mesh or the 17 source clips. The Motion Library exposes 16 original source clips, six exported clips, and Shaking Hands (23 runtime clips total); Vietnamese Greeting and Japan's Greeting are excluded."
+      ],
+      "locomotionCriteria": "At sampled Walk/Run poses, distal forearm/hand surfaces remain at least 1mm from torso/thigh; the connected shoulder attachment is excluded. Runtime offsets restore before every mixer update and do not accumulate.",
+      "method": "Namaste: fresh source runtime; 5342/5232 triangles with any positive hand-subtree influence, including thumbs; 241 timestamps at 1/60s over 0-4s with AABB and bidirectional edge/triangle screening; strict palm-only 501/514 triangle distance; 25 interior palm rays and seven rays per corresponding long finger; 60Hz joint continuity, reset comparison, thumb-axis and joint-bend measurement at the 2s hold, and front/oblique/true-side browser views. Final thumb-adjusted screen: 241 samples, zero inter-hand crossings, maximum 20 AABB candidates. Parent independently sampled 16 timestamps. Vietnamese: fresh runtime; 5342/5232 hand-subtree triangles; 81 samples at 0.05s over 0-4s with bidirectional edge/triangle screening; full-weight IK from 0.675-2.9s; 2.0s palm/finger gaps, wrist spacing, elbow flex and runtime render. Japan's Greeting: fresh supplemental runtime; 55 samples at 0.05s over 0-2.70s; first thigh contact patch and normal locked per side/frame; hand-subtree signed projection refines contact to an estimated 0.015-1.726mm gap; maximum elbow flex 5.9 degrees; front/oblique runtime render and live one-shot completion. These patch projections do not prove full-mesh or continuous-time collision safety. All source clips retain 195 tracks. The added 5-degree torso correction is measured at 0, 0.45, 0.75, 1.05, 2.0, 2.4, 2.75, 3.05, and 4.0s as 0, 0, 2.5, 5, 5, 5, 2.212, 0, and 0 degrees. At the 2.0s hold, wrist spacing is 36.639mm, palm/finger gaps are 0.497552/0.018562mm, and long-finger-axis divergence/bend remain 0.000482/0.001186 degrees. Texture was checked from the live GLB material: the embedded 8K JPEG is restored through the TextureLoader fallback, UV count is 66,251, and a #e04836 tint/restore round trip retains the map. Head/Spine added rotations were measured at 0, 0.45, 0.75, 1.05, 2.0, 2.4, 2.75, 3.05, and 4.0s; the 2.0s total head rotation is 10 degrees. The final hand sweep has zero crossings over 241 samples. The 45-degree Neck reach was tested with fixed fingertips: nearest head/right-middle-fingertip surface vertices are 1.212mm apart at 2s; fingertip position delta is 0mm, max wrist/elbow deltas are 0.000039/0.000024mm, and sampled head pitch transitions 0→25→50→50→22.121→0 degrees. Final 241-sample 60Hz hand screen records zero inter-hand crossings. The incoming GLB’s position, normal, UV, skin-index, skin-weight, and index-buffer hashes plus its embedded texture hash match the current rendered GLB; its six 65-joint, 195-track clips are serialized to public/robot/exported-robot-animations.json. Each new clip was played to Completed; runtime count is 25.",
+      "limits": "Namaste retains a 5-degree Spine bow and adds a 45-degree contact-blended Neck pitch to reach the fixed fingertips. At 2.0s, total head pitch is 50 degrees and nearest head/right-middle-fingertip surface vertices are 1.212mm apart; hands and arms remain unchanged. The hand-reference fidelity still FAILS: current full-hand 25-ray median/maximum gaps are 11.448/23.076mm and corresponding long-finger rays reach 22.294mm; minimum palm distance is point contact, not area contact. The 241-frame no-crossing screen and near-contact vertex metric do not prove continuous-time, coplanar, full-body, or same-hand collision safety. Rejected runtime-morph trials remain removed; full hand-shell/rig reauthor is broader. The removed Vietnamese and Japan greetings remain in their source assets for provenance but are not selectable in the current Motion Library; the exported VietNam's Greeting and Japan's Greet are separate clips."
+    },
+    "status": "robot-texture-map-fallback-restored; namaste-reference-body-retargeted; namaste-thumb-axis-straightened; namaste-gentle-torso-bow-added; namaste-neck-to-fingertip-reach; namaste-head-bow-synchronized-to-contact; namaste-hand-reference-fidelity-not-achieved; source-hand-correction-retained; safe-approximation-user-accepted; rejected-morph-trials-rolled-back; vietnamese-greeting-excluded-from-current-library; japan-greeting-excluded-from-current-library; gait-review-unchanged; new-exported-animation-pack-integrated; requested-exported-animation-renames-applied",
+    "exportedAnimationPack": {
+      "sourceFile": "new-robot+3d+model.glb",
+      "sourceSha256": "73c0b5d4ae5a63dda62c40ffa3cfea319fd013088549203edd99b7e936078caf",
+      "runtimeAsset": "public/robot/exported-robot-animations.json",
+      "clipCount": 6,
+      "tracksPerClip": 195,
+      "jointCount": 65,
+      "runtimeClipCount": 23,
+      "staticModelReused": true,
+      "playbackPolicy": "Append to the existing Motion Library as one-shot clips; retain all 17 source clips and both supplemental greetings.",
+      "profiles": [
+        {
+          "sourceName": "Begin with your left foot forward, knees slightly bent, chin lo",
+          "label": "Muay 01",
+          "motionClass": "in-place",
+          "loop": false,
+          "duration": 7,
+          "poseReturnDegrees": 13.498782613372905,
+          "hipReturnH": 0.0029902156801070927,
+          "scaleDelta": 0.000011205673217773438,
+          "tracks": 195
+        },
+        {
+          "sourceName": "Stand upright with your feet close together, knees relaxed, bac",
+          "label": "Gentleman greeting",
+          "motionClass": "in-place",
+          "loop": false,
+          "duration": 6,
+          "poseReturnDegrees": 9.05234448958614,
+          "hipReturnH": 0.000567713405153651,
+          "scaleDelta": 0.000011324882507324219,
+          "tracks": 195
+        },
+        {
+          "sourceName": "Stand with your feet hip-width apart, knees soft, and your uppe",
+          "label": "Hip-Width Stance",
+          "motionClass": "in-place",
+          "loop": false,
+          "duration": 10,
+          "poseReturnDegrees": 16.618538795272798,
+          "hipReturnH": 0.0016795848798479601,
+          "scaleDelta": 0.000011324882507324219,
+          "tracks": 195
+        },
+        {
+          "sourceName": "Stand upright with your feet close together, knees relaxed, and",
+          "label": "VietNam's Greeting",
+          "motionClass": "in-place",
+          "loop": false,
+          "duration": 5,
+          "poseReturnDegrees": 10.724997517714105,
+          "hipReturnH": 0.0005037263795517741,
+          "scaleDelta": 0.000011205673217773438,
+          "tracks": 195
+        },
+        {
+          "sourceName": "Stand upright with your feet together, back straight, and shoul",
+          "label": "Japan's Greet",
+          "motionClass": "in-place",
+          "loop": false,
+          "duration": 5,
+          "poseReturnDegrees": 153.64369937282635,
+          "hipReturnH": 0.4380104817665452,
+          "scaleDelta": 0.000011444091796875,
+          "tracks": 195,
+          "requestedNameAlias": "Feel-Together Standing"
+        },
+        {
+          "sourceName": "Begin in a left-leading guard with your knees slightly bent, ch",
+          "label": "Muay 02",
+          "motionClass": "in-place",
+          "loop": false,
+          "duration": 6,
+          "poseReturnDegrees": 10.084243011357826,
+          "hipReturnH": 0.0025513708325728785,
+          "scaleDelta": 0.000011205673217773438,
+          "tracks": 195
+        }
+      ],
+      "visibleSourceClipCount": 16,
+      "excludedFromMotionLibrary": [
+        "Vietnamese Greeting",
+        "Japan's Greeting"
+      ],
+      "renameMap": {
+        "Greet 01": "US Greeting",
+        "Web Greeting": "Generally Greeting",
+        "Greet 04": "Hiphop Greeting",
+        "Left-Lead Stance": "Muay 01",
+        "Close Upright Stand": "Gentleman greeting",
+        "Relaxed Close Stand": "VietNam's Greeting",
+        "Deep Kneeling Bow": "Japan's Greet",
+        "Left-Lead Guard": "Muay 02"
+      }
+    }
+  },
+  "qualityContract": {
+    "definitionOfDone": [
+      "The exact corrected 66,251-vertex skinned surface renders without geometry replacement or omission.",
+      "Clicking the surface resolves the touched triangle to its dominant skin-weight segment; the six non-empty groups remain reusable controls.",
+      "Every source vertex has exactly one dominant body-part owner; the six non-empty segment counts sum to 66,251 and no vertex is unassigned.",
+      "Runtime vertex-color tint changes only vertices owned by the selected dominant part; the source texture is retained and reset restores every source vertex color.",
+      "All 17 source clips remain available with their original 195 tracks each; only the three measured return-pose clips loop. The two supplemental greetings are exposed alongside them as one-shot actions for a 19-clip Motion Library.",
+      "All 17 clips deform the source skin; direct-source gap screening found no detached-surface gaps in 272 sampled observations.",
+      "Initial idle, Stop/reset, and completed one-shot actions share the final frame of China — Traditional Gongshou Greeting; looping actions remain active until Stop.",
+      "Gongshou, Vietnamese, and locomotion retain their recorded criteria above. Namaste uses the supplied reference body and wrist trajectory retimed to the source clip's 4s window while retaining the source hand/finger channels and current runtime corrections. Hand-reference acceptance still requires the supplied praying-hands silhouette and paired pad contact in front, oblique, and true-side views, eight extended fingers within 2 degrees of the shared axis, at most 0.5mm contact-surface gap, no whole-hand crossings in the 241-frame 60Hz sweep, downward-diverging forearms, and reversible smooth runtime correction. Current Namaste hand reference fidelity FAILS despite its passing angular, minimum-contact, restoration, and sampled crossing metrics.",
+      "Orbit, resize, keyboard controls, and narrow viewports remain usable."
+    ],
+    "requiredViews": [
+      "front three-quarter hero",
+      "front",
+      "left profile",
+      "rear three-quarter",
+      "rear"
+    ],
+    "failureModes": [
+      "vertex or segment coverage differs from the corrected one-mesh probe",
+      "a color edit leaks to a different segment or replaces the source texture",
+      "animation channels are altered, missing, or fail to deform the skinned mesh",
+      "direct-source playback introduces a visible surface gap or detached geometry",
+      "Namaste body/wrist motion diverges from the supplied reference on normalized-phase review, hand/finger correction loses the retained straight/contact pose, palms or paired long-finger pads remain visibly open rather than pressed, thumbs cross the partner hand, forearms fail to diverge downward, any long-finger axis diverges more than 2 degrees at hold, minimum contact-surface gap exceeds 0.5mm, any whole-hand crossing including thumbs occurs in the 241-frame 60Hz sweep, or corrections become discontinuous or fail reset; Vietnamese wrists fail to cross, hands fail visible abdomen contact, elbow flex falls below 25 degrees, or the correction becomes discontinuous; Japan's Greeting arms exceed 6 degrees elbow flex, hands float off the front/outer thigh, or visibly pass through the thigh surface; sampled Walk/Run distal clearance falls below 1mm or drifts",
+      "model is clipped, incorrectly framed, or covered by controls"
+    ]
+  }
+}
