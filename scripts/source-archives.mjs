@@ -56,8 +56,17 @@ export async function createSourceArchive(root, entry, publicFiles) {
   const packages = new Set(['three']);
   const publicAssets = new Set();
   const visited = new Set();
-  const template = await readFile(path.join(root, 'scripts/source-package/index.template'), 'utf8');
-  const example = await readFile(path.join(root, 'scripts/source-package/example.template'), 'utf8');
+  // Robot segment-color studio is mounted through renderRobotStudio on a WebGPU renderer
+  // (with WebGL2 fallback). The generic Viewer uses WebGL and cannot preserve its TSL/WebGPU
+  // material nodes, so the robot entry gets its own entry point instead of the shared one.
+  const templatePath = entry.id === 'man-robot-studio'
+    ? 'scripts/source-package/robot-index.template'
+    : 'scripts/source-package/index.template';
+  const examplePath = entry.id === 'man-robot-studio'
+    ? 'scripts/source-package/robot-example.template'
+    : 'scripts/source-package/example.template';
+  const template = await readFile(path.join(root, templatePath), 'utf8');
+  const example = await readFile(path.join(root, examplePath), 'utf8');
 
   async function addFile(name, override) {
     if (visited.has(name)) return;
@@ -94,6 +103,22 @@ export async function createSourceArchive(root, entry, publicFiles) {
       }
       return matches.length > 0;
     }
+    // Exact normalized path membership only — no directory-prefix fuzzy match.
+    // The whole-binary rewrite of `BASE_URL + 'literal'` must point resolveSourceAsset at
+    // a real public file; prefix matches would rewrite a `BASE_URL + 'robot/'` reference
+    // into resolveSourceAsset('__SHOWCASE_ASSET__/robot/'), which throws at runtime because
+    // the urls map keys individual files, not directories.
+    function exactPublicAsset(text) {
+      const candidate = text.replace(/^\//, '');
+      if (!candidate || candidate.includes(' ') || candidate.includes('\n')) return null;
+      const exact = publicFiles.find((asset) => asset === candidate);
+      if (exact) {
+        if (forbiddenAsset.test(exact)) throw new Error(`Binary model asset prohibited: ${name}: ${exact}`);
+        publicAssets.add(exact);
+        return exact;
+      }
+      return null;
+    }
     function visit(node) {
       if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
         addSpecifier(node.moduleSpecifier.text);
@@ -113,11 +138,45 @@ export async function createSourceArchive(root, entry, publicFiles) {
         if (node.arguments[0].text.startsWith('.')) dependencies.add(node.arguments[0].text);
       }
       if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)
-        && node.expression.name.text === 'load' && node.arguments.length > 0) {
-        usesAssetResolver = true;
+        && (node.expression.name.text === 'load' || node.expression.name.text === 'loadAsync')
+        && node.arguments.length > 0) {
         const argument = node.arguments[0];
-        replacements.push({ start: argument.getStart(file), end: argument.getStart(file), text: 'resolveSourceAsset(' });
-        replacements.push({ start: argument.end, end: argument.end, text: ')' });
+        // Skip when the argument is a `BASE_URL + 'literal'` concatenation that the
+        // binary-expression handler below rewrites as a single resolveSourceAsset call.
+        // The skip must use the SAME exact-match condition as that handler, otherwise a
+        // dynamic / non-existent tail would slip past the loader wrapper into a raw
+        // BASE_URL concatenation that never resolves to a real asset URL.
+        const isBaseUrlConcat = ts.isBinaryExpression(argument)
+          && argument.operatorToken.kind === ts.SyntaxKind.PlusToken
+          && ts.isPropertyAccessExpression(argument.left)
+          && argument.left.getText(file) === 'import.meta.env.BASE_URL'
+          && (ts.isStringLiteral(argument.right) || ts.isNoSubstitutionTemplateLiteral(argument.right))
+          && exactPublicAsset(argument.right.text) !== null;
+        if (!isBaseUrlConcat) {
+          usesAssetResolver = true;
+          replacements.push({ start: argument.getStart(file), end: argument.getStart(file), text: 'resolveSourceAsset(' });
+          replacements.push({ start: argument.end, end: argument.end, text: ')' });
+        }
+      }
+      // `import.meta.env.BASE_URL + 'public-asset-path'` becomes
+      // resolveSourceAsset('__SHOWCASE_ASSET__/public-asset-path'). The static prefix is
+      // only safe to inline when the right-hand tail exactly names a tracked public
+      // asset — exactPublicAsset returns null for directory prefixes and unknown paths,
+      // leaving the expression alone for the original recursion to handle.
+      // Returning early prevents the children from being visited independently and
+      // overlapping the replacement range.
+      if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken
+        && ts.isPropertyAccessExpression(node.left)
+        && node.left.getText(file) === 'import.meta.env.BASE_URL'
+        && (ts.isStringLiteral(node.right) || ts.isNoSubstitutionTemplateLiteral(node.right))) {
+        const exact = exactPublicAsset(node.right.text);
+        if (exact !== null) {
+          usesAssetResolver = true;
+          const fullPath = '__SHOWCASE_ASSET__/' + exact;
+          replacements.push({ start: node.getStart(file), end: node.end,
+            text: 'resolveSourceAsset(' + JSON.stringify(fullPath) + ')' });
+          return;
+        }
       }
       if (ts.isPropertyAccessExpression(node) && node.getText(file) === 'import.meta.env.BASE_URL') {
         replacements.push({ start: node.getStart(file), end: node.end, text: JSON.stringify('__SHOWCASE_ASSET__/') });
@@ -169,7 +228,11 @@ export async function createSourceArchive(root, entry, publicFiles) {
   textFile('src/vite-env.d.ts', '/// <reference types="vite/client" />\n');
   textFile('index.html', '<!doctype html>\n<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Showcase source</title><style>body{margin:0}#stage{width:100vw;height:100vh}#actions{position:fixed;bottom:1rem;left:1rem;right:1rem;display:flex;flex-wrap:wrap;gap:.5rem;max-height:30vh;overflow:auto}button{padding:.5rem}</style><div id="stage"></div><div id="actions" aria-label="Showcase controls"></div><script type="module" src="./example.ts"></script></html>\n');
   textFile('example.ts', example);
-  textFile('README.md', `# ${entry.id} — portable Three.js source\n\nThis package contains exactly one showcase from img2threejs-showcase, its original TypeScript dependency graph, shaders, animation/controller/VFX code, encoded data and required image/JSON assets. No GLB/glTF file or GLTFLoader is used. Encoded geometry/rig streams remain code data, not a GLB hidden inside a loader. Public assets use module-relative URLs; this package does not request assets from the gallery or GitHub.\n\n## Run the included example\n\n\`npm install\`, then \`npm run dev\`. For a production build run \`npm run build\`. Use a web server, not file://. Requires a browser with WebGL and a TypeScript-aware bundler supporting standard asset imports and new URL(..., import.meta.url), such as Vite. Three.js version ${dependencies.three}; the host and package must share one compatible Three.js instance.\n\n## Import into another project\n\nCopy \`src/\` AND \`assets/\` together, preserving relative paths. Install the dependencies in package.json. Import \`mountShowcase\` from \`./path/to/src/index\` and call \`await mountShowcase(container)\` on a sized HTMLElement. The returned \`viewer\` owns the render loop, stage interactions and cleanup; call \`asset.dispose()\` on unmount. The included example exposes every declared animation and strike-element controller, plus outfit switching when available. Quality options and game controls remain in the original source modules.\n\nFor an existing Three.js scene, import \`createShowcase\` and use \`const asset = await createShowcase(scene)\`. Each frame call \`asset.update(dtSeconds, elapsedSeconds)\`, then \`asset.prepareRender()\` once before your main render. Do NOT also run asset.update with mountShowcase: its viewer already advances the tickers. \`asset.model\` is the original Group. \`asset.runtime\` exposes the original animationController, strikeVfx and other authored APIs. Camera-dependent game/interaction hooks require the included Viewer; use mountShowcase for the complete stage experience or adapt those hooks to your engine. Own scene resources/teardown when using createShowcase directly.\n\nThis exports authored code, not the current posed/isolated asset scope. All quality levels and animations reachable from this showcase are included. It does not add animations to static showcases. Source provenance and attribution comments are retained. Third-party reference/texture rights remain the user's responsibility; this download does not grant additional rights.\n`);
+  if (entry.id === 'man-robot-studio') {
+    textFile('README.md', `# ${entry.id} — portable Three.js source\n\nThis package contains exactly the Man Robot · Segment Color Studio from img2threejs-showcase, including its WebGPURenderer stage with WebGL2 fallback, TSL/WebGPU material nodes, 23 measured motion clips, per-segment paint layer, green-energy scan VFX, original low-level robot runtime/factory APIs and all six encoded public assets. No GLB/glTF file or GLTFLoader is used: the source mesh and rig are reconstructed at load time from the encoded \`robot3d-threejs-scene-v152.json.gz\` stream plus the offline-generated animation profiles in \`exported-robot-animations.json\`. Encoded geometry/rig streams stay code data, not a GLB hidden inside a loader. Public assets use module-relative URLs; this package does not request assets from the gallery or GitHub.\n\n## Run the included example\n\n\`npm install\`, then \`npm run dev\`. For a production build run \`npm run build\`. Use a web server, not file://. Requires a browser with WebGPU support (Chrome/Edge on desktop or any browser with WebGPU enabled) and falls back to WebGL2 when WebGPU is unavailable. Three.js version ${dependencies.three}; the host and package must share one compatible Three.js instance.\n\n## What the studio mounts\n\n\`mountShowcase(host)\` calls \`renderRobotStudio(host, await loadShowcase())\`. The studio renders the same DOM as the gallery: top bar, segment list, motion library, color picker, reset view, rotate toggle and animation playback row. The export/source-download section is intentionally hidden — the gallery's exporter module owns interchange exports and the source-ZIP download; this portable runtime is a pure viewer.\n\nFor an existing WebGPU renderer, import the low-level factory APIs directly: \`createRobotModel(scene, onProgress?)\` returns the display Group; \`waitForRobotModel(displayRoot)\` resolves to a \`RobotRuntime\` carrying the meshes, mixer, clips, segmentation, originalVertexColors, segment color setters and motion correction hooks. \`loadRobotAsset\`, \`loadRobotGreetingClips\` and \`loadRobotExportedAnimationClips\` are exposed for advanced consumers; \`prewarmRobotModel\` is the gallery's prewarm entry.\n\n## Import into another project\n\nCopy \`src/\` AND \`assets/\` together, preserving relative paths. Install the dependencies in package.json. Import \`mountShowcase\` from \`./path/to/src/index\` and call \`await mountShowcase(container)\` on a sized HTMLElement. The returned handle matches the generic portable package shape (\`{ dispose }\`); call \`asset.dispose()\` to tear down the renderer, mixer and event listeners on unmount. The original \`renderRobotStudio\` and every low-level robot API remain reachable from \`./path/to/src/index\`.\n\nAll 23 measured clips (16 source clips, 6 exported retargeted clips and 1 greeting collection) are retained along with the original positions/normals/UVs/texture map and the per-segment colour layer. Source provenance and attribution comments are preserved. Third-party reference/texture rights remain the user's responsibility; this download does not grant additional rights.\n`);
+  } else {
+    textFile('README.md', `# ${entry.id} — portable Three.js source\n\nThis package contains exactly one showcase from img2threejs-showcase, its original TypeScript dependency graph, shaders, animation/controller/VFX code, encoded data and required image/JSON assets. No GLB/glTF file or GLTFLoader is used. Encoded geometry/rig streams remain code data, not a GLB hidden inside a loader. Public assets use module-relative URLs; this package does not request assets from the gallery or GitHub.\n\n## Run the included example\n\n\`npm install\`, then \`npm run dev\`. For a production build run \`npm run build\`. Use a web server, not file://. Requires a browser with WebGL and a TypeScript-aware bundler supporting standard asset imports and new URL(..., import.meta.url), such as Vite. Three.js version ${dependencies.three}; the host and package must share one compatible Three.js instance.\n\n## Import into another project\n\nCopy \`src/\` AND \`assets/\` together, preserving relative paths. Install the dependencies in package.json. Import \`mountShowcase\` from \`./path/to/src/index\` and call \`await mountShowcase(container)\` on a sized HTMLElement. The returned \`viewer\` owns the render loop, stage interactions and cleanup; call \`asset.dispose()\` on unmount. The included example exposes every declared animation and strike-element controller, plus outfit switching when available. Quality options and game controls remain in the original source modules.\n\nFor an existing Three.js scene, import \`createShowcase\` and use \`const asset = await createShowcase(scene)\`. Each frame call \`asset.update(dtSeconds, elapsedSeconds)\`, then \`asset.prepareRender()\` once before your main render. Do NOT also run asset.update with mountShowcase: its viewer already advances the tickers. \`asset.model\` is the original Group. \`asset.runtime\` exposes the original animationController, strikeVfx and other authored APIs. Camera-dependent game/interaction hooks require the included Viewer; use mountShowcase for the complete stage experience or adapt those hooks to your engine. Own scene resources/teardown when using createShowcase directly.\n\nThis exports authored code, not the current posed/isolated asset scope. All quality levels and animations reachable from this showcase are included. It does not add animations to static showcases. Source provenance and attribution comments are retained. Third-party reference/texture rights remain the user's responsibility; this download does not grant additional rights.\n`);
+  }
   textFile('manifest.json', JSON.stringify({ showcase: entry.id, entry: 'src/index.ts',
     runtime: 'native-threejs-source', glbDependency: false, dependencies,
     files: [...Object.keys(files), 'manifest.json'].sort() }, null, 2) + '\n');
