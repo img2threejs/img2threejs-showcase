@@ -83,6 +83,38 @@ interface RobotStudioDebug {
   auditClips: () => Array<{ name: string; tracks: number; duration: number; movingBones: number; maxPositionDelta: number; maxRotationDelta: number }>;
 }
 
+/** Locked runtime handles the studio page exposes to its host (capture snapshot, current state, edit gate). */
+export interface RobotStudioExportContext {
+  mount: HTMLElement;
+  demo: DemoEntry;
+  /** Returns the live model group + animation runtime once it is loaded; null until then. */
+  getRuntime: () => { displayRoot: THREE.Group; runtime: RobotRuntime } | null;
+  /** True after the host marks the route disposed; safe to call from any awaited continuation. */
+  isDisposed: () => boolean;
+  /**
+   * Drive the studio's edit/asset-busy gate. The page freezes the clock + skips the next mixer
+   * update; the handler must invoke the exporter between setAssetBusy(true) and setAssetBusy(false)
+   * in a try/finally. The page does not touch any activeAction, mixer, finished flag, or weight, so
+   * the live pose and crossfade survive a busy release unchanged.
+   */
+  setAssetBusy: (busy: boolean) => void;
+}
+
+/** Host-supplied handler called once the studio is mounted. The returned object drives section readiness. */
+export interface RobotStudioExportHandler {
+  ready: () => void;
+  dispose: () => void;
+}
+
+export interface RobotStudioOptions {
+  /**
+   * Inject an export panel after the page has built. The page only exposes the runtime; the host
+   * is responsible for the import tree (exporters, source-download) so the source archive can
+   * opt out of those dependencies and ship the studio without GLTFLoader.
+   */
+  mountExports?: (context: RobotStudioExportContext) => RobotStudioExportHandler;
+}
+
 function labelForClip(name: string, index: number): string {
   return name ? name.replace(/_/g, ' ') : 'Animation ' + (index + 1);
 }
@@ -123,7 +155,11 @@ function auditClip(runtime: RobotRuntime, clip: THREE.AnimationClip): { movingBo
   return { movingBones, maxPositionDelta, maxRotationDelta };
 }
 
-export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => void {
+export function renderRobotStudio(
+  mount: HTMLElement,
+  demo: DemoEntry,
+  options: RobotStudioOptions = {},
+): () => void {
   mount.innerHTML = STUDIO_MARKUP;
   const query = <T extends Element>(selector: string): T => {
     const element = mount.querySelector<T>(selector);
@@ -250,6 +286,20 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
   const marker = new THREE.Vector3();
   const modelScale = 2.15;
   let rotationOn = false;
+  let exportAnimationFrozen = false;
+  // Capture the pre-freeze disabled state of every studio control so the busy gate can
+  // restore the exact previous enablement without recreating or re-binding animation actions.
+  let exportControlSnapshot: {
+    controlsEnabled: boolean;
+    panelColor: boolean;
+    floatingColor: boolean;
+    resetSegmentButton: boolean;
+    resetAllButton: boolean;
+    playPauseButton: boolean;
+    stopButton: boolean;
+    clipButtons: Map<HTMLButtonElement, boolean>;
+    rowButtons: Map<HTMLButtonElement, boolean>;
+  } | null = null;
 
   const resize = (): void => {
     const width = Math.max(1, canvasMount.clientWidth);
@@ -265,6 +315,11 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
   const renderFrame = (): void => {
     if (disposed || !rendererReady) return;
     frame = requestAnimationFrame(renderFrame);
+    if (exportAnimationFrozen) {
+      // The asset export captures the live pose; advance no animation and paint no new frame.
+      // Skipping controls.update too prevents the camera from drifting under the disabled mouse.
+      return;
+    }
     const delta = Math.min(clock.getDelta(), 0.1);
     if (runtime) {
       resetRobotAnimationCorrection(runtime);
@@ -377,7 +432,7 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
     x?: number,
     y?: number,
   ): void => {
-    if (!runtime) return;
+    if (!runtime || exportAnimationFrozen) return;
     activeSegment = mesh ? segmentId : null;
     const segment = activeSegment ? runtime.segments.get(activeSegment) : undefined;
     if (!mesh || !segment) {
@@ -449,7 +504,7 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
   renderer.domElement.addEventListener('pointerleave', onPointerLeave);
 
   const applyColor = (input: HTMLInputElement): void => {
-    if (!runtime || !activeSegment) return;
+    if (!runtime || !activeSegment || exportAnimationFrozen) return;
     setRobotSegmentColor(runtime, activeSegment, input.value);
     syncColorInputs();
     const segment = runtime.segments.get(activeSegment);
@@ -656,7 +711,7 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
 
   const onLoadProgress = (progress: { loaded: number; total: number }): void => {
     if (disposed) return;
-    loadingTitle.textContent = 'Loading the original GLB surface';
+    loadingTitle.textContent = 'loading';
     if (progress.total > 0) {
       const percent = Math.max(0, Math.min(100, progress.loaded / progress.total * 100));
       progressFill.style.width = percent.toFixed(1) + '%';
@@ -665,6 +720,77 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
       loadingCopy.textContent = (progress.loaded / 1048576).toFixed(1) + ' MB transferred';
     }
   };
+
+  // --- Host-supplied export panel --------------------------------------------------
+  // The page stays free of any importers the portable source package does not ship (exporters.ts
+  // pulls in GLTFLoader for round-trip validation, and the source ZIP contract bans that import).
+  // The host route (demo.ts) injects an export handler that owns all interchange / source-download
+  // code. The page is responsible for freezing the animation + locking edits during a busy asset
+  // export; the handler owns status text, downloads, and any QA hooks it wants to publish.
+  // The freeze gates the renderFrame mixer update only and never touches activeAction, the mixer,
+  // or any AnimationAction state, so the live pose, weight, finished flag and crossfade all survive
+  // a busy release byte-for-byte. setAssetBusy returns void — the handler invokes exporters between
+  // setAssetBusy(true) and setAssetBusy(false) directly.
+  const setControlDisabled = (control: HTMLButtonElement | HTMLInputElement, disabled: boolean): void => {
+    control.disabled = disabled;
+  };
+  const exportHandler = options.mountExports
+    ? options.mountExports({
+        mount,
+        demo,
+        getRuntime: () => (displayRoot && runtime ? { displayRoot, runtime } : null),
+        isDisposed: () => disposed,
+        setAssetBusy: (busy: boolean) => {
+          if (disposed) return;
+          if (busy) {
+            if (exportAnimationFrozen) return;
+            exportAnimationFrozen = true;
+            clock.stop();
+            const clipButtonStates = new Map<HTMLButtonElement, boolean>();
+            for (const button of clipButtons) clipButtonStates.set(button, button.disabled);
+            const rowButtonStates = new Map<HTMLButtonElement, boolean>();
+            for (const button of rowButtons.values()) rowButtonStates.set(button, button.disabled);
+            exportControlSnapshot = {
+              controlsEnabled: controls.enabled,
+              panelColor: panelColor.disabled,
+              floatingColor: floatingColor.disabled,
+              resetSegmentButton: resetSegmentButton.disabled,
+              resetAllButton: resetAllButton.disabled,
+              playPauseButton: playPauseButton.disabled,
+              stopButton: stopButton.disabled,
+              clipButtons: clipButtonStates,
+              rowButtons: rowButtonStates,
+            };
+            setControlDisabled(panelColor, true);
+            setControlDisabled(floatingColor, true);
+            setControlDisabled(resetSegmentButton, true);
+            setControlDisabled(resetAllButton, true);
+            setControlDisabled(playPauseButton, true);
+            setControlDisabled(stopButton, true);
+            for (const button of clipButtons) setControlDisabled(button, true);
+            for (const button of rowButtons.values()) setControlDisabled(button, true);
+            controls.enabled = false;
+          } else {
+            if (!exportAnimationFrozen) return;
+            exportAnimationFrozen = false;
+            clock.start();
+            const saved = exportControlSnapshot;
+            exportControlSnapshot = null;
+            if (saved) {
+              controls.enabled = saved.controlsEnabled;
+              setControlDisabled(panelColor, saved.panelColor);
+              setControlDisabled(floatingColor, saved.floatingColor);
+              setControlDisabled(resetSegmentButton, saved.resetSegmentButton);
+              setControlDisabled(resetAllButton, saved.resetAllButton);
+              setControlDisabled(playPauseButton, saved.playPauseButton);
+              setControlDisabled(stopButton, saved.stopButton);
+              for (const [button, wasDisabled] of saved.clipButtons) setControlDisabled(button, wasDisabled);
+              for (const [button, wasDisabled] of saved.rowButtons) setControlDisabled(button, wasDisabled);
+            }
+          }
+        },
+      })
+    : null;
 
   displayRoot = createRobotModel(scene, onLoadProgress);
   void waitForRobotModel(displayRoot).then((loadedRuntime) => {
@@ -691,6 +817,7 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
     window.setTimeout(() => { if (!disposed) loading.hidden = true; }, 360);
     exposeDeveloperAudit(runtime);
     runtime.mixer.addEventListener('finished', onAnimationFinished);
+    if (exportHandler) exportHandler.ready();
     // Clips start only after selection; the source rest pose is the initial preview.
     window.requestAnimationFrame(() => {
       if (!disposed) (window as unknown as { __IMG2THREEJS_READY__?: boolean }).__IMG2THREEJS_READY__ = true;
@@ -721,6 +848,7 @@ export function renderRobotStudio(mount: HTMLElement, demo: DemoEntry): () => vo
     renderer.domElement.removeEventListener('pointerleave', onPointerLeave);
     window.removeEventListener('keydown', onKeyDown);
     if (runtime) runtime.mixer.removeEventListener('finished', onAnimationFinished);
+    if (exportHandler) exportHandler.dispose();
     if (displayRoot) disposeRobotModel(displayRoot, runtime);
     if (rendererReady) disposeRenderer();
     renderer.domElement.remove();

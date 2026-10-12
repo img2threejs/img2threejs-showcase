@@ -459,6 +459,7 @@ function createRuntime(
     triangleCount += (geometry.index?.count ?? geometry.getAttribute('position')?.count ?? 0) / 3;
   }
   const runtime = { ...runtimeBase, triangleCount: Math.round(triangleCount) };
+  model.animations = runtime.clips;
   const namasteReferenceMixer = new THREE.AnimationMixer(runtime.model);
   const namasteReferenceAction = namasteReferenceMixer.clipAction(namasteReferenceBodyClip);
   namasteReferenceAction.setLoop(THREE.LoopOnce, 1);

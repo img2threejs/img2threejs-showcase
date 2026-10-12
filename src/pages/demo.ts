@@ -88,8 +88,11 @@ export async function renderDemo(
    * localhost, and `analytics.ts` refuses to send for either of those reasons on its own.
    */
   if (demo.id === 'man-robot-studio') {
+    // Lazy-load the studio + its export module only on this route so other demos never pay
+    // for the exporters/GLTFLoader/source-download chunks pulled in by the export panel.
     const { renderRobotStudio } = await import('./robotStudio');
-    return renderRobotStudio(mount, demo);
+    const { mountRobotStudioExports } = await import('./robotStudioExports');
+    return renderRobotStudio(mount, demo, { mountExports: mountRobotStudioExports });
   }
   // Read structurally, like `toneMapping`, so this file stays independent of the fields being declared
   // on DemoEntry. `image` is the default because every demo predating the field was built from

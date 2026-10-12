@@ -277,6 +277,25 @@
       }
     }
   },
+  "exportPolicy": {
+    "formats": ["glb", "gltf", "obj", "stl", "ply", "usdz"],
+    "scope": "Robot display root only; studio floor, lights and camera are excluded.",
+    "portableRig": {
+      "formats": ["glb", "gltf"],
+      "joints": 65,
+      "runtimeClips": 23,
+      "preserve": ["source texture", "current segment vertex tints"]
+    },
+    "staticFormats": "Bake the current posed geometry; no armature or editable clips. Material and colour limits are shown per format.",
+    "runtimeLimits": "Interchange files do not serialize scan shaders or runtime gesture corrections; the source archive retains their implementations.",
+    "sourceArchive": {
+      "runtimeAssets": 6,
+      "modelFiles": "No GLB/glTF files or GLTFLoader dependency.",
+      "stage": "Original Robot Studio with component painting, motion controls and renderer fallback.",
+      "mountLifecycle": "mountShowcase returns a handle with dispose().",
+      "galleryDownloads": "Not included in the standalone stage."
+    }
+  },
   "qualityContract": {
     "definitionOfDone": [
       "The exact corrected 66,251-vertex skinned surface renders without geometry replacement or omission.",

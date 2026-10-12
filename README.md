@@ -288,6 +288,15 @@ Open a Three.js study, choose **Export**, then **Download source code** under
 that showcase's runtime dependency graph, not the entire gallery. Source download
 is independent of asset export scope, isolation and the current pose.
 
+Man Robot Studio has these download controls in its component console. **Download GLB**
+exports the robot alone (not the studio floor/lights); the format selector also offers
+glTF, OBJ, STL, PLY and USDZ, and **Export all formats** bundles all six with a validation
+manifest. GLB/glTF retain the source texture, current segment tints, 65-joint rig and
+23 runtime clips. Static formats bake the visible pose with their stated material/rig
+limits. Runtime scan shaders and gesture corrections remain in the source ZIP, not
+the interchange files. Asset exports temporarily lock motion and painting, then
+resume the existing playback state. Source download works before the model is ready.
+
 Unlike GLB/glTF asset export, the source ZIP retains the original TypeScript factories,
 all reachable quality/data modules, animation controllers, shaders, procedural VFX,
 lighting and stage interaction hooks. Required textures and JSON assets are included;
@@ -309,6 +318,8 @@ To reuse it, copy **both `src/` and `assets/`**, preserving their relative layou
 a TypeScript-aware, asset-aware Three.js project. Install the ZIP's declared dependencies
 and share a compatible Three.js instance with the host.
 
+For standard Viewer-based packages:
+
 ```ts
 import { mountShowcase } from './downloaded-showcase/src/index';
 
@@ -326,6 +337,13 @@ its included Viewer already does so. Camera-dependent game interactions require 
 included Viewer or an adaptation to the host engine. The package README explains both
 integration paths and resource ownership. Existing provenance/attribution remains;
 downloading does not grant new rights to third-party references or textures.
+
+The Robot Studio package instead mounts its original component editor, motion library
+and WebGPU/WebGL-fallback stage. `mountShowcase(container)` returns `{ dispose }`;
+its controls own playback and painting. Use the exported robot model/animation APIs
+when integrating into an existing scene. It includes the six robot runtime assets,
+but omits the gallery's download panel to keep the standalone package free of
+`GLTFLoader`.
 
 Archives are generated from the selected registry entry and its actual imports by
 `scripts/source-archives.mjs`. `npm run build` writes all Three.js archives to
