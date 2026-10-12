@@ -14,6 +14,13 @@ export default defineConfig({
         index: 'index.html',
         iphoneDuo: 'iphone-duo.html',
       },
+      output: {
+        // Do not hoist shared preload helpers and eagerly load Pixi on 3D routes.
+        onlyExplicitManualChunks: true,
+        manualChunks(id) {
+          if (id.includes('/node_modules/pixi.js/')) return 'pixi-runtime';
+        },
+      },
     },
   },
 });
