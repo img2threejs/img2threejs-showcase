@@ -184,6 +184,9 @@ demo, not a separate HTML entry or a Three.js group with invented camera metadat
   `src/pages/pixi-demo.ts` owns the hash-route shell and serialized atlas leases;
   `src/pixi/showcase.ts` owns the Application, uniform artboard fit, ambient clock and cleanup.
   The existing Three.js registry, cameras, inspector and exporters remain separate.
+- Browser extensions are registered before Application initialization, with automatic
+  extension imports disabled. Vite keeps Pixi in one lazy runtime chunk so the 2D
+  route does not need a separate browser/worker environment fetch; 3D routes do not load it.
 - The panel contains only the description and original reference. Desktop starts expanded;
   mobile starts folded. **Info / Hide**, Enter and Escape control it; folded content is inert
   and the expanded mobile panel scrolls independently. Reduced motion stops scene playback.

@@ -1,3 +1,5 @@
+// Register the browser environment before Application.init; keep automatic imports disabled.
+import 'pixi.js/browser';
 import { Application } from 'pixi.js';
 import type { Container } from 'pixi.js';
 import type { PixiDemoMetadata } from './registry';
@@ -131,6 +133,7 @@ export async function mountPixiShowcase(
       width: 1, height: 1, preference: 'webgl', backgroundAlpha: 0,
       resolution: Math.min(window.devicePixelRatio, 2), autoDensity: true,
       antialias: false, autoStart: false, sharedTicker: false,
+      skipExtensionImports: true,
       eventFeatures: { move: false, globalMove: false, click: false, wheel: false },
     });
     if (!isCurrent()) {
