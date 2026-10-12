@@ -1,4 +1,5 @@
 import { demos, getDemo, loadDemo, type DemoEntry, type DemoMetadata } from '../demos/registry';
+import { pixiDemos } from '../pixi/registry';
 import { Viewer, type PartInfo } from '../scene';
 import { parseRoute, replaceHashSilently } from '../router';
 import { createLoader, whenViewerReady, type Loader } from '../loader';
@@ -184,7 +185,18 @@ export function renderWorkbench(
       generatedWith: 'img2threejs · Product Study',
       referenceLabel: 'Measured Model',
       linkLabel: 'Open Live 3D Showcase',
+      viewLabel: 'Live 3D on open',
     },
+    ...pixiDemos.map((demo) => ({
+      ...demo,
+      imageAlt: demo.referenceAlt,
+      imageLabel: 'Reference image',
+      href: `#/demo/${demo.id}`,
+      generationLabel: 'PixiJS 8.22.0',
+      referenceLabel: 'Image Reference',
+      linkLabel: 'Open Live 2D Showcase',
+      viewLabel: 'Live 2D on open',
+    })),
     ...demos.map((demo) => ({
       ...demo,
       imageAlt: `Reference used to reconstruct ${demo.title}`,
@@ -193,6 +205,7 @@ export function renderWorkbench(
       generationLabel: extractVersion(demo.generatedWith) ?? CURRENT_VERSION,
       referenceLabel: demo.referenceKind === 'model' ? 'Measured Model' : 'Image Reference',
       linkLabel: 'Open Live 3D Inspector',
+      viewLabel: 'Live 3D on open',
     })),
   ];
   const archiveCharacterCount = archiveEntries.filter((demo) => demo.subjectClass === 'character').length;
@@ -219,7 +232,7 @@ export function renderWorkbench(
             <h3>${escapeAttr(demo.title)}</h3>
             <p class="archive-description">${brand(demo.blurb)}</p>
             <div class="archive-meta mono">
-              <span>Live 3D on open</span>
+              <span>${escapeAttr(demo.viewLabel)}</span>
               <span>${escapeAttr(demo.generationLabel)}</span>
               <span>${escapeAttr(demo.referenceLabel)}</span>
             </div>
@@ -536,7 +549,7 @@ export function renderWorkbench(
           <p class="section-index mono">04 / THE ARCHIVE</p>
           <div class="section-title-wrap">
             <h2 id="archive-title">A library of<br /><em>working geometry.</em></h2>
-            <p>Explore live Three.js studies: orbit models, play their animations and discover how each one was made. Each card opens its interactive viewer.</p>
+            <p>Explore live Three.js studies and animated PixiJS artwork. Orbit 3D models or view a 2D scene alongside its source reference. Each card opens its dedicated viewer.</p>
           </div>
           <p class="archive-count mono">${String(archiveEntries.length).padStart(2, '0')} STUDIES<br />OBJECTS + CHARACTERS</p>
         </header>
