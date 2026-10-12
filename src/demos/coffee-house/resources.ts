@@ -1,4 +1,4 @@
-// The host owns original and authored-motion Assets atlas leases. Scene factories borrow their sources
+// The host owns the authored-motion Assets atlas lease. Scene factories borrow its source
 // and own only manifest-framed Texture wrappers.
 
 import { Assets, Texture } from 'pixi.js';
@@ -13,7 +13,6 @@ import type { CoffeeManifest, CoffeePart, CoffeePartId, CoffeeResources, MotionM
 import rawManifest from './manifest.json';
 import rawMotionManifest from './motion-manifest.json';
 
-const ATLAS_PATH = 'coffee-house/atlas.png';
 const MOTION_ATLAS_PATH = 'coffee-house/motion-atlas.png';
 const MOTION_IDS: readonly MotionPartId[] = ['backdrop', 'sky-mask', 'sky-day', 'sky-dusk', 'sky-night',
   'cloud-1', 'cloud-2', 'cloud-3', 'boat-1', 'boat-2', 'boat-3', 'cat-body', 'cat-tail'];
@@ -190,38 +189,32 @@ export async function loadCoffeeResources(): Promise<CoffeeResources> {
   if (motionManifest.referenceHash !== manifest.referenceHash) {
     throw new Error('Animation assets do not match the admitted artwork');
   }
-  const atlasUrlPath = atlasUrl(ATLAS_PATH);
+  const motionUrlPath = atlasUrl(MOTION_ATLAS_PATH);
   let texture: Texture;
   try {
-    texture = await Assets.load<Texture>({ alias: atlasUrlPath, src: atlasUrlPath });
+    texture = await Assets.load<Texture>({ alias: motionUrlPath, src: motionUrlPath });
   } catch (err) {
-    throw new Error(`Assets.load failed for atlas at ${atlasUrlPath}: ${(err as Error).message}`);
+    throw new Error(`Assets.load failed for motion atlas at ${motionUrlPath}: ${(err as Error).message}`);
   }
-  if (!(texture instanceof Texture)) {
-    throw new Error(`Assets.load did not return a Texture for atlas at ${atlasUrlPath}`);
-  }
-  const motionUrlPath = atlasUrl(MOTION_ATLAS_PATH);
-  let motionTexture: Texture | undefined;
   try {
-    inspectAtlasTexture(texture, manifest);
-    motionTexture = await Assets.load<Texture>({ alias: motionUrlPath, src: motionUrlPath });
-    if (!(motionTexture instanceof Texture)) throw new Error('Animation atlas did not load as a texture');
-    inspectAtlasTexture(motionTexture, motionManifest);
+    if (!(texture instanceof Texture)) {
+      throw new Error(`Assets.load did not return a Texture for motion atlas at ${motionUrlPath}`);
+    }
+    inspectAtlasTexture(texture, motionManifest);
   } catch (err) {
-    if (motionTexture) await Assets.unload(motionUrlPath);
-    await Assets.unload(atlasUrlPath);
+    await Assets.unload(motionUrlPath);
     throw err;
   }
-  return { manifest, texture, motion: { manifest: motionManifest, texture: motionTexture } };
+  return { manifest, motion: { manifest: motionManifest, texture } };
 }
 
 export async function releaseCoffeeResources(resources: CoffeeResources): Promise<void> {
   if (releasedResources.has(resources)) return;
   releasedResources.add(resources);
-  const atlasUrlPath = atlasUrl(ATLAS_PATH);
+  const motionUrlPath = atlasUrl(MOTION_ATLAS_PATH);
   try {
-    await Promise.all([Assets.unload(atlasUrlPath), Assets.unload(atlasUrl(MOTION_ATLAS_PATH))]);
+    await Assets.unload(motionUrlPath);
   } catch (err) {
-    throw new Error(`Assets.unload failed for atlas at ${atlasUrlPath}: ${(err as Error).message}`);
+    throw new Error(`Assets.unload failed for motion atlas at ${motionUrlPath}: ${(err as Error).message}`);
   }
 }

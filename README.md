@@ -176,10 +176,9 @@ This checkout includes **Moonlight Cafe** at `#/demo/coffee-house`, discoverable
 archive's Objects filter and the **Find a Study** command palette. It is an integrated gallery
 demo, not a separate HTML entry or a Three.js group with invented camera metadata.
 
-- `src/demos/coffee-house/` contains the migrated scene, animation modules and bundled JSON
-  manifests. Seven scene implementation files and five assets/manifests matched the approved
-  source byte-for-byte. The source-derived mattes and hidden-background reconstruction remain
-  authored approximations; this migration does not claim artist-alpha reconstruction.
+- `src/demos/coffee-house/` contains the production scene, animation modules and bundled
+  layout/motion manifests. The source-derived mattes and hidden-background reconstruction
+  remain authored approximations; this study does not claim artist-alpha reconstruction.
 - `src/pixi/registry.ts` owns 2D metadata and runtime-selected renderer/artwork plugins.
   `src/pages/pixi-demo.ts` owns the hash-route shell and serialized atlas leases;
   `src/pixi/showcase.ts` owns the Application, uniform artboard fit, ambient clock and cleanup.
@@ -188,22 +187,17 @@ demo, not a separate HTML entry or a Three.js group with invented camera metadat
   mobile starts folded. **Info / Hide**, Enter and Escape control it; folded content is inert
   and the expanded mobile panel scrolls independently. Reduced motion stops scene playback.
   Painting modes, Zoom/pan, Explore, part selection and 3D inspector/export tabs are absent.
-- Runtime atlases and the byte-identical original PNG are local assets in `public/coffee-house/`;
-  manifests are static imports, with no direct factory `fetch` or external asset service.
-  The gallery thumbnail at `public/references/coffee-house.webp` is 189,598 bytes, below the
-  existing 800 KiB reference limit. The full artboard and reference are not cropped.
-- The scoped safety scan and full production build passed on the isolated branch with
-  `NODE_OPTIONS=--max-old-space-size=8192 npm run build`. The default-heap build still hits an
-  inherited Node heap limit; the same failure is recorded in the earlier Tropical Island
-  [PR #82 CI job](https://github.com/img2threejs/img2threejs-showcase/actions/runs/37933451797/job/113829571902).
-  This study does not change the repository's build script or CI heap configuration.
-- **35 native browser checks** cover archive/palette entry through `#/x/crown-chest`,
-  desktop/mobile and keyboard behavior, ambient/reduced motion, unchanged artwork under
-  camera gestures, in-flight route replacement, asset-failure recovery and existing Three.js
-  viewer/export regression. A direct `#/` archive-filter click timed out after 30 seconds;
-  no Island runtime or startup-performance fixes are included. Results and screenshots:
-  `verification/coffee-house/acceptance.json`; build context:
-  `verification/coffee-house/build-context.json`. No public deployment is claimed.
+- `public/coffee-house/motion-atlas.png` supplies every live scene texture. The original PNG
+  at `public/coffee-house/reference.png` is shown in the reference panel; the gallery uses
+  `public/references/coffee-house.webp` (189,598 bytes, below the 800 KiB catalog limit).
+  Manifests are static imports; there is no direct factory `fetch` or external asset service.
+  The full artboard and reference are not cropped.
+- The scene exposes only its root, clock and disposal. It does not ship the source app's
+  Original mode, selection markers or configurable effect controls, and does not load the
+  separate original-mode atlas. Development screenshots and verification logs are not
+  checked into the production contribution.
+- Artwork redistribution rights still require maintainer approval. No public deployment
+  or independent artwork-license verification is claimed.
 
 
 ### Tropical Island — code-only diorama

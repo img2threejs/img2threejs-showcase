@@ -1,9 +1,7 @@
-// Adapter: returns a PixiShowcaseArtwork for the migrated coffee-house
-// scene. The adapter enables the existing ambient motion (gallery cards
-// must show the animated reconstruction, not the static original), hides
-// the selection hotspots (the gallery has no Painting-mode UI), and
-// guarantees the borrowed atlas sources are released on both the happy
-// path and on setup failure.
+// Adapter: returns a PixiShowcaseArtwork for the coffee-house scene. The
+// scene is presentation-only and always shows the live ambient motion; the
+// adapter guarantees the borrowed atlas source is released on both the
+// happy path and on setup failure.
 //
 // Static imports keep the per-route tree-shake boundary clean: the
 // Three.js bundle never has to load the PixiJS scene module.
@@ -17,11 +15,7 @@ export async function loadCoffeeHouseArtwork(): Promise<PixiShowcaseArtwork> {
   const resources = await loadCoffeeResources();
   let scene: CoffeeScene | undefined;
   try {
-    // Presentation-only — no onSelect callback. The scene contract is
-    // documented to skip pointer wiring when the callback is omitted.
     scene = createCoffeeScene(resources);
-    scene.setAmbient(true);
-    scene.setMarkers(false);
     return {
       root: scene.root,
       setTime: scene.setTime,

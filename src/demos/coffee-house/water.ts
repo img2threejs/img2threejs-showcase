@@ -3,7 +3,7 @@
 // Two disjoint water windows in the source artwork (the distant horizon
 // strip at the back of the bay and a smaller reflective channel near
 // the foreground) each render via a fixed-geometry MeshGeometry whose
-// texture is the same source region a Sprite would draw. The mesh uses
+// texture is the corresponding authored-motion region. The mesh uses
 // the native default TextureShader (GL/GPU compatible) — no custom
 // shader, no custom GLSL. Only the UV attribute of the geometry is
 // animated; positions and indices are immutable.
@@ -26,14 +26,11 @@
 // scene. setTime(0) returns to a known neutral shape. No random
 // sources; all phases and trig components are baked into typed arrays.
 
-import { Container, Mesh, MeshGeometry, Rectangle, Sprite, Texture } from 'pixi.js';
+import { Container, Mesh, MeshGeometry, Rectangle, Texture } from 'pixi.js';
 
 interface WaterParams {
   parent: Container;
   source: Texture;
-  liveSource: Texture;
-  liveFrameX: number;
-  liveFrameY: number;
   frameX: number;
   frameY: number;
   width: number;
@@ -54,10 +51,8 @@ interface WaterParams {
 
 interface WaterState {
   container: Container;
-  originalSprite: Sprite;
   mesh: Mesh<MeshGeometry>;
   framedTexture: Texture;
-  liveTexture: Texture;
   aUV: Float32Array;
   originals: Float32Array;
   edges: Float32Array;
@@ -69,11 +64,10 @@ interface WaterState {
   cosPsi: Float32Array;
   amplitudeU: number;
   amplitudeV: number;
-  strength: number;
   omega: number;
   srcWidth: number;
   srcHeight: number;
-  /** Latest clock value applied (so toggling ambient mid-flight re-syncs). */
+  /** Latest clock value applied, used to skip duplicate updates. */
   lastSeconds: number;
   /** Was aUV uploaded yet? Skip the geometry.uvs setter when nothing changed. */
   dirty: boolean;
@@ -188,27 +182,18 @@ function makeFramedTexture(source: Texture, fx: number, fy: number, fw: number, 
 
 function createWater(p: WaterParams): WaterState {
   const framedTexture = makeFramedTexture(p.source, p.frameX, p.frameY, p.width, p.height);
-  const liveTexture = makeFramedTexture(p.liveSource, p.liveFrameX, p.liveFrameY, p.width, p.height);
-  const originalSprite = new Sprite({ texture: framedTexture });
-  originalSprite.x = p.originX;
-  originalSprite.y = p.originY;
-  p.parent.addChild(originalSprite);
-
   const { geometry, uvs, originals, edges, sinPhi, cosPhi, sinPsi, cosPsi } = buildGeometry(
     p.width, p.height, p.gridCols, p.gridRows, p.phaseScale,
   );
-  const mesh = new Mesh({ texture: liveTexture, geometry });
+  const mesh = new Mesh({ texture: framedTexture, geometry });
   mesh.x = p.originX;
   mesh.y = p.originY;
-  mesh.visible = false;
   p.parent.addChild(mesh);
 
   return {
     container: p.parent,
-    originalSprite,
     mesh,
     framedTexture,
-    liveTexture,
     aUV: uvs,
     originals,
     edges,
@@ -218,7 +203,6 @@ function createWater(p: WaterParams): WaterState {
     cosPsi,
     amplitudeU: p.amplitudeU,
     amplitudeV: p.amplitudeV,
-    strength: 1,
     omega: p.omega,
     srcWidth: p.width,
     srcHeight: p.height,
@@ -228,21 +212,9 @@ function createWater(p: WaterParams): WaterState {
   };
 }
 
-function setAmbient(res: WaterState, ambient: boolean): void {
+function applyTime(res: WaterState, seconds: number): void {
   if (res.disposed) return;
-  res.originalSprite.visible = !ambient;
-  res.mesh.visible = ambient;
-  if (ambient) {
-    // Re-sync the geometry to the latest known clock value when the
-    // mesh becomes visible again, so paused-or-skipped frames do not
-    // flash a stale neutral grid.
-    applyTime(res, res.lastSeconds, true);
-  }
-}
-
-function applyTime(res: WaterState, seconds: number, force: boolean): void {
-  if (res.disposed || !res.mesh.visible) return;
-  if (!force && seconds === res.lastSeconds && res.dirty) return;
+  if (seconds === res.lastSeconds && res.dirty) return;
   const t = seconds;
   const omega = res.omega;
   const sint = Math.sin(omega * t);
@@ -254,8 +226,8 @@ function applyTime(res: WaterState, seconds: number, force: boolean): void {
   const cosPhi = res.cosPhi;
   const sinPsi = res.sinPsi;
   const cosPsi = res.cosPsi;
-  const ampU = res.amplitudeU * res.strength;
-  const ampV = res.amplitudeV * res.strength;
+  const ampU = res.amplitudeU;
+  const ampV = res.amplitudeV;
   const widthInv = 1 / res.srcWidth;
   const heightInv = 1 / res.srcHeight;
   const verts = sinPhi.length;
@@ -287,42 +259,25 @@ function applyTime(res: WaterState, seconds: number, force: boolean): void {
 }
 
 function setTime(res: WaterState, seconds: number): void {
-  if (res.disposed) return;
-  const t = Math.max(0, seconds);
-  // Always remember the latest clock so a later setAmbient(true)
-  // re-syncs the geometry to the current value, even if the mesh
-  // was hidden during intermediate setTime calls.
-  if (!res.mesh.visible || res.strength === 0) {
-    res.lastSeconds = t;
-    return;
-  }
-  applyTime(res, t, false);
+  applyTime(res, Math.max(0, seconds));
 }
 
 function disposeWater(res: WaterState): void {
   if (res.disposed) return;
   res.disposed = true;
   res.mesh.visible = false;
-  res.originalSprite.visible = false;
   if (res.container.children.includes(res.mesh)) res.container.removeChild(res.mesh);
-  if (res.container.children.includes(res.originalSprite)) res.container.removeChild(res.originalSprite);
   // Host must perform a renderer-first teardown before this runs.
   // geometry.destroy(true) releases the OWN buffer set; Mesh.destroy
   // alone does NOT release them. Texture wrapper is owned; the
   // borrowed atlas source is preserved (destroy(false)).
   res.mesh.geometry.destroy(true);
   res.framedTexture.destroy(false);
-  res.liveTexture.destroy(false);
   res.mesh.destroy({ children: false, texture: false, textureSource: false });
-  res.originalSprite.destroy({ children: false, texture: false, textureSource: false });
 }
 
 export interface WaterWindowHandle {
-  /** The live Mesh for this window. Exposed so the host can drive the contract. */
-  readonly mesh: Mesh<MeshGeometry>;
-  setAmbient(enabled: boolean): void;
   setTime(seconds: number): void;
-  setStrength(value: number): void;
   dispose(): void;
 }
 
@@ -341,14 +296,10 @@ export function createWaterWindow(
   amplitudeV: number,
   omega: number,
   phaseScale: number,
-  liveSource: Texture,
-  liveFrameX: number,
-  liveFrameY: number,
 ): WaterWindowHandle {
   const res = createWater({
     parent,
     source,
-    liveSource, liveFrameX, liveFrameY,
     frameX, frameY,
     width, height,
     originX, originY,
@@ -356,17 +307,7 @@ export function createWaterWindow(
     amplitudeU, amplitudeV, omega, phaseScale,
   });
   return {
-    mesh: res.mesh,
-    setAmbient(enabled: boolean): void { setAmbient(res, enabled); },
     setTime(seconds: number): void { setTime(res, seconds); },
-    setStrength(value: number): void {
-      res.strength = value;
-      if (value === 0) {
-        res.aUV.set(res.originals);
-        res.mesh.geometry.uvs = res.aUV;
-        res.dirty = true;
-      } else applyTime(res, res.lastSeconds, true);
-    },
     dispose(): void { disposeWater(res); },
   };
 }

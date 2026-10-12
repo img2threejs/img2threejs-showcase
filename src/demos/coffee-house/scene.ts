@@ -1,13 +1,13 @@
 // Coffee-house scene factory.
 //
-// Wires a borrowed atlas Texture (with manifest identifying five
-// disjoint rectangular regions of the source artwork) plus a frame
-// clock into a single Container hierarchy matching the CoffeeScene
-// contract:
+// Wires the borrowed motion atlas Texture (with its manifest of authored
+// regions) plus a frame clock into a single Container hierarchy matching
+// the CoffeeScene contract:
 //
 //   root
-//     environment Mesh (original or approved authored backdrop)
-//     cafe / castle contextual Sprites; original or source-textured cat skin
+//     environment Mesh (authored backdrop with cafe / cat / castle / water /
+//                       foliage regions cut out)
+//     cafe / castle contextual Sprites; source-textured cat body and tail
 //     sky Container (masked day/night gradients, clouds, sun and moon)
 //     foliage Container (two pinned contextual source meshes)
 //     water Container (source windows and authored wave crests)
@@ -15,23 +15,17 @@
 //     lights Container (native halos at observed lantern centers)
 //     fireflies ParticleContainer (~20 reusable deterministic warm
 //                                  particles near vines/front garden)
-//     hotspots Container (native Graphics restrained markers near
-//                         PLACES points)
 //
 // Constraints honoured:
 //   * No Application, ticker, or host listeners are created here.
-//   * No borrowed atlas source is destroyed; the borrowed source
-//     remains valid for a second consumer after our dispose().
+//   * The scene is presentation-only; it exposes no pointer handling.
+//   * The borrowed motion atlas source is never destroyed; it remains
+//     valid for a second consumer after our dispose().
 //   * Mesh geometry.destroy(true) releases its OWN buffer set.
 //   * Owned framed Texture wrappers are destroyed with destroy(false).
 //   * Generated light texture/source is destroyed once.
 //   * setTime(0) returns to a known neutral shape; no Math.random
 //     anywhere in the per-frame path.
-//   * When onSelect is supplied, Pixi pointertap on actual cafe/cat/castle
-//     nodes invokes it. Without it the scene is presentation-only.
-//     Markers are an INDEPENDENT Graphics overlay
-//     that the host can show or hide; the original capture (and
-//     ambient state) hides the markers but is unaffected by them.
 
 import {
   Container,
@@ -46,8 +40,8 @@ import {
   TextureSource,
 } from 'pixi.js';
 
-import { PLACES, EFFECTS, createAnimationSettings, nightAtTime } from './contracts.js';
-import type { CoffeePart, CoffeeResources, CoffeeScene, EffectId, PlaceId } from './contracts.js';
+import { nightAtTime } from './contracts.js';
+import type { CoffeePart, CoffeeResources, CoffeeScene } from './contracts.js';
 import { createWaterWindow } from './water.js';
 import type { WaterWindowHandle } from './water.js';
 import { createCatPuppet } from './cat-puppet.js';
@@ -56,10 +50,9 @@ import { createSky } from './sky.js';
 import { createBoats } from './boats.js';
 import { createFoliage, FOLIAGE_REGIONS } from './foliage.js';
 
-// ----------------- authoring constants ----------------------------------
+// ----------------- constants --------------------------------------------
 //
 // Day/night sky and source-layer animation use the approved reconstruction.
-// Original mode restores every original sampler and disables new layers.
 
 const WATER_HORIZON_AMP_U = 3.4;
 const WATER_HORIZON_AMP_V = 1.4;
@@ -100,14 +93,6 @@ const LANTERN_PULSE_PERIOD = 4.0;
 const LANTERN_PULSE_AMP = 0.18;
 const LANTERN_BASE_ALPHA = 0.10;
 
-const HOTSPOT_RADIUS = 18;
-const HOTSPOT_RING_WIDTH = 2;
-const HOTSPOT_FILL = 0xfff3c2;
-const HOTSPOT_STROKE = 0x6b4a1a;
-
-const SELECTION_HALO = 0xfff3c2;
-const SELECTION_INNER = 0x6b4a1a;
-
 // ----------------- small helpers ---------------------------------------
 
 function getPart(parts: readonly CoffeePart[], id: CoffeePart['id']): CoffeePart {
@@ -115,9 +100,9 @@ function getPart(parts: readonly CoffeePart[], id: CoffeePart['id']): CoffeePart
   throw new Error(`coffee scene: manifest missing part '${id}'`);
 }
 
-function partFrame(part: CoffeePart): { fx: number; fy: number; fw: number; fh: number } {
-  const [fx, fy, fw, fh] = part.frame;
-  return { fx, fy, fw, fh };
+function partFrame(part: CoffeePart): { fw: number; fh: number } {
+  const [, , fw, fh] = part.frame;
+  return { fw, fh };
 }
 
 function partOrigin(part: CoffeePart): { x: number; y: number } {
@@ -125,9 +110,9 @@ function partOrigin(part: CoffeePart): { x: number; y: number } {
   return { x, y };
 }
 
-// Geometry owns the complement of the five contextual rectangles. Sampling
-// opaque original pixels avoids bilinear alpha seams around raster holes.
-function environmentGeometry(parts: readonly { id: string; origin: [number, number]; frame: [number, number, number, number] }[], width: number, height: number): MeshGeometry {
+// Geometry owns the complement of the cut rectangles, so the backdrop never
+// draws behind separately owned regions.
+function buildEnvironmentGeometry(parts: readonly { id: string; origin: [number, number]; frame: [number, number, number, number] }[], width: number, height: number): MeshGeometry {
   const cuts = parts.filter(part => part.id !== 'environment');
   const xEdges = new Set<number>([0, width]);
   const yEdges = new Set<number>([0, height]);
@@ -207,13 +192,9 @@ function createLightTexture(): Texture {
 
 // ----------------- scene factory ---------------------------------------
 
-export function createCoffeeScene(
-  resources: CoffeeResources,
-  onSelect?: (place: PlaceId) => void,
-): CoffeeScene {
-  const { manifest, texture: atlasTexture } = resources;
+export function createCoffeeScene(resources: CoffeeResources): CoffeeScene {
+  const { manifest } = resources;
   const parts = manifest.parts;
-  const envPart = getPart(parts, 'environment');
   const horizonPart = getPart(parts, 'water-horizon');
   const channelPart = getPart(parts, 'water-channel');
   const cafePart = getPart(parts, 'cafe');
@@ -221,97 +202,74 @@ export function createCoffeeScene(
   const castlePart = getPart(parts, 'castle');
   const backdropPart = resources.motion.manifest.parts.find(part => part.id === 'backdrop')!;
   const [backdropX, backdropY] = backdropPart.frame;
-  const livingTexture = new Texture({ source: resources.motion.texture.source,
-    frame: new Rectangle(...backdropPart.frame), label: 'coffee-scene.authored-backdrop' });
-  const originalGeometry = environmentGeometry(parts, manifest.artboard[0], manifest.artboard[1]);
+  const backdropTexture = new Texture({ source: resources.motion.texture.source,
+    frame: new Rectangle(...backdropPart.frame), label: 'coffee-scene.backdrop' });
   const foliageCuts = FOLIAGE_REGIONS.map(([x, y, w, h], index) => ({
     id: `foliage-${index}`, origin: [x, y] as [number, number], frame: [0, 0, w, h] as [number, number, number, number],
   }));
-  const livingGeometry = environmentGeometry([...parts, ...foliageCuts], manifest.artboard[0], manifest.artboard[1]);
+  const environmentGeometry = buildEnvironmentGeometry([...parts, ...foliageCuts], manifest.artboard[0], manifest.artboard[1]);
 
   // ----- root hierarchy -------------------------------------------------
   const root = new Container({ label: 'coffee-scene.root' });
 
-  // Only complement triangles render. The opaque sampling image may include
-  // neighbor pixels, but it never draws behind the separately owned regions.
-  const envFrame = partFrame(envPart);
-  const envTexture = new Texture({
-    source: atlasTexture.source,
-    frame: new Rectangle(envFrame.fx, envFrame.fy, envFrame.fw, envFrame.fh),
-    label: 'coffee-scene.environment.texture',
-  });
+  // Only complement triangles render: the backdrop never draws behind the
+  // separately owned vignette, water and foliage regions.
   const environment = new Mesh({
-    texture: envTexture,
-    geometry: originalGeometry,
+    texture: backdropTexture,
+    geometry: environmentGeometry,
     label: 'coffee-scene.environment',
   });
   root.addChild(environment);
 
-  // ----- water layer (Container; Sprite+Mesh pairs) ---------------------
+  // ----- water layer ----------------------------------------------------
   const water = new Container({ label: 'coffee-scene.water' });
 
   const horizonFrame = partFrame(horizonPart);
   const horizonOrigin = partOrigin(horizonPart);
   const horizon: WaterWindowHandle = createWaterWindow(
     water,
-    atlasTexture,
-    horizonFrame.fx, horizonFrame.fy,
+    resources.motion.texture,
+    backdropX + horizonOrigin.x, backdropY + horizonOrigin.y,
     horizonFrame.fw, horizonFrame.fh,
     horizonOrigin.x, horizonOrigin.y,
     WATER_HORIZON_COLS, WATER_HORIZON_ROWS,
     WATER_HORIZON_AMP_U, WATER_HORIZON_AMP_V,
     WATER_HORIZON_OMEGA, WATER_HORIZON_PHASE,
-    resources.motion.texture, backdropX + horizonOrigin.x, backdropY + horizonOrigin.y,
   );
 
   const channelFrame = partFrame(channelPart);
   const channelOrigin = partOrigin(channelPart);
   const channel: WaterWindowHandle = createWaterWindow(
     water,
-    atlasTexture,
-    channelFrame.fx, channelFrame.fy,
+    resources.motion.texture,
+    backdropX + channelOrigin.x, backdropY + channelOrigin.y,
     channelFrame.fw, channelFrame.fh,
     channelOrigin.x, channelOrigin.y,
     WATER_CHANNEL_COLS, WATER_CHANNEL_ROWS,
     WATER_CHANNEL_AMP_U, WATER_CHANNEL_AMP_V,
     WATER_CHANNEL_OMEGA, WATER_CHANNEL_PHASE,
-    resources.motion.texture, backdropX + channelOrigin.x, backdropY + channelOrigin.y,
   );
   const waves = createSurfaceWaves(water);
 
-  // ----- interactive vignettes -----------------------------------------
-  const vignetteTextures: Array<{ sprite: Sprite; original: Texture; living: Texture }> = [];
-  function makeVignette(part: CoffeePart, place: PlaceId, label: string): Sprite {
+  // ----- contextual vignettes ------------------------------------------
+  const vignetteTextures: Texture[] = [];
+  function makeVignette(part: CoffeePart, label: string): Sprite {
     const f = partFrame(part);
     const o = partOrigin(part);
-    const tex = new Texture({
-      source: atlasTexture.source,
-      frame: new Rectangle(f.fx, f.fy, f.fw, f.fh),
-      label: `coffee-scene.${place}.texture`,
-    });
+    const tex = new Texture({ source: resources.motion.texture.source,
+      frame: new Rectangle(backdropX + o.x, backdropY + o.y, f.fw, f.fh),
+      label: `coffee-scene.${label}.texture` });
+    vignetteTextures.push(tex);
     const sprite = new Sprite({ texture: tex, label: `coffee-scene.${label}` });
     sprite.x = o.x;
     sprite.y = o.y;
-    const living = new Texture({ source: resources.motion.texture.source,
-      frame: new Rectangle(backdropX + o.x, backdropY + o.y, f.fw, f.fh) });
-    vignetteTextures.push({ sprite, original: tex, living });
-    sprite.eventMode = onSelect ? 'static' : 'none';
-    if (onSelect) {
-      sprite.cursor = 'pointer';
-      sprite.hitArea = new Rectangle(0, 0, f.fw, f.fh);
-      sprite.on('pointertap', (event): void => {
-        event.stopPropagation();
-        onSelect(place);
-      });
-    }
+    sprite.eventMode = 'none';
     return sprite;
   }
 
-  const cafe = makeVignette(cafePart, 'cafe', 'cafe');
-  const catBackdrop = makeVignette(catPart, 'cat', 'cat-context');
+  const cafe = makeVignette(cafePart, 'cafe');
+  const catBackdrop = makeVignette(catPart, 'cat-context');
   catBackdrop.position.set(0, 0);
-  catBackdrop.removeAllListeners();
-  catBackdrop.eventMode = 'none';
   function catSourceTexture(id: 'cat-body' | 'cat-tail'): Texture {
     const part = resources.motion.manifest.parts.find(part => part.id === id);
     if (!part) throw new Error(`Missing coffee motion part: ${id}`);
@@ -322,14 +280,9 @@ export function createCoffeeScene(
   const catPuppet = createCatPuppet(catTextures);
   const cat = new Container({ label: 'coffee-scene.cat' });
   cat.position.set(...catPart.origin);
-  cat.eventMode = onSelect ? 'static' : 'none';
-  if (onSelect) {
-    cat.cursor = 'pointer';
-    cat.hitArea = new Rectangle(0, 0, catPart.frame[2], catPart.frame[3]);
-    cat.on('pointertap', event => { event.stopPropagation(); onSelect('cat'); });
-  }
+  cat.eventMode = 'none';
   cat.addChild(catBackdrop, catPuppet.root);
-  const castle = makeVignette(castlePart, 'castle', 'castle');
+  const castle = makeVignette(castlePart, 'castle');
   root.addChild(cafe);
   root.addChild(cat);
   root.addChild(castle);
@@ -383,8 +336,7 @@ export function createCoffeeScene(
       color: true,
     },
   });
-  // Set a wide bounds area so culling never drops them off-canvas
-  // while the host pans/zooms.
+  // Include the full bounded firefly trajectories in the culling area.
   fireflies.boundsArea = new Rectangle(-512, -512, manifest.artboard[0] + 1024, manifest.artboard[1] + 1024);
   root.addChild(fireflies);
 
@@ -450,113 +402,18 @@ export function createCoffeeScene(
     fireflies.addParticle(p);
   }
 
-  // ----- hotspots (Graphics markers) -----------------------------------
-  const hotspots = new Container({ label: 'coffee-scene.hotspots' });
-  root.addChild(hotspots);
-  const placeIds: readonly PlaceId[] = ['cafe', 'cat', 'castle'];
-  const markerGraphics: Graphics[] = [];
-  for (const place of placeIds) {
-    const [px, py] = PLACES[place].point;
-    const g = new Graphics({ label: `coffee-scene.marker.${place}` });
-    // Restrained marker: filled dot with a thin ring and a tiny tail.
-    g.circle(0, 0, HOTSPOT_RADIUS * 0.5)
-      .fill({ color: HOTSPOT_FILL, alpha: 0.7 })
-      .circle(0, 0, HOTSPOT_RADIUS * 0.5)
-      .stroke({ color: HOTSPOT_STROKE, width: HOTSPOT_RING_WIDTH, alpha: 0.95 })
-      .moveTo(0, 0)
-      .lineTo(0, -HOTSPOT_RADIUS - 2)
-      .stroke({ color: HOTSPOT_STROKE, width: HOTSPOT_RING_WIDTH, alpha: 0.9 });
-    g.x = px;
-    g.y = py;
-    // The marker is a visual overlay only; pointer events pass
-    // through to the underlying interactive Sprite (cafe/cat/castle)
-    // which holds the canonical pointertap handler.
-    g.eventMode = 'none';
-    hotspots.addChild(g);
-    markerGraphics.push(g);
-  }
-  hotspots.visible = false;
-
-  // Selection outline: an owned Graphics that draws a thin frame
-  // around the currently selected vignette's exact frame. select(null)
-  // clears it; the host's reference capture calls select(null) to
-  // guarantee the original frame is bit-exact.
-  const selectionOutline = new Graphics({ label: 'coffee-scene.selection-outline' });
-  selectionOutline.eventMode = 'none';
-  root.addChild(selectionOutline);
-  const vignetteByPlace: Record<PlaceId, { sprite: Container; frame: { fw: number; fh: number } }> = {
-    cafe: { sprite: cafe, frame: { fw: cafePart.frame[2]!, fh: cafePart.frame[3]! } },
-    cat: { sprite: cat, frame: { fw: catPart.frame[2]!, fh: catPart.frame[3]! } },
-    castle: { sprite: castle, frame: { fw: castlePart.frame[2]!, fh: castlePart.frame[3]! } },
-  };
-
   // ----- runtime state -------------------------------------------------
-  let ambient = false;
   let disposed = false;
-  let time = 0;
-  const effects = createAnimationSettings().effects;
-  const applyWater = (): void => {
-    const effect = effects.water;
-    const strength = effect.enabled ? effect.amount : 0;
-    horizon.setStrength(strength); channel.setStrength(strength); waves.setStrength(strength);
-    // Stopping water motion must not resurrect the baked source sun/boat pixels.
-    horizon.setAmbient(ambient); channel.setAmbient(ambient);
-    waves.setAmbient(ambient && effect.enabled);
-  };
-  const applyCat = (): void => {
-    catPuppet.root.visible = ambient;
-    catPuppet.setStrength(effects.cat.enabled ? effects.cat.amount : 0);
-  };
-
-  function applyAmbient(): void {
-    environment.texture = ambient ? livingTexture : envTexture;
-    environment.geometry = ambient ? livingGeometry : originalGeometry;
-    for (const entry of vignetteTextures) entry.sprite.texture = ambient ? entry.living : entry.original;
-    applyWater();
-    applyCat();
-    sky.setAmbient(ambient); boats.setAmbient(ambient); foliage.setAmbient(ambient);
-    lighting.visible = ambient;
-    lights.visible = ambient && effects.lamps.enabled;
-    fireflies.visible = ambient && effects.fireflies.enabled;
-  }
-  applyAmbient();
-
-  function setAmbient(enabled: boolean): void {
-    if (disposed) return;
-    ambient = enabled;
-    applyAmbient();
-  }
-
-
-  function setEffect(id: EffectId, enabled: boolean, amount: number): void {
-    if (disposed) return;
-    const definition = EFFECTS[id];
-    if (!definition || !Number.isFinite(amount)) throw new RangeError('Effect amount must be finite and effect must exist');
-    const effect = effects[id];
-    effect.enabled = enabled; effect.amount = Math.max(0, Math.min(definition.max, amount));
-    if (id === 'water') applyWater();
-    else if (id === 'cat') applyCat();
-    else if (id === 'clouds') sky.setTime(time, enabled ? effect.amount : 0);
-    else if (id === 'boats') boats.setTime(time, enabled ? effect.amount : 0);
-    else if (id === 'foliage') foliage.setTime(time, enabled ? effect.amount : 0);
-    else {
-      lights.visible = ambient && effects.lamps.enabled;
-      fireflies.visible = ambient && effects.fireflies.enabled;
-      updateLights(time);
-    }
-  }
-  function setMarkers(enabled: boolean): void {
-    if (disposed) return;
-    hotspots.visible = enabled;
-  }
+  // Live ambient layers run at their default strength (1) from construction.
+  sky.setAmbient(true); boats.setAmbient(true); foliage.setAmbient(true);
+  waves.setAmbient(true);
 
   function setTime(seconds: number): void {
     if (disposed) return;
     const t = Math.max(0, seconds);
-    time = t;
-    sky.setTime(t, effects.clouds.enabled ? effects.clouds.amount : 0);
-    boats.setTime(t, effects.boats.enabled ? effects.boats.amount : 0);
-    foliage.setTime(t, effects.foliage.enabled ? effects.foliage.amount : 0);
+    sky.setTime(t, 1);
+    boats.setTime(t, 1);
+    foliage.setTime(t, 1);
     horizon.setTime(t);
     channel.setTime(t);
     waves.setTime(t);
@@ -570,7 +427,7 @@ export function createCoffeeScene(
     const lanternPulse = 1 + Math.sin((t / LANTERN_PULSE_PERIOD) * Math.PI * 2) * LANTERN_PULSE_AMP;
     for (let i = 0; i < lanternSprites.length; i++) {
       const s = lanternSprites[i]!;
-      s.alpha = Math.min(1, (LANTERN_BASE_ALPHA + night * 0.72) * lanternPulse * effects.lamps.amount);
+      s.alpha = Math.min(1, (LANTERN_BASE_ALPHA + night * 0.72) * lanternPulse);
       s.scale.set(lanternBaseScales[i]! * (1 + night * 0.45));
     }
     // Fireflies — bounded deterministic bob and twinkle. We update
@@ -583,121 +440,48 @@ export function createCoffeeScene(
       particle.x = st.baseX + Math.sin(t * st.speedX + st.phaseX) * st.rx;
       particle.y = st.baseY + Math.cos(t * st.speedY + st.phaseY) * st.ry;
       const twinkle = 1 + Math.sin(t * (Math.PI * 2 / FIREFLY_TWINKLE_PERIOD) + st.twinklePhase) * FIREFLY_TWINKLE_AMP;
-      particle.alpha = Math.max(0, Math.min(1, st.baseAlpha * twinkle * effects.fireflies.amount));
+      particle.alpha = Math.max(0, Math.min(1, st.baseAlpha * twinkle));
     }
-  }
-
-  function select(place: PlaceId | null): void {
-    if (disposed) return;
-    if (place === null) {
-      selectionOutline.clear();
-      selectionOutline.visible = false;
-      return;
-    }
-    const entry = vignetteByPlace[place];
-    const sx = entry.sprite.x;
-    const sy = entry.sprite.y;
-    const fw = entry.frame.fw;
-    const fh = entry.frame.fh;
-    selectionOutline.clear();
-    // Outer halo then a thin inner stroke so the outline reads on
-    // both bright and dark parts of the source region without
-    // obscuring painting detail.
-    selectionOutline
-      .rect(sx - 3, sy - 3, fw + 6, fh + 6)
-      .stroke({ color: SELECTION_HALO, width: 2, alpha: 0.6 })
-      .rect(sx, sy, fw, fh)
-      .stroke({ color: SELECTION_INNER, width: 2, alpha: 0.95 });
-    selectionOutline.visible = true;
   }
 
   function dispose(): void {
     if (disposed) return;
     disposed = true;
-    // Factory owns the root. Detach first so the host's renderer-
-    // first teardown sees a stage with no children to release; then
-    // destroy every scene-owned node. Host performs the renderer
-    // flush BEFORE this is called; we are only undoing the scene
-    // graph and its GPU-side buffers/textures. The borrowed atlas
-    // source is never destroyed.
+    // Factory owns the root. Detach first, then destroy every scene-owned
+    // node. The host flushes the renderer BEFORE this is called; we only
+    // undo the scene graph and its GPU-side buffers/textures. The borrowed
+    // motion atlas source is never destroyed.
     if (root.parent) root.parent.removeChild(root);
-    // Water windows: their handle.dispose() releases the geometry
-    // buffer set, framed texture (destroy(false) — borrowed source
-    // untouched), and the neutral Sprite + Mesh.
     horizon.dispose();
     channel.dispose();
     waves.dispose();
     catPuppet.dispose();
     sky.dispose(); boats.dispose(); foliage.dispose();
     lighting.destroy();
-    // Lantern sprites — each shares the generated light texture; we
-    // destroy sprites only and tear the texture down once below.
+    // Lantern sprites share the generated light texture; destroy sprites
+    // only and tear the texture down once below.
     for (const s of lanternSprites) {
-      s.removeAllListeners();
       s.destroy({ children: false, texture: false, textureSource: false });
     }
-    // Fireflies — clear children; the container is destroyed with
-    // its parent (root.destroy()).
+    // Fireflies — clear children; the container is destroyed with root.
     fireflies.particleChildren.length = 0;
     fireflies.update();
-    // Marker Graphics — default destroy() tears down the owned
-    // context.
-    for (const g of markerGraphics) {
-      g.removeAllListeners();
-      g.destroy();
-    }
-    // Selection outline Graphics — also owns a context.
-    selectionOutline.removeAllListeners();
-    selectionOutline.destroy();
     // Scene-owned framed textures and environment buffers; atlas source borrowed.
-    originalGeometry.destroy(true);
-    livingGeometry.destroy(true);
-    envTexture.destroy(false);
-    livingTexture.destroy(false);
-    for (const entry of vignetteTextures) { entry.original.destroy(false); entry.living.destroy(false); }
+    environmentGeometry.destroy(true);
+    backdropTexture.destroy(false);
+    for (const texture of vignetteTextures) texture.destroy(false);
     catTextures.body.destroy(false); catTextures.tail.destroy(false);
     for (const child of [cafe, castle, environment]) {
-      child.removeAllListeners();
       child.destroy({ children: false, texture: false, textureSource: false });
     }
-    // Generated lantern texture — destroy(true) tears down its
-    // CanvasSource as well.
+    // Generated lantern texture — destroy(true) tears down its CanvasSource as well.
     lightTexture.destroy(true);
-    // The lights / water / hotspots / fireflies Containers and the
-    // root itself still own their contexts and child refs; root's
-    // destroy walks and releases them, including the still-attached
-    // lantern Sprites' parents (lights) and ParticleContainer
-    // (fireflies). We remove event listeners first to keep the
-    // dispose idempotent and to avoid stray callback traffic.
-    for (const node of [lights, fireflies, hotspots, water, root]) {
-      node.removeAllListeners();
-    }
     root.destroy({ children: true, texture: false, textureSource: false });
-    // Clear references so GC can collect typed arrays.
     lanternSprites.length = 0;
     lanternBaseScales.length = 0;
     fireflyStates.length = 0;
     fireflyParticles.length = 0;
-    markerGraphics.length = 0;
   }
 
-  const scene: CoffeeScene = {
-    root,
-    layers: { environment, cafe, cat, castle, water, sky: sky.root, sun: sky.sun, moon: sky.moon,
-      boats: boats.root, foliage: foliage.root, lights, lighting, fireflies, hotspots },
-    waterMeshes: [horizon.mesh, channel.mesh],
-    waveMeshes: waves.meshes,
-    cloudSprites: sky.clouds,
-    boatSprites: boats.sprites,
-    foliageMeshes: foliage.meshes,
-    catParts: catPuppet.parts,
-    catPuppet: catPuppet.root,
-    setEffect,
-    setAmbient,
-    setMarkers,
-    setTime,
-    select,
-    dispose,
-  };
-  return scene;
+  return { root, setTime, dispose };
 }
