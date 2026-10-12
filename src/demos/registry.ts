@@ -1,5 +1,5 @@
 import type * as THREE from 'three';
-import type { PinnedCaptureCamera } from '../scene';
+import type { CameraOrbitLimits, PinnedCaptureCamera } from '../scene';
 
 export interface DemoMetadata {
   /** route id, e.g. 'crown-chest' */
@@ -60,6 +60,7 @@ export interface DemoMetadata {
   cameraPosition: [number, number, number];
   cameraTarget: [number, number, number];
   cameraFov: number;
+  cameraOrbit?: CameraOrbitLimits;
   /** Optional per-demo accent (hex) — themes the panel to the object's signature colour. */
   accent?: string;
   /** Optional radial-gradient backdrop (inner→outer hex) for a themed hero stage. */
@@ -121,6 +122,112 @@ const BASE = import.meta.env.BASE_URL;
 const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 
 const authored: CatalogEntry[] = [
+  {
+    id: 'tropical-island',
+    updatedAt: '2026-10-06',
+    title: 'Tropical Island — Code-only Diorama',
+    subjectClass: 'object',
+    blurb:
+      'A tropical island with a timber cabin, four palms, a campfire and a dockside rowboat in '
+      + 'turquoise water, with an automatic day/night cycle, leaf wind and animated fire. '
+      + 'Drop a rock into the liquid water to throw up a splash and send waves into shore; strong impacts shake the props and extinguish the campfire until you click to relight it. '
+      + 'Ten force-measured prop surfaces are reconstructed from TypeScript, with no runtime GLB files or source texture images.',
+    referenceImage: BASE + 'references/tropical-island.webp',
+    referenceKind: 'image',
+    sourcePath: 'src/demos/tropical-island/createTropicalIslandModel.ts',
+    sourceUrl: REPO + '/src/demos/tropical-island/createTropicalIslandModel.ts',
+    generatedWith:
+      'img2threejs force-measured · code-only surfaces · procedural terrain and water',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'final',
+    cameraPosition: [10, 11, 15],
+    cameraTarget: [0.7, 0.7, 0],
+    cameraFov: 36,
+    cameraOrbit: {
+      minPolarAngle: 0.32,
+      maxPolarAngle: 1.25,
+      minDistance: 9,
+      maxDistance: 60,
+      enablePan: false,
+    },
+    accent: '#5dc1c8',
+    backgroundGradient: { inner: '#cfe6ec', outer: '#7fbac4' },
+    exposure: 1.05,
+    environmentIntensity: 0.85,
+    toneMapping: 'aces',
+    loadRuntime: async () => {
+      // Runtime-selected exhibit plugins stay lazy; static imports load them on unrelated routes.
+      const [{ createTropicalIslandModel }, { installTropicalIslandLights }, { preloadMeasuredProps }] = await Promise.all([
+        import('./tropical-island/createTropicalIslandModel'),
+        import('./tropical-island/environment'),
+        import('./tropical-island/measured/props'),
+      ]);
+      // Finish bounded, asynchronous numeric-data loading before the synchronous factory runs.
+      await preloadMeasuredProps();
+      return {
+        installLights: installTropicalIslandLights,
+        build: (scene) => {
+          // Terrain and water receive real shadows; the studio floor would occlude wave troughs.
+          for (const object of scene.children) {
+            const floor = object as THREE.Mesh<THREE.BufferGeometry, THREE.ShadowMaterial>;
+            if (floor.isMesh && floor.material.isShadowMaterial) {
+              scene.remove(floor);
+              floor.geometry.dispose();
+              floor.material.dispose();
+              break;
+            }
+          }
+          const group = createTropicalIslandModel();
+          scene.add(group, group.userData.stageOcean as THREE.Object3D);
+          return group;
+        },
+      };
+    },
+  },
+  {
+    id: 'snowy-village',
+    updatedAt: '2026-09-28',
+    title: 'Snowbound Crossing — Mini Game',
+    subjectClass: 'object',
+    blurb:
+      'A playable isometric winter village built from hash-pinned GLB data exported to native Three.js modules. '
+      + 'WASD or arrows move the character; Shift runs; E opens the nearby gate; M plus arrows moves the house.',
+    referenceImage: BASE + 'references/snowy-village/overview.png',
+    referenceKind: 'image',
+    sourcePath: 'src/demos/snowy-village/createSnowyVillageModel.ts',
+    sourceUrl: REPO + '/src/demos/snowy-village/createSnowyVillageModel.ts',
+    generatedWith:
+      'Hyper3D · native Three.js role modules · original PBR image bytes retained · '
+      + 'game-specific placement and interactions adapted at runtime',
+    author: 'Hoài Nhớ',
+    authorUrl: 'https://github.com/hoainho',
+    status: 'final',
+    cameraPosition: [7, 11.2, 9.3],
+    cameraTarget: [0, 1.25, 0],
+    cameraFov: 36,
+    cameraOrbit: {
+      minPolarAngle: 0.36,
+      maxPolarAngle: 0.95,
+      minDistance: 9,
+      maxDistance: 34,
+      enablePan: false,
+    },
+    defaultAnimation: 'idle',
+    accent: '#c9daf7',
+    backgroundGradient: { inner: '#bfc3e1', outer: '#a5b0ce' },
+    exposure: 1,
+    environmentIntensity: 0.48,
+    loadRuntime: async () => {
+      const { createSnowyVillageModel, installSnowyVillageLights, prewarmSnowyVillage } =
+        await import('./snowy-village/createSnowyVillageModel');
+      return {
+        prewarm: prewarmSnowyVillage,
+        installLights: installSnowyVillageLights,
+        build: createSnowyVillageModel,
+      };
+    },
+  },
   {
     id: 'prs-ocean',
     title: 'Ocean Blue PRS Guitar — Measured Surface Flow',

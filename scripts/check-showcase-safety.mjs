@@ -26,6 +26,8 @@ const BANNED_PATTERNS = [
 ];
 
 const URL_LITERAL = /https?:\/\//;
+// An SVG namespace identifies the vocabulary; it is not a fetched resource URL.
+const SVG_NAMESPACE = /\bxmlns\s*=\s*(["'])http:\/\/www\.w3\.org\/2000\/svg\1/g;
 
 function parseArgs(argv) {
   const out = { base: process.env.GITHUB_BASE_REF || 'main', files: null };
@@ -69,7 +71,7 @@ function scanDemoFile(relPath, violations) {
         violations.push({ file: relPath, line: idx + 1, message });
       }
     }
-    if (!isRegistry && URL_LITERAL.test(line)) {
+    if (!isRegistry && URL_LITERAL.test(line.replace(SVG_NAMESPACE, ''))) {
       violations.push({
         file: relPath,
         line: idx + 1,

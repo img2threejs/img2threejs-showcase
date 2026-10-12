@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "681eac653ba24050bfe5602b775d0ca5fcfcfadf",
+  "dirtySourceSha256": "79290136349c8c1c84926ad06556cc891ecf0d14747c4b9b4b1baa6f537ff8d6",
+  "threeRevision": "169.0",
+  "assets": [
+    {
+      "name": "character",
+      "source": {
+        "path": "assets-source/snowy-village/character/optimized/hyper3d-out/snowy-character-optimized-297a4bb9/model.glb",
+        "originalPath": "public/models/snowy-village/character/optimized/hyper3d-out/snowy-character-optimized-297a4bb9/model.glb",
+        "bytes": 1379216,
+        "sha256": "9311aa162b6f2038b637d2c3ff0cf370f78f231be07164749a6999527e286beb"
+      },
+      "module": "data/character.mjs",
+      "generatedSha256": "84755d230648abf0f696cb6ab098a751f911861b80b429243b4ae6f57136a9ba"
+    },
+    {
+      "name": "idle",
+      "source": {
+        "path": "assets-source/snowy-village/character/animation-clips/hyper3d-out/snowy-idle-6168f63a/model.glb",
+        "originalPath": "public/models/snowy-village/character/animation-clips/hyper3d-out/snowy-idle-6168f63a/model.glb",
+        "bytes": 383752,
+        "sha256": "b3f7b20b571bb931768049f9522f5b02772836ccad1b115400c1c364bc01f739"
+      },
+      "module": "data/idle.mjs",
+      "generatedSha256": "0563224b311b04b356550261369b393a1be0d48626216b83a057958e2dfa0dfc"
+    },
+    {
+      "name": "walk",
+      "source": {
+        "path": "assets-source/snowy-village/character/animation-clips/hyper3d-out/snowy-walk-fdc6aeab/model.glb",
+        "originalPath": "public/models/snowy-village/character/animation-clips/hyper3d-out/snowy-walk-fdc6aeab/model.glb",
+        "bytes": 75904,
+        "sha256": "a995aab268014d3a9994b42ac8abceaf0135f81baa2daff140536d36d3dcf690"
+      },
+      "module": "data/walk.mjs",
+      "generatedSha256": "53ec0b2503bad54d76f46100dbffb041ce4926fe9028a113e5e81a22627f1523"
+    },
+    {
+      "name": "run",
+      "source": {
+        "path": "assets-source/snowy-village/character/animation-clips/hyper3d-out/snowy-run-10a13484/model.glb",
+        "originalPath": "public/models/snowy-village/character/animation-clips/hyper3d-out/snowy-run-10a13484/model.glb",
+        "bytes": 54176,
+        "sha256": "24c56c4431a8e4a269226cfd3d0b0048313e72146f5feb3981909507666701ba"
+      },
+      "module": "data/run.mjs",
+      "generatedSha256": "23f1afbc2a2377af552ac7f494fee0cb05b1a002829b2df6880631fa7826be58"
+    },
+    {
+      "name": "boxing",
+      "source": {
+        "path": "assets-source/snowy-village/character/animation-clips/hyper3d-out/snowy-boxing-f5baf81b/model.glb",
+        "originalPath": "public/models/snowy-village/character/animation-clips/hyper3d-out/snowy-boxing-f5baf81b/model.glb",
+        "bytes": 73048,
+        "sha256": "da5db38514d70c4173a52d04c6b481cf1480938d46de90373f7b2fdb8b2e86d7"
+      },
+      "module": "data/boxing.mjs",
+      "generatedSha256": "c6781438e8a96e8f1cb7f5b5fba6e1f6f03dcbf6cb75d27ee371523359c24d88"
+    },
+    {
+      "name": "gate",
+      "source": {
+        "path": "assets-source/snowy-village/gate/hyper3d-out/snowy-gate-segment-946c05bf/model.glb",
+        "originalPath": "public/models/snowy-village/gate/hyper3d-out/snowy-gate-segment-946c05bf/model.glb",
+        "bytes": 7205504,
+        "sha256": "d8937a79384126ecc14ae230b2f9472c4a47a0e49fdb22937e86920708cedf69"
+      },
+      "module": "data/gate.mjs",
+      "generatedSha256": "cb923a27ae0c6b3f42f62fa3eab6eb6ae10c8a828070eb8c568eb12780ea3990"
+    },
+    {
+      "name": "house",
+      "source": {
+        "path": "assets-source/snowy-village/house/source/model.glb",
+        "originalPath": "public/models/snowy-village/house/source/model.glb",
+        "bytes": 4210244,
+        "sha256": "0027db2103418df5a8fea4fd65d00097f215a53eee4af8255b8fde54c3f77cae"
+      },
+      "module": "data/house.mjs",
+      "generatedSha256": "6d119039322311b6101d99680990ff25e09a86d5084205ae27439c2d78d6dd14"
+    },
+    {
+      "name": "rock",
+      "source": {
+        "path": "assets-source/snowy-village/rock/source/model.glb",
+        "originalPath": "public/models/snowy-village/rock/source/model.glb",
+        "bytes": 4559984,
+        "sha256": "15e842128e39bd2334ca8c9c5ea3c490c71a7776ccbfb406230ba34958c443da"
+      },
+      "module": "data/rock.mjs",
+      "generatedSha256": "78a5889811d8adee1f8eb8a64fbc1030da42f78f9f1e14ffb168da6d8625a115"
+    },
+    {
+      "name": "tree",
+      "source": {
+        "path": "assets-source/snowy-village/tree/source/model.glb",
+        "originalPath": "public/models/snowy-village/tree/source/model.glb",
+        "bytes": 3758944,
+        "sha256": "13081bd455c7275c4866fd02cc724241ca16b0c70abb0395da3717e077a276c8"
+      },
+      "module": "data/tree.mjs",
+      "generatedSha256": "9e0783293eca4e0da5fcf5904403d693c193355a2aa61ef13ee1b28db650eec6"
+    },
+    {
+      "name": "campfire",
+      "source": {
+        "path": "assets-source/snowy-village/campfire/hyper3d-out/snowy-village-campfire-parts-758e78e5/model.glb",
+        "originalPath": "public/models/snowy-village/campfire/hyper3d-out/snowy-village-campfire-parts-758e78e5/model.glb",
+        "bytes": 5973540,
+        "sha256": "184bfff7c7fa4a9d8f2989734cf419498dc2d4802b5c7454baf7e5b765027ba6"
+      },
+      "module": "data/campfire.mjs",
+      "generatedSha256": "022137203b0f7d5b79b468e74612659bedbfd00e217e37c5d4bc2cb5704d7f1e"
+    }
+  ]
+}

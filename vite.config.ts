@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { sourceArchivesPlugin } from './scripts/source-archives.mjs';
 
 /**
  * Served from the apex domain `img2threejs.io` (see `public/CNAME`), so assets resolve from the
@@ -6,6 +7,7 @@ import { defineConfig } from 'vite';
  */
 export default defineConfig({
   base: '/',
+  plugins: [sourceArchivesPlugin()],
   build: {
     rollupOptions: {
       input: {

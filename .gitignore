@@ -20,3 +20,6 @@ public/mesh/
 
 # Standalone iPhone Duo build output
 /dist-iphone-duo/
+
+# Local Tropical Island measurement references/intermediates never ship.
+/work/tropical-island/

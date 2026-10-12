@@ -9,6 +9,7 @@ export interface ViewerOptions {
   cameraPosition?: [number, number, number];
   cameraTarget?: [number, number, number];
   cameraFov?: number;
+  orbitLimits?: CameraOrbitLimits;
   background?: number;
   /** Radial gradient backdrop (inner→outer hex) — a premium themed stage for hero props. */
   backgroundGradient?: { inner: string; outer: string };
@@ -36,6 +37,14 @@ export interface ViewerOptions {
   turntable?: boolean;
   /** Turntable rate in degrees per second (default 15, so a full revolution in 24 s). */
   turntableSpeed?: number;
+}
+
+export interface CameraOrbitLimits {
+  minPolarAngle?: number;
+  maxPolarAngle?: number;
+  minDistance?: number;
+  maxDistance?: number;
+  enablePan?: boolean;
 }
 
 /** An explicit review camera: geometry-independent, so a pass is measured rather than reframed. */
@@ -99,9 +108,9 @@ const isMesh = (o: THREE.Object3D): o is THREE.Mesh => (o as THREE.Mesh).isMesh 
 const isSkinnedMesh = (o: THREE.Object3D): o is THREE.SkinnedMesh =>
   (o as THREE.SkinnedMesh).isSkinnedMesh === true;
 
-/** A mesh that carries real geometry — i.e. not one of the inspector's own overlay clones. */
+/** Model geometry, excluding inspector overlays and procedural effect render bounds. */
 function isRealMesh(o: THREE.Object3D): o is THREE.Mesh {
-  return isMesh(o) && !!o.geometry && !o.userData.isHighlight;
+  return isMesh(o) && !!o.geometry && !o.userData.isHighlight && !o.userData.isRuntimeEffect;
 }
 
 function triangleCount(root: THREE.Object3D): number {
@@ -347,6 +356,14 @@ export class Viewer {
     // Freeze the camera in capture mode so evaluation renders are deterministic.
     this.controls.enableDamping = !this.capture;
     this.controls.enabled = !this.capture;
+    if (!this.capture && options.orbitLimits) {
+      const limits = options.orbitLimits;
+      if (limits.minPolarAngle !== undefined) this.controls.minPolarAngle = limits.minPolarAngle;
+      if (limits.maxPolarAngle !== undefined) this.controls.maxPolarAngle = limits.maxPolarAngle;
+      if (limits.minDistance !== undefined) this.controls.minDistance = limits.minDistance;
+      if (limits.maxDistance !== undefined) this.controls.maxDistance = limits.maxDistance;
+      if (limits.enablePan !== undefined) this.controls.enablePan = limits.enablePan;
+    }
     const [tx, ty, tz] = options.cameraTarget ?? [0, 0, 0];
     this.controls.target.set(tx, ty, tz);
     this.controls.update();
@@ -1000,7 +1017,8 @@ export class Viewer {
     this.raycaster.setFromCamera(this.ndc, this.camera);
     const out: THREE.Object3D[] = [];
     for (const hit of this.raycaster.intersectObject(this.inspectRoot, true)) {
-      if (hit.object.userData.isHighlight || !this.visibleUpTo(hit.object)) continue;
+      if (hit.object.userData.isHighlight || hit.object.userData.isRuntimeEffect
+        || hit.object.userData.isPointerTransparent || !this.visibleUpTo(hit.object)) continue;
       const node = this.resolveOwner(hit.object);
       if (node && !out.includes(node)) out.push(node);
     }

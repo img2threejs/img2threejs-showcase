@@ -61,6 +61,7 @@ of truth is [`src/demos/registry.ts`](src/demos/registry.ts).
 | Study | What to explore |
 | --- | --- |
 | [Man Robot · Segment Color Studio](https://img2threejs.io/#/demo/man-robot-studio) | A source-preserving 65-joint robot with six color regions, rigged clips, an electric-green scan, and a WebGPU-first renderer with an automatic WebGL2 fallback. |
+| [Tropical Island — code-only measured study](src/demos/tropical-island/createTropicalIslandModel.ts) | Ten force-measured TypeScript surfaces, procedural terrain/water/foliage, 27 selectable parts, and no runtime GLB or source texture maps. |
 | [Ocean Blue PRS Guitar](https://img2threejs.io/#/demo/prs-ocean) | Measured vertex color and PBR samples preserved in code, six addressable strings, and opt-in water-flow actions. |
 | [Groot — Heart of the Forest](https://img2threejs.io/#/demo/monster-tree) | A navigable woodland scene with retargeted movement, grounded combat, living-wood effects, and lantern spirits. |
 | [Mars Cat](https://img2threejs.io/#/demo/mars-cat) | Seventeen measured regions streamed at three quality levels without shipping the reference GLB, textures, or UV atlas. |
@@ -167,6 +168,175 @@ npm run star-history   # regenerate the chart below; requires GITHUB_TOKEN
 
 The gallery uses hash routes (`#/` and `#/demo/:id`) so direct navigation remains compatible
 with static hosting.
+
+### Tropical Island — code-only diorama
+
+Open `#/demo/tropical-island`. The demo has 27 selectable parts, a coupled
+shallow-water simulation, moored boat buoyancy, wind-driven foliage, a day/night
+cycle and procedural fire, smoke and water-entry effects. Click/tap clear deep
+sea to drop a rock, drag to orbit, and press **R** to repeat at the last water
+point. Strong shore impacts extinguish the campfire; click its retained wood or
+stone to relight it. Reduced motion holds the scene and disables physical drops.
+Eligible, unobstructed water shows a gold aim cursor with a dark outline. Hover
+uses the same depth, solid-prop, occupied-column and pool-capacity admission as
+clicks. The native 32×32 SVG cursor has a centered hotspot, falls back to
+`crosshair`, adds no animation loop, and clears on dragging, leaving the canvas,
+blur or a click/**R** drop.
+
+The ten prop surfaces in [`measured/`](src/demos/tropical-island/measured/)
+follow the img2threejs force-measured route: u16 positions, octahedral 8+8-bit
+normals, sampled vertex colors and lossless indices decoded into ordinary
+Three.js geometry. These are surface buffers, **not a base64-wrapped GLB**.
+Runtime uses no GLB/GLTF/BIN, GLTF/DRACO loader, source texture image or UV atlas.
+The reference WebP is a gallery thumbnail, not a model texture.
+
+[The measurement manifest](pipelines/tropical-island/measured-surfaces.json)
+records source hashes, topology, transforms and sampling conventions. Across ten
+source meshes, 708,881 vertices and 1,145,710 triangles retain their original
+index order before the existing palm/fire cleanup. Independent local parity
+checks measured maximum position error of `7.62939453125e-6` in source mesh
+units and nonzero-normal error below `0.95°`.
+
+**Fidelity limit:** base color is sampled at vertices; roughness and metalness
+use measured sampled medians. Sub-vertex texture detail and source normal maps
+are not retained, so this is not pixel-identical PBR texture shading.
+Surface streams load asynchronously as 60 bounded TypeScript chunks before the
+synchronous model factory runs. Raw positions, normals, sampled colors and
+index order are preserved; the split removes the monolithic parser workload.
+The complete island payload remains about 11.04 MB gzip. Build guards enforce
+512 KiB runtime/metadata chunks, 300 KiB numeric chunks and 11 MiB aggregate gzip.
+Vite receives an 8 GiB Node heap ceiling for full-gallery builds; this is not a
+browser allocation or a quality setting.
+
+**Numerical runtime.** MUSCL/HLL reconstruction and face fluxes use a generated
+11,810-byte WebAssembly SIMD kernel with strict float64 arithmetic. Each water
+instance owns its memory, and typed-array views avoid per-step copying.
+Neighboring-cell foam lookups retain binary-search fallback for longer travel;
+incident-wave dispersion is cached by exact depth. Regeneration uses the retained
+C sources and `node pipelines/tropical-island/water-kernel/build-water-kernel.mjs`
+(LLVM clang with wasm32 support and `wasm-ld` required). Normal builds use the
+checked-in `waterKernelCode.ts`, with no compiler or external `.wasm` download.
+Runtime requires WebAssembly SIMD and `DecompressionStream`.
+
+Body and parcel sources now enter the field after every existing CFL substep,
+before the next CFL scan. Contact sampling reads live water instead of the last
+GPU upload; visual effects and texture uploads remain once per render frame.
+This fixes uneven-frame feedback that could eject a submerged rock and make
+the solver's CFL speed signal explode. The repeating schedule
+`1/60, 0.05, 1/120, 0.026` seconds previously reached 31,784; the corrected real
+scene completed 6.026 physical seconds with a maximum of 30.59 and a submerged
+rock. Coastal-jitter and stale-contact regressions both failed before their fixes.
+No geometry/effects were removed; no velocity clamp, FPS cap, simulation-clock
+slowdown, LOD, decimation or busy worker was introduced.
+
+**Verification.** All 95 island tests passed. With identical source scheduling,
+116 frames across still water, incident waves, prescribed impacts and mixed
+wet/dry lanes were byte-identical to the original solver across 16 fields.
+Physical clocks, soil absorption and non-finite errors matched; four full-grid
+foam-transport cases also matched, including long backtraces and signed zero.
+The body-coupling fix deliberately changes source scheduling rather than
+preserving the unstable trajectory.
+
+**Process CPU measurement:** Chrome 154 / Apple M1 Metal, headless 1280×960 at
+DPR 1, production assets, the same executable and a dedicated profile. Each
+default-scene run lasted 40 seconds; values average the final 30 seconds.
+CDP per-process CPU-time deltas use **100% for one CPU core**, not the whole
+machine. No profiler, build or test job ran during capture.
+
+| Measurement | Previous runtime | Optimized |
+| --- | ---: | ---: |
+| Total Chrome-process CPU | 107.4% | 79.8% |
+| Renderer-process CPU | 85.6% | 57.7% |
+| Main-thread occupancy | 81.2% | 52.6% |
+| Observed FPS | 42.8 | 40.6 |
+| Mean scene tick CPU per frame | 17.25 ms | 11.18 ms |
+
+A trusted click and eight seconds of impact/settling averaged 84.0% total Chrome
+CPU. These are measured workload results, not locked-60-FPS or other-hardware
+guarantees. Browser checks covered sinking, boat response, fire extinction and
+mesh-click relight, keyboard repeat, orbit cancellation, reduced motion, eligible
+and blocked cursor states, full-pool rejection and native portrait touch.
+
+
+`npm run build` checks island source/public assets before building and checks
+`dist/` afterward. Focused physics and interaction regression tests:
+
+```bash
+node --test pipelines/tropical-island/*.test.mjs
+npm run check:tropical-island
+npm run build
+```
+
+The offline encoder and independent verifier are retained as code in
+`pipelines/tropical-island/`. Regeneration requires Python 3 with Pillow and the
+original GLBs under the gitignored `work/tropical-island/reference-models/`:
+
+```bash
+python3 pipelines/tropical-island/encode-surfaces.py
+node pipelines/tropical-island/verify-surfaces.mjs
+```
+
+Normal builds do not need Python or the offline GLBs. Original models, temporary
+state/specs, generation logs and historical QA images/videos are not part of
+this showcase submission. Optional inspector GLB **export** remains available;
+static exports do not bake the simulation, wind or volumetric effects.
+
+## Download a showcase's Three.js source
+
+Open a Three.js study, choose **Export**, then **Download source code** under
+**Export a 3D Asset / From Stage**. The `<showcase-id>-source.zip` contains only
+that showcase's runtime dependency graph, not the entire gallery. Source download
+is independent of asset export scope, isolation and the current pose.
+
+Unlike GLB/glTF asset export, the source ZIP retains the original TypeScript factories,
+all reachable quality/data modules, animation controllers, shaders, procedural VFX,
+lighting and stage interaction hooks. Required textures and JSON assets are included;
+their URLs resolve within the downloaded package, including after a subpath production
+build. No `.glb`/`.gltf` model file or `GLTFLoader` dependency is allowed in these packages.
+Static studies remain static: downloading source does not invent animation.
+
+Each ZIP includes `package.json`, `manifest.json`, an executable browser example and
+integration instructions:
+
+```sh
+npm install
+npm run dev
+# Production example:
+npm run build
+```
+
+To reuse it, copy **both `src/` and `assets/`**, preserving their relative layout, into
+a TypeScript-aware, asset-aware Three.js project. Install the ZIP's declared dependencies
+and share a compatible Three.js instance with the host.
+
+```ts
+import { mountShowcase } from './downloaded-showcase/src/index';
+
+const asset = await mountShowcase(container);
+const animation = asset.runtime?.animationController;
+const action = animation?.actions[0];
+if (action) animation.play(action.id);
+// On unmount:
+asset.dispose();
+```
+
+Use `createShowcase(scene)` for an existing scene and advance its `update(dt, elapsed)`
+and `prepareRender()` from your own loop. Do not advance these again with `mountShowcase`;
+its included Viewer already does so. Camera-dependent game interactions require the
+included Viewer or an adaptation to the host engine. The package README explains both
+integration paths and resource ownership. Existing provenance/attribution remains;
+downloading does not grant new rights to third-party references or textures.
+
+Archives are generated from the selected registry entry and its actual imports by
+`scripts/source-archives.mjs`. `npm run build` writes all Three.js archives to
+`dist/source/`; development serves them on demand. Deploy that directory along with
+the gallery. After building, validate all packages in isolated consumers with:
+
+```sh
+node scripts/check-source-archives.mjs
+# Or specific studies:
+node scripts/check-source-archives.mjs leesin tropical-island
+```
 
 ## Repository map
 

@@ -1,0 +1,68 @@
+import * as THREE from 'three';
+import { loadShowcase, showcase, type DemoEntry } from './demos/registry';
+import { Viewer, type ViewerOptions } from './scene';
+
+export { showcase, Viewer };
+export type { ViewerOptions };
+
+/** Build the original showcase in an existing scene, including its own light rig. */
+export async function createShowcase(scene: THREE.Scene) {
+  return buildShowcase(scene, await loadShowcase(), true);
+}
+
+async function buildShowcase(scene: THREE.Scene, demo: DemoEntry, installLights: boolean) {
+  const previous = new Set<THREE.Object3D>();
+  scene.traverse((object) => previous.add(object));
+  if (installLights) demo.installLights?.(scene);
+  const model = demo.build(scene);
+  await demo.prewarm?.();
+  const roots = scene.children.filter((object) => !previous.has(object));
+  const tickers: Array<(dt: number, elapsed: number) => void> = [];
+  const preparers: Array<() => void> = [];
+  for (const root of roots) root.traverse((object) => {
+    if (typeof object.userData.tick === 'function') tickers.push(object.userData.tick);
+    if (typeof object.userData.prepareRender === 'function') preparers.push(object.userData.prepareRender);
+  });
+  const controller = model.userData.sculptRuntime?.animationController;
+  if (demo.defaultAnimation && controller?.actions.some((action: { id: string }) => action.id === demo.defaultAnimation)) {
+    controller.play(demo.defaultAnimation);
+  }
+  return {
+    model,
+    /** Controllers remain the original objects: animationController, strikeVfx, outfitController, etc. */
+    get runtime() { return model.userData.sculptRuntime; },
+    /** Call once per frame before rendering when using your own render loop. */
+    update(dt: number, elapsed: number) { for (const tick of tickers) tick(dt, elapsed); },
+    /** Call once before the main render, not inside shadow/reflection passes. */
+    prepareRender() { for (const prepare of preparers) prepare(); },
+  };
+}
+
+/** Complete browser stage with the original camera, lighting, tickers and interaction hooks. */
+export async function mountShowcase(host: HTMLElement, options: ViewerOptions = {}) {
+  const demo = await loadShowcase();
+  const viewer = new Viewer(host, {
+    cameraPosition: demo.cameraPosition,
+    cameraTarget: demo.cameraTarget,
+    cameraFov: demo.cameraFov,
+    orbitLimits: demo.cameraOrbit,
+    backgroundGradient: demo.backgroundGradient,
+    exposure: demo.exposure,
+    environmentIntensity: demo.environmentIntensity,
+    installLights: demo.installLights,
+    toneMapping: demo.toneMapping,
+    turntable: demo.turntable,
+    ...options,
+  });
+  try {
+    const asset = await buildShowcase(viewer.scene, demo, false);
+    viewer.setExplodeRoot(asset.model);
+    viewer.rebuildParts();
+    viewer.fitToViewport(asset.model, true);
+    viewer.start(); // refreshTickers also mounts each mountViewerInteraction hook.
+    return { ...asset, viewer, dispose: () => viewer.dispose() };
+  } catch (error) {
+    viewer.dispose();
+    throw error;
+  }
+}
