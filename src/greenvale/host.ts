@@ -57,9 +57,7 @@ function buildShell(): DocumentFragment {
   tpl.innerHTML = `
     <main class="greenvale-main">
       <div class="greenvale-play">
-        <section class="greenvale-stage" id="greenvale-stage" aria-label="Greenvale canvas">
-          <p class="greenvale-loading" id="greenvale-loading" role="status" aria-live="polite">Building Greenvale…</p>
-        </section>
+        <section class="greenvale-stage" id="greenvale-stage" aria-label="Greenvale canvas"></section>
         <div class="greenvale-touch" role="group" aria-label="Mobile game controls">
           <div class="greenvale-touch__movement">
             <div id="gv-joystick" class="greenvale-joystick" role="group" tabindex="0"
@@ -92,18 +90,21 @@ function buildShell(): DocumentFragment {
 }
 
 function attachShell(): void {
+  const loading = document.getElementById('greenvale-loading');
   const characterStyles = document.getElementById('character-styles');
   if (characterStyles) characterStyles.remove();
   document.title = PAGE_TITLE;
   document.documentElement.lang = 'en';
   document.body.className = 'greenvale-page';
-  document.body.removeAttribute('data-loading');
   document.body.replaceChildren(buildShell());
+  if (loading) document.body.append(loading);
 }
 
 function showError(message: string): void {
   const host = document.getElementById('greenvale-error') as HTMLElement | null;
   if (!host) return;
+  document.getElementById('greenvale-loading')?.remove();
+  document.body.removeAttribute('data-loading');
   host.hidden = false;
   const p = host.querySelector<HTMLElement>('#greenvale-error-message');
   if (p) p.textContent = message;
@@ -115,6 +116,11 @@ function setStatus(message: string): void {
   const status = document.getElementById('gv-status');
   if (!status) return;
   status.textContent = message;
+}
+
+function setLoadingStatus(message: string): void {
+  const status = document.getElementById('greenvale-entry-status');
+  if (status) status.textContent = message;
 }
 
 function bindUi(state: RuntimeState, api: GreenvaleApi): void {
@@ -213,9 +219,12 @@ async function start(state: RuntimeState): Promise<void> {
   state.stageEl = stageEl;
   // Load font + resources before initing the Application so a half-initialised
   // Pixi application never lingers on a boot error.
+  setLoadingStatus('Preparing the interface…');
   await loadGameFont();
+  setLoadingStatus('Loading the village…');
   const resources = await loadResources();
   state.resources = resources;
+  setLoadingStatus('Bringing Greenvale to life…');
   const app = new Application();
   try {
     await app.init({
@@ -273,6 +282,8 @@ async function start(state: RuntimeState): Promise<void> {
   state.ticker = tickFn;
   if (!document.hidden) state.app.start();
   fitStage(state);
+  document.getElementById('greenvale-loading')?.remove();
+  document.body.removeAttribute('data-loading');
 }
 
 function teardown(state: RuntimeState): void {

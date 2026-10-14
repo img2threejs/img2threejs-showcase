@@ -19,13 +19,123 @@ body.greenvale-page {
 .greenvale-main { height: 100dvh; }
 .greenvale-stage { touch-action: none; }
 .greenvale-canvas { display: block; width: 100%; height: 100%; }
+@font-face {
+  font-family: "Greenvale Title";
+  src: url("/greenvale/fonts/be-vietnam-pro-700-lat.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+.greenvale-page[data-loading] .greenvale-main { visibility: hidden; }
 .greenvale-loading {
-  position: absolute;
+  position: fixed;
+  z-index: 10;
   inset: 0;
-  margin: 0;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: max(40px, env(safe-area-inset-top)) 24px max(96px, env(safe-area-inset-bottom));
+  background: #0c1915;
+  color: #f7edce;
+}
+.greenvale-loading::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgb(8 22 17 / 54%), rgb(8 22 17 / 82%)),
+    url("/greenvale/showcase-preview.webp") center / cover;
   pointer-events: none;
+}
+.greenvale-loading__content {
+  position: relative;
+  width: min(100%, 640px);
+  text-align: center;
+}
+.greenvale-loading h1 {
+  margin: 0;
+  color: #f7edce;
+  font-family: "Greenvale Title", "Be Vietnam Pro", sans-serif;
+  font-size: clamp(2.75rem, 9vw, 6rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  text-shadow: 0 4px 24px rgb(0 0 0 / 40%);
+}
+.greenvale-loading__subtitle {
+  margin: 16px 0 0;
+  color: #d2ddc6;
+  font-size: clamp(0.95rem, 2vw, 1.1rem);
+  line-height: 1.6;
+}
+.greenvale-loading__signal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 40px 0 20px;
+  height: 16px;
+}
+.greenvale-loading__signal::before,
+.greenvale-loading__signal::after {
+  content: "";
+  width: 48px;
+  height: 1px;
+  margin-inline: 8px;
+  background: rgb(230 186 105 / 32%);
+}
+.greenvale-loading__signal span {
+  width: 7px;
+  height: 7px;
+  background: #e6ba69;
+  animation: greenvale-loading-pulse 1.4s ease-in-out infinite;
+}
+.greenvale-loading__signal span:nth-child(2) { animation-delay: 0.12s; }
+.greenvale-loading__signal span:nth-child(3) { animation-delay: 0.24s; }
+.greenvale-loading__signal span:nth-child(4) { animation-delay: 0.36s; }
+.greenvale-loading__signal span:nth-child(5) { animation-delay: 0.48s; }
+#greenvale-entry-status {
+  min-height: 3em;
+  max-width: 40ch;
+  margin: 0 auto;
+  color: #f0cc8b;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+.greenvale-loading__controls {
+  position: absolute;
+  right: 24px;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: 24px;
+  margin: 0;
+  color: #d2ddc6;
+  text-align: center;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  text-wrap: balance;
+}
+.greenvale-loading__controls span { display: block; }
+.greenvale-loading ::selection { background: #e6ba69; color: #0c1915; }
+.greenvale-loading[data-state="error"] .greenvale-loading__signal span {
+  animation: none;
+  background: #f9d7c8;
+}
+.greenvale-loading[data-state="error"] #greenvale-entry-status { color: #f9d7c8; }
+@keyframes greenvale-loading-pulse {
+  0%, 100% { opacity: 0.3; transform: translateY(2px); }
+  45% { opacity: 1; transform: translateY(-3px); }
+}
+@media (max-height: 480px) {
+  .greenvale-loading { padding-top: 24px; padding-bottom: 64px; }
+  .greenvale-loading h1 { font-size: clamp(2.75rem, 8vw, 4rem); }
+  .greenvale-loading__subtitle { margin-top: 8px; }
+  .greenvale-loading__signal { margin-top: 24px; margin-bottom: 12px; }
+  .greenvale-loading__controls { bottom: max(12px, env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .greenvale-loading__signal span { animation: none; }
 }
 .greenvale-sr-only, .greenvale-touch__help {
   position: absolute;
