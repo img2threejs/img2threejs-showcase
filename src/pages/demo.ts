@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { getDemo, loadDemo } from '../demos/registry';
 import { Viewer, type PartInfo } from '../scene';
 import { navigate } from '../router';
+
 import { brand, extractVersion, escapeAttr, GITHUB_CORE as GITHUB_URL } from '../site-data';
 import { createLoader, whenViewerReady } from '../loader';
 import {
@@ -86,6 +87,13 @@ export async function renderDemo(
    * Unguarded by `capture`, because it does not need to be: a capture run is a headless browser on
    * localhost, and `analytics.ts` refuses to send for either of those reasons on its own.
    */
+  if (demo.id === 'man-robot-studio') {
+    // Lazy-load the studio + its export module only on this route so other demos never pay
+    // for the exporters/GLTFLoader/source-download chunks pulled in by the export panel.
+    const { renderRobotStudio } = await import('./robotStudio');
+    const { mountRobotStudioExports } = await import('./robotStudioExports');
+    return renderRobotStudio(mount, demo, { mountExports: mountRobotStudioExports });
+  }
   // Read structurally, like `toneMapping`, so this file stays independent of the fields being declared
   // on DemoEntry. `image` is the default because every demo predating the field was built from
   // photographs -- the honest default rather than the flattering one.

@@ -1,0 +1,51 @@
+import { loadShowcase, showcase } from './demos/registry';
+import { renderRobotStudio } from './pages/robotStudio';
+
+// Re-export the original showcase metadata for compatibility with generic consumers.
+export { showcase };
+// Re-export the original low-level robot runtime/factory APIs so callers retain
+// full access to motion, paint, scan and lifecycle hooks.
+export {
+  ROBOT_ASSET_URL,
+  ROBOT_SOURCE_CONTRACT,
+  applyRobotAnimationCorrection,
+  createRobotModel,
+  disposeRobotModel,
+  prewarmRobotModel,
+  resetRobotAnimationCorrection,
+  resetRobotSegmentColor,
+  robotSegmentColor,
+  robotSegmentForFace,
+  setRobotSegmentColor,
+  waitForRobotModel,
+} from './demos/man-robot-studio/robotModel';
+export type {
+  RobotLoadProgress,
+  RobotPaintTarget,
+  RobotRuntime,
+  RobotSegmentId,
+} from './demos/man-robot-studio/robotModel';
+export {
+  ROBOT_ANIMATION_PROFILE,
+  getRobotAnimationProfile,
+  loadRobotExportedAnimationClips,
+  loadRobotGreetingClips,
+} from './demos/man-robot-studio/animationProfile';
+export type { RobotAnimationProfile } from './demos/man-robot-studio/animationProfile';
+export { ROBOT_SEGMENTS } from './demos/man-robot-studio/segments';
+
+/**
+ * Mount the full WebGPU (with WebGL2 fallback) robot segment-color studio on the given host.
+ *
+ * Returns the same `{ dispose }` shape as the generic portable package so callers can use
+ * `asset.dispose()` consistently across every source archive. The example wires it to
+ * pagehide so the studio cleans up its renderer, mixer and event listeners on navigation.
+ */
+export interface RobotStudioHandle {
+  dispose: () => void;
+}
+
+export async function mountShowcase(host: HTMLElement): Promise<RobotStudioHandle> {
+  const demo = await loadShowcase();
+  return { dispose: renderRobotStudio(host, demo) };
+}

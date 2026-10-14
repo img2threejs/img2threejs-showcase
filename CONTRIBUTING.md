@@ -145,6 +145,23 @@ need special sign-off beyond normal review; anything outside that requires
 the owner's review, enforced by [`.github/CODEOWNERS`](.github/CODEOWNERS).
 On merge, `deploy.yml` republishes the gallery automatically.
 
+### Dedicated PixiJS 2D studies
+
+The standard generator and `src/demos/registry.ts` remain Three.js-only. An owner-reviewed 2D
+study uses `src/pixi/registry.ts`, the dedicated `src/pages/pixi-demo.ts` route shell and
+`src/pixi/showcase.ts` host; it must not invent Three.js geometry or camera fields.
+Its implementation still lives under `src/demos/<id>/`, with an id unique across both catalogs.
+
+Moonlight Cafe is the source-derived raster example. Its factory returns a Pixi root,
+`setTime` and asynchronous disposal; the host owns the Application, clock, fit and listeners.
+Dispose renderer bindings and framed texture wrappers before unloading borrowed atlas sources.
+Bundle manifests as static imports and load approved local runtime assets through Pixi Assets,
+never direct factory `fetch` or external services. Catalog images in `public/references/`
+remain capped at 800 KiB; full original artwork/atlases live in the study's reviewed
+`public/<id>/` asset folder, not as oversized catalog images. Core host, route, dependency
+and safety-scanner changes require the existing owner's review.
+
+
 ## What gets a submission approved
 
 Each rule below is a pass/fail test — most are checked automatically, some
@@ -153,11 +170,11 @@ need a maintainer's judgment:
 | Rule | Checked by |
 |---|---|
 | Reference image is one you have rights to use (own photo, public domain, or licensed) — name the source in the PR | maintainer |
-| Factory builds geometry procedurally in code — no imported mesh, no downloaded texture pack | maintainer |
-| Zero runtime network calls, no external CDN/fonts | CI (`check-showcase-safety.mjs`) |
-| `id` kebab-case, unique, matches its `src/demos/<id>/` folder exactly | CI + `tsc` |
-| Every catalog metadata field and runtime loader filled, `status: 'final'` | `tsc` (all fields required) |
-| Reference image ≤ 800 KB, `.png`/`.jpg`/`.jpeg`/`.webp` only (no `.svg`) | CI |
+| Three.js factories build geometry procedurally in code — no imported mesh or downloaded texture pack; dedicated source-derived PixiJS raster studies follow the owner-reviewed path above | maintainer |
+| No direct factory network calls or external CDN/fonts; approved bundled local assets are allowed for the dedicated PixiJS path | CI (`check-showcase-safety.mjs`) + maintainer |
+| `id` kebab-case, unique across both catalogs, matches its `src/demos/<id>/` folder exactly | CI + `tsc` |
+| Every field and runtime loader required by the selected renderer's catalog filled, `status: 'final'` | `tsc` |
+| Catalog reference image ≤ 800 KiB, `.png`/`.jpg`/`.jpeg`/`.webp` only (no `.svg`) | CI |
 | PR only touches the contribution surface above, or has owner review | `CODEOWNERS` |
 
 ## Troubleshooting
@@ -165,10 +182,9 @@ need a maintainer's judgment:
 - **`npm run new-demo` fails with "already exists"** — pick a different `<id>`,
   or if you're re-running after fixing a mistake, delete `src/demos/<id>/`
   and remove its entry from `registry.ts` first.
-- **`check-showcase-safety.mjs` flags a URL literal** — it only allows
-  `http(s)://` strings inside `registry.ts`'s own metadata fields
-  (`sourceUrl`, GitHub links). Any URL in your factory code itself, even in
-  a comment, needs to go.
+- **`check-showcase-safety.mjs` flags a URL literal** — `http(s)://` strings are allowed only
+  in the exact catalog files `src/demos/registry.ts` and `src/pixi/registry.ts`
+  for metadata (`sourceUrl`, GitHub links). A URL in factory/host code itself needs to go.
 - **Build fails on `registry.ts`** — usually a missing catalog metadata field
   or an invalid `loadRuntime` return; the error message names the mismatch.
 

@@ -1,0 +1,18 @@
+import { mountShowcase } from './src/index';
+
+/**
+ * Mounts the full robot segment-color studio. The studio's original WebGPU renderer
+ * (with WebGL2 fallback) initializes on the supplied host; motion, paint and scan VFX
+ * are all retained. There are no interchange export actions and no source-ZIP download
+ * button in this portable runtime — both belong to the parent gallery's export module.
+ */
+async function main(): Promise<void> {
+  const asset = await mountShowcase(document.querySelector<HTMLElement>('#stage')!);
+  window.addEventListener('pagehide', () => asset.dispose(), { once: true });
+}
+
+void main().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  document.querySelector<HTMLElement>('#actions')!.textContent = message;
+  console.error(error);
+});

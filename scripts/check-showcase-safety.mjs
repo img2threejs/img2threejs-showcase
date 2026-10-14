@@ -62,7 +62,7 @@ function scanDemoFile(relPath, violations) {
   const absPath = join(ROOT, relPath);
   if (!existsSync(absPath)) return; // deleted file
   const content = readFileSync(absPath, 'utf8');
-  const isRegistry = relPath === 'src/demos/registry.ts';
+  const isRegistry = relPath === 'src/demos/registry.ts' || relPath === 'src/pixi/registry.ts';
   const lines = content.split('\n');
   lines.forEach((line, idx) => {
     if (isCommentLine(line)) return;
@@ -104,30 +104,34 @@ function scanReferenceImage(relPath, violations) {
 }
 
 function checkRegistryFolderCrossReference(violations) {
-  const registryPath = join(ROOT, 'src/demos/registry.ts');
-  if (!existsSync(registryPath)) return;
-  const content = readFileSync(registryPath, 'utf8');
-  const idPattern = /\bid:\s*'([^']+)'/g;
   const kebabCase = /^[a-z0-9]+(-[a-z0-9]+)*$/;
   const demosDir = join(ROOT, 'src/demos');
   const existingFolders = new Set(
     existsSync(demosDir) ? readdirSync(demosDir).filter((f) => statSync(join(demosDir, f)).isDirectory()) : []
   );
-  let match;
-  while ((match = idPattern.exec(content)) !== null) {
-    const id = match[1];
-    if (!kebabCase.test(id)) {
-      violations.push({
-        file: 'src/demos/registry.ts',
-        message: `registry id "${id}" is not kebab-case`,
-      });
-      continue;
-    }
-    if (!existingFolders.has(id)) {
-      violations.push({
-        file: 'src/demos/registry.ts',
-        message: `registry id "${id}" has no matching folder under src/demos/${id}/`,
-      });
+  const registeredIds = new Set();
+  for (const registry of ['src/demos/registry.ts', 'src/pixi/registry.ts']) {
+    const registryPath = join(ROOT, registry);
+    if (!existsSync(registryPath)) continue;
+    const content = readFileSync(registryPath, 'utf8');
+    const idPattern = /\bid:\s*'([^']+)'/g;
+    let match;
+    while ((match = idPattern.exec(content)) !== null) {
+      const id = match[1];
+      if (!kebabCase.test(id)) {
+        violations.push({ file: registry, message: `registry id "${id}" is not kebab-case` });
+        continue;
+      }
+      if (registeredIds.has(id)) {
+        violations.push({ file: registry, message: `registry id "${id}" is duplicated` });
+      }
+      registeredIds.add(id);
+      if (!existingFolders.has(id)) {
+        violations.push({
+          file: registry,
+          message: `registry id "${id}" has no matching folder under src/demos/${id}/`,
+        });
+      }
     }
   }
 }
@@ -156,7 +160,7 @@ function main() {
 
   for (const relPath of changed) {
     const norm = relPath.replace(/\\/g, '/');
-    if (norm.startsWith('src/demos/') && norm.endsWith('.ts')) {
+    if ((norm.startsWith('src/demos/') || norm.startsWith('src/pixi/')) && norm.endsWith('.ts')) {
       scanDemoFile(norm, violations);
     } else if (norm.startsWith('public/references/')) {
       scanReferenceImage(norm, violations);

@@ -285,10 +285,15 @@ function usedMaterialList(mesh: THREE.Mesh): THREE.Material[] {
     .filter((material): material is THREE.Material => !!material);
 }
 
+// WebGPU and core Three.js builds have distinct constructors but share these type flags.
+function isTexture(value: unknown): value is THREE.Texture {
+  return !!value && typeof value === 'object' && (value as THREE.Texture).isTexture === true;
+}
+
 function allMaterialTextures(material: THREE.Material): THREE.Texture[] {
   const textures = new Set<THREE.Texture>();
   const add = (value: unknown): void => {
-    if (value instanceof THREE.Texture) textures.add(value);
+    if (isTexture(value)) textures.add(value);
     else if (Array.isArray(value)) for (const item of value) add(item);
   };
   const record = material as unknown as Record<string, unknown>;
@@ -310,16 +315,16 @@ function portableMaterialTextures(material: THREE.Material): {
   let bindingCount = 0;
   for (const key of DIRECT_GLTF_TEXTURE_KEYS) {
     const value = record[key];
-    if (!(value instanceof THREE.Texture)) continue;
+    if (!isTexture(value)) continue;
     textures.add(value);
     bindingCount += 1;
   }
   // glTF packs these two scalar channels into one metallic-roughness texture binding.
   const metalness = record.metalnessMap;
   const roughness = record.roughnessMap;
-  if (metalness instanceof THREE.Texture || roughness instanceof THREE.Texture) {
-    if (metalness instanceof THREE.Texture) textures.add(metalness);
-    if (roughness instanceof THREE.Texture) textures.add(roughness);
+  if (isTexture(metalness) || isTexture(roughness)) {
+    if (isTexture(metalness)) textures.add(metalness);
+    if (isTexture(roughness)) textures.add(roughness);
     bindingCount += 1;
   }
   return { textures: [...textures], bindingCount };
@@ -373,11 +378,12 @@ function normalizeMaterialTextures(
   const record = material as unknown as Record<string, unknown>;
   for (const key of Object.keys(record)) {
     const value = record[key];
-    if (!(value instanceof THREE.DataTexture)) continue;
-    let converted = convertedTextures.get(value);
+    if (!isTexture(value) || !(value as THREE.DataTexture).isDataTexture) continue;
+    const dataTexture = value as THREE.DataTexture;
+    let converted = convertedTextures.get(dataTexture);
     if (!converted) {
-      converted = dataTextureAsCanvas(value);
-      convertedTextures.set(value, converted);
+      converted = dataTextureAsCanvas(dataTexture);
+      convertedTextures.set(dataTexture, converted);
     }
     record[key] = converted;
   }
