@@ -41,6 +41,16 @@ npm run dev -- --host 127.0.0.1
 # Open /greenvale.html on the URL printed by Vite.
 ```
 
+The home page Archive lists **Greenvale — Playable 2D Village** among its first
+cards, with a **2D Experiment** label and an actual gameplay overview. Use the
+**2D Games** filter or search for Greenvale/img2pixi2D; **Play the 2D Game** opens
+the standalone page rather than a Three.js inspector.
+
+![Greenvale gameplay overview](public/greenvale/showcase-preview.webp)
+
+The 960×640 WebP is captured from the running PixiJS scene, not the source
+reference or a generated mockup. It is a runtime asset for the gallery card.
+
 - Native PixiJS 8.22.0 containers, source-derived sprite layers, editable actor rigs,
   native HUD text/graphics, lighting, water, smoke and skill VFX; no 3D runtime.
 - WASD/arrows walk; Shift runs; E interacts. 1/2/3 cast Heal/Ice/Fire;
@@ -70,7 +80,8 @@ Bundled Be Vietnam Pro fonts retain their [SIL OFL](public/greenvale/fonts/OFL.t
 
 **Runtime-only Greenvale files:** keep `greenvale.html`, `src/greenvale/`,
 the three `public/greenvale/*/manifest.json` files, their referenced PNGs,
-and all bundled fonts with `OFL.txt`. The manifests retain source hashes and
+all bundled fonts with `OFL.txt`, and `public/greenvale/showcase-preview.webp`
+for the gallery. The manifests retain source hashes and
 inference notes. Build/local-server configuration and the dependency lockfile
 remain required. Extraction masks, unused per-layer metadata, separate character
 provenance, screenshots, verification reports and the Greenvale test harness have
@@ -89,6 +100,11 @@ re-enters it, and Combo works while fullscreen is active. Chromium checks confir
 the stage fills both 1440×960 and 844×390 viewports, including mobile controls.
 Browsers require a user gesture for fullscreen; where the API is unavailable,
 the game still fills the browser viewport.
+Gallery checks: the overview loads at 960×640 on desktop and mobile; counts are
+31 total studies, 17 objects, 13 characters and one 2D game. Object/character
+filters exclude Greenvale; search and the archive card both open `/greenvale.html`,
+where a subsequent click enters fullscreen. No JavaScript errors were recorded
+in those navigation checks.
 `npm run build` passes TypeScript and emits page bundles, but then fails during the
 existing source-ZIP generator's recursive AST traversal with
 `RangeError: Maximum call stack size exceeded` in `scripts/source-archives.mjs`.

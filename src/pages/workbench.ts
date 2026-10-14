@@ -184,6 +184,24 @@ export function renderWorkbench(
       generatedWith: 'img2threejs · Product Study',
       referenceLabel: 'Measured Model',
       linkLabel: 'Open Live 3D Showcase',
+      runtimeLabel: 'Live 3D on open',
+    },
+    {
+      id: 'greenvale',
+      title: 'Greenvale — Playable 2D Village',
+      subjectClass: 'game',
+      blurb: 'A playable img2pixi2D village with animated characters, lighting and nine skills. '
+        + 'Keyboard and touch controls; fullscreen on click or tap.',
+      referenceImage: `${import.meta.env.BASE_URL}greenvale/showcase-preview.webp`,
+      imageAlt: 'Greenvale gameplay overview with the hero, village, river, forge and skill HUD',
+      imageLabel: 'Gameplay overview',
+      href: `${import.meta.env.BASE_URL}greenvale.html`,
+      status: 'experiment',
+      generationLabel: 'img2pixi2D Experiment',
+      generatedWith: 'img2pixi2D · PixiJS 8.22.0',
+      referenceLabel: 'Image Reference',
+      linkLabel: 'Play the 2D Game',
+      runtimeLabel: 'Playable 2D on open',
     },
     ...demos.map((demo) => ({
       ...demo,
@@ -193,10 +211,12 @@ export function renderWorkbench(
       generationLabel: extractVersion(demo.generatedWith) ?? CURRENT_VERSION,
       referenceLabel: demo.referenceKind === 'model' ? 'Measured Model' : 'Image Reference',
       linkLabel: 'Open Live 3D Inspector',
+      runtimeLabel: 'Live 3D on open',
     })),
   ];
   const archiveCharacterCount = archiveEntries.filter((demo) => demo.subjectClass === 'character').length;
-  const archiveObjectCount = archiveEntries.length - archiveCharacterCount;
+  const archiveObjectCount = archiveEntries.filter((demo) => demo.subjectClass === 'object').length;
+  const archiveGameCount = archiveEntries.filter((demo) => demo.subjectClass === 'game').length;
   const archiveCards = archiveEntries
     .map(
       (demo, i) => `
@@ -213,13 +233,13 @@ export function renderWorkbench(
           </figure>
           <div class="archive-copy">
             <div class="archive-card-head">
-              <p class="archive-status mono">${demo.status === 'final' ? 'Released Study' : 'Working Study'}</p>
+              <p class="archive-status mono">${demo.status === 'final' ? 'Released Study' : demo.status === 'experiment' ? '2D Experiment' : 'Working Study'}</p>
               <span class="archive-card-index mono">${String(i + 1).padStart(2, '0')}</span>
             </div>
             <h3>${escapeAttr(demo.title)}</h3>
             <p class="archive-description">${brand(demo.blurb)}</p>
             <div class="archive-meta mono">
-              <span>Live 3D on open</span>
+              <span>${escapeAttr(demo.runtimeLabel)}</span>
               <span>${escapeAttr(demo.generationLabel)}</span>
               <span>${escapeAttr(demo.referenceLabel)}</span>
             </div>
@@ -536,9 +556,9 @@ export function renderWorkbench(
           <p class="section-index mono">04 / THE ARCHIVE</p>
           <div class="section-title-wrap">
             <h2 id="archive-title">A library of<br /><em>working geometry.</em></h2>
-            <p>Explore live Three.js studies: orbit models, play their animations and discover how each one was made. Each card opens its interactive viewer.</p>
+            <p>Explore live Three.js studies and playable PixiJS scenes: orbit models, play animations or step into a 2D game. Each card opens its own interactive experience.</p>
           </div>
-          <p class="archive-count mono">${String(archiveEntries.length).padStart(2, '0')} STUDIES<br />OBJECTS + CHARACTERS</p>
+          <p class="archive-count mono">${String(archiveEntries.length).padStart(2, '0')} STUDIES<br />OBJECTS + CHARACTERS + GAMES</p>
         </header>
         <div class="archive-toolbar" aria-label="Archive Controls">
           <div class="archive-filters" role="group" aria-label="Filter Studies">
@@ -550,6 +570,9 @@ export function renderWorkbench(
             </button>
             <button type="button" class="archive-filter" data-archive-filter="object" aria-pressed="false">
               <span>Objects</span><strong class="mono">${String(archiveObjectCount).padStart(2, '0')}</strong>
+            </button>
+            <button type="button" class="archive-filter" data-archive-filter="game" aria-pressed="false">
+              <span>2D Games</span><strong class="mono">${String(archiveGameCount).padStart(2, '0')}</strong>
             </button>
           </div>
           <p class="archive-filter-status mono" id="archive-filter-status" aria-live="polite">

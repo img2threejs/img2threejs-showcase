@@ -5656,6 +5656,11 @@ body,
   filter: saturate(0.96) contrast(1.05) brightness(1);
 }
 
+.archive-card[data-archive-subject="game"] .archive-image .archive-model-stage img {
+  opacity: 1;
+  filter: none;
+}
+
 .archive-card:hover .archive-image::before,
 .archive-card:focus-visible .archive-image::before {
   opacity: 1;
