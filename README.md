@@ -39,7 +39,6 @@ Three.js model, modify the gallery router, or depend on the separate Moonlight C
 npm ci
 npm run dev -- --host 127.0.0.1
 # Open /greenvale.html on the URL printed by Vite.
-npm run test:greenvale
 ```
 
 - Native PixiJS 8.22.0 containers, source-derived sprite layers, editable actor rigs,
@@ -57,7 +56,7 @@ npm run test:greenvale
   remain at least 48px; portrait and desktop styling is preserved.
 
 Implementation: [`src/greenvale/`](src/greenvale/).
-Bundled artwork, per-layer manifests/provenance and fonts:
+Bundled artwork, runtime layer manifests and fonts:
 [`public/greenvale/`](public/greenvale/).
 The host owns the Pixi Application, ticker, input and resource lifetime;
 `scene.ts` owns the reusable scene.
@@ -69,16 +68,27 @@ Attack effects are visual actions, not an enemy/damage combat system. Artwork is
 relicensed by this experiment; redistribution rights still require maintainer confirmation.
 Bundled Be Vietnam Pro fonts retain their [SIL OFL](public/greenvale/fonts/OFL.txt).
 
-**Verification:** four gameplay regression tests pass. Production-page Chromium checks
-cover keyboard and native multitouch walk/run (25/47 px per 0.2 s), all nine skills,
-pause/reset, fullscreen entry, scene recreation and a visible missing-asset failure.
-[Screenshots and measured results](verification/greenvale/verification.json) are retained
-under `verification/greenvale/`. Physical-device and Safari checks were not performed.
-The [landscape-control update](verification/greenvale/transparent-controls/verification.json)
-records native multitouch and all nine skills at 568×320, 844×390 and 1024×768,
-plus portrait and desktop checks in the local game project. Those screenshots
-supersede the original landscape appearance; the initial port's checksum record
-is historical for the two subsequently updated host/style files.
+**Runtime-only Greenvale files:** keep `greenvale.html`, `src/greenvale/`,
+the three `public/greenvale/*/manifest.json` files, their referenced PNGs,
+and all bundled fonts with `OFL.txt`. The manifests retain source hashes and
+inference notes. Build/local-server configuration and the dependency lockfile
+remain required. Extraction masks, unused per-layer metadata, separate character
+provenance, screenshots, verification reports and the Greenvale test harness have
+been removed; gameplay and other showcase scenes are unchanged.
+
+To check locally, open `/greenvale.html`, walk/run with WASD and Shift, try the
+nine skill keys and resize to mobile landscape for the translucent controls.
+Physical-device and Safari checks were not performed.
+Runtime-only cleanup check: TypeScript passes; Chromium loads all 47 manifest
+images and 12 font files, renders one canvas, and accepts all nine keyboard
+skills. Walk/run move 25/47 pixels over four 0.05-second simulation steps driven
+by native keyboard input. At 844×390, translucent controls render without page
+overflow and the pointer Combo button invokes the Combo action.
+Fullscreen is preserved: the first click enters browser fullscreen, F exits and
+re-enters it, and Combo works while fullscreen is active. Chromium checks confirm
+the stage fills both 1440×960 and 844×390 viewports, including mobile controls.
+Browsers require a user gesture for fullscreen; where the API is unavailable,
+the game still fills the browser viewport.
 `npm run build` passes TypeScript and emits page bundles, but then fails during the
 existing source-ZIP generator's recursive AST traversal with
 `RangeError: Maximum call stack size exceeded` in `scripts/source-archives.mjs`.
