@@ -49,8 +49,13 @@ the standalone page rather than a Three.js inspector.
 ![Greenvale gameplay overview](public/greenvale/showcase-preview.webp)
 
 The 960×640 WebP is captured from the running PixiJS scene, not the source
-reference or a generated mockup. It is a runtime asset for the gallery card.
+reference or a generated mockup. It is a runtime asset for the gallery card and
+the standalone loading screen.
 
+- A village-art loading screen appears from initial HTML, before the game module
+  downloads. The same screen reports font, asset and renderer setup without fake
+  percentages or an artificial delay. Pixel pulses respect reduced motion;
+  module failures stop the animation, while boot failures reveal the retry alert.
 - Native PixiJS 8.22.0 containers, source-derived sprite layers, editable actor rigs,
   native HUD text/graphics, lighting, water, smoke and skill VFX; no 3D runtime.
 - WASD/arrows walk; Shift runs; E interacts. 1/2/3 cast Heal/Ice/Fire;

@@ -5,10 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="description" content="Greenvale: an experimental img2pixi2D image-to-playable-scene study with PixiJS, keyboard and touch controls.">
     <title>Greenvale — img2pixi2D experiment</title>
+    <link rel="stylesheet" href="/src/greenvale/style.css">
   </head>
-  <body>
-    <p id="greenvale-entry-status" role="status">Loading the Greenvale experiment…</p>
-    <noscript>This interactive 2D experiment requires JavaScript.</noscript>
+  <body class="greenvale-page" data-loading>
+    <main class="greenvale-loading" id="greenvale-loading" aria-labelledby="greenvale-loading-title" aria-busy="true">
+      <div class="greenvale-loading__content">
+        <h1 id="greenvale-loading-title">Greenvale</h1>
+        <p class="greenvale-loading__subtitle">A village waiting to come alive.</p>
+        <div class="greenvale-loading__signal" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <p id="greenvale-entry-status" role="status" aria-live="polite">Preparing your adventure…</p>
+        <noscript><p>This interactive 2D experiment requires JavaScript.</p></noscript>
+      </div>
+      <p class="greenvale-loading__controls">
+        <span>WASD to explore · Shift to run</span>
+        <span>Touch controls on mobile</span>
+      </p>
+    </main>
     <script type="module" src="/src/greenvale/entry.ts"></script>
   </body>
 </html>
