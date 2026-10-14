@@ -13,6 +13,7 @@ export default defineConfig({
       input: {
         index: 'index.html',
         iphoneDuo: 'iphone-duo.html',
+        greenvale: 'greenvale.html',
       },
       output: {
         // Do not hoist shared preload helpers and eagerly load Pixi on 3D routes.

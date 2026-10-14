@@ -28,6 +28,91 @@ running live in the browser.
 
 ---
 
+## Greenvale — img2pixi2D experiment
+
+**Experimental img2pixi2D study; rendering and provenance limits remain documented below.**
+This study ports the existing Greenvale 2D game into a standalone `/greenvale.html`
+entry, alongside the existing standalone iPhone Duo page. It does not register a
+Three.js model, modify the gallery router, or depend on the separate Moonlight Cafe PR.
+
+```sh
+npm ci
+npm run dev -- --host 127.0.0.1
+# Open /greenvale.html on the URL printed by Vite.
+```
+
+The home page Archive lists **Greenvale — Playable 2D Village** among its first
+cards, with a **2D Experiment** label and an actual gameplay overview. Use the
+**2D Games** filter or search for Greenvale/img2pixi2D; **Play the 2D Game** opens
+the standalone page rather than a Three.js inspector.
+
+![Greenvale gameplay overview](public/greenvale/showcase-preview.webp)
+
+The 960×640 WebP is captured from the running PixiJS scene, not the source
+reference or a generated mockup. It is a runtime asset for the gallery card.
+
+- Native PixiJS 8.22.0 containers, source-derived sprite layers, editable actor rigs,
+  native HUD text/graphics, lighting, water, smoke and skill VFX; no 3D runtime.
+- WASD/arrows walk; Shift runs; E interacts. 1/2/3 cast Heal/Ice/Fire;
+  J/K/L/U/I/O trigger Slash/Combo/Thrust/Spin/Dash/Ground Strike.
+- Touch devices receive a joystick, hold-to-run, interaction and all nine skill buttons.
+  The first click/tap requests fullscreen where supported; F toggles fullscreen,
+  P pauses and R resets. No outer settings panel or header.
+- The 1536×1024 artboard keeps its proportions. Portrait screens have substantial
+  letterboxing; landscape touch controls can overlap the map.
+- Landscape controls use translucent circles (24% button fill, 12% joystick fill),
+  a larger Slash button, arc-arranged attacks and colored Heal/Ice/Fire symbols.
+  Held controls brighten; keyboard badges are hidden in landscape. Touch targets
+  remain at least 48px; portrait and desktop styling is preserved.
+
+Implementation: [`src/greenvale/`](src/greenvale/).
+Bundled artwork, runtime layer manifests and fonts:
+[`public/greenvale/`](public/greenvale/).
+The host owns the Pixi Application, ticker, input and resource lifetime;
+`scene.ts` owns the reusable scene.
+
+**Provenance and limits:** artwork derives from a user-supplied flattened Greenvale
+reference. Hidden ground/joints and actor background plates are inferred, not recovered
+original layers. Mirrored front-view poses are not true side/rear sprite sheets.
+Attack effects are visual actions, not an enemy/damage combat system. Artwork is not
+relicensed by this experiment; redistribution rights still require maintainer confirmation.
+Bundled Be Vietnam Pro fonts retain their [SIL OFL](public/greenvale/fonts/OFL.txt).
+
+**Runtime-only Greenvale files:** keep `greenvale.html`, `src/greenvale/`,
+the three `public/greenvale/*/manifest.json` files, their referenced PNGs,
+all bundled fonts with `OFL.txt`, and `public/greenvale/showcase-preview.webp`
+for the gallery. The manifests retain source hashes and
+inference notes. Build/local-server configuration and the dependency lockfile
+remain required. Extraction masks, unused per-layer metadata, separate character
+provenance, screenshots, verification reports and the Greenvale test harness have
+been removed; gameplay and other showcase scenes are unchanged.
+
+To check locally, open `/greenvale.html`, walk/run with WASD and Shift, try the
+nine skill keys and resize to mobile landscape for the translucent controls.
+Physical-device and Safari checks were not performed.
+Runtime-only cleanup check: TypeScript passes; Chromium loads all 47 manifest
+images and 12 font files, renders one canvas, and accepts all nine keyboard
+skills. Walk/run move 25/47 pixels over four 0.05-second simulation steps driven
+by native keyboard input. At 844×390, translucent controls render without page
+overflow and the pointer Combo button invokes the Combo action.
+Fullscreen is preserved: the first click enters browser fullscreen, F exits and
+re-enters it, and Combo works while fullscreen is active. Chromium checks confirm
+the stage fills both 1440×960 and 844×390 viewports, including mobile controls.
+Browsers require a user gesture for fullscreen; where the API is unavailable,
+the game still fills the browser viewport.
+Gallery checks: the overview loads at 960×640 on desktop and mobile; counts are
+33 total studies, 18 objects, 14 characters and one 2D game after integrating main.
+Object/character
+filters exclude Greenvale; search and the archive card both open `/greenvale.html`,
+where a subsequent click enters fullscreen. No JavaScript errors were recorded
+in those navigation checks.
+After integrating the current main branch, the complete `npm run build` passes:
+prebuild donation/iPhone/Tropical Island checks, TypeScript, Vite production
+bundles, 30 portable Three.js source archives and the postbuild dist check.
+The earlier source-ZIP traversal failure no longer occurs in this integrated
+version; no build gate was skipped.
+
+
 ## About the showcase
 
 This repository is the public gallery for [img2threejs](https://github.com/img2threejs/img2threejs).

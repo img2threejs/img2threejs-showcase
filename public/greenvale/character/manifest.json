@@ -1,0 +1,112 @@
+{
+  "referenceHash": "d071abc0d2308b515e02e3be027b2e420734122408c58038e0c7512d4e9a133b",
+  "origin": {
+    "x": 768,
+    "y": 560
+  },
+  "parts": [
+    {
+      "id": "sword",
+      "file": "/greenvale/character/parts/sword.png",
+      "x": 727,
+      "y": 485,
+      "width": 27,
+      "height": 38,
+      "pivot": [
+        749,
+        518
+      ],
+      "observedHash": "948e2eff3a71954de6ec0c077868eb4d85564246fc2c93454fb5e862a7f4015f",
+      "sha256": "4a0c3f888b21f2f753dea1360a51beaef11a7fd43ebe48c733031acd38a8e305"
+    },
+    {
+      "id": "leg-left",
+      "file": "/greenvale/character/parts/leg-left.png",
+      "x": 746,
+      "y": 539,
+      "width": 24,
+      "height": 24,
+      "pivot": [
+        756,
+        542
+      ],
+      "observedHash": "0bc64b91d927358661980f8643eb688e5bba67701f361854c614285c13c56955",
+      "sha256": "7b3c89bee828dbeab9a01a37e1f8a15b7893413a9c8b9a2be85368fac4d7a12f"
+    },
+    {
+      "id": "leg-right",
+      "file": "/greenvale/character/parts/leg-right.png",
+      "x": 769,
+      "y": 539,
+      "width": 21,
+      "height": 23,
+      "pivot": [
+        782,
+        542
+      ],
+      "observedHash": "0b22f4bb5ced0e0b3df2e5fc94bb2125504afe5ab4c853b3c8422d6643e635c7",
+      "sha256": "48de53158b6f9fb2bf9518071bbc06a1996556dc48341f0bc3c1a364b4a64c5b"
+    },
+    {
+      "id": "arm-left",
+      "file": "/greenvale/character/parts/arm-left.png",
+      "x": 737,
+      "y": 523,
+      "width": 19,
+      "height": 28,
+      "pivot": [
+        748,
+        528
+      ],
+      "observedHash": "d4ca1f71892d34fab44dc7cfa8849458f1ee39971cc6c523f979995a4bdefddf",
+      "sha256": "d6b7ecfc715b10af974897f7fe467039ed18529dc5dc120dcba7e4db286dee30"
+    },
+    {
+      "id": "arm-right",
+      "file": "/greenvale/character/parts/arm-right.png",
+      "x": 782,
+      "y": 522,
+      "width": 12,
+      "height": 26,
+      "pivot": [
+        788,
+        528
+      ],
+      "observedHash": "d90547504ca19765f8527d3372cded122e00cb7308f0c91e8c076332df3f9ea2",
+      "sha256": "8e1dad2995507d4b66ec70a37fcc21924c609d7e802eb4b76c0f9689b941f9e7"
+    },
+    {
+      "id": "torso",
+      "file": "/greenvale/character/parts/torso.png",
+      "x": 748,
+      "y": 519,
+      "width": 39,
+      "height": 32,
+      "pivot": [
+        768,
+        542
+      ],
+      "observedHash": "ae830f1ce0497ced75ebd08409ac8eb703b103a164174d26e197b6ef8c5b29d7",
+      "sha256": "5c47b7e7821072642564f3f3d0c18ba7992f0ab7d9ac3ade9a8d5832da873692"
+    },
+    {
+      "id": "head",
+      "file": "/greenvale/character/parts/head.png",
+      "x": 740,
+      "y": 470,
+      "width": 58,
+      "height": 53,
+      "pivot": [
+        768,
+        520
+      ],
+      "observedHash": "346bdfe079175ab2bbaa76dea9d664821764fd2738cc53bbb155ca36564f287d",
+      "sha256": "d7ca239131eca8d26c67dcdb306b5b64ff08fe10291ab5b6bd1d621e4ccf9755"
+    }
+  ],
+  "inference": [
+    "Physical polygons; declared local 2px mixed edges use inferred alpha/RGB from adjacent owned material.",
+    "Each moving limb has at most 3px of hidden top-joint source-material continuation.",
+    "Front-view cutout articulation and global mirror, not recovered side/back sprites."
+  ]
+}

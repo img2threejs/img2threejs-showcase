@@ -1,0 +1,568 @@
+{
+  "actors": [
+    {
+      "id": "guard",
+      "feet": {
+        "x": 383,
+        "y": 473
+      },
+      "host": "house",
+      "plate": {
+        "id": "guard-plate",
+        "file": "/greenvale/actors/guard-plate.png",
+        "x": 335,
+        "y": 377,
+        "width": 81,
+        "height": 103
+      },
+      "parts": [
+        {
+          "id": "guard-spear",
+          "role": "spear",
+          "file": "/greenvale/actors/guard-spear.png",
+          "x": 339,
+          "y": 382,
+          "width": 24,
+          "height": 92,
+          "pivot": {
+            "x": 355.0,
+            "y": 445.0
+          },
+          "parent": "upper",
+          "order": 0,
+          "rotationRange": [
+            -0.06,
+            0.06
+          ]
+        },
+        {
+          "id": "guard-legs",
+          "role": "legs",
+          "file": "/greenvale/actors/guard-legs.png",
+          "x": 359,
+          "y": 451,
+          "width": 52,
+          "height": 25,
+          "pivot": {
+            "x": 383.0,
+            "y": 473.0
+          },
+          "parent": null,
+          "order": 1
+        },
+        {
+          "id": "guard-upper",
+          "role": "upper",
+          "file": "/greenvale/actors/guard-upper.png",
+          "x": 354,
+          "y": 381,
+          "width": 58,
+          "height": 72,
+          "pivot": {
+            "x": 383.0,
+            "y": 452.0
+          },
+          "parent": null,
+          "order": 2,
+          "offsetRange": {
+            "x": [
+              0,
+              0
+            ],
+            "y": [
+              0,
+              2
+            ]
+          }
+        },
+        {
+          "id": "guard-blink",
+          "role": "blink",
+          "file": "/greenvale/actors/guard-blink.png",
+          "x": 372,
+          "y": 415,
+          "width": 21,
+          "height": 7,
+          "pivot": {
+            "x": 383.0,
+            "y": 452.0
+          },
+          "parent": "upper",
+          "order": 3,
+          "overlay": true,
+          "authored": true
+        }
+      ],
+      "anchors": {}
+    },
+    {
+      "id": "farmer",
+      "feet": {
+        "x": 315,
+        "y": 690
+      },
+      "host": "terrain",
+      "plate": {
+        "id": "farmer-plate",
+        "file": "/greenvale/actors/farmer-plate.png",
+        "x": 273,
+        "y": 587,
+        "width": 84,
+        "height": 113
+      },
+      "parts": [
+        {
+          "id": "farmer-legs",
+          "role": "legs",
+          "file": "/greenvale/actors/farmer-legs.png",
+          "x": 292,
+          "y": 669,
+          "width": 46,
+          "height": 25,
+          "pivot": {
+            "x": 314.0,
+            "y": 692.0
+          },
+          "parent": null,
+          "order": 0
+        },
+        {
+          "id": "farmer-upper",
+          "role": "upper",
+          "file": "/greenvale/actors/farmer-upper.png",
+          "x": 279,
+          "y": 593,
+          "width": 72,
+          "height": 88,
+          "pivot": {
+            "x": 314.0,
+            "y": 669.0
+          },
+          "parent": null,
+          "order": 1,
+          "offsetRange": {
+            "x": [
+              0,
+              0
+            ],
+            "y": [
+              0,
+              2
+            ]
+          }
+        },
+        {
+          "id": "farmer-arm",
+          "role": "arm",
+          "file": "/greenvale/actors/farmer-arm.png",
+          "x": 326,
+          "y": 643,
+          "width": 20,
+          "height": 30,
+          "pivot": {
+            "x": 330.0,
+            "y": 647.0
+          },
+          "parent": "upper",
+          "order": 2,
+          "rotationRange": [
+            -2.6,
+            0.0
+          ]
+        },
+        {
+          "id": "farmer-blink",
+          "role": "blink",
+          "file": "/greenvale/actors/farmer-blink.png",
+          "x": 305,
+          "y": 626,
+          "width": 21,
+          "height": 8,
+          "pivot": {
+            "x": 314.0,
+            "y": 669.0
+          },
+          "parent": "upper",
+          "order": 3,
+          "overlay": true,
+          "authored": true
+        }
+      ],
+      "anchors": {}
+    },
+    {
+      "id": "merchant",
+      "feet": {
+        "x": 1281,
+        "y": 529
+      },
+      "host": "market",
+      "plate": {
+        "id": "merchant-plate",
+        "file": "/greenvale/actors/merchant-plate.png",
+        "x": 1252,
+        "y": 461,
+        "width": 61,
+        "height": 72
+      },
+      "parts": [
+        {
+          "id": "merchant-body",
+          "role": "body",
+          "file": "/greenvale/actors/merchant-body.png",
+          "x": 1256,
+          "y": 497,
+          "width": 53,
+          "height": 32,
+          "pivot": {
+            "x": 1282.0,
+            "y": 528.0
+          },
+          "parent": null,
+          "order": 0
+        },
+        {
+          "id": "merchant-head",
+          "role": "head",
+          "file": "/greenvale/actors/merchant-head.png",
+          "x": 1263,
+          "y": 465,
+          "width": 44,
+          "height": 40,
+          "pivot": {
+            "x": 1282.0,
+            "y": 503.0
+          },
+          "parent": null,
+          "order": 1,
+          "offsetRange": {
+            "x": [
+              0,
+              0
+            ],
+            "y": [
+              0,
+              2
+            ]
+          },
+          "rotationRange": [
+            -0.06,
+            0.06
+          ]
+        },
+        {
+          "id": "merchant-blink",
+          "role": "blink",
+          "file": "/greenvale/actors/merchant-blink.png",
+          "x": 1272,
+          "y": 486,
+          "width": 20,
+          "height": 9,
+          "pivot": {
+            "x": 1282.0,
+            "y": 503.0
+          },
+          "parent": "head",
+          "order": 2,
+          "overlay": true,
+          "authored": true
+        }
+      ],
+      "anchors": {}
+    },
+    {
+      "id": "dog",
+      "feet": {
+        "x": 327,
+        "y": 560
+      },
+      "host": "terrain",
+      "plate": {
+        "id": "dog-plate",
+        "file": "/greenvale/actors/dog-plate.png",
+        "x": 295,
+        "y": 506,
+        "width": 63,
+        "height": 61
+      },
+      "parts": [
+        {
+          "id": "dog-body",
+          "role": "body",
+          "file": "/greenvale/actors/dog-body.png",
+          "x": 308,
+          "y": 526,
+          "width": 45,
+          "height": 37,
+          "pivot": {
+            "x": 327.0,
+            "y": 556.0
+          },
+          "parent": null,
+          "order": 0
+        },
+        {
+          "id": "dog-tail",
+          "role": "tail",
+          "file": "/greenvale/actors/dog-tail.png",
+          "x": 341,
+          "y": 517,
+          "width": 13,
+          "height": 20,
+          "pivot": {
+            "x": 346.0,
+            "y": 533.0
+          },
+          "parent": "body",
+          "order": 1,
+          "rotationRange": [
+            -0.4,
+            0.4
+          ]
+        },
+        {
+          "id": "dog-head",
+          "role": "head",
+          "file": "/greenvale/actors/dog-head.png",
+          "x": 299,
+          "y": 510,
+          "width": 35,
+          "height": 40,
+          "pivot": {
+            "x": 324.0,
+            "y": 542.0
+          },
+          "parent": "body",
+          "order": 2,
+          "offsetRange": {
+            "x": [
+              0,
+              0
+            ],
+            "y": [
+              0,
+              1
+            ]
+          },
+          "rotationRange": [
+            -0.15,
+            0.15
+          ]
+        },
+        {
+          "id": "dog-blink",
+          "role": "blink",
+          "file": "/greenvale/actors/dog-blink.png",
+          "x": 313,
+          "y": 527,
+          "width": 6,
+          "height": 8,
+          "pivot": {
+            "x": 324.0,
+            "y": 542.0
+          },
+          "parent": "head",
+          "order": 3,
+          "overlay": true,
+          "authored": true
+        }
+      ],
+      "anchors": {}
+    },
+    {
+      "id": "blacksmith",
+      "feet": {
+        "x": 1326,
+        "y": 884
+      },
+      "host": "smith",
+      "plate": {
+        "id": "blacksmith-plate",
+        "file": "/greenvale/actors/blacksmith-plate.png",
+        "x": 1257,
+        "y": 771,
+        "width": 111,
+        "height": 117
+      },
+      "parts": [
+        {
+          "id": "blacksmith-legs",
+          "role": "legs",
+          "file": "/greenvale/actors/blacksmith-legs.png",
+          "x": 1302,
+          "y": 846,
+          "width": 63,
+          "height": 39,
+          "pivot": {
+            "x": 1326.0,
+            "y": 849.0
+          },
+          "parent": null,
+          "order": 0
+        },
+        {
+          "id": "blacksmith-upper",
+          "role": "upper",
+          "file": "/greenvale/actors/blacksmith-upper.png",
+          "x": 1299,
+          "y": 774,
+          "width": 66,
+          "height": 75,
+          "pivot": {
+            "x": 1326.0,
+            "y": 849.0
+          },
+          "parent": null,
+          "order": 1,
+          "offsetRange": {
+            "x": [
+              0,
+              0
+            ],
+            "y": [
+              0,
+              2
+            ]
+          }
+        },
+        {
+          "id": "blacksmith-arm",
+          "role": "arm",
+          "file": "/greenvale/actors/blacksmith-arm.png",
+          "x": 1288,
+          "y": 817,
+          "width": 28,
+          "height": 28,
+          "pivot": {
+            "x": 1312.0,
+            "y": 823.0
+          },
+          "parent": "upper",
+          "order": 2,
+          "rotationRange": [
+            0.0,
+            1.8
+          ]
+        },
+        {
+          "id": "blacksmith-hammer",
+          "role": "hammer",
+          "file": "/greenvale/actors/blacksmith-hammer.png",
+          "x": 1258,
+          "y": 829,
+          "width": 54,
+          "height": 12,
+          "pivot": {
+            "x": 1299.0,
+            "y": 835.0
+          },
+          "parent": "arm",
+          "order": 3,
+          "authored": true
+        },
+        {
+          "id": "blacksmith-blink",
+          "role": "blink",
+          "file": "/greenvale/actors/blacksmith-blink.png",
+          "x": 1321,
+          "y": 803,
+          "width": 13,
+          "height": 8,
+          "pivot": {
+            "x": 1327.0,
+            "y": 806.0
+          },
+          "parent": "upper",
+          "order": 4,
+          "overlay": true,
+          "authored": true
+        }
+      ],
+      "anchors": {
+        "impact": {
+          "x": 1263,
+          "y": 840
+        },
+        "forge": {
+          "x": 1425,
+          "y": 820
+        }
+      }
+    },
+    {
+      "id": "boat",
+      "feet": {
+        "x": 601,
+        "y": 939
+      },
+      "host": "terrain",
+      "plate": {
+        "id": "boat-plate",
+        "file": "/greenvale/actors/boat-plate.png",
+        "x": 518,
+        "y": 857,
+        "width": 166,
+        "height": 86
+      },
+      "parts": [
+        {
+          "id": "boat-hull",
+          "role": "hull",
+          "file": "/greenvale/actors/boat-hull.png",
+          "x": 521,
+          "y": 860,
+          "width": 160,
+          "height": 80,
+          "pivot": {
+            "x": 601.0,
+            "y": 939.0
+          },
+          "parent": null,
+          "order": 0,
+          "offsetRange": {
+            "x": [
+              -1,
+              1
+            ],
+            "y": [
+              -2,
+              2
+            ]
+          },
+          "rotationRange": [
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "anchors": {}
+    }
+  ],
+  "referenceHash": "d071abc0d2308b515e02e3be027b2e420734122408c58038e0c7512d4e9a133b",
+  "inference": [
+    "guard: matte traced as native-pixel polygons along the outermost dark outline pixels of helmet, armour and spear; ground shadow, fence posts and hedge stay background.",
+    "guard: the spear shaft behind the gripping hand and the leg edge is inferred (nearest shaft colours per 2px cell) and always hidden under upper/legs at rest.",
+    "guard: the plate behind the figure (house wall, hedge, fence rail and grass continuation) is exemplar-copied from same-image donor windows (hedge, wall, fence rail, grass; rectangles in provenance); it is only visible where the spear or the breathing upper vacates pixels.",
+    "guard: blink eyelids are authored (sampled local skin tone + 2px dark lid line aligned to each eye).",
+    "farmer: matte traced along the outermost dark outline pixels of hat, hair, overalls, fists and boots (1 px generous, peeled back onto the outline by local luma evidence); crops and soil stay background.",
+    "farmer: the torso side under the screen-right arm is inferred (left torso edge mirrored about x=314 below the shoulder, nearest torso colours in the shoulder seam) and hidden under the arm at rest.",
+    "farmer: the plate behind the figure (soil, crop leaves) is exemplar-copied from same-image donor windows within a 26px ring.",
+    "farmer: blink eyelids are authored (sampled local skin tone + 2px dark lid line aligned to each eye).",
+    "merchant: matte traced along the outermost outline of hair, face, sleeves and hands above the counter line y=528; counter, goods, canopy and stall interior stay in market.png / background.",
+    "merchant: neck/hair support under the head is a copy of the head's rows 497-503 stored in the body texture and hidden under the head at rest.",
+    "merchant: the plate behind her (stall interior, awning edge above the hair) is exemplar-copied from same-image donor windows beside her; the market host hole excludes the counter and goods in front of her.",
+    "merchant: blink eyelids are authored (sampled local skin tone + 2px dark lid line aligned to each eye).",
+    "dog: matte traced along the outermost dark outline pixels of head, ears, body, paws and curled tail; the dark ground shadow under the paws stays background.",
+    "dog: body support behind the head (neck/chest fur) and the rump under the tail base are inferred from the nearest body fur per 2px cell; the rump gets a 2px outline in the dog's own outline colour; both are hidden under head/tail at rest.",
+    "dog: the plate behind the dog (dirt path above y~525, grass and ground shadow below) is exemplar-copied from same-image donor windows on each side of the path/grass boundary.",
+    "dog: the blink eyelid is authored (sampled fur tone + 2px dark lid line aligned to the visible eye).",
+    "Blacksmith: matte = native-pixel contour along his outermost outline (head loop peeled against the light wall at luma >= 80 with a 1px anti-alias fringe kept, body hand-traced); 5311 px split into legs (belt down incl. the right knee), upper (head, torso, screen-right arm, apron pouch) and arm (screen-left arm: shoulder, forearm, fist and the small tool in the hand).",
+    "Blacksmith upper carries 111 inferred px under the arm footprint: the torso's left edge (mirror of the adjacent vest columns plus a source-outline column), the jaw corner and a shoulder cap centred on the arm pivot (1312, 823), so the raised arm reveals a body, never background.",
+    "Blacksmith hammer is authored pixel art (392 px, 2px art cells inside a 1px outline): 10x12 iron head with a light top/left highlight (greys sampled from the anvil face), 6px wooden handle (browns sampled from the wooden post); the observed fist pixels are copied over the handle so the hand wraps it. Grip pivot (1299, 835); at rest the head stands on the anvil top face, impact (1263, 840); arm rotation 0..1.8 rad lifts the head above his hair.",
+    "Blacksmith blink is an authored eyes-closed overlay (104 px): cheek skin continued up over the eyes plus two lid arcs in the source eye-outline colour.",
+    "Blacksmith plate: 5311 matte px are inferred wall/anvil/stone-course/floor continuation made by mirror-copying same-image pixels within 14px of the matte (2px outline halo skipped, horizontal bands only below y=818; the arm footprint tiles the anvil face columns x1274..1287). Outside the matte the plate is the reference.",
+    "Blacksmith host hole: 222 smith.png pixels (hair top rows and the tool tip lie outside the layer's actor rectangle hole) are cleared so the animated body is not duplicated.",
+    "Boat: hull matte of 10103 px follows the dark outline (rim, cargo and keel included): the loose contour is peeled against water/foam (b-r >= 50) and the rock bank above the rim; the white foam lines, the stern-post tie and teal gap at the upper right stay in the terrain, and the dock post (x >= 681) is excluded.",
+    "Boat plate: the 10103 hull px hold inferred water made by mirror-copying same-image pond pixels (within 12px of the hull; the 3px next to the outline may mirror bank rock/foam/post outline so a 2px bob reveals the neighbouring surface, deeper pixels use water only so the interior stays calm water with the ripple/foam lines carried across). Outside the hull the plate is the reference, an envelope of 3px."
+  ]
+}
