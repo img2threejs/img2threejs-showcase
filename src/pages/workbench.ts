@@ -171,6 +171,23 @@ export function renderWorkbench(
   // Standalone product experiences share the archive card and filters while keeping their viewer.
   const archiveEntries = [
     {
+      id: 'skybound-adventure',
+      title: 'Skybound Adventure — The Floating Kingdom',
+      subjectClass: 'game',
+      blurb: 'Explore a floating pixel-art kingdom, collect all 13 crystals and reach the sky gate. '
+        + 'A playable 2D platformer with double jumps, wall jumps, dash and checkpoints.',
+      referenceImage: `${import.meta.env.BASE_URL}references/skybound-adventure.webp`,
+      imageAlt: 'Original Skybound Adventure reference: a blue-sky kingdom of floating islands, castles, waterfalls and a pixel-art hero',
+      imageLabel: 'Source reference',
+      href: `${import.meta.env.BASE_URL}skybound-adventure.html`,
+      status: 'experiment',
+      generationLabel: 'img2pixi2D Experiment',
+      generatedWith: 'img2pixi2D · PixiJS 8.22.0',
+      referenceLabel: 'Original Image',
+      linkLabel: 'Explore Skybound Adventure',
+      viewLabel: 'Playable 2D on open',
+    },
+    {
       id: 'iphone-duo',
       title: 'iPhone Duo — A Whole New Dimension',
       subjectClass: 'object',

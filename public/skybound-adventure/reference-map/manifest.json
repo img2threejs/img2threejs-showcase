@@ -1,0 +1,1478 @@
+{
+  "version": 1,
+  "width": 2051,
+  "height": 767,
+  "referenceHash": "8cc4abc8a861dda79a0e68123687af2f366e4c4249272de5e3d02d779428b21d",
+  "layers": [
+    {
+      "id": "background:clean-support",
+      "texture": "skybound-adventure/reference-map/background-clean.png",
+      "x": 0,
+      "y": 0,
+      "w": 2051,
+      "h": 767,
+      "z": 0,
+      "motion": "still"
+    },
+    {
+      "id": "cloud:01",
+      "texture": "skybound-adventure/reference-map/cloud--01.png",
+      "x": 170,
+      "y": 91,
+      "w": 119,
+      "h": 37,
+      "z": 10,
+      "motion": "cloud"
+    },
+    {
+      "id": "cloud:02",
+      "texture": "skybound-adventure/reference-map/cloud--02.png",
+      "x": 258,
+      "y": 76,
+      "w": 130,
+      "h": 62,
+      "z": 10,
+      "motion": "cloud"
+    },
+    {
+      "id": "cloud:03",
+      "texture": "skybound-adventure/reference-map/cloud--03.png",
+      "x": 380,
+      "y": 45,
+      "w": 117,
+      "h": 52,
+      "z": 10,
+      "motion": "cloud"
+    },
+    {
+      "id": "cloud:04",
+      "texture": "skybound-adventure/reference-map/cloud--04.png",
+      "x": 667,
+      "y": 44,
+      "w": 134,
+      "h": 113,
+      "z": 10,
+      "motion": "cloud"
+    },
+    {
+      "id": "cloud:05",
+      "texture": "skybound-adventure/reference-map/cloud--05.png",
+      "x": 1047,
+      "y": 149,
+      "w": 56,
+      "h": 46,
+      "z": 10,
+      "motion": "cloud"
+    },
+    {
+      "id": "cloud:06",
+      "texture": "skybound-adventure/reference-map/cloud--06.png",
+      "x": 1360,
+      "y": 35,
+      "w": 105,
+      "h": 75,
+      "z": 10,
+      "motion": "cloud"
+    },
+    {
+      "id": "cloud:07",
+      "texture": "skybound-adventure/reference-map/cloud--07.png",
+      "x": 1606,
+      "y": 102,
+      "w": 201,
+      "h": 110,
+      "z": 10,
+      "motion": "cloud"
+    },
+    {
+      "id": "cloud:08",
+      "texture": "skybound-adventure/reference-map/cloud--08.png",
+      "x": 352,
+      "y": 309,
+      "w": 24,
+      "h": 24,
+      "z": 10,
+      "motion": "cloud"
+    },
+    {
+      "id": "cloud:09",
+      "texture": "skybound-adventure/reference-map/cloud--09.png",
+      "x": 496,
+      "y": 319,
+      "w": 85,
+      "h": 29,
+      "z": 10,
+      "motion": "cloud"
+    },
+    {
+      "id": "cloud:10",
+      "texture": "skybound-adventure/reference-map/cloud--10.png",
+      "x": 511,
+      "y": 537,
+      "w": 47,
+      "h": 36,
+      "z": 10,
+      "motion": "cloud"
+    },
+    {
+      "id": "cloud:11",
+      "texture": "skybound-adventure/reference-map/cloud--11.png",
+      "x": 85,
+      "y": 534,
+      "w": 185,
+      "h": 161,
+      "z": 10,
+      "motion": "cloud"
+    },
+    {
+      "id": "cloud:12",
+      "texture": "skybound-adventure/reference-map/cloud--12.png",
+      "x": 801,
+      "y": 561,
+      "w": 66,
+      "h": 85,
+      "z": 10,
+      "motion": "cloud"
+    },
+    {
+      "id": "distant:west-island",
+      "texture": "skybound-adventure/reference-map/distant--west-island.png",
+      "x": 193,
+      "y": 158,
+      "w": 226,
+      "h": 207,
+      "z": 25,
+      "motion": "still"
+    },
+    {
+      "id": "distant:crown-castle",
+      "texture": "skybound-adventure/reference-map/distant--crown-castle.png",
+      "x": 869,
+      "y": 142,
+      "w": 181,
+      "h": 195,
+      "z": 25,
+      "motion": "still"
+    },
+    {
+      "id": "distant:central-castle",
+      "texture": "skybound-adventure/reference-map/distant--central-castle.png",
+      "x": 1070,
+      "y": 177,
+      "w": 375,
+      "h": 157,
+      "z": 25,
+      "motion": "still"
+    },
+    {
+      "id": "distant:east-island",
+      "texture": "skybound-adventure/reference-map/distant--east-island.png",
+      "x": 1553,
+      "y": 280,
+      "w": 216,
+      "h": 210,
+      "z": 25,
+      "motion": "still"
+    },
+    {
+      "id": "distant:upper-east",
+      "texture": "skybound-adventure/reference-map/distant--upper-east.png",
+      "x": 1689,
+      "y": 198,
+      "w": 109,
+      "h": 101,
+      "z": 25,
+      "motion": "still"
+    },
+    {
+      "id": "distant:lower-middle",
+      "texture": "skybound-adventure/reference-map/distant--lower-middle.png",
+      "x": 839,
+      "y": 629,
+      "w": 141,
+      "h": 131,
+      "z": 25,
+      "motion": "still"
+    },
+    {
+      "id": "distant:west-treetop",
+      "texture": "skybound-adventure/reference-map/distant--west-treetop.png",
+      "x": 282,
+      "y": 114,
+      "w": 44,
+      "h": 43,
+      "z": 25,
+      "motion": "still"
+    },
+    {
+      "id": "distant:upper-east-canopy",
+      "texture": "skybound-adventure/reference-map/distant--upper-east-canopy.png",
+      "x": 1676,
+      "y": 148,
+      "w": 115,
+      "h": 71,
+      "z": 25,
+      "motion": "still"
+    },
+    {
+      "id": "distant:central-west-canopy",
+      "texture": "skybound-adventure/reference-map/distant--central-west-canopy.png",
+      "x": 1065,
+      "y": 170,
+      "w": 45,
+      "h": 31,
+      "z": 25,
+      "motion": "still"
+    },
+    {
+      "id": "distant:crown-left-peak",
+      "texture": "skybound-adventure/reference-map/distant--crown-left-peak.png",
+      "x": 716,
+      "y": 129,
+      "w": 54,
+      "h": 62,
+      "z": 25,
+      "motion": "still"
+    },
+    {
+      "id": "airship",
+      "texture": "skybound-adventure/reference-map/airship.png",
+      "x": 1496,
+      "y": 86,
+      "w": 124,
+      "h": 90,
+      "z": 35,
+      "motion": "airship"
+    },
+    {
+      "id": "water:west-far",
+      "texture": "skybound-adventure/reference-map/water--west-far.png",
+      "x": 300,
+      "y": 183,
+      "w": 27,
+      "h": 177,
+      "z": 45,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--west-far-flow.png"
+    },
+    {
+      "id": "water:great-fall",
+      "texture": "skybound-adventure/reference-map/water--great-fall.png",
+      "x": 646,
+      "y": 210,
+      "w": 66,
+      "h": 513,
+      "z": 45,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--great-fall-flow.png"
+    },
+    {
+      "id": "water:crown-far",
+      "texture": "skybound-adventure/reference-map/water--crown-far.png",
+      "x": 929,
+      "y": 165,
+      "w": 30,
+      "h": 163,
+      "z": 45,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--crown-far-flow.png"
+    },
+    {
+      "id": "water:castle-west",
+      "texture": "skybound-adventure/reference-map/water--castle-west.png",
+      "x": 1137,
+      "y": 194,
+      "w": 28,
+      "h": 115,
+      "z": 45,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--castle-west-flow.png"
+    },
+    {
+      "id": "water:castle-center",
+      "texture": "skybound-adventure/reference-map/water--castle-center.png",
+      "x": 1258,
+      "y": 193,
+      "w": 35,
+      "h": 134,
+      "z": 45,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--castle-center-flow.png"
+    },
+    {
+      "id": "water:castle-east",
+      "texture": "skybound-adventure/reference-map/water--castle-east.png",
+      "x": 1382,
+      "y": 193,
+      "w": 26,
+      "h": 115,
+      "z": 45,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--castle-east-flow.png"
+    },
+    {
+      "id": "water:east-far",
+      "texture": "skybound-adventure/reference-map/water--east-far.png",
+      "x": 1591,
+      "y": 291,
+      "w": 44,
+      "h": 209,
+      "z": 45,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--east-far-flow.png"
+    },
+    {
+      "id": "water:east-small",
+      "texture": "skybound-adventure/reference-map/water--east-small.png",
+      "x": 1719,
+      "y": 212,
+      "w": 16,
+      "h": 86,
+      "z": 45,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--east-small-flow.png"
+    },
+    {
+      "id": "terrain:start-west",
+      "texture": "skybound-adventure/reference-map/terrain--start-west.png",
+      "x": 1,
+      "y": 386,
+      "w": 217,
+      "h": 212,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:start-east",
+      "texture": "skybound-adventure/reference-map/terrain--start-east.png",
+      "x": 234,
+      "y": 425,
+      "w": 119,
+      "h": 170,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:left-garden",
+      "texture": "skybound-adventure/reference-map/terrain--left-garden.png",
+      "x": 361,
+      "y": 460,
+      "w": 148,
+      "h": 181,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:slime-isle",
+      "texture": "skybound-adventure/reference-map/terrain--slime-isle.png",
+      "x": 552,
+      "y": 505,
+      "w": 118,
+      "h": 120,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:stone-chip",
+      "texture": "skybound-adventure/reference-map/terrain--stone-chip.png",
+      "x": 560,
+      "y": 396,
+      "w": 55,
+      "h": 37,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:lower-garden",
+      "texture": "skybound-adventure/reference-map/terrain--lower-garden.png",
+      "x": 247,
+      "y": 618,
+      "w": 116,
+      "h": 120,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:lower-spikes-west",
+      "texture": "skybound-adventure/reference-map/terrain--lower-spikes-west.png",
+      "x": 412,
+      "y": 674,
+      "w": 288,
+      "h": 92,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:lower-spikes-east",
+      "texture": "skybound-adventure/reference-map/terrain--lower-spikes-east.png",
+      "x": 729,
+      "y": 671,
+      "w": 88,
+      "h": 95,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:upper-isle",
+      "texture": "skybound-adventure/reference-map/terrain--upper-isle.png",
+      "x": 366,
+      "y": 278,
+      "w": 96,
+      "h": 122,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:upper-west",
+      "texture": "skybound-adventure/reference-map/terrain--upper-west.png",
+      "x": 579,
+      "y": 202,
+      "w": 77,
+      "h": 78,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:crown",
+      "texture": "skybound-adventure/reference-map/terrain--crown.png",
+      "x": 709,
+      "y": 203,
+      "w": 219,
+      "h": 221,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:mid-west",
+      "texture": "skybound-adventure/reference-map/terrain--mid-west.png",
+      "x": 903,
+      "y": 386,
+      "w": 197,
+      "h": 127,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:banner-shelf",
+      "texture": "skybound-adventure/reference-map/terrain--banner-shelf.png",
+      "x": 1005,
+      "y": 457,
+      "w": 97,
+      "h": 118,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:watch-beam",
+      "texture": "skybound-adventure/reference-map/terrain--watch-beam.png",
+      "x": 1045,
+      "y": 291,
+      "w": 97,
+      "h": 34,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:heartland",
+      "texture": "skybound-adventure/reference-map/terrain--heartland.png",
+      "x": 1112,
+      "y": 426,
+      "w": 350,
+      "h": 278,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "prop:upper-ruin",
+      "texture": "skybound-adventure/reference-map/prop--upper-ruin.png",
+      "x": 1215,
+      "y": 255,
+      "w": 186,
+      "h": 208,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "prop:stone-bridge",
+      "texture": "skybound-adventure/reference-map/prop--stone-bridge.png",
+      "x": 1350,
+      "y": 421,
+      "w": 439,
+      "h": 205,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:lower-bridge-step",
+      "texture": "skybound-adventure/reference-map/terrain--lower-bridge-step.png",
+      "x": 1537,
+      "y": 532,
+      "w": 74,
+      "h": 43,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:lower-bridge-isle",
+      "texture": "skybound-adventure/reference-map/terrain--lower-bridge-isle.png",
+      "x": 1537,
+      "y": 600,
+      "w": 122,
+      "h": 156,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "terrain:goal",
+      "texture": "skybound-adventure/reference-map/terrain--goal.png",
+      "x": 1758,
+      "y": 387,
+      "w": 292,
+      "h": 224,
+      "z": 60,
+      "motion": "still"
+    },
+    {
+      "id": "prop:goal-tower",
+      "texture": "skybound-adventure/reference-map/prop--goal-tower.png",
+      "x": 1804,
+      "y": 147,
+      "w": 246,
+      "h": 247,
+      "z": 65,
+      "motion": "still"
+    },
+    {
+      "id": "water:start-channel",
+      "texture": "skybound-adventure/reference-map/water--start-channel.png",
+      "x": 214,
+      "y": 461,
+      "w": 25,
+      "h": 147,
+      "z": 70,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--start-channel-flow.png"
+    },
+    {
+      "id": "water:lower-west",
+      "texture": "skybound-adventure/reference-map/water--lower-west.png",
+      "x": 698,
+      "y": 679,
+      "w": 37,
+      "h": 88,
+      "z": 70,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--lower-west-flow.png"
+    },
+    {
+      "id": "water:bridge-west",
+      "texture": "skybound-adventure/reference-map/water--bridge-west.png",
+      "x": 1459,
+      "y": 564,
+      "w": 50,
+      "h": 154,
+      "z": 70,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--bridge-west-flow.png"
+    },
+    {
+      "id": "water:bridge-east",
+      "texture": "skybound-adventure/reference-map/water--bridge-east.png",
+      "x": 1661,
+      "y": 614,
+      "w": 67,
+      "h": 126,
+      "z": 70,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--bridge-east-flow.png"
+    },
+    {
+      "id": "water:goal",
+      "texture": "skybound-adventure/reference-map/water--goal.png",
+      "x": 1917,
+      "y": 395,
+      "w": 70,
+      "h": 372,
+      "z": 70,
+      "motion": "water",
+      "flowTexture": "skybound-adventure/reference-map/water--goal-flow.png"
+    },
+    {
+      "id": "prop:start-house",
+      "texture": "skybound-adventure/reference-map/prop--start-house.png",
+      "x": 1,
+      "y": 208,
+      "w": 124,
+      "h": 180,
+      "z": 75,
+      "motion": "still"
+    },
+    {
+      "id": "prop:upper-timber",
+      "texture": "skybound-adventure/reference-map/prop--upper-timber.png",
+      "x": 411,
+      "y": 244,
+      "w": 180,
+      "h": 131,
+      "z": 77,
+      "motion": "still"
+    },
+    {
+      "id": "prop:left-scaffold",
+      "texture": "skybound-adventure/reference-map/prop--left-scaffold.png",
+      "x": 271,
+      "y": 299,
+      "w": 63,
+      "h": 121,
+      "z": 78,
+      "motion": "still"
+    },
+    {
+      "id": "prop:upper-west-crate",
+      "texture": "skybound-adventure/reference-map/prop--upper-west-crate.png",
+      "x": 612,
+      "y": 171,
+      "w": 34,
+      "h": 37,
+      "z": 79,
+      "motion": "still"
+    },
+    {
+      "id": "prop:upper-east-crate",
+      "texture": "skybound-adventure/reference-map/prop--upper-east-crate.png",
+      "x": 736,
+      "y": 171,
+      "w": 33,
+      "h": 35,
+      "z": 79,
+      "motion": "still"
+    },
+    {
+      "id": "prop:start-crates",
+      "texture": "skybound-adventure/reference-map/prop--start-crates.png",
+      "x": 186,
+      "y": 388,
+      "w": 90,
+      "h": 35,
+      "z": 79,
+      "motion": "still"
+    },
+    {
+      "id": "prop:garden-crates",
+      "texture": "skybound-adventure/reference-map/prop--garden-crates.png",
+      "x": 460,
+      "y": 413,
+      "w": 79,
+      "h": 62,
+      "z": 79,
+      "motion": "still"
+    },
+    {
+      "id": "prop:heart-crates",
+      "texture": "skybound-adventure/reference-map/prop--heart-crates.png",
+      "x": 1144,
+      "y": 429,
+      "w": 75,
+      "h": 90,
+      "z": 79,
+      "motion": "still"
+    },
+    {
+      "id": "prop:lower-crates",
+      "texture": "skybound-adventure/reference-map/prop--lower-crates.png",
+      "x": 1559,
+      "y": 569,
+      "w": 82,
+      "h": 64,
+      "z": 79,
+      "motion": "still"
+    },
+    {
+      "id": "foliage:start-tree",
+      "texture": "skybound-adventure/reference-map/foliage--start-tree.png",
+      "x": 1,
+      "y": 117,
+      "w": 145,
+      "h": 101,
+      "z": 85,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:start-garden-tree",
+      "texture": "skybound-adventure/reference-map/foliage--start-garden-tree.png",
+      "x": 88,
+      "y": 222,
+      "w": 157,
+      "h": 118,
+      "z": 85,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:crown-tree",
+      "texture": "skybound-adventure/reference-map/foliage--crown-tree.png",
+      "x": 759,
+      "y": 82,
+      "w": 114,
+      "h": 68,
+      "z": 85,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:mid-canopy",
+      "texture": "skybound-adventure/reference-map/foliage--mid-canopy.png",
+      "x": 954,
+      "y": 330,
+      "w": 103,
+      "h": 61,
+      "z": 85,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:goal-canopy",
+      "texture": "skybound-adventure/reference-map/foliage--goal-canopy.png",
+      "x": 1793,
+      "y": 41,
+      "w": 179,
+      "h": 166,
+      "z": 85,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:cherry-tree",
+      "texture": "skybound-adventure/reference-map/foliage--cherry-tree.png",
+      "x": 1895,
+      "y": 144,
+      "w": 155,
+      "h": 141,
+      "z": 87,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:grass-01",
+      "texture": "skybound-adventure/reference-map/foliage--grass-01.png",
+      "x": 82,
+      "y": 425,
+      "w": 131,
+      "h": 9,
+      "z": 90,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:grass-02",
+      "texture": "skybound-adventure/reference-map/foliage--grass-02.png",
+      "x": 243,
+      "y": 426,
+      "w": 106,
+      "h": 9,
+      "z": 90,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:grass-03",
+      "texture": "skybound-adventure/reference-map/foliage--grass-03.png",
+      "x": 364,
+      "y": 459,
+      "w": 141,
+      "h": 9,
+      "z": 90,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:grass-04",
+      "texture": "skybound-adventure/reference-map/foliage--grass-04.png",
+      "x": 554,
+      "y": 505,
+      "w": 115,
+      "h": 9,
+      "z": 90,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:grass-05",
+      "texture": "skybound-adventure/reference-map/foliage--grass-05.png",
+      "x": 580,
+      "y": 202,
+      "w": 69,
+      "h": 9,
+      "z": 90,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:grass-06",
+      "texture": "skybound-adventure/reference-map/foliage--grass-06.png",
+      "x": 779,
+      "y": 244,
+      "w": 138,
+      "h": 9,
+      "z": 90,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:grass-07",
+      "texture": "skybound-adventure/reference-map/foliage--grass-07.png",
+      "x": 905,
+      "y": 386,
+      "w": 136,
+      "h": 9,
+      "z": 90,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:grass-08",
+      "texture": "skybound-adventure/reference-map/foliage--grass-08.png",
+      "x": 1009,
+      "y": 457,
+      "w": 87,
+      "h": 9,
+      "z": 90,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:grass-09",
+      "texture": "skybound-adventure/reference-map/foliage--grass-09.png",
+      "x": 1178,
+      "y": 507,
+      "w": 278,
+      "h": 9,
+      "z": 90,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:grass-10",
+      "texture": "skybound-adventure/reference-map/foliage--grass-10.png",
+      "x": 1243,
+      "y": 384,
+      "w": 152,
+      "h": 9,
+      "z": 90,
+      "motion": "foliage"
+    },
+    {
+      "id": "foliage:grass-11",
+      "texture": "skybound-adventure/reference-map/foliage--grass-11.png",
+      "x": 1765,
+      "y": 387,
+      "w": 152,
+      "h": 9,
+      "z": 90,
+      "motion": "foliage"
+    },
+    {
+      "id": "chain:chain-lift",
+      "texture": "skybound-adventure/reference-map/chain--chain-lift.png",
+      "x": 869,
+      "y": 387,
+      "w": 15,
+      "h": 122,
+      "z": 95,
+      "motion": "chain",
+      "binding": "chain-lift"
+    },
+    {
+      "id": "sign:start",
+      "texture": "skybound-adventure/reference-map/sign--start.png",
+      "x": 188,
+      "y": 335,
+      "w": 90,
+      "h": 40,
+      "z": 100,
+      "motion": "still"
+    },
+    {
+      "id": "sign:goal",
+      "texture": "skybound-adventure/reference-map/sign--goal.png",
+      "x": 1912,
+      "y": 225,
+      "w": 93,
+      "h": 39,
+      "z": 100,
+      "motion": "still"
+    },
+    {
+      "id": "platform:drifter",
+      "texture": "skybound-adventure/reference-map/platform--drifter.png",
+      "x": 668,
+      "y": 431,
+      "w": 110,
+      "h": 50,
+      "z": 100,
+      "motion": "mover",
+      "binding": "drifter"
+    },
+    {
+      "id": "platform:chain-lift",
+      "texture": "skybound-adventure/reference-map/platform--chain-lift.png",
+      "x": 823,
+      "y": 495,
+      "w": 105,
+      "h": 46,
+      "z": 100,
+      "motion": "mover",
+      "binding": "chain-lift"
+    },
+    {
+      "id": "flag:start",
+      "texture": "skybound-adventure/reference-map/flag--start.png",
+      "x": 97,
+      "y": 213,
+      "w": 30,
+      "h": 74,
+      "z": 103,
+      "motion": "flag",
+      "pivot": {
+        "x": 15.0,
+        "y": 0
+      }
+    },
+    {
+      "id": "flag:watch",
+      "texture": "skybound-adventure/reference-map/flag--watch.png",
+      "x": 1082,
+      "y": 308,
+      "w": 35,
+      "h": 73,
+      "z": 103,
+      "motion": "flag",
+      "pivot": {
+        "x": 17.5,
+        "y": 0
+      }
+    },
+    {
+      "id": "flag:bridge-west",
+      "texture": "skybound-adventure/reference-map/flag--bridge-west.png",
+      "x": 1488,
+      "y": 441,
+      "w": 34,
+      "h": 65,
+      "z": 103,
+      "motion": "flag",
+      "pivot": {
+        "x": 17.0,
+        "y": 0
+      }
+    },
+    {
+      "id": "flag:bridge-east",
+      "texture": "skybound-adventure/reference-map/flag--bridge-east.png",
+      "x": 1703,
+      "y": 479,
+      "w": 27,
+      "h": 62,
+      "z": 103,
+      "motion": "flag",
+      "pivot": {
+        "x": 13.5,
+        "y": 0
+      }
+    },
+    {
+      "id": "lantern:start",
+      "texture": "skybound-adventure/reference-map/lantern--start.png",
+      "x": 315,
+      "y": 325,
+      "w": 19,
+      "h": 32,
+      "z": 105,
+      "motion": "lantern",
+      "pivot": {
+        "x": 9.5,
+        "y": 0
+      }
+    },
+    {
+      "id": "lantern:watch",
+      "texture": "skybound-adventure/reference-map/lantern--watch.png",
+      "x": 1039,
+      "y": 320,
+      "w": 15,
+      "h": 28,
+      "z": 105,
+      "motion": "lantern",
+      "pivot": {
+        "x": 7.5,
+        "y": 0
+      }
+    },
+    {
+      "id": "lantern:goal-west",
+      "texture": "skybound-adventure/reference-map/lantern--goal-west.png",
+      "x": 1874,
+      "y": 275,
+      "w": 20,
+      "h": 28,
+      "z": 105,
+      "motion": "lantern",
+      "pivot": {
+        "x": 10.0,
+        "y": 0
+      }
+    },
+    {
+      "id": "lantern:goal-east",
+      "texture": "skybound-adventure/reference-map/lantern--goal-east.png",
+      "x": 2014,
+      "y": 272,
+      "w": 17,
+      "h": 30,
+      "z": 105,
+      "motion": "lantern",
+      "pivot": {
+        "x": 8.5,
+        "y": 0
+      }
+    },
+    {
+      "id": "flying:owl",
+      "texture": "skybound-adventure/reference-map/flying--owl.png",
+      "x": 600,
+      "y": 338,
+      "w": 56,
+      "h": 39,
+      "z": 110,
+      "motion": "flying"
+    },
+    {
+      "id": "flying:spirit",
+      "texture": "skybound-adventure/reference-map/flying--spirit.png",
+      "x": 163,
+      "y": 388,
+      "w": 21,
+      "h": 27,
+      "z": 110,
+      "motion": "flying"
+    },
+    {
+      "id": "flying:ember",
+      "texture": "skybound-adventure/reference-map/flying--ember.png",
+      "x": 1720,
+      "y": 305,
+      "w": 52,
+      "h": 40,
+      "z": 110,
+      "motion": "flying"
+    },
+    {
+      "id": "spikes:lower-west",
+      "texture": "skybound-adventure/reference-map/spikes--lower-west.png",
+      "x": 418,
+      "y": 641,
+      "w": 281,
+      "h": 42,
+      "z": 115,
+      "motion": "spikes"
+    },
+    {
+      "id": "spikes:lower-east",
+      "texture": "skybound-adventure/reference-map/spikes--lower-east.png",
+      "x": 739,
+      "y": 651,
+      "w": 42,
+      "h": 32,
+      "z": 115,
+      "motion": "spikes"
+    },
+    {
+      "id": "spikes:heartland",
+      "texture": "skybound-adventure/reference-map/spikes--heartland.png",
+      "x": 1058,
+      "y": 545,
+      "w": 60,
+      "h": 36,
+      "z": 115,
+      "motion": "spikes"
+    },
+    {
+      "id": "spikes:bridge",
+      "texture": "skybound-adventure/reference-map/spikes--bridge.png",
+      "x": 1449,
+      "y": 397,
+      "w": 34,
+      "h": 30,
+      "z": 115,
+      "motion": "spikes"
+    },
+    {
+      "id": "spikes:lower-bridge",
+      "texture": "skybound-adventure/reference-map/spikes--lower-bridge.png",
+      "x": 1648,
+      "y": 578,
+      "w": 102,
+      "h": 41,
+      "z": 115,
+      "motion": "spikes"
+    },
+    {
+      "id": "spikes:crate",
+      "texture": "skybound-adventure/reference-map/spikes--crate.png",
+      "x": 1606,
+      "y": 579,
+      "w": 33,
+      "h": 28,
+      "z": 115,
+      "motion": "spikes"
+    },
+    {
+      "id": "portal:inner",
+      "texture": "skybound-adventure/reference-map/portal--inner.png",
+      "x": 1917,
+      "y": 292,
+      "w": 59,
+      "h": 99,
+      "z": 120,
+      "motion": "portal",
+      "binding": "goal"
+    },
+    {
+      "id": "npc:lower-guardian",
+      "texture": "skybound-adventure/reference-map/npc--lower-guardian.png",
+      "x": 289,
+      "y": 579,
+      "w": 35,
+      "h": 45,
+      "z": 130,
+      "motion": "idle"
+    },
+    {
+      "id": "enemy:slime-left",
+      "texture": "skybound-adventure/reference-map/enemy--slime-left.png",
+      "x": 594,
+      "y": 484,
+      "w": 33,
+      "h": 25,
+      "z": 130,
+      "motion": "enemy",
+      "binding": "slime-left"
+    },
+    {
+      "id": "enemy:slime-mid",
+      "texture": "skybound-adventure/reference-map/enemy--slime-mid.png",
+      "x": 971,
+      "y": 372,
+      "w": 30,
+      "h": 17,
+      "z": 130,
+      "motion": "enemy",
+      "binding": "slime-mid"
+    },
+    {
+      "id": "enemy:slime-watch-a",
+      "texture": "skybound-adventure/reference-map/enemy--slime-watch-a.png",
+      "x": 1070,
+      "y": 270,
+      "w": 29,
+      "h": 27,
+      "z": 130,
+      "motion": "enemy",
+      "binding": "slime-watch-a"
+    },
+    {
+      "id": "enemy:slime-watch-b",
+      "texture": "skybound-adventure/reference-map/enemy--slime-watch-b.png",
+      "x": 1099,
+      "y": 271,
+      "w": 31,
+      "h": 24,
+      "z": 130,
+      "motion": "enemy",
+      "binding": "slime-watch-b"
+    },
+    {
+      "id": "enemy:slime-crate",
+      "texture": "skybound-adventure/reference-map/enemy--slime-crate.png",
+      "x": 1159,
+      "y": 401,
+      "w": 36,
+      "h": 26,
+      "z": 130,
+      "motion": "enemy",
+      "binding": "slime-crate"
+    },
+    {
+      "id": "enemy:boar-low",
+      "texture": "skybound-adventure/reference-map/enemy--boar-low.png",
+      "x": 1297,
+      "y": 463,
+      "w": 45,
+      "h": 48,
+      "z": 130,
+      "motion": "enemy",
+      "binding": "boar-low"
+    },
+    {
+      "id": "enemy:boar-bridge",
+      "texture": "skybound-adventure/reference-map/enemy--boar-bridge.png",
+      "x": 1377,
+      "y": 364,
+      "w": 59,
+      "h": 59,
+      "z": 130,
+      "motion": "enemy",
+      "binding": "boar-bridge"
+    },
+    {
+      "id": "player",
+      "texture": "skybound-adventure/reference-map/player.png",
+      "x": 87,
+      "y": 374,
+      "w": 47,
+      "h": 56,
+      "z": 140,
+      "motion": "player",
+      "binding": "player"
+    },
+    {
+      "id": "crystal:gem-01",
+      "texture": "skybound-adventure/reference-map/crystal--gem-01.png",
+      "x": 325,
+      "y": 384,
+      "w": 21,
+      "h": 30,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-01"
+    },
+    {
+      "id": "crystal:gem-02",
+      "texture": "skybound-adventure/reference-map/crystal--gem-02.png",
+      "x": 422,
+      "y": 420,
+      "w": 20,
+      "h": 30,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-02"
+    },
+    {
+      "id": "crystal:gem-03",
+      "texture": "skybound-adventure/reference-map/crystal--gem-03.png",
+      "x": 577,
+      "y": 354,
+      "w": 19,
+      "h": 30,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-03"
+    },
+    {
+      "id": "crystal:gem-04",
+      "texture": "skybound-adventure/reference-map/crystal--gem-04.png",
+      "x": 602,
+      "y": 459,
+      "w": 21,
+      "h": 32,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-04"
+    },
+    {
+      "id": "crystal:gem-05",
+      "texture": "skybound-adventure/reference-map/crystal--gem-05.png",
+      "x": 672,
+      "y": 159,
+      "w": 21,
+      "h": 33,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-05"
+    },
+    {
+      "id": "crystal:gem-06",
+      "texture": "skybound-adventure/reference-map/crystal--gem-06.png",
+      "x": 932,
+      "y": 345,
+      "w": 20,
+      "h": 31,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-06"
+    },
+    {
+      "id": "crystal:gem-07",
+      "texture": "skybound-adventure/reference-map/crystal--gem-07.png",
+      "x": 1082,
+      "y": 422,
+      "w": 19,
+      "h": 32,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-07"
+    },
+    {
+      "id": "crystal:gem-08",
+      "texture": "skybound-adventure/reference-map/crystal--gem-08.png",
+      "x": 1127,
+      "y": 382,
+      "w": 17,
+      "h": 31,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-08"
+    },
+    {
+      "id": "crystal:gem-09",
+      "texture": "skybound-adventure/reference-map/crystal--gem-09.png",
+      "x": 1320,
+      "y": 346,
+      "w": 19,
+      "h": 30,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-09"
+    },
+    {
+      "id": "crystal:gem-10",
+      "texture": "skybound-adventure/reference-map/crystal--gem-10.png",
+      "x": 1544,
+      "y": 386,
+      "w": 19,
+      "h": 30,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-10"
+    },
+    {
+      "id": "crystal:gem-11",
+      "texture": "skybound-adventure/reference-map/crystal--gem-11.png",
+      "x": 1600,
+      "y": 386,
+      "w": 20,
+      "h": 30,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-11"
+    },
+    {
+      "id": "crystal:gem-12",
+      "texture": "skybound-adventure/reference-map/crystal--gem-12.png",
+      "x": 1550,
+      "y": 487,
+      "w": 20,
+      "h": 34,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-12"
+    },
+    {
+      "id": "crystal:gem-13",
+      "texture": "skybound-adventure/reference-map/crystal--gem-13.png",
+      "x": 1582,
+      "y": 487,
+      "w": 20,
+      "h": 34,
+      "z": 150,
+      "motion": "crystal",
+      "binding": "gem-13"
+    },
+    {
+      "id": "cloud:13",
+      "texture": "skybound-adventure/reference-map/cloud--13.png",
+      "x": 1382,
+      "y": 710,
+      "w": 126,
+      "h": 57,
+      "z": 170,
+      "motion": "cloud"
+    },
+    {
+      "id": "cloud:14",
+      "texture": "skybound-adventure/reference-map/cloud--14.png",
+      "x": 1727,
+      "y": 615,
+      "w": 124,
+      "h": 88,
+      "z": 170,
+      "motion": "cloud"
+    },
+    {
+      "id": "foreground:left-foliage",
+      "texture": "skybound-adventure/reference-map/foreground--left-foliage.png",
+      "x": 1,
+      "y": 567,
+      "w": 509,
+      "h": 199,
+      "z": 180,
+      "motion": "foliage"
+    },
+    {
+      "id": "foreground:middle-foliage",
+      "texture": "skybound-adventure/reference-map/foreground--middle-foliage.png",
+      "x": 975,
+      "y": 675,
+      "w": 423,
+      "h": 91,
+      "z": 180,
+      "motion": "foliage"
+    },
+    {
+      "id": "foreground:right-foliage",
+      "texture": "skybound-adventure/reference-map/foreground--right-foliage.png",
+      "x": 1742,
+      "y": 619,
+      "w": 308,
+      "h": 147,
+      "z": 180,
+      "motion": "foliage"
+    }
+  ],
+  "player": {
+    "texture": "skybound-adventure/reference-map/player-atlas.png",
+    "frameWidth": 96,
+    "frameHeight": 96,
+    "columns": 8,
+    "anchor": {
+      "x": 48,
+      "y": 88
+    },
+    "animations": {
+      "idle": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "run": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "jump": [
+        12,
+        13
+      ],
+      "fall": [
+        14,
+        15
+      ],
+      "dash": [
+        16,
+        17
+      ],
+      "hurt": [
+        18,
+        19
+      ],
+      "dead": [
+        20,
+        21,
+        22
+      ],
+      "complete": [
+        23,
+        24,
+        25,
+        26
+      ]
+    }
+  },
+  "hud": {
+    "portrait": "skybound-adventure/reference-map/hud-portrait.png",
+    "heart": "skybound-adventure/reference-map/hud-heart.png",
+    "crystal": "skybound-adventure/reference-map/hud-crystal.png"
+  }
+}
