@@ -28,6 +28,47 @@ running live in the browser.
 
 ---
 
+## Skybound Adventure — playable pixel-art kingdom
+
+Open **Skybound Adventure — The Floating Kingdom** in the home-page Archive, or
+use the **2D Games** filter. The card displays the supplied **original reference
+image**, not a gameplay screenshot; **Explore Skybound Adventure** opens the
+standalone `/skybound-adventure.html` game.
+
+![Skybound Adventure original reference](public/references/skybound-adventure.webp)
+
+Production-browser captures (PR evidence, not shipped game assets):
+[gallery card](https://raw.githubusercontent.com/img2threejs/img2threejs-showcase/52cce2d0dd4f61342ab553a5c4104b0e29ec4388/public/skybound-adventure/showcase-card.webp) ·
+[native-fullscreen gameplay](https://raw.githubusercontent.com/img2threejs/img2threejs-showcase/52cce2d0dd4f61342ab553a5c4104b0e29ec4388/public/skybound-adventure/showcase-fullscreen.webp).
+
+The game fills the browser viewport without an inspector/sidebar. Begin requests
+native fullscreen when supported; the fullscreen button or F toggles it and Esc
+leaves it. Browsers that deny native fullscreen still get full-window gameplay.
+Back to Showcase returns to the gallery.
+
+- A/D or arrow keys move; Space jumps, double-jumps or wall-jumps; Shift dashes.
+- Collect up to 13 crystals, activate checkpoints and reach the sky gate. Coins
+  remain optional in ordinary play.
+- Losses with hearts remaining respawn at the checkpoint without refilling those
+  hearts. The last heart starts a fresh run after the death animation, resetting
+  spawn, collectibles, enemies, checkpoint, moving platforms and run counters.
+- Keyboard controls are required; touch movement controls are not implemented.
+- `npm run test:skybound` runs the ported gameplay regression suite, including the
+  all-13 route and exhausted-heart reset. `npm run build` includes the standalone page.
+
+Implementation: [`src/demos/skybound-adventure/`](src/demos/skybound-adventure/).
+Runtime layers and locally bundled Press Start 2P font:
+[`public/skybound-adventure/`](public/skybound-adventure/).
+The full supplied image is [`reference.png`](public/skybound-adventure/reference.png);
+the archive WebP is a downscaled copy within the catalog's 800 KiB limit.
+
+**Provenance and limits:** this is an experimental source-derived PixiJS raster
+game, not a procedural Three.js model or a claim of recovered original layers.
+Hidden artwork/support and actor animation are authored/inferred. Existing
+background reconstruction limitations remain; the reference is not relicensed
+by this port and redistribution rights require maintainer confirmation. The
+bundled pixel font retains its license in the game's `fonts/` directory.
+
 ## Greenvale — img2pixi2D experiment
 
 **Experimental img2pixi2D study; rendering and provenance limits remain documented below.**

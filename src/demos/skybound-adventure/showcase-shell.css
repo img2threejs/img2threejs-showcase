@@ -1,0 +1,188 @@
+/*
+ * Skybound Adventure showcase shell. Original game artwork, HUD and overlays
+ * stay in style.css; this file only owns the chrome that wraps them.
+ */
+
+.skybound-page {
+  background: #071b2c;
+  color: #fff7dc;
+  font-family: "Press Start 2P", monospace;
+  margin: 0;
+  min-height: 100dvh;
+}
+
+.skybound-page .skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999;
+  padding: 12px 16px;
+  background: rgba(6, 18, 32, 0.92);
+  color: #fff0a8;
+  border: 1px solid rgba(232, 191, 104, 0.55);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 10px;
+  text-decoration: none;
+}
+.skybound-page .skip-link:focus {
+  left: max(env(safe-area-inset-left, 0px), 12px);
+  top: max(env(safe-area-inset-top, 0px), 12px);
+  outline: 3px solid #fff0a8;
+  outline-offset: 3px;
+}
+
+/* The canvas stays full-bleed; absolute HUD offsets need an explicit override. */
+.skybound-page #game-shell {
+  height: 100dvh;
+}
+.skybound-page #hud {
+  top: calc(env(safe-area-inset-top, 0px) + 56px);
+  left: max(env(safe-area-inset-left, 0px), 16px);
+  right: max(env(safe-area-inset-right, 0px), 16px);
+}
+.skybound-page #restart {
+  min-width: 44px;
+  min-height: 44px;
+}
+#shell-top {
+  position: absolute;
+  top: env(safe-area-inset-top, 0px);
+  left: max(env(safe-area-inset-left, 0px), 8px);
+  right: max(env(safe-area-inset-right, 0px), 8px);
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 6;
+  pointer-events: none;
+}
+#shell-top > * {
+  pointer-events: auto;
+}
+
+.skybound-showcase-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px 14px;
+  background: rgba(11, 28, 44, 0.78);
+  color: #fff7dc;
+  border: 1px solid rgba(232, 191, 104, 0.55);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  backdrop-filter: blur(6px);
+}
+.skybound-showcase-link svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.skybound-showcase-link:hover,
+.skybound-showcase-link:focus-visible {
+  background: rgba(6, 18, 32, 0.92);
+  border-color: #fff0a8;
+  color: #fff0a8;
+  outline: none;
+}
+.skybound-showcase-link:focus-visible {
+  outline: 3px solid #fff0a8;
+  outline-offset: 3px;
+}
+
+.skybound-fullscreen-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px 12px;
+  background: rgba(11, 28, 44, 0.78);
+  color: #fff7dc;
+  border: 1px solid rgba(232, 191, 104, 0.55);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+.skybound-fullscreen-button svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.skybound-fullscreen-button:hover,
+.skybound-fullscreen-button:focus-visible {
+  background: rgba(6, 18, 32, 0.92);
+  border-color: #fff0a8;
+  color: #fff0a8;
+  outline: none;
+}
+.skybound-fullscreen-button:focus-visible {
+  outline: 3px solid #fff0a8;
+  outline-offset: 3px;
+}
+.skybound-fullscreen-button[aria-pressed="true"] {
+  background: #fff0a8;
+  color: #142f3e;
+  border-color: #fff0a8;
+}
+
+/* Status pill sits above the bottom corner controls (dash-status, #controls)
+   so it never crosses health or portrait card. Width capped at 560px so the
+   text wraps on phone viewports. */
+.skybound-fullscreen-status {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  max-width: min(560px, calc(100% - 32px));
+  margin: 0;
+  padding: 8px 14px;
+  background: rgba(6, 18, 32, 0.82);
+  border: 1px solid rgba(232, 191, 104, 0.45);
+  border-radius: 999px;
+  color: rgba(255, 247, 220, 0.85);
+  font: inherit;
+  font-size: 8px;
+  line-height: 1.6;
+  text-align: center;
+  white-space: normal;
+  pointer-events: none;
+}
+.skybound-fullscreen-status[hidden],
+.skybound-fullscreen-status:empty {
+  display: none !important;
+}
+
+/* Narrow viewports: text labels collapse to icons so chips stay 44px touch
+   targets without forcing horizontal scroll. */
+@media (max-width: 720px) {
+  .skybound-showcase-link span,
+  .skybound-fullscreen-button > [data-label] {
+    display: none;
+  }
+  .skybound-showcase-link,
+  .skybound-fullscreen-button {
+    min-width: 44px;
+    padding: 10px;
+    gap: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skybound-showcase-link,
+  .skybound-fullscreen-button {
+    transition: none;
+  }
+}

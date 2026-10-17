@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#071b2c" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="Skybound Adventure — a pixel-art floating kingdom platformer brought into the img2threejs showcase. Keyboard fullscreen play; designed around the original reference map."
+    />
+    <title>Skybound Adventure — img2threejs showcase</title>
+  </head>
+  <body class="skybound-page">
+    <svg width="0" height="0" aria-hidden="true" style="position: absolute">
+      <defs>
+        <symbol id="restart-icon" viewBox="0 0 24 24">
+          <path
+            d="M5 8a8 8 0 1 1-1 8M5 3v5h5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="square"
+          />
+        </symbol>
+        <symbol id="arrow-icon" viewBox="0 0 24 24">
+          <path
+            d="M3 12h17m-6-6 6 6-6 6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          />
+        </symbol>
+        <symbol id="back-icon" viewBox="0 0 24 24">
+          <path
+            d="M14 5l-7 7 7 7M7 12h14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="square"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="fullscreen-enter-icon" viewBox="0 0 24 24">
+          <path
+            d="M5 5h6M5 5v6M19 5h-6M19 5v6M5 19h6M5 19v-6M19 19h-6M19 19v-6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="square"
+          />
+        </symbol>
+        <symbol id="fullscreen-exit-icon" viewBox="0 0 24 24">
+          <path
+            d="M9 5v6H3M15 5v6h6M9 19v-6H3M15 19v-6h6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="square"
+          />
+        </symbol>
+      </defs>
+    </svg>
+    <a class="skip-link" href="#game-shell">Skip to the game canvas</a>
+    <main id="game-shell" tabindex="-1">
+      <div id="shell-top" role="group" aria-label="Game controls">
+        <a
+          id="back-showcase"
+          class="skybound-showcase-link"
+          href="./#/"
+          aria-label="Back to the img2threejs showcase index"
+        >
+          <svg aria-hidden="true"><use href="#back-icon" /></svg>
+          <span>Back to Showcase</span>
+        </a>
+        <button
+          id="fullscreen"
+          class="skybound-fullscreen-button"
+          type="button"
+          aria-pressed="false"
+          aria-label="Enter fullscreen"
+          title="Toggle fullscreen (F)"
+        >
+          <svg aria-hidden="true"><use href="#fullscreen-enter-icon" /></svg>
+          <span data-label>F</span>
+        </button>
+      </div>
+      <p
+        id="fullscreen-status"
+        class="skybound-fullscreen-status"
+        role="status"
+        aria-live="polite"
+        hidden
+      ></p>
+      <div
+        id="canvas-host"
+        role="application"
+        aria-label="Skybound Adventure platformer"
+      ></div>
+      <section id="hud" aria-label="Player status">
+        <div class="status-card">
+          <img id="portrait" data-art="portrait" alt="" aria-hidden="true" />
+          <div class="health" aria-label="Health">
+            <span id="hearts">
+              <img data-art="heart" alt="" aria-hidden="true" />
+              <img data-art="heart" alt="" aria-hidden="true" />
+              <img data-art="heart" alt="" aria-hidden="true" />
+            </span>
+          </div>
+          <div class="crystals">
+            <img
+              class="crystal-icon"
+              data-art="crystal"
+              alt=""
+              aria-hidden="true"
+            />
+            <span aria-hidden="true">×</span>
+            <strong id="crystal-count">00</strong>
+            <span id="crystal-total" class="sr-only">/ 00</span>
+          </div>
+        </div>
+        <span id="checkpoint-status" class="sr-only"
+          >Find the ancient sky gate</span
+        >
+        <button
+          id="restart"
+          class="icon-button"
+          aria-label="Restart level"
+          title="Restart (R)"
+        >
+          <svg aria-hidden="true"><use href="#restart-icon" /></svg>
+        </button>
+      </section>
+      <div id="dash-status">
+        <span>SHIFT</span>
+        <div class="dash-track"><div id="dash-fill"></div></div>
+        <b id="dash-label">DASH READY</b>
+      </div>
+      <div id="controls">
+        <span><kbd>A</kbd><kbd>D</kbd> MOVE</span
+        ><span><kbd>SPACE</kbd> JUMP ×2</span
+        ><span><kbd>SHIFT</kbd> DASH</span
+        ><span><kbd>R</kbd> RESTART</span>
+      </div>
+      <div id="toast" role="status" aria-live="polite"></div>
+      <section id="start-screen" class="overlay">
+        <div class="intro-panel">
+          <h1>SKYBOUND<br /><em>ADVENTURE</em></h1>
+          <p>Beyond the clouds, a forgotten kingdom awaits.</p>
+          <button id="start-button" class="primary-button">
+            BEGIN YOUR JOURNEY
+            <svg aria-hidden="true"><use href="#arrow-icon" /></svg>
+          </button>
+          <p class="hint">
+            Keyboard required · A / D to move · Space to jump twice · Shift to dash
+          </p>
+        </div>
+      </section>
+      <section id="complete-screen" class="overlay" hidden>
+        <div class="completion-panel">
+          <h2>The sky gate is open.</h2>
+          <p id="completion-stats"></p>
+          <button id="play-again" class="primary-button">
+            PLAY AGAIN
+            <svg aria-hidden="true"><use href="#restart-icon" /></svg>
+          </button>
+        </div>
+      </section>
+      <div id="loading" role="status">Preparing the floating kingdom…</div>
+    </main>
+    <script type="module" src="/src/demos/skybound-adventure/main.ts"></script>
+  </body>
+</html>
