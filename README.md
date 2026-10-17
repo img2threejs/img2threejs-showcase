@@ -37,9 +37,9 @@ standalone `/skybound-adventure.html` game.
 
 ![Skybound Adventure original reference](public/references/skybound-adventure.webp)
 
-Production-browser captures:
-[gallery card](public/skybound-adventure/showcase-card.webp) ·
-[native-fullscreen gameplay](public/skybound-adventure/showcase-fullscreen.webp).
+Production-browser captures (PR evidence, not shipped game assets):
+[gallery card](https://raw.githubusercontent.com/img2threejs/img2threejs-showcase/52cce2d0dd4f61342ab553a5c4104b0e29ec4388/public/skybound-adventure/showcase-card.webp) ·
+[native-fullscreen gameplay](https://raw.githubusercontent.com/img2threejs/img2threejs-showcase/52cce2d0dd4f61342ab553a5c4104b0e29ec4388/public/skybound-adventure/showcase-fullscreen.webp).
 
 The game fills the browser viewport without an inspector/sidebar. Begin requests
 native fullscreen when supported; the fullscreen button or F toggles it and Esc
