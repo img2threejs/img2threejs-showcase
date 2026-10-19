@@ -335,7 +335,7 @@ export function mountRobotStudioExports(
     exportBusy = true;
     setExportControlsEnabled(false);
     exportSourceButton.classList.add('is-exporting');
-    setExportStatus('Fetching source archive', 'busy');
+    setExportStatus('Requesting source download', 'busy');
     const signal = sourceAbortController.signal;
     let outcome: 'success' | 'error' | 'aborted' = 'aborted';
     try {
@@ -344,15 +344,15 @@ export function mountRobotStudioExports(
         outcome = 'aborted';
         return;
       }
-      saveBlob(result.blob, result.filename);
+      const size = result.bytes === undefined ? '' : ` · ${readableBytes(result.bytes)}`;
       if (exportSourceNote) {
-        exportSourceNote.textContent = `Source ready · ${readableBytes(result.blob.size)} · animation + VFX preserved · no GLB dependency`;
+        exportSourceNote.textContent = `Source download requested${size} · animation + VFX preserved · no GLB dependency`;
       }
       showReport(
-        `${result.filename} · ${readableBytes(result.blob.size)} · animation + VFX preserved · no GLB loader in archive`,
+        `${result.filename}${size} · your browser is handling the download · animation + VFX preserved · no GLB loader in archive`,
         [],
       );
-      setExportStatus('Source archive ready', 'success');
+      setExportStatus('Source download requested', 'success');
       outcome = 'success';
     } catch (error) {
       if (context.isDisposed() || signal.aborted) {

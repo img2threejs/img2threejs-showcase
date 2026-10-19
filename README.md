@@ -512,9 +512,31 @@ but omits the gallery's download panel to keep the standalone package free of
 `GLTFLoader`.
 
 Archives are generated from the selected registry entry and its actual imports by
-`scripts/source-archives.mjs`. `npm run build` writes all Three.js archives to
-`dist/source/`; development serves them on demand. Deploy that directory along with
-the gallery. After building, validate all packages in isolated consumers with:
+`scripts/source-archives.mjs`. `npm run build` writes deterministic ZIPs to
+`.release/showcase-sources/`, outside the Pages artifact. Only the small
+`dist/source/index.json` catalog ships with Pages; development still generates
+`/source/<id>.zip` on demand.
+
+Production downloads use native browser attachments from a content-addressed
+[GitHub Release](https://github.com/img2threejs/img2threejs-showcase/releases/tag/showcase-sources-54b5799f8fbb65a009d4b09e69296b64384b75b97b5f4300e18209cb2630c086),
+not cross-origin `fetch`/Blob downloads: the release blob host does not provide
+the CORS headers that flow needs. The catalog binds each showcase to its filename,
+byte size, SHA-256 and immutable release URL. A source change produces a new tag;
+there is no mutable `latest` download or manually maintained list of showcases.
+
+The Pages workflow runs `npm run publish:source` **before** uploading its site
+artifact. Publication verifies local bytes and server-side digests, resumes an
+incomplete draft, reuses an identical published release, and refuses to overwrite
+different published assets. Only the trusted deployment build receives
+`contents: write`; PR builds generate and check packages without publishing.
+For an authorized manual publication, build first, authenticate `gh` with release
+write access, then run `npm run publish:source`.
+
+`npm run build` also runs `npm run test:source` and rejects a Pages output larger
+than 1,000,000,000 bytes. With the living-room study included, the verified output
+is 959,790,635 bytes; its 30 procedural Source ZIPs (278,445,916 bytes) are hosted
+on Releases instead. Runtime scene assets and visual quality are unchanged.
+After building, validate all packages in isolated consumers with:
 
 ```sh
 node scripts/check-source-archives.mjs
