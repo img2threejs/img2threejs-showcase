@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "bundle": {
+    "url": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-living-room-assets-v1/living-room-assets.zip",
+    "sha256": "a030986729e2014002ff58fd499a5fb21fa29535dfc5868ad937a38300e86b2d",
+    "bytes": 539663456
+  },
+  "files": [
+    {
+      "path": "assets/interior/manifest.json",
+      "sha256": "ea98eeb96c5baddd91dbe202a8e8905272f0025579feba899314bc856ac6ce8e",
+      "bytes": 3800
+    },
+    {
+      "path": "assets/interior/room-runtime.glb",
+      "sha256": "3cfa824c0f2896626a400861a1203071a2545a85e432527dcb299a3473dfc71a",
+      "bytes": 106821020
+    },
+    {
+      "path": "assets/interior/room-portable.glb",
+      "sha256": "2face8366a6e8501615227e38df3026bb89673aae8bd473d83c844341e46aaff",
+      "bytes": 44913856
+    },
+    {
+      "path": "assets/interior/room-master.blend",
+      "sha256": "7ad7d6ca32456ff74fb62fae37ef6ce0ded21d244264b3bfe64faa8fadc2169a",
+      "bytes": 85250515
+    },
+    {
+      "path": "assets/interior/lightmap-architecture.exr",
+      "sha256": "8430c7e983d74debf1eb6ccd51e211bd85f11552777142c3c237467374a75b2f",
+      "bytes": 37671808
+    },
+    {
+      "path": "assets/interior/lightmap-furniture.exr",
+      "sha256": "6bed4cec26f2444ee956ab0bc14324b173e27c68b15cf4a95b11c81a8f567112",
+      "bytes": 30883915
+    },
+    {
+      "path": "assets/interior/lightmap-garden.exr",
+      "sha256": "2bfe0b6bd639c79072575aeada22028b585736386990382666a163403db5a994",
+      "bytes": 125181823
+    },
+    {
+      "path": "assets/interior/lightmap-textiles.exr",
+      "sha256": "7b7b2a2a09bebb4ef48ff5fb7e015fd0b314510fa84f9f1dadca165e6aced942",
+      "bytes": 82320363
+    },
+    {
+      "path": "assets/interior/lightmap-details.exr",
+      "sha256": "4ffe10407e47e18b7363a83d785a18093584ff243de5e8af76495198b324c0db",
+      "bytes": 11775580
+    },
+    {
+      "path": "assets/interior/room-environment.exr",
+      "sha256": "28b19d41f43376c19d2d28cb20f02560d6c2243fbb2c3a075b16fea57ae09587",
+      "bytes": 1336176
+    },
+    {
+      "path": "assets/interior/garden-environment.hdr",
+      "sha256": "a01892cfcb3882853f99783970d3162dbaf0758ba4bcf90c11e29681287cd8f4",
+      "bytes": 7195915
+    },
+    {
+      "path": "assets/interior-modern-source.png",
+      "sha256": "95eb31d840165964deac849813dc77ad18bad71f1df90770bff1f7b4a5fb666b",
+      "bytes": 6306909
+    }
+  ],
+  "downloads": {
+    "source": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-living-room-assets-v1/living-room-source.zip",
+    "portableModel": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-living-room-assets-v1/living-room-portable.glb",
+    "blender": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-living-room-assets-v1/living-room.blend"
+  }
+}

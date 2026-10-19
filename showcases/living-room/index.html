@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="An interactive 3D living room: orbit the space, swap the sofa fabric, move the curtains and download the source, GLB and Blender files." />
+    <title>Living room — interactive 3D</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#study">Skip to 3D view</a>
+    <div id="app" class="app" data-panel="open">
+      <main id="study" class="study" aria-label="Interior viewer" tabindex="-1">
+        <div id="viewport" class="viewport" aria-busy="true">
+          <div id="canvas-host" class="canvas-host"></div>
+          <figure id="source-panel" class="source-panel" hidden>
+            <img id="source-view" src="/assets/interior-modern-source.png" width="2752" height="1536" alt="Synthetic design reference: cream sofa, round table and black leather chair in a living room with a glazed window on the left." />
+            <figcaption>Synthetic design reference · not a 3D render</figcaption>
+          </figure>
+          <div id="viewer-message" class="viewer-message">
+            <div class="loader">
+              <svg class="loader-art" viewBox="0 0 320 160" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path pathLength="1" d="M10 140H310" />
+                <path pathLength="1" d="M10 140V20L310 20V140" class="loader-wall" />
+                <path pathLength="1" d="M28 36H92V118H28Z" />
+                <path pathLength="1" d="M60 36V118M28 77H92" />
+                <path pathLength="1" d="M118 140V112Q118 100 130 100H206Q218 100 218 112V140M118 112H218M132 100V84Q132 76 140 76H196Q204 76 204 84V100" />
+                <path pathLength="1" d="M236 116H284M260 116V140M248 140H272" />
+                <path pathLength="1" d="M252 116Q252 104 260 104Q268 104 268 116" />
+                <path pathLength="1" d="M286 20V70M298 20V70" class="loader-curtain" />
+              </svg>
+              <p id="message-title" class="loader-title">Opening room</p>
+              <p id="message-detail">Reading model, materials and lightmap atlases.</p>
+              <ol class="phases" aria-hidden="true">
+                <li data-phase-step="0">Scene manifest</li>
+                <li data-phase-step="1">Model, textures and lightmaps</li>
+                <li data-phase-step="2">Lighting probe and shaders</li>
+                <li data-phase-step="3">First frame</li>
+              </ol>
+              <progress id="load-progress" aria-label="Asset groups loaded"></progress>
+              <button id="retry-load" class="retry-button" type="button" hidden>Retry load</button>
+            </div>
+          </div>
+        </div>
+      </main>
+      <aside id="panel" class="panel" aria-label="Living room panel">
+        <header class="panel-head">
+          <div>
+            <h1>Living room <em>in light</em></h1>
+            <p class="panel-lead">A Blender-authored room rendered live with Three.js. Orbit it, swap the sofa fabric and pull the curtains.</p>
+          </div>
+          <button id="panel-toggle" class="panel-toggle" type="button" aria-expanded="true" aria-controls="panel-body">Hide panel</button>
+        </header>
+        <p id="load-status" class="load-status" role="status" aria-live="polite" aria-atomic="true">Reading scene manifest…</p>
+        <div id="panel-body" class="panel-body">
+          <ul class="badges" aria-label="Technology">
+            <li>Blender</li>
+            <li>Three.js</li>
+            <li>WebGL 2</li>
+            <li>PBR materials</li>
+            <li>Baked ambient light</li>
+          </ul>
+          <section class="group reference" aria-labelledby="reference-title">
+            <h2 id="reference-title">Reference</h2>
+            <div class="reference-row">
+              <a id="source-link" class="reference-thumb" href="/assets/interior-modern-source.png" target="_blank" rel="noopener" aria-label="Open the reference image at full size (new tab)">
+                <img id="source-thumbnail" src="/assets/interior-modern-source.png" width="2752" height="1536" alt="Reference image of the living room with sunlight from the glazed window, cream sofa and wooden furniture." />
+              </a>
+              <div class="mode-block">
+                <div class="mode-switch" role="group" aria-label="View content">
+                  <button id="mode-3d" type="button" aria-pressed="true" disabled>3D room</button>
+                  <button id="mode-source" type="button" aria-pressed="false" disabled>Reference</button>
+                </div>
+                <p id="view-label" class="viewer-kind">3D · sunlight and interactive curtains</p>
+              </div>
+            </div>
+            <p class="note">Synthetic design image, kept separate from the 3D scene. Dimensions and hidden surfaces are estimates from this single image.</p>
+          </section>
+          <section class="group" aria-labelledby="view-title">
+            <h2 id="view-title">Camera</h2>
+            <div class="camera-actions" role="group" aria-label="Preset views">
+              <button type="button" data-view="source" aria-pressed="true" disabled>Source</button>
+              <button type="button" data-view="left" aria-pressed="false" disabled>Left</button>
+              <button type="button" data-view="right" aria-pressed="false" disabled>Right</button>
+              <button type="button" data-view="detail" aria-pressed="false" disabled>Detail</button>
+              <button type="button" data-view="curtain" aria-pressed="false" disabled>Curtains</button>
+            </div>
+            <div class="tool-row">
+              <button id="wireframe" type="button" aria-pressed="false" disabled>Wireframe</button>
+              <button id="reset" type="button" disabled>Reset all</button>
+            </div>
+            <p id="interaction-hint" class="note">Drag to orbit; scroll or pinch to zoom; right-drag to pan. With the 3D frame focused: arrow keys rotate, + / − zoom, Home returns to the source view.</p>
+          </section>
+          <section class="group" aria-labelledby="sofa-title">
+            <h2 id="sofa-title">Sofa fabric</h2>
+            <p class="finish-name"><span class="visually-hidden">Current fabric: </span><strong id="finish-label">Waiting for materials</strong></p>
+            <div id="finish-swatches" class="finish-swatches" role="group" aria-label="Sofa fabric colors"></div>
+          </section>
+          <fieldset class="group curtain-controls" aria-describedby="curtain-hint">
+            <legend>Curtains</legend>
+            <div class="curtain-slider">
+              <div class="curtain-slider-label"><label for="curtain-amount">Coverage</label><output id="curtain-percent" for="curtain-amount">0%</output></div>
+              <input id="curtain-amount" type="range" min="0" max="100" value="0" step="1" disabled />
+            </div>
+            <div class="curtain-actions">
+              <button id="curtain-open" type="button" disabled>Open</button>
+              <button id="curtain-close" type="button" disabled>Close</button>
+              <button id="curtain-wind" type="button" aria-pressed="true" disabled>Gentle breeze</button>
+            </div>
+            <p id="curtain-hint" class="note">Or grab the fabric in 3D and drag along the window; release to let it settle.</p>
+          </fieldset>
+          <section class="group downloads" aria-labelledby="download-title">
+            <h2 id="download-title">Downloads</h2>
+            <a id="download-source" class="download-link" download="living-room-source.zip"><span>Source ZIP</span><small>Runnable viewer</small></a>
+            <a id="download-glb" class="download-link" aria-disabled="true" tabindex="-1" download="living-room-portable.glb"><span>GLB model</span><small>Portable, baked</small></a>
+            <a id="download-blend" class="download-link" aria-disabled="true" tabindex="-1" download="living-room.blend"><span>Blender scene</span><small>Packed .blend</small></a>
+            <p class="note">GLB and Blender files are the original state (open curtains, cream sofa) without cloth simulation. The GLB uses static baked light, so reflections differ from the viewer.</p>
+          </section>
+        </div>
+      </aside>
+    </div>
+    <noscript><p class="noscript">JavaScript is required to view and interact with the 3D model. The reference image can still be opened from the thumbnail.</p></noscript>
+    <script type="module" src="/src/interior.js"></script>
+  </body>
+</html>

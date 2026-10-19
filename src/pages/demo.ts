@@ -1087,26 +1087,26 @@ export async function renderDemo(
         exportSourceButton.classList.add('is-exporting');
         exportReport?.setAttribute('hidden', '');
         if (exportStatus) {
-          exportStatus.value = 'Fetching source archive';
+          exportStatus.value = 'Requesting source download';
           exportStatus.dataset.state = 'busy';
         }
         try {
           const result = await downloadShowcaseSource(demo.id, signal);
           if (!routeIsActive() || signal.aborted) return;
-          saveBlob(result.blob, result.filename);
           if (exportStatus) {
-            exportStatus.value = 'Source archive ready';
+            exportStatus.value = 'Source download requested';
             exportStatus.dataset.state = 'success';
           }
           if (exportReport && exportSummary && exportWarnings) {
+            const size = result.bytes === undefined ? '' : ` · ${readableBytes(result.bytes)}`;
             exportSummary.textContent =
-              `${result.filename} · ${readableBytes(result.blob.size)} · animation + VFX preserved · no GLB loader in archive`;
+              `${result.filename}${size} · your browser is handling the download · animation + VFX preserved · no GLB loader in archive`;
             exportWarnings.replaceChildren();
             exportWarnings.hidden = true;
             exportReport.hidden = false;
           }
           if (exportSourceNote) {
-            exportSourceNote.textContent = 'Source ready · animation + VFX preserved · no GLB dependency';
+            exportSourceNote.textContent = 'Source download requested · animation + VFX preserved · no GLB dependency';
           }
         } catch (error) {
           if (!routeIsActive() || signal.aborted) return;

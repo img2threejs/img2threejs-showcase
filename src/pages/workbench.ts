@@ -205,6 +205,23 @@ export function renderWorkbench(
       viewLabel: 'Live 3D on open',
     },
     {
+      id: 'living-room',
+      title: 'Living Room — Blender + Three.js',
+      subjectClass: 'object',
+      blurb: 'A Blender-authored living room with baked lighting and PBR materials. Orbit the room, '
+        + 'swap the sofa fabric, move the curtains, and download the source ZIP, GLB or Blender file.',
+      referenceImage: `${import.meta.env.BASE_URL}references/living-room.webp`,
+      imageAlt: 'Synthetic design reference for the living room: cream sofa, round table and black leather chair beside a glazed window',
+      imageLabel: 'Design reference',
+      href: `${import.meta.env.BASE_URL}living-room/`,
+      status: 'final',
+      generationLabel: 'Blender · Three.js · PBR',
+      generatedWith: 'Blender · Three.js 0.180.0',
+      referenceLabel: 'Design Reference',
+      linkLabel: 'Open Live 3D Room',
+      viewLabel: 'Live 3D on open',
+    },
+    {
       id: 'greenvale',
       title: 'Greenvale — Playable 2D Village',
       subjectClass: 'game',

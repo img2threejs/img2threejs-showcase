@@ -512,9 +512,31 @@ but omits the gallery's download panel to keep the standalone package free of
 `GLTFLoader`.
 
 Archives are generated from the selected registry entry and its actual imports by
-`scripts/source-archives.mjs`. `npm run build` writes all Three.js archives to
-`dist/source/`; development serves them on demand. Deploy that directory along with
-the gallery. After building, validate all packages in isolated consumers with:
+`scripts/source-archives.mjs`. `npm run build` writes deterministic ZIPs to
+`.release/showcase-sources/`, outside the Pages artifact. Only the small
+`dist/source/index.json` catalog ships with Pages; development still generates
+`/source/<id>.zip` on demand.
+
+Production downloads use native browser attachments from a content-addressed
+[GitHub Release](https://github.com/img2threejs/img2threejs-showcase/releases/tag/showcase-sources-54b5799f8fbb65a009d4b09e69296b64384b75b97b5f4300e18209cb2630c086),
+not cross-origin `fetch`/Blob downloads: the release blob host does not provide
+the CORS headers that flow needs. The catalog binds each showcase to its filename,
+byte size, SHA-256 and immutable release URL. A source change produces a new tag;
+there is no mutable `latest` download or manually maintained list of showcases.
+
+The Pages workflow runs `npm run publish:source` **before** uploading its site
+artifact. Publication verifies local bytes and server-side digests, resumes an
+incomplete draft, reuses an identical published release, and refuses to overwrite
+different published assets. Only the trusted deployment build receives
+`contents: write`; PR builds generate and check packages without publishing.
+For an authorized manual publication, build first, authenticate `gh` with release
+write access, then run `npm run publish:source`.
+
+`npm run build` also runs `npm run test:source` and rejects a Pages output larger
+than 1,000,000,000 bytes. With the living-room study included, the verified output
+is 959,790,635 bytes; its 30 procedural Source ZIPs (278,445,916 bytes) are hosted
+on Releases instead. Runtime scene assets and visual quality are unchanged.
+After building, validate all packages in isolated consumers with:
 
 ```sh
 node scripts/check-source-archives.mjs
@@ -551,6 +573,37 @@ scripts/
 Pull requests targeting `main` run the shared Node 20 quality workflow. The repository adds
 showcase-specific checks for unsafe network access, reference formats and sizes, unique ids
 across both renderer catalogs, and contribution boundaries. Merged changes are deployed automatically.
+
+## img2interior — standalone living room
+
+The archive card opens `/living-room/`: a Blender-authored room rendered in Three.js,
+with PBR materials, baked ambient lighting, a shadowed sun, editable sofa finishes,
+interactive curtains, reference comparison, and a collapsible Panel. This is not a
+procedural img2threejs reconstruction. The synthetic Customuse reference is labelled
+as a design image; Poly Haven materials/models are CC0, not the synthetic reference.
+
+`showcases/living-room/` is an independent npm workspace pinning Three.js 0.180.0 and
+Vite 6.4.1. The gallery keeps its existing dependency versions and procedural safety
+rules. `npm ci` installs both dependency sets; Python 3 is also required.
+
+- `npm run build` builds the child before the gallery. `build:living-room` uses Vite
+  mode `showcase` and base `/living-room/`, writing generated files to `public/living-room/`.
+- Before gallery development, run `npm run build:living-room`, then `npm run dev`.
+  `npm run dev:living-room` runs the standalone viewer; `preview:living-room` serves
+  its gallery build.
+- Large binaries are pinned in `showcases/living-room/assets.lock.json`, fetched from
+  the versioned [asset prerelease](https://github.com/img2threejs/img2threejs-showcase/releases/tag/img2interior-living-room-assets-v1),
+  and verified against bundle and per-file SHA-256 checksums. They are not Git blobs.
+- The Pages build contains runtime assets only. Source ZIP, portable GLB and packed
+  Blender downloads point to the release, avoiding a duplicate half-gigabyte archive
+  in Pages. They contain the original open-curtain / cream-sofa state, not live edits.
+- Ordinary standalone `npm run build` keeps local downloads and includes all assets
+  in its Source ZIP. The downloaded source is independently runnable.
+- **Hide panel / Show panel** fills the browser viewport and preserves edits on
+  desktop and narrow screens; it does not request operating-system fullscreen.
+- `npm run sync:living-room -- --from <canonical-project>` explicitly refreshes viewer
+  sources and manifest-declared assets. It preserves the gallery-specific publication
+  adapter and requires matching dependency pins and the download override hook.
 
 ## Community
 

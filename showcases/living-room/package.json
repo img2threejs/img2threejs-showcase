@@ -1,0 +1,24 @@
+{
+  "name": "@img2threejs/living-room",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch:assets": "python3 scripts/fetch_assets.py",
+    "predev": "python3 scripts/fetch_assets.py",
+    "dev": "vite",
+    "package:source": "python3 scripts/package_source.py",
+    "prebuild": "python3 scripts/fetch_assets.py",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "vite": "6.4.1"
+  },
+  "engines": {
+    "node": "^18.0.0 || ^20.0.0 || >=22.0.0"
+  }
+}

@@ -23,3 +23,9 @@ public/mesh/
 
 # Local Tropical Island measurement references/intermediates never ship.
 /work/tropical-island/
+
+# Independent living-room workspace build, not source.
+/public/living-room/
+
+# Generated GitHub Release attachments; never part of Pages or Git.
+/.release/

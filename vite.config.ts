@@ -7,7 +7,20 @@ import { sourceArchivesPlugin } from './scripts/source-archives.mjs';
  */
 export default defineConfig({
   base: '/',
-  plugins: [sourceArchivesPlugin()],
+  plugins: [
+    sourceArchivesPlugin(),
+    {
+      name: 'living-room-directory-index',
+      configureServer(server) {
+        server.middlewares.use((request, _response, next) => {
+          if (request.url?.split('?')[0] === '/living-room/') {
+            request.url = request.url.replace('/living-room/', '/living-room/index.html');
+          }
+          next();
+        });
+      },
+    },
+  ],
   build: {
     rollupOptions: {
       input: {

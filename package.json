@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "check:donate": "node scripts/check-donate-integrity.mjs",
-    "prebuild": "npm run check:donate && npm run check:iphone-duo && npm run check:tropical-island",
+    "prebuild": "npm run check:donate && npm run check:iphone-duo && npm run check:tropical-island && npm run build:living-room",
     "dev": "vite",
     "build": "tsc --noEmit && node --max-old-space-size=8192 node_modules/vite/bin/vite.js build",
-    "postbuild": "npm run check:tropical-island -- --dist",
+    "postbuild": "npm run check:tropical-island -- --dist && npm run test:source && node scripts/check-pages-size.mjs",
     "preview": "vite preview",
     "new-demo": "node scripts/new-showcase.mjs",
     "qa:export:list": "node scripts/qa-export-matrix.mjs --list",
@@ -17,6 +17,12 @@
     "dev:iphone-duo": "vite --config vite.iphone-duo.config.ts",
     "build:iphone-duo": "npm run check:iphone-duo && tsc --noEmit -p tsconfig.iphone-duo.json && vite build --config vite.iphone-duo.config.ts",
     "preview:iphone-duo": "vite preview --config vite.iphone-duo.config.ts",
+    "build:living-room": "npm run build --workspace @img2threejs/living-room -- --mode showcase --base=/living-room/ --outDir ../../public/living-room --emptyOutDir",
+    "dev:living-room": "npm run dev --workspace @img2threejs/living-room",
+    "preview:living-room": "npm run preview --workspace @img2threejs/living-room -- --mode showcase --base=/living-room/ --outDir ../../public/living-room",
+    "sync:living-room": "node scripts/sync-living-room.mjs",
+    "publish:source": "node scripts/publish-source-archives.mjs",
+    "test:source": "node --import tsx --test scripts/source-release.test.mjs tests/source-download.test.ts",
     "check:iphone-duo": "node scripts/check-iphone-duo-no-glb.mjs",
     "check:tropical-island": "node scripts/check-tropical-island-no-glb.mjs",
     "test:skybound": "tsx --test tests/skybound-adventure/simulation.test.ts"
@@ -32,5 +38,8 @@
     "tsx": "^4.23.15",
     "typescript": "^5.6.0",
     "vite": "^5.4.0"
-  }
+  },
+  "workspaces": [
+    "showcases/living-room"
+  ]
 }
