@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "bundle": {
+    "url": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-modern-house-assets-v1/modern-house-assets.zip",
+    "sha256": "a899700a6c053f082ee645a97144c4b35743fe152266c051976f88c16f52df7b",
+    "bytes": 100602820
+  },
+  "files": [
+    {
+      "path": "assets/interior/manifest.json",
+      "sha256": "4d26927ffe89df87954162208c61216f7ed392a93e102de5768c1f225d42ed26",
+      "bytes": 4505
+    },
+    {
+      "path": "assets/interior/room-runtime.glb",
+      "sha256": "66e7281e377752836cbd2fde9fdb83ca6ad497082b64d01f7231a92f86c1eb89",
+      "bytes": 13885396
+    },
+    {
+      "path": "assets/interior/room-portable.glb",
+      "sha256": "c76737d30408bacbea239e6a946bce44bd1ff9c2ac49d40e1140d5522679a0b9",
+      "bytes": 13075364
+    },
+    {
+      "path": "assets/interior/room-master.blend",
+      "sha256": "eade74209d1be29dc2fd9673ca593be7ce56a360333b3bb2c2274182e4ac5a57",
+      "bytes": 8704869
+    },
+    {
+      "path": "assets/interior/lightmap-architecture.exr",
+      "sha256": "ff72dad70229ef5fdc57dd80d190a5d8118dd06f29b79f1522fc9065ffd030fe",
+      "bytes": 1895880
+    },
+    {
+      "path": "assets/interior/lightmap-details.exr",
+      "sha256": "0591dc8b166f7eef0be76f0ff2b6ce7a2bf64d7da641d6ea742db633fd814e9b",
+      "bytes": 2079772
+    },
+    {
+      "path": "assets/interior/lightmap-furniture.exr",
+      "sha256": "f37e5827a9f2d8bed0a9144a9c214f3f04584386441a5a11e1eae511d93d0585",
+      "bytes": 7012218
+    },
+    {
+      "path": "assets/interior/lightmap-garden.exr",
+      "sha256": "97fee2361b5c16c6423b02f6c5e125e909a44fd4d86efb2475675fa17843b26d",
+      "bytes": 9008370
+    },
+    {
+      "path": "assets/interior/lightmap-textiles.exr",
+      "sha256": "4da9e21b7aa365847798c0904da5073f5ad70589706c857b8868256b2a40c0f4",
+      "bytes": 8898705
+    },
+    {
+      "path": "assets/interior/room-environment.exr",
+      "sha256": "e9a448e4053f1942939cac6824a8f26974a48dd6720b2f07e353dafc71787d3f",
+      "bytes": 917321
+    },
+    {
+      "path": "assets/reference.png",
+      "sha256": "0ead754e44235b4c57fab7612362a3a5480c47a7e33c5636773047513f43b201",
+      "bytes": 1395407
+    },
+    {
+      "path": "assets/viggle/scene.spz",
+      "sha256": "d43b3f703820d2de50156327779f95cc10f1e853910108d5e667c62d049da5ef",
+      "bytes": 16488056
+    },
+    {
+      "path": "assets/viggle-house/scene.spz",
+      "sha256": "445709bc2e6e4d321adb210defa0a876b8b0a74b281314b64f4c36f2ad6921c5",
+      "bytes": 17235103
+    }
+  ],
+  "downloads": {
+    "source": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-modern-house-assets-v1/modern-house-source.zip",
+    "portableModel": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-modern-house-assets-v1/modern-house-portable.glb",
+    "blender": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-modern-house-assets-v1/modern-house.blend"
+  }
+}

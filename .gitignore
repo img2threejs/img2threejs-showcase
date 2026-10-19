@@ -27,5 +27,8 @@ public/mesh/
 # Independent living-room workspace build, not source.
 /public/living-room/
 
+# Independent modern-house workspace build, not source.
+/public/modern-house/
+
 # Generated GitHub Release attachments; never part of Pages or Git.
 /.release/
