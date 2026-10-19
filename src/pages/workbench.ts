@@ -172,6 +172,7 @@ export function renderWorkbench(
   const archiveEntries = [
     {
       id: 'skybound-adventure',
+      updatedAt: '2026-10-17',
       title: 'Skybound Adventure — The Floating Kingdom',
       subjectClass: 'game',
       blurb: 'Explore a floating pixel-art kingdom, collect all 13 crystals and reach the sky gate. '
@@ -189,6 +190,7 @@ export function renderWorkbench(
     },
     {
       id: 'iphone-duo',
+      updatedAt: '2026-09-11',
       title: 'iPhone Duo — A Whole New Dimension',
       subjectClass: 'object',
       blurb: 'A folding-phone showcase with a continuous display, six finishes and two release sequences. '
@@ -206,8 +208,9 @@ export function renderWorkbench(
     },
     {
       id: 'living-room',
+      updatedAt: '2026-10-19',
       title: 'Living Room — Blender + Three.js',
-      subjectClass: 'object',
+      subjectClass: 'interior',
       blurb: 'A Blender-authored living room with baked lighting and PBR materials. Orbit the room, '
         + 'swap the sofa fabric, move the curtains, and download the source ZIP, GLB or Blender file.',
       referenceImage: `${import.meta.env.BASE_URL}references/living-room.webp`,
@@ -215,14 +218,15 @@ export function renderWorkbench(
       imageLabel: 'Design reference',
       href: `${import.meta.env.BASE_URL}living-room/`,
       status: 'final',
-      generationLabel: 'Blender · Three.js · PBR',
-      generatedWith: 'Blender · Three.js 0.180.0',
+      generationLabel: 'img2interior · Blender · Three.js',
+      generatedWith: 'img2interior · Blender · Three.js 0.180.0',
       referenceLabel: 'Design Reference',
       linkLabel: 'Open Live 3D Room',
       viewLabel: 'Live 3D on open',
     },
     {
       id: 'greenvale',
+      updatedAt: '2026-10-14',
       title: 'Greenvale — Playable 2D Village',
       subjectClass: 'game',
       blurb: 'A playable img2pixi2D village with animated characters, lighting and nine skills. '
@@ -258,14 +262,16 @@ export function renderWorkbench(
       linkLabel: 'Open Live 3D Inspector',
       viewLabel: 'Live 3D on open',
     })),
-  ];
+  ].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
   const archiveCharacterCount = archiveEntries.filter((demo) => demo.subjectClass === 'character').length;
   const archiveObjectCount = archiveEntries.filter((demo) => demo.subjectClass === 'object').length;
   const archiveGameCount = archiveEntries.filter((demo) => demo.subjectClass === 'game').length;
+  const archiveInteriorCount = archiveEntries.filter((demo) => demo.subjectClass === 'interior').length;
+  const latestEntries = archiveEntries.slice(0, 3);
   const archiveCards = archiveEntries
     .map(
       (demo, i) => `
-      <a class="archive-card" href="${demo.href}" data-archive-subject="${demo.subjectClass}">
+      <a class="archive-card${i === 0 ? ' archive-card-latest' : ''}" href="${demo.href}" data-archive-id="${demo.id}" data-archive-subject="${demo.subjectClass}" data-updated-at="${demo.updatedAt}">
         <div class="archive-card-surface">
           <figure class="archive-image">
             <span class="archive-live mono">${escapeAttr(demo.imageLabel)}</span>
@@ -278,12 +284,13 @@ export function renderWorkbench(
           </figure>
           <div class="archive-copy">
             <div class="archive-card-head">
-              <p class="archive-status mono">${demo.status === 'final' ? 'Released Study' : demo.status === 'experiment' ? '2D Experiment' : 'Working Study'}</p>
+              <p class="archive-status mono">${i === 0 ? 'Latest Showcase' : demo.status === 'final' ? 'Released Study' : demo.status === 'experiment' ? '2D Experiment' : 'Working Study'}</p>
               <span class="archive-card-index mono">${String(i + 1).padStart(2, '0')}</span>
             </div>
             <h3>${escapeAttr(demo.title)}</h3>
             <p class="archive-description">${brand(demo.blurb)}</p>
             <div class="archive-meta mono">
+              <time datetime="${demo.updatedAt}">${demo.updatedAt}</time>
               <span>${escapeAttr(demo.viewLabel)}</span>
               <span>${escapeAttr(demo.generationLabel)}</span>
               <span>${escapeAttr(demo.referenceLabel)}</span>
@@ -379,6 +386,31 @@ export function renderWorkbench(
           </button>
         </div>
       </header>
+
+      ${!focusId ? `
+      <section class="hero-latest" aria-labelledby="latest-showcases-title">
+        <header class="hero-latest-heading">
+          <h2 id="latest-showcases-title">Latest showcases.</h2>
+          <a class="text-link" href="#archive" data-jump="#archive">Browse the Archive <span aria-hidden="true">↓</span></a>
+        </header>
+        <div class="hero-latest-grid">
+          ${latestEntries.map((demo, i) => `
+          <a class="hero-latest-item${i === 0 ? ' is-newest' : ''}" href="${demo.href}"
+             data-showcase-id="${demo.id}" data-updated-at="${demo.updatedAt}">
+            <figure>
+              <img src="${demo.referenceImage}" alt="${escapeAttr(demo.imageAlt)}"
+                   loading="${i === 0 ? 'eager' : 'lazy'}" />
+              <figcaption>${escapeAttr(demo.imageLabel)}</figcaption>
+            </figure>
+            <div class="hero-latest-copy">
+              <p class="hero-latest-status">${i === 0 ? 'Newest showcase' : 'Recent showcase'} · ${demo.subjectClass === 'interior' ? 'Interior / img2interior' : demo.subjectClass === 'game' ? '2D Game' : demo.subjectClass === 'character' ? 'Character' : 'Object'}</p>
+              <h3>${escapeAttr(demo.title)}</h3>
+              <time datetime="${demo.updatedAt}">${demo.updatedAt}</time>
+              <span class="hero-latest-action">${escapeAttr(demo.linkLabel)} <span aria-hidden="true">↗</span></span>
+            </div>
+          </a>`).join('')}
+        </div>
+      </section>` : ''}
 
       <main class="wb-stage" id="workbench-main" tabindex="-1">
         <section class="wb-caption">
@@ -601,14 +633,17 @@ export function renderWorkbench(
           <p class="section-index mono">04 / THE ARCHIVE</p>
           <div class="section-title-wrap">
             <h2 id="archive-title">A library of<br /><em>working geometry.</em></h2>
-            <p>Explore live Three.js studies, animated PixiJS artwork and playable 2D scenes. Orbit models, compare artwork with its reference or step into a game. Each card opens its own interactive experience.</p>
+            <p>Explore live Three.js studies, img2interior rooms, animated PixiJS artwork and playable 2D scenes. Newest showcases appear first. Each card opens its own interactive experience.</p>
           </div>
-          <p class="archive-count mono">${String(archiveEntries.length).padStart(2, '0')} STUDIES<br />OBJECTS + CHARACTERS + GAMES</p>
+          <p class="archive-count mono">${String(archiveEntries.length).padStart(2, '0')} STUDIES<br />INTERIOR + OBJECTS + CHARACTERS + GAMES</p>
         </header>
         <div class="archive-toolbar" aria-label="Archive Controls">
           <div class="archive-filters" role="group" aria-label="Filter Studies">
             <button type="button" class="archive-filter is-active" data-archive-filter="all" aria-pressed="true">
               <span>All Studies</span><strong class="mono">${String(archiveEntries.length).padStart(2, '0')}</strong>
+            </button>
+            <button type="button" class="archive-filter" data-archive-filter="interior" aria-pressed="false">
+              <span>Interior</span><strong class="mono">${String(archiveInteriorCount).padStart(2, '0')}</strong>
             </button>
             <button type="button" class="archive-filter" data-archive-filter="character" aria-pressed="false">
               <span>Characters</span><strong class="mono">${String(archiveCharacterCount).padStart(2, '0')}</strong>

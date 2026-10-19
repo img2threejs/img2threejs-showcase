@@ -28,6 +28,18 @@ running live in the browser.
 
 ---
 
+## Latest showcases and Interior
+
+The landing page opens with **Latest showcases**, highlighting the three most recently
+updated studies across Three.js, PixiJS and standalone experiences. The same `updatedAt`
+ordering drives **04 / THE ARCHIVE** and Find a Study; the newest archive card is marked
+**Latest Showcase**.
+
+Use the **Interior** filter for img2interior rooms. **Living Room — Blender + Three.js**
+opens the dedicated `/living-room/` viewer and is no longer listed under Objects.
+Its thumbnail remains explicitly labeled **Design reference**, not a captured live render.
+Existing `#/x/<id>` links still open the requested Three.js study directly.
+
 ## Skybound Adventure — playable pixel-art kingdom
 
 Open **Skybound Adventure — The Floating Kingdom** in the home-page Archive, or

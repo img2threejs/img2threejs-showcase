@@ -100,10 +100,16 @@ scaffold added (it's at the top of the `authored` catalog), and replace every
 | `author` | your display name — shows as "by \<author\>" on the card and demo page |
 | `authorUrl` | usually your GitHub profile |
 | `status` | change `'placeholder'` → `'final'` once the real factory is in |
+| `updatedAt` | Date of the last meaningful study update, `YYYY-MM-DD`; controls newest-first discovery, not the build/deploy date |
 | `cameraPosition` / `cameraTarget` / `cameraFov` | tune these in `npm run preview` until the framing looks right |
 
 Keep the generated `loadRuntime` import literal and inside that catalog entry.
 This lets the landing page load metadata without downloading every demo's model code.
+
+The landing's Latest showcases and Archive use one newest-first list across all renderers.
+Pixi metadata in `src/pixi/registry.ts` also requires `updatedAt`. Owner-reviewed standalone
+experiences declare it alongside their archive metadata in `src/pages/workbench.ts`;
+img2interior rooms use the `interior` subject category rather than `object`.
 
 **c. The reference image.** Add `public/references/<id>.png` (or `.jpg`/`.jpeg`/`.webp`,
 **≤ 800 KB** — larger files and other formats, including `.svg`, are rejected by CI).

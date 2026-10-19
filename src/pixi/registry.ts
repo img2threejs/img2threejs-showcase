@@ -3,7 +3,7 @@ import type { PixiShowcaseArtwork } from './showcase';
 
 export type PixiDemoMetadata = Pick<DemoMetadata,
   'id' | 'title' | 'subjectClass' | 'blurb' | 'referenceImage' | 'sourcePath' | 'sourceUrl'
-  | 'generatedWith' | 'author' | 'authorUrl' | 'status'> & {
+  | 'generatedWith' | 'author' | 'authorUrl' | 'status' | 'updatedAt'> & {
   renderer: 'pixi';
   referenceAlt: string;
   fullReferenceImage: string;
@@ -19,6 +19,7 @@ const REPO = 'https://github.com/img2threejs/img2threejs-showcase/blob/main';
 export const pixiDemos: PixiDemoMetadata[] = [
   {
     id: 'coffee-house',
+    updatedAt: '2026-10-12',
     renderer: 'pixi',
     title: 'Moonlight Cafe',
     subjectClass: 'object',
