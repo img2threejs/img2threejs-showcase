@@ -552,6 +552,37 @@ Pull requests targeting `main` run the shared Node 20 quality workflow. The repo
 showcase-specific checks for unsafe network access, reference formats and sizes, unique ids
 across both renderer catalogs, and contribution boundaries. Merged changes are deployed automatically.
 
+## img2interior — standalone living room
+
+The archive card opens `/living-room/`: a Blender-authored room rendered in Three.js,
+with PBR materials, baked ambient lighting, a shadowed sun, editable sofa finishes,
+interactive curtains, reference comparison, and a collapsible Panel. This is not a
+procedural img2threejs reconstruction. The synthetic Customuse reference is labelled
+as a design image; Poly Haven materials/models are CC0, not the synthetic reference.
+
+`showcases/living-room/` is an independent npm workspace pinning Three.js 0.180.0 and
+Vite 6.4.1. The gallery keeps its existing dependency versions and procedural safety
+rules. `npm ci` installs both dependency sets; Python 3 is also required.
+
+- `npm run build` builds the child before the gallery. `build:living-room` uses Vite
+  mode `showcase` and base `/living-room/`, writing generated files to `public/living-room/`.
+- Before gallery development, run `npm run build:living-room`, then `npm run dev`.
+  `npm run dev:living-room` runs the standalone viewer; `preview:living-room` serves
+  its gallery build.
+- Large binaries are pinned in `showcases/living-room/assets.lock.json`, fetched from
+  the versioned [asset prerelease](https://github.com/img2threejs/img2threejs-showcase/releases/tag/img2interior-living-room-assets-v1),
+  and verified against bundle and per-file SHA-256 checksums. They are not Git blobs.
+- The Pages build contains runtime assets only. Source ZIP, portable GLB and packed
+  Blender downloads point to the release, avoiding a duplicate half-gigabyte archive
+  in Pages. They contain the original open-curtain / cream-sofa state, not live edits.
+- Ordinary standalone `npm run build` keeps local downloads and includes all assets
+  in its Source ZIP. The downloaded source is independently runnable.
+- **Hide panel / Show panel** fills the browser viewport and preserves edits on
+  desktop and narrow screens; it does not request operating-system fullscreen.
+- `npm run sync:living-room -- --from <canonical-project>` explicitly refreshes viewer
+  sources and manifest-declared assets. It preserves the gallery-specific publication
+  adapter and requires matching dependency pins and the download override hook.
+
 ## Community
 
 - [Discord](https://discord.gg/8DS8RTyuR) — feedback, reconstruction discussion, and work-in-progress studies
