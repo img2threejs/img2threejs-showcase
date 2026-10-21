@@ -220,7 +220,3 @@ export function sourceLabel(manifest) {
   return ['synthetic', 'synthetic-design', 'synthetic-design-reference'].includes(manifest.sourceKind)
     ? 'Synthetic design reference' : 'Source reference image';
 }
-
-export function usesPolyHavenAPI(manifest) {
-  return manifest.resourceCredit?.provider === 'Poly Haven' && manifest.resourceCredit?.apiDerived === true;
-}

@@ -646,6 +646,11 @@ customisation and source / portable GLB / editable Blender downloads.
   not duplicated in the Pages output. The static exports do not capture live
   palette, curtain or throw changes. Baked indirect lighting does not rebounce
   when colours change.
+- Throw contacts use each particle's updated position after every triangle
+  projection, avoiding stacked stale-position pushes. Fringe strands align their
+  bearing before the gravity/ground pitch, preventing unstable sideways flips.
+- The viewer omits the visible provider-credit footer; CC0 provenance remains in
+  the authoring resource metadata.
 - Dimensions and unseen surfaces are authored estimates from one synthetic
   reference, not measured reconstruction.
 
