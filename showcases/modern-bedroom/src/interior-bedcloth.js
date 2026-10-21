@@ -26,6 +26,8 @@ const SUPPORT_W = 0.05;
 // Per-particle triangle cache against a fixed surface: slots per particle, how far a particle may move before the list is rebuilt, and
 // the extra reach the list is built with so that it still covers the contact range after that move.
 const FC_SLOTS = 48, FC_PAD = 0.008, FC_DRIFT2 = (FC_PAD * 0.9) ** 2, FC_STALE = -1;
+// Weight, as a fraction of a rigid strand's length, of its previous heading against its measured horizontal lean when choosing its bearing.
+const SETTLE_BEARING_BIAS = 1;
 const STATIC_CELL = 0.2;
 // Per-cloth solver parameters (the manifest may override any of them). Fabric stiffness is physical: N/m for stretch and shear, N m for
 // bending rigidity. `compression` is the fraction of the tension stiffness that resists compression (fabric buckles, it does not push).
@@ -1203,7 +1205,7 @@ export function createBedClothSystem({ root, config, roomBounds }) {
     for (let p = 0; p < S.N; p++) {
       const o = p * 3;
       if (mode !== 'init' && !measure && SW[p] === 0) continue;
-      const px = mode === 'init' ? S.rest[o] : SP[o], py = mode === 'init' ? S.rest[o + 1] : SP[o + 1], pz = mode === 'init' ? S.rest[o + 2] : SP[o + 2];
+      let px = mode === 'init' ? S.rest[o] : SP[o], py = mode === 'init' ? S.rest[o + 1] : SP[o + 1], pz = mode === 'init' ? S.rest[o + 2] : SP[o + 2];
       const rad = pair.rad[p];
       if (boundsCull && (px < blo[0] - bm || px > bhi[0] + bm || py < blo[1] - bm || py > bhi[1] + bm || pz < blo[2] - bm || pz > bhi[2] + bm)) continue;
       // (the hash is queried with the particle's own cell: the triangles were binned with the whole contact margin)
@@ -1362,6 +1364,10 @@ export function createBedClothSystem({ root, config, roomBounds }) {
             TP[ic] += sx * g * w * wc; TP[ic + 1] += sy * g * w * wc; TP[ic + 2] += sz * g * w * wc;
           }
         }
+        // The next triangle sees the particle where this contact left it (Gauss-Seidel): a particle touching a crowd of triangles of
+        // one dense surface (a vertex shared by six, a crease) would otherwise collect every triangle's full push from the same stale
+        // position, be thrown several centimetres, and be pulled back by the constraints next substep: a buzz that is rendered as jerks.
+        px = SP[o]; py = SP[o + 1]; pz = SP[o + 2];
       }
       }
       if (mode === 'init') {
@@ -1680,6 +1686,18 @@ export function createBedClothSystem({ root, config, roomBounds }) {
     }
   }
 
+  // Rotates a rigid piece about the vertical axis through its root (positive angle turns x towards -z).
+  function yawPiece(binding, piece, rx, ry, rz, angle) {
+    const pos = binding.posArray, nrm = binding.normal?.array, tan = binding.tangent?.array;
+    const c = Math.cos(angle), sn = Math.sin(angle);
+    for (const v of piece.vertices) {
+      const o = v * 3, lx = pos[o] - rx, lz = pos[o + 2] - rz;
+      pos[o] = rx + lx * c + lz * sn; pos[o + 2] = rz - lx * sn + lz * c;
+      if (nrm) { const nx = nrm[o], nz = nrm[o + 2]; nrm[o] = nx * c + nz * sn; nrm[o + 2] = -nx * sn + nz * c; }
+      if (tan) { const w = v * 4, tx = tan[w], tz = tan[w + 2]; tan[w] = tx * c + tz * sn; tan[w + 2] = -tx * sn + tz * c; }
+    }
+  }
+
   // Rigid pieces (fringe strands) hang from their root like pendulums.
   //
   // A pendulum swings in a vertical plane: its bearing (the horizontal direction it points) is fixed, and only its elevation
@@ -1705,9 +1723,19 @@ export function createBedClothSystem({ root, config, roomBounds }) {
       // The strand's bearing, and the normal of its swing plane. A pendulum swings in the vertical plane spanned by its bearing
       // and the world up axis, so the rotation axis is that plane's normal: (bearing x up) = (-bz, 0, bx). Rotating about it changes
       // the elevation only, and the bearing is preserved exactly, so the strand keeps pointing where the hem points.
-      const hl = Math.hypot(dx, dz);
+      // A strand that is nearly vertical before the rule is applied leans by a few millimetres, and the direction of that lean is skin
+      // noise: it flips by up to 180 degrees from one frame to the next, and the ladder rule then lays the strand over along it (a 10 cm
+      // tip swing in one frame while the cloth underneath moves smoothly). The bearing the strand had in the previous frame therefore
+      // regularises the measured lean: it decides while the lean is small against the strand's length (a strand cannot change its heading
+      // when it has no lean to change it by) and gives way to the measured lean as soon as the strand really leans. Memory is only the
+      // heading; the elevation is still evaluated from the current geometry every frame (reset() forgets the heading).
       let bx, bz;
-      if (hl > 1e-3) { bx = dx / hl; bz = dz / hl; }
+      const hl0 = Math.hypot(dx, dz);
+      if (piece.bearX !== undefined) {
+        bx = dx + SETTLE_BEARING_BIAS * reach * piece.bearX; bz = dz + SETTLE_BEARING_BIAS * reach * piece.bearZ;
+        const hl = Math.hypot(bx, bz);
+        if (hl > 1e-9) { bx /= hl; bz /= hl; } else { bx = piece.bearX; bz = piece.bearZ; }
+      } else if (hl0 > 1e-3) { bx = dx / hl0; bz = dz / hl0; }
       else {
         // The strand stands exactly vertical, so it has no bearing of its own yet. It falls over along the hem: the direction it was
         // authored with, carried into the root's current frame, is the direction it keeps.
@@ -1716,6 +1744,15 @@ export function createBedClothSystem({ root, config, roomBounds }) {
         const fz = piece.azimX * frames[o + 5] + piece.azimY * frames[o + 8];
         const fl2 = Math.hypot(fx, fz);
         if (fl2 > 1e-3) { bx = fx / fl2; bz = fz / fl2; } else { bx = 1; bz = 0; }
+      }
+      piece.bearX = bx; piece.bearZ = bz;
+      // The swing below assumes the strand lies in the vertical plane of the chosen bearing. When the bearing was regularised away from
+      // the strand's own lean, the strand is first yawed about the vertical through its root onto that bearing, so the pitch that follows
+      // reaches the ladder angle exactly (about a swing plane that did not contain the strand it missed the target and the whole-piece
+      // clearance lift then moved it).
+      if (hl0 > 1e-6) {
+        const yaw = Math.atan2(dz, dx) - Math.atan2(bz, bx);
+        if (Math.abs(yaw) > 1e-6) yawPiece(binding, piece, rx, ry, rz, yaw);
       }
       let kx = -bz, kz = bx;
       // The steepest angle at which the strand still clears the ground: the tip reaches the floor at asin(h / L). The strand's own
@@ -1964,6 +2001,7 @@ export function createBedClothSystem({ root, config, roomBounds }) {
         const geometry = binding.mesh.geometry;
         geometry.boundingBox = binding.originalBox?.clone() ?? null;
         geometry.boundingSphere = binding.originalSphere?.clone() ?? null;
+        if (binding.rigid) for (const piece of binding.rigid) piece.bearX = piece.bearZ = undefined;
       }
       updateBounds(cloth);
     }

@@ -164,7 +164,6 @@ figcaption { margin-top: 6px; color: var(--muted); font-size: 11px; line-height:
 .download-link small { color: var(--muted); font-size: 11px; font-weight: 400; }
 .download-link:hover { color: var(--accent); }
 .download-link[aria-disabled="true"] { pointer-events: none; }
-.asset-credit { margin-top: 12px; color: var(--muted); font-size: 11px; line-height: 1.6; }
 .noscript { position: fixed; inset: auto 16px 16px; z-index: 10; margin: 0; padding: 16px; background: var(--paper); border: 1px solid var(--accent); line-height: 1.6; }
 
 @media (max-width: 600px) {

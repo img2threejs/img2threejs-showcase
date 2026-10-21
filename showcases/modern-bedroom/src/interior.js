@@ -5,7 +5,7 @@ import { createAssetLoader, createTextureUploader } from './interior-loader.js';
 import { createCurtainInteraction } from './interior-curtains.js';
 import { createBedCloth, createBedClothOwnerLookup } from './interior-bedcloth.js';
 import { createInteriorNavigation } from './interior-navigation.js';
-import { validateManifest, sourceLabel, usesPolyHavenAPI } from './interior-manifest.js';
+import { validateManifest, sourceLabel } from './interior-manifest.js';
 import { ambientReference, repairStarvedVertices, createMeshMatcher, applyLightFallbacks } from './interior-lightmaps.js';
 import { createBakedShaderPatch, createClothShaderPatch } from './interior-shading.js';
 import { createPalette } from './interior-palette.js';
@@ -19,7 +19,7 @@ const ui = Object.fromEntries([
   'load-status', 'load-progress', 'retry-load', 'wireframe',
   'reset', 'reset-bed', 'download-glb', 'download-blend', 'pendant-lights',
   'curtain-amount', 'curtain-percent', 'curtain-open', 'curtain-close', 'curtain-wind',
-  'scene-title', 'camera-actions', 'palette-controls', 'curtain-controls', 'resource-credit',
+  'scene-title', 'camera-actions', 'palette-controls', 'curtain-controls',
   'source-caption', 'thumbnail-caption', 'interaction-hint', 'representation-title', 'representation-detail',
 ].map(id => [id, document.getElementById(id)]));
 let viewButtons = [];
@@ -571,7 +571,6 @@ function configureSceneContent(manifest) {
   }
   ui['source-caption'].textContent = `${sourceLabel(manifest)} · not a viewer render`;
   ui['thumbnail-caption'].textContent = `${sourceLabel(manifest)}. Open the image to compare details.`;
-  ui['resource-credit'].hidden = !usesPolyHavenAPI(manifest);
   viewButtons = [['source', { label: 'Source view' }], ...Object.entries(manifest.views)].map(([name, pose]) => {
     const button = document.createElement('button');
     button.type = 'button';
