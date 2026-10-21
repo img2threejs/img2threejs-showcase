@@ -8,7 +8,7 @@
     "prebuild": "npm run check:donate && npm run check:iphone-duo && npm run check:tropical-island && npm run build:living-room",
     "dev": "vite",
     "build": "tsc --noEmit && node --max-old-space-size=8192 node_modules/vite/bin/vite.js build",
-    "postbuild": "npm run check:tropical-island -- --dist && npm run test:source && node scripts/check-pages-size.mjs",
+    "postbuild": "npm run check:tropical-island -- --dist && npm run test:source && node scripts/check-pages-size.mjs && npm run build:demos-json",
     "preview": "vite preview",
     "new-demo": "node scripts/new-showcase.mjs",
     "qa:export:list": "node scripts/qa-export-matrix.mjs --list",
@@ -25,7 +25,9 @@
     "test:source": "node --import tsx --test scripts/source-release.test.mjs tests/source-download.test.ts",
     "check:iphone-duo": "node scripts/check-iphone-duo-no-glb.mjs",
     "check:tropical-island": "node scripts/check-tropical-island-no-glb.mjs",
-    "test:skybound": "tsx --test tests/skybound-adventure/simulation.test.ts"
+    "test:skybound": "tsx --test tests/skybound-adventure/simulation.test.ts",
+    "build:demos-json": "node --import tsx scripts/demos-json.mjs dist/demos.json",
+    "test:demos-json": "node --import tsx --test scripts/demos-json.test.mjs"
   },
   "dependencies": {
     "meshoptimizer": "~0.18.1",
