@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 2,
+  "provider": "Viggle PINOC",
+  "engine": "@viggle/splat-engine@0.2.0",
+  "playcanvas": "2.18.0",
+  "defaultScene": "house",
+  "scenes": {
+    "original": {
+      "asset": "public/assets/viggle/scene.spz",
+      "expectedSha256": "d43b3f703820d2de50156327779f95cc10f1e853910108d5e667c62d049da5ef",
+      "sourceReferenceSha256": "0ead754e44235b4c57fab7612362a3a5480c47a7e33c5636773047513f43b201",
+      "assetId": "efb23076-2ebe-4144-8b4b-63996ea7bbd0",
+      "taskId": "a7c4fbd4-b92a-42c0-820b-beeaa5e507ba",
+      "revision": 2,
+      "newGenerationPerformed": false,
+      "deblurredOrRegenerated": false,
+      "cameraPolicy": "Rotation at capture origin; no metric walking or recovered room correspondence",
+      "knownDifference": "Viggle's inferred bedroom includes a window above the headboard not present in source B; its layout is not a verified measured equivalent of the authored detail model."
+    },
+    "house": {
+      "asset": "public/assets/viggle-house/scene.spz",
+      "assetSha256": "445709bc2e6e4d321adb210defa0a876b8b0a74b281314b64f4c36f2ad6921c5",
+      "byteLength": 17235103,
+      "sourcePanorama": "public/assets/viggle-house/source-panorama.png",
+      "sourcePanoramaSha256": "50a1e5a6217fc1ce9b1907c3dc34d8afe841fd0377a17a35d5eab054d81fa506",
+      "sourcePanoramaWidth": 3072,
+      "sourcePanoramaHeight": 1536,
+      "assetId": "46ee3b8a-fb55-4dcd-9094-f325b0630249",
+      "taskId": "c2a52c44-31a6-46e4-8e17-86517d266e67",
+      "revision": 2,
+      "iteration": 2,
+      "automaticExpandPasses": 2,
+      "newGenerationPerformed": true,
+      "deblurredOrRegenerated": true,
+      "generationProvider": "Viggle PINOC",
+      "generationPrompt": "Generated from a single 2:1 equirectangular Cycles panorama rendered inside the authored house (capture point inside the open-plan living room, panorama centre faces the TV wall).",
+      "generationCreditsCharged": "between 5 and 11, as billed by PINOC",
+      "panoramaRender": {
+        "script": ".img2/artifacts/interior/viggle-r2/render_panorama.py",
+        "engine": "Blender 4.3 Cycles equirect",
+        "samples": 64,
+        "denoise": true,
+        "viewTransform": "Khronos PBR Neutral",
+        "exposure": 0.25,
+        "scratchScene": true,
+        "masterBlendModified": false,
+        "temporaryAdditions": [
+            "PanoCeiling (House.Plaster slab at the authored wall height)",
+            "PanoFront.glass + rails + mullions (House.Glass + House.Charcoal__architecture)",
+            "PanoGround (House.Foliage__garden lawn beyond the plinth)"
+          ],
+        "cameraBlender": [-0.3, -0.4, 1.5],
+        "cameraYawDeg": 90
+      },
+      "cameraPolicy": "Rotation at capture origin; no metric walking or recovered room correspondence",
+      "knownDifference": "Single-viewpoint reconstruction: areas unseen from the capture point (bedroom, bathroom interiors) are engine-filled; the temporary ceiling and glazed front wall exist only in the scratch render used to build the panorama and are not in the shipped GLB/.blend; scale is arbitrary."
+    }
+  }
+}

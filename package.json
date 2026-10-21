@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "check:donate": "node scripts/check-donate-integrity.mjs",
-    "prebuild": "npm run check:donate && npm run check:iphone-duo && npm run check:tropical-island && npm run build:living-room",
+    "prebuild": "npm run check:donate && npm run check:iphone-duo && npm run check:tropical-island && npm run build:living-room && npm run build:modern-house",
     "dev": "vite",
     "build": "tsc --noEmit && node --max-old-space-size=8192 node_modules/vite/bin/vite.js build",
     "postbuild": "npm run check:tropical-island -- --dist && npm run test:source && node scripts/check-pages-size.mjs && npm run build:demos-json",
@@ -21,6 +21,10 @@
     "dev:living-room": "npm run dev --workspace @img2threejs/living-room",
     "preview:living-room": "npm run preview --workspace @img2threejs/living-room -- --mode showcase --base=/living-room/ --outDir ../../public/living-room",
     "sync:living-room": "node scripts/sync-living-room.mjs",
+    "build:modern-house": "npm run build --workspace @img2threejs/modern-house -- --mode showcase --base=/modern-house/ --outDir ../../public/modern-house --emptyOutDir",
+    "dev:modern-house": "npm run dev --workspace @img2threejs/modern-house",
+    "preview:modern-house": "npm run preview --workspace @img2threejs/modern-house -- --mode showcase --base=/modern-house/ --outDir ../../public/modern-house",
+    "sync:modern-house": "node scripts/sync-modern-house.mjs",
     "publish:source": "node scripts/publish-source-archives.mjs",
     "test:source": "node --import tsx --test scripts/source-release.test.mjs tests/source-download.test.ts",
     "check:iphone-duo": "node scripts/check-iphone-duo-no-glb.mjs",
@@ -42,6 +46,7 @@
     "vite": "^5.4.0"
   },
   "workspaces": [
-    "showcases/living-room"
+    "showcases/living-room",
+    "showcases/modern-house"
   ]
 }

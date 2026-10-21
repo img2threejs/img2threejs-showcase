@@ -37,7 +37,10 @@ ordering drives **04 / THE ARCHIVE** and Find a Study; the newest archive card i
 
 Use the **Interior** filter for img2interior rooms. **Living Room — Blender + Three.js**
 opens the dedicated `/living-room/` viewer and is no longer listed under Objects.
-Its thumbnail remains explicitly labeled **Design reference**, not a captured live render.
+**Modern House Tour — Source B cutaway** opens the dedicated `/modern-house/` viewer
+with the Detail 3D study plus the Viggle capture (default scene reconstructed from
+an img2interior Cycles panorama; the original Viggle capture is preserved as a
+comparison). Their thumbnails remain **Design reference**, not captured live renders.
 Existing `#/x/<id>` links still open the requested Three.js study directly.
 
 ## Skybound Adventure — playable pixel-art kingdom
@@ -616,6 +619,75 @@ rules. `npm ci` installs both dependency sets; Python 3 is also required.
 - `npm run sync:living-room -- --from <canonical-project>` explicitly refreshes viewer
   sources and manifest-declared assets. It preserves the gallery-specific publication
   adapter and requires matching dependency pins and the download override hook.
+
+## img2interior — standalone modern house
+
+The archive card opens `/modern-house/`: a Blender-authored Source B cutaway rendered
+in Three.js with **306 meshes / 80,140 triangles** across 44 components, five
+half-float PIZ EXR ambient lightmaps (architecture, furniture, details, textiles,
+garden, sized 1024–2048), one shadowed runtime SUN, seven authored camera presets
+(living, kitchen, bedroom, bathroom, reverse, material, plus the source cutaway
+overview), an editable linen sofa finish (ivory / stone / sage), a wall switchable
+into a matte living-room / source-image side-by-side reference comparison, and a
+collapsible panel. The hybrid path exposes both `window.interiorStudy` (the Detail 3D
+study: scene graph, finishes, curtain-free cameras, dispose) and `window.hybridStudy`
+(the mode wrapper adding the Viggle scene swap and the deep-zoom navigation
+constraints). This is **not** a procedural img2threejs reconstruction. The synthetic
+Customuse source is labelled `synthetic-design-reference`; Poly Haven materials are
+CC0, not the synthetic reference.
+
+The Detail 3D house and the Viggle capture are **two independent representations**,
+not a registered pair. The native cutaway is navigated with bounded source-camera
+eye / target; the Viggle default scene is a new revision-2 SPZ reconstructed from a
+Blender Cycles equirectangular panorama rendered **inside the authored house** (the
+panorama capture point sits in the open-plan living room, the centre faces the TV
+wall). The original Viggle capture is kept as the `original` scene for comparison.
+Both share the official `@viggle/splat-engine` and rotate in place at the capture
+origin; scale is arbitrary and no registration between the native house and the
+Viggle scene is claimed. The portable GLB is a separately baked static diffuse
+snapshot (walnut grain speckled, mirror dark) — not live GI, not a ray-traced mirror,
+not real-time cloth.
+
+`showcases/modern-house/` is an independent npm workspace pinning Three.js 0.180.0,
+Vite 6.4.1, `@viggle/splat-engine` 0.2.0 and `playcanvas` 2.18.0. `gltf-validator`
+2.0.0-dev.3.10 validates both runtime and portable GLBs (0 errors / 0 warnings). The
+gallery keeps its existing dependency versions and procedural safety rules.
+`npm ci` installs both dependency sets; Python 3 is also required.
+
+- `npm run build` builds the child before the gallery. `build:modern-house` uses Vite
+  mode `showcase` and base `/modern-house/`, writing generated files to
+  `public/modern-house/` (gitignored build output).
+- Before gallery development, run `npm run build:modern-house`, then `npm run dev`.
+  `npm run dev:modern-house` runs the standalone viewer; `preview:modern-house`
+  serves its gallery build.
+- Large binaries are pinned in `showcases/modern-house/assets.lock.json`, fetched
+  from the versioned [asset prerelease](https://github.com/img2threejs/img2threejs-showcase/releases/tag/img2interior-modern-house-assets-v1)
+  and verified against bundle and per-file SHA-256 checksums. They are not Git
+  blobs; the asset bundle `modern-house-assets.zip` covers exactly the 13 manifest
+  `assets/...` entries (95.9 MiB total).
+- The Pages build contains runtime assets only. Source ZIP `modern-house-source.zip`,
+  portable GLB (13,075,364 bytes) and packed Blender master (8,704,869 bytes)
+  download from the release, avoiding a duplicate half-gigabyte archive in Pages. The
+  runtime GLB (13,885,396 bytes) and five PIZ EXR lightmaps ship with Pages. The
+  initial runtime payload is approximately 43.6 MB.
+- `VITE_MODERN_HOUSE_DOWNLOADS` carries the release URLs into the bundle; the
+  download override hook mirrors the living-room mechanism.
+- Ordinary standalone `npm run build` keeps local downloads and includes all assets
+  in its Source ZIP. The downloaded source is independently runnable.
+- **Hide panel / Show panel** fills the browser viewport and preserves edits on
+  desktop and narrow screens; it does not request operating-system fullscreen.
+- `npm run sync:modern-house -- --from <canonical-project>` explicitly refreshes
+  viewer sources and manifest-declared assets. It preserves the gallery-specific
+  publication adapter and requires matching dependency pins and the download
+  override hook.
+
+**Honest limits.** The Source B cutaway, hidden depth, fixture detail, metric
+scale and the source camera are **authored estimates from one synthetic reference
+image**, not survey data. There is **no registration between the native house
+and the Viggle capture**, and the Viggle scale is arbitrary. The portable GLB is
+a **static baked snapshot** (walnut grain is intentionally speckled, the mirror
+is intentionally dark) — not live GI, not a ray-traced mirror. Device evidence is
+headless only.
 
 ## Community
 

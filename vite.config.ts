@@ -10,11 +10,13 @@ export default defineConfig({
   plugins: [
     sourceArchivesPlugin(),
     {
-      name: 'living-room-directory-index',
+      // Independent workspace showcases are built to public/<id>/; serve their index in dev.
+      name: 'workspace-showcase-directory-index',
       configureServer(server) {
         server.middlewares.use((request, _response, next) => {
-          if (request.url?.split('?')[0] === '/living-room/') {
-            request.url = request.url.replace('/living-room/', '/living-room/index.html');
+          const directory = request.url?.split('?')[0];
+          if (directory === '/living-room/' || directory === '/modern-house/') {
+            request.url = request.url!.replace(directory, `${directory}index.html`);
           }
           next();
         });

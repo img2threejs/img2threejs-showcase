@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Viggle capture</title>
+  </head>
+  <body>
+    <div id="viggle-stage" class="viggle-stage">
+      <div id="viggle-host" class="viggle-host"></div>
+      <div id="viggle-message" class="viggle-message" role="status" aria-live="polite">
+        <p id="viggle-message-title">Opening the Viggle capture</p>
+        <p id="viggle-message-detail">Checking the capture file…</p>
+        <progress id="viggle-progress" aria-label="Loading the Viggle capture"></progress>
+        <button id="viggle-retry" type="button" hidden>Retry capture</button>
+      </div>
+      <p id="viggle-hint" class="viggle-hint">Viggle capture. You look around from one fixed point. Drag, or use the arrow keys when this view has focus. Home resets the look direction.</p>
+    </div>
+    <noscript><p class="viggle-noscript">JavaScript is required to run the Viggle capture.</p></noscript>
+    <script type="module" src="/src/viggle.js"></script>
+  </body>
+</html>

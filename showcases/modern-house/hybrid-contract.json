@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "scope": "Source-B house showcase combining preserved Viggle immersion and newly authored sharp mesh/PBR study; no Gaussian deblurring or exact registration claim",
+  "source": "public/assets/reference.png",
+  "sourceSha256": "0ead754e44235b4c57fab7612362a3a5480c47a7e33c5636773047513f43b201",
+  "representations": {
+    "detail": "Editable, source-guided Blender geometry and native PBR, ambient EXR lightmaps plus direct SUN, Three.js viewer",
+    "viggle": "New revision-2 SPZ reconstructed from a Cycles panorama rendered inside the authored house (default, 'house'); the original Viggle capture is kept as a 'original' comparison. Both share the official Viggle engine and rotate in place at the capture origin.",
+    "comparison": "Source B / authored render and explicit modes, not a registered pixel-aligned before/after"
+  },
+  "viggleScenes": {
+    "default": "house",
+    "house": {
+      "asset": "public/assets/viggle-house/scene.spz",
+      "assetSha256": "445709bc2e6e4d321adb210defa0a876b8b0a74b281314b64f4c36f2ad6921c5",
+      "sourcePanorama": "public/assets/viggle-house/source-panorama.png",
+      "sourcePanoramaSha256": "50a1e5a6217fc1ce9b1907c3dc34d8afe841fd0377a17a35d5eab054d81fa506",
+      "panoramaScript": ".img2/artifacts/interior/viggle-r2/render_panorama.py",
+      "singleViewpointReconstruction": true,
+      "registrationToAuthoredModel": false,
+      "scale": "arbitrary"
+    },
+    "original": {
+      "asset": "public/assets/viggle/scene.spz",
+      "assetSha256": "d43b3f703820d2de50156327779f95cc10f1e853910108d5e667c62d049da5ef",
+      "sourceReferenceSha256": "0ead754e44235b4c57fab7612362a3a5480c47a7e33c5636773047513f43b201",
+      "registrationToAuthoredModel": false
+    }
+  },
+  "physicalRoomNativeZUp": {"x": [-5.4, 5.4], "y": [-4.2, 4.2], "height": 2.9},
+  "sourceCamera": {"position": [11.5, -16.5, 13.5], "target": [0, 0, 0.8], "lensMm": 48, "sensorWidthMm": 36},
+  "views": ["source", "living", "kitchen", "bedroom", "bathroom", "reverse", "material"],
+  "materialInputs": "material-inputs.json",
+  "materialNames": ["House.Walnut", "House.Stone", "House.Linen", "House.Plaster", "House.Metal", "House.Charcoal", "House.Glass", "House.Porcelain", "House.Mirror", "House.Bedding", "House.Foliage"],
+  "runtimeNavigation": "Declare physical room bounds accurately. The cutaway source camera requires a separate finite viewing enclosure including source camera and room; constrain both eye and target and disclose that this is not walk/collision certification.",
+  "limits": ["Metre scale, unseen depth and camera are authored estimates, not survey data", "Native cutaway and captured Viggle panorama are independently navigated representations", "Runtime GI and reflection probe are static, not live mirror/GI", "No additional paid generation, source upload or deployment", "Keep original preview on port 8893 unchanged"]
+}

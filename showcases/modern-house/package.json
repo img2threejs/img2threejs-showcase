@@ -1,0 +1,27 @@
+{
+  "name": "@img2threejs/modern-house",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch:assets": "python3 scripts/fetch_assets.py",
+    "predev": "python3 scripts/fetch_assets.py",
+    "dev": "vite",
+    "package:source": "python3 scripts/package_source.py",
+    "prebuild": "python3 scripts/fetch_assets.py",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@viggle/splat-engine": "0.2.0",
+    "playcanvas": "2.18.0",
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "gltf-validator": "2.0.0-dev.3.10",
+    "vite": "6.4.1"
+  },
+  "engines": {
+    "node": "^18.0.0 || ^20.0.0 || >=22.0.0"
+  }
+}
