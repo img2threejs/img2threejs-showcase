@@ -1,0 +1,31 @@
+{
+  "name": "@img2threejs/modern-bedroom",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch:assets": "python3 scripts/fetch_assets.py",
+    "lock:assets": "python3 scripts/lock_assets.py",
+    "optimize:assets": "node scripts/optimize_runtime_assets.mjs",
+    "predev": "python3 scripts/fetch_assets.py",
+    "dev": "vite",
+    "package:source": "python3 scripts/package_source.py",
+    "prebuild": "python3 scripts/fetch_assets.py",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "gltf-validator": "2.0.0-dev.3.10",
+    "meshoptimizer": "^1.3.0",
+    "sharp": "^0.35.5",
+    "vite": "6.4.1"
+  },
+  "engines": {
+    "node": "^18.0.0 || ^20.0.0 || >=22.0.0"
+  }
+}

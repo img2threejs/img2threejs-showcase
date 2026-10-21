@@ -545,9 +545,10 @@ For an authorized manual publication, build first, authenticate `gh` with releas
 write access, then run `npm run publish:source`.
 
 `npm run build` also runs `npm run test:source` and rejects a Pages output larger
-than 1,000,000,000 bytes. With the living-room study included, the verified output
-is 959,790,635 bytes; its 30 procedural Source ZIPs (278,445,916 bytes) are hosted
-on Releases instead. Runtime scene assets and visual quality are unchanged.
+than 1,000,000,000 bytes. The verified clean gallery output with both living-room
+and modern-bedroom is **858,270,609 bytes / 525 files**, including `demos.json`.
+Procedural Source ZIPs stay on Releases; runtime texture values and original
+editable exports are unchanged.
 After building, validate all packages in isolated consumers with:
 
 ```sh
@@ -604,11 +605,21 @@ rules. `npm ci` installs both dependency sets; Python 3 is also required.
   `npm run dev:living-room` runs the standalone viewer; `preview:living-room` serves
   its gallery build.
 - Large binaries are pinned in `showcases/living-room/assets.lock.json`, fetched from
-  the versioned [asset prerelease](https://github.com/img2threejs/img2threejs-showcase/releases/tag/img2interior-living-room-assets-v1),
+  the versioned [runtime asset release](https://github.com/img2threejs/img2threejs-showcase/releases/tag/img2interior-living-room-assets-v2),
   and verified against bundle and per-file SHA-256 checksums. They are not Git blobs.
 - The Pages build contains runtime assets only. Source ZIP, portable GLB and packed
   Blender downloads point to the release, avoiding a duplicate half-gigabyte archive
   in Pages. They contain the original open-curtain / cream-sofa state, not live edits.
+- Runtime lightmaps use ZIP-compressed HALF EXRs instead of FLOAT EXRs. The pinned
+  Three.js loader already decoded the originals to HALF: all five replacement maps
+  produce bit-identical decoded RGBA texture buffers, saving 216,008,767 Pages bytes.
+  Original source, portable GLB and packed Blender downloads remain on the immutable
+  v1 release; this is not a reduction of the original editable exports.
+- To prepare a new runtime release from verified local assets, run
+  `node showcases/living-room/scripts/pack_runtime_assets.mjs --tag <new-tag> --output <new-directory>`.
+  The tool verifies every input checksum, rejects changed decoded texels, and emits
+  the bundle, replacement maps, new lock and per-map proof. Publish the bundle and
+  proof under the new tag before committing its lock; never replace a published tag.
 - Ordinary standalone `npm run build` keeps local downloads and includes all assets
   in its Source ZIP. The downloaded source is independently runnable.
 - **Hide panel / Show panel** fills the browser viewport and preserves edits on
@@ -616,6 +627,27 @@ rules. `npm ci` installs both dependency sets; Python 3 is also required.
 - `npm run sync:living-room -- --from <canonical-project>` explicitly refreshes viewer
   sources and manifest-declared assets. It preserves the gallery-specific publication
   adapter and requires matching dependency pins and the download override hook.
+
+## img2interior — standalone modern bedroom
+
+The Interior gallery card opens `/modern-bedroom/`. The 3D canvas fills the browser
+viewport; the **Panel** button opens an overlay without resizing or resetting the
+camera. The panel contains the overview, synthetic design reference, room-colour
+customisation and source / portable GLB / editable Blender downloads.
+
+- `showcases/modern-bedroom/` pins Three.js 0.180.0 and Vite 6.4.1.
+- Run `npm run dev:modern-bedroom` for the standalone viewer, or
+  `npm run build:modern-bedroom` before gallery development.
+- `npm run build` builds both interior workspaces before the gallery.
+- The runtime uses meshopt geometry, KTX2 textures/lightmaps and static lighting
+  samples. Its versioned release bundle and individual files are SHA-256-pinned in
+  `showcases/modern-bedroom/assets.lock.json`; binary assets are not Git blobs.
+- Source, portable GLB and packed Blender downloads are separate release assets,
+  not duplicated in the Pages output. The static exports do not capture live
+  palette, curtain or throw changes. Baked indirect lighting does not rebounce
+  when colours change.
+- Dimensions and unseen surfaces are authored estimates from one synthetic
+  reference, not measured reconstruction.
 
 ## Community
 

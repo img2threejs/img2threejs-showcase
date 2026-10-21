@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "bundle": {
-    "url": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-living-room-assets-v1/living-room-assets.zip",
-    "sha256": "a030986729e2014002ff58fd499a5fb21fa29535dfc5868ad937a38300e86b2d",
-    "bytes": 539663456
+    "url": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-living-room-assets-v2/living-room-assets.zip",
+    "sha256": "1976f126a1506167cdfc97f00f3dd8a9adf4f41e36dc93b0605942d10411f9c4",
+    "bytes": 323654881
   },
   "files": [
     {
@@ -28,28 +28,28 @@
     },
     {
       "path": "assets/interior/lightmap-architecture.exr",
-      "sha256": "8430c7e983d74debf1eb6ccd51e211bd85f11552777142c3c237467374a75b2f",
-      "bytes": 37671808
+      "sha256": "2794cf6e50fbaf0789ec34eec1273b162e5bcd867dc0d85dc92b1d84627c7e67",
+      "bytes": 8023885
     },
     {
       "path": "assets/interior/lightmap-furniture.exr",
-      "sha256": "6bed4cec26f2444ee956ab0bc14324b173e27c68b15cf4a95b11c81a8f567112",
-      "bytes": 30883915
+      "sha256": "16279f7559cfc439590de4e8aaeb19dcd865a39a32d49f2b776f6fbed18478bb",
+      "bytes": 9639062
     },
     {
       "path": "assets/interior/lightmap-garden.exr",
-      "sha256": "2bfe0b6bd639c79072575aeada22028b585736386990382666a163403db5a994",
-      "bytes": 125181823
+      "sha256": "2d0e7d01118fe636fc40fc4d43c7dbb9efc3367e212861a63784fd5517047ffb",
+      "bytes": 25572636
     },
     {
       "path": "assets/interior/lightmap-textiles.exr",
-      "sha256": "7b7b2a2a09bebb4ef48ff5fb7e015fd0b314510fa84f9f1dadca165e6aced942",
-      "bytes": 82320363
+      "sha256": "f1e9927512a234309787ec8d9a0fca15990e4ee302eb6506cb37033281748aac",
+      "bytes": 24441505
     },
     {
       "path": "assets/interior/lightmap-details.exr",
-      "sha256": "4ffe10407e47e18b7363a83d785a18093584ff243de5e8af76495198b324c0db",
-      "bytes": 11775580
+      "sha256": "3cb455933f843cdc113b963510bbff51122d184cba8e1bbeee873aa68dada0a1",
+      "bytes": 4147634
     },
     {
       "path": "assets/interior/room-environment.exr",

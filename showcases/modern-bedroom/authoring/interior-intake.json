@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "sourceKind": "synthetic-design-reference",
+  "authorization": "Owner approved generated reference in reference-result.json and explicitly authorized local bedroom reconstruction. No publication, uploads or paid generation authorized.",
+  "scale": {
+    "unit": "m",
+    "basis": "authored-estimate",
+    "note": "2.0x2.1 m king mattress prior; room/camera/hidden surfaces estimated from one synthetic image."
+  },
+  "components": [
+    "room-shell",
+    "floor",
+    "bed-frame",
+    "headboard",
+    "bedding",
+    "pillows",
+    "throw",
+    "nightstands",
+    "pendants",
+    "wardrobe",
+    "dresser",
+    "art",
+    "rug",
+    "glazing",
+    "curtains",
+    "decor",
+    "exterior"
+  ],
+  "unknowns": [
+    "Blender Z-up metres; glTF maps (x,y,z) to (x,z,-y).",
+    "King-size mattress 2.0 by 2.1 m is a scale prior, not a measurement.",
+    "Room 6.4 by 5.8 by 2.9 m and hidden front wall are authored.",
+    "Bed, upholstered headboard, cabinetry, dresser, art and pendant silhouettes are authored from visible source cues, not imported room assets.",
+    "Two curtain layers use position-based browser cloth; no calibrated FEM or complete self/furniture collision.",
+    "Ambient bake and probe remain static when curtains move; direct shadows respond without global dimming.",
+    "Thin glazing is an explicit transmission/shadow approximation; exterior skyline is simple authored geometry.",
+    "Desktop Chromium and narrow emulation are required; no real-phone proof or public deployment."
+  ],
+  "interactionRequired": true
+}

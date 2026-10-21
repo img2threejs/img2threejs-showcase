@@ -1,0 +1,22 @@
+{
+  "requestId": "b383e938-d265-40c9-8be2-8b3a67afcd70",
+  "operationId": "e43d933c-3e06-4425-bc23-83ac2e54d4a3",
+  "workflowId": "b2f682b3-2f7c-4070-8263-764e3899ae70",
+  "nodeId": "2e8b69d3-38b4-4b1f-8cd1-95a09f3fc6bd",
+  "submissionState": "submitted",
+  "canvasUrl": "https://customuse.com/workflow/b2f682b3-2f7c-4070-8263-764e3899ae70",
+  "status": "complete",
+  "resultUrl": "https://public.customuse.com/media-artifacts/f0d89c59-4fb8-47d1-a007-41a05eaa744b/media-artifact-e27b1ac69924f126de53401121e13f5b-original.png",
+  "localImage": {
+    "file": "public/assets/reference.png",
+    "format": "PNG",
+    "width": 2752,
+    "height": 1536,
+    "mode": "RGB",
+    "bytes": 6142788,
+    "sha256": "cef54153070019a90541145fbba9981609c0cfb3ae52468e6ea80b89c0b605d9"
+  },
+  "userImageApproval": "approved",
+  "showcaseBuildStarted": false,
+  "source": "New text-to-image generation; no living-room image, scene or asset inputs supplied"
+}

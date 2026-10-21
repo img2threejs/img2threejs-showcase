@@ -1,0 +1,297 @@
+{
+  "schemaVersion": 1,
+  "title": "Walnut / Petrol — Bedroom Study",
+  "sourceKind": "synthetic-design-reference",
+  "source": "public/assets/reference.png",
+  "sourceViewLimit": "Single approved AI design image. Metre dimensions, unseen depth and reverse surfaces are authored estimates, not measured recovery.",
+  "portability": "Runtime uses PBR, compressed SUN/lamp-free ambient lightmaps and a static probe, interactive curtains, a fixed duvet, a draggable throw, and switchable shadowed pendants. Portable is a separate embedded static snapshot with lamps on; no cloth, relighting or live state. Native retains editable packed PBR and authored lamps on.",
+  "authoring": {
+    "sceneBuilder": "build_scene.py",
+    "sourceImageSize": [
+      2752,
+      1536
+    ],
+    "room": {
+      "x": [
+        -3.2,
+        3.2
+      ],
+      "y": [
+        -3.1,
+        2.7
+      ],
+      "height": 2.9
+    },
+    "cameraEstimate": {
+      "position": [
+        -2.215,
+        -2.178,
+        1.183
+      ],
+      "target": [
+        0.61,
+        1.946,
+        1.193
+      ],
+      "lensMm": 17.4,
+      "sensorWidthMm": 36
+    },
+    "inspectionViews": {
+      "lateral": {
+        "position": [
+          2.75,
+          -2.3,
+          1.65
+        ],
+        "target": [
+          0,
+          1,
+          0.9
+        ]
+      },
+      "reverse": {
+        "position": [
+          2.6,
+          2,
+          1.75
+        ],
+        "target": [
+          -0.5,
+          -1.4,
+          1.1
+        ]
+      },
+      "textile-front": {
+        "position": [
+          0,
+          -1.4,
+          1.55
+        ],
+        "target": [
+          0,
+          0.45,
+          0.65
+        ]
+      },
+      "textile-grazing": {
+        "position": [
+          -1.6,
+          -0.5,
+          0.95
+        ],
+        "target": [
+          0,
+          0.5,
+          0.65
+        ]
+      },
+      "curtain": {
+        "position": [
+          1,
+          -1.6,
+          1.6
+        ],
+        "target": [
+          3,
+          0.7,
+          1.45
+        ]
+      },
+      "linen-macro": {
+        "position": [
+          0.15,
+          0.45,
+          1.02
+        ],
+        "target": [
+          0.15,
+          0.65,
+          0.69
+        ]
+      },
+      "linen-grazing-macro": {
+        "position": [
+          -0.35,
+          0.1,
+          0.8
+        ],
+        "target": [
+          0.1,
+          0.65,
+          0.69
+        ]
+      },
+      "throw-macro": {
+        "position": [
+          0.4,
+          -1.05,
+          0.62
+        ],
+        "target": [
+          0.12,
+          -0.36,
+          0.34
+        ]
+      },
+      "floor-rug": {
+        "position": [
+          2.2,
+          -1.75,
+          0.85
+        ],
+        "target": [
+          1.35,
+          -1.0,
+          0.01
+        ]
+      },
+      "pendants": {
+        "position": [
+          -1.65,
+          0.4,
+          1.25
+        ],
+        "target": [
+          -1.39,
+          1.68,
+          1.2
+        ]
+      },
+      "headboard": {
+        "position": [
+          -0.2,
+          0.3,
+          1.65
+        ],
+        "target": [
+          0,
+          2.09,
+          1.1
+        ]
+      }
+    },
+    "probePosition": [
+      0,
+      -1.5,
+      1.4
+    ],
+    "resourceManifest": ".img2/artifacts/interior/resources.json"
+  },
+  "runtime": {
+    "background": "/assets/interior/bedroom-sky.exr",
+    "backgroundIntensity": 1.0,
+    "glassTransmission": 0.9,
+    "variants": [],
+    "shading": {
+      "probe": { "specularScale": 0.4 },
+      "cloth": {
+        "drape": { "saturation": 0.0, "gain": 1.6, "tint": [1.084, 0.984, 0.924], "translucency": 0.05, "fold": { "occlusion": 0.5, "radius": 0.08, "ridge": 0.2 } },
+        "sheer": { "saturation": 0.0, "gain": 1.77, "tint": [0.99, 0.99, 1.04], "translucency": 0.95, "fold": { "occlusion": 0.15, "radius": 0.08, "ridge": 0.05 } }
+      },
+      "starvedIslands": { "meshes": ["floor.plank.**"], "threshold": 0.04, "groove": 0.6 },
+      "samplers": [
+        {
+          "meshes": ["bedding.throw.knitted-drape", "bedding.throw.bound-edge", "bedding.throw.fringe.*"],
+          "bias": -3.0,
+          "anisotropy": 16,
+          "slots": ["map", "normalMap"]
+        },
+        {
+          "meshes": ["rug.low-pile", "rug.bound-fabric-edge"],
+          "bias": -2.0,
+          "anisotropy": 8,
+          "slots": ["map", "normalMap"]
+        }
+      ]
+    },
+    "bedCloth": {
+      "gravity": 9.81,
+      "floorY": 0.0,
+      "substeps": 8,
+      "contactInterval": 2,
+      "colliderMeshes": [
+        "bed.mattress.king",
+        "bed.frame.**",
+        "bed.leg.**",
+        "headboard.*",
+        "nightstand.*.body",
+        "nightstand.*.drawer",
+        "nightstand.*.travertine",
+        "dresser.carcass",
+        "dresser.plinth",
+        "dresser.top",
+        "wardrobe.*.carcass",
+        "wall.central.feature",
+        "rug.low-pile"
+      ],
+      "softColliderMeshes": [
+        "pillow.*.*.?"
+      ],
+      "cloths": [
+        {
+          "id": "duvet",
+          "fixed": true,
+          "surfaceMesh": "bedding.duvet.closed",
+          "followMeshes": [
+            "bedding.duvet.sewn-edge"
+          ],
+          "simSpacing": 0.07,
+          "thickness": 0.018,
+          "loft": 0.045,
+          "massPerM2": 0.9,
+          "stretch": 1,
+          "shear": 0.5,
+          "bend": 0.1,
+          "bendFlat": 0.7,
+          "compression": 0.5,
+          "friction": 0.9,
+          "damping": 2.5,
+          "airDrag": 3.5,
+          "iterations": 1,
+          "gripStiffness": 0.25,
+          "gripSpeed": 2.2,
+          "gripRadius": 3,
+          "selfCollision": true
+        },
+        {
+          "id": "throw",
+          "surfaceMesh": "bedding.throw.knitted-drape",
+          "followMeshes": [
+            "bedding.throw.bound-edge",
+            "bedding.throw.fringe.*"
+          ],
+          "simSpacing": 0.04,
+          "thickness": 0.004,
+          "massPerM2": 0.6,
+          "stretchStiffness": 1500,
+          "shearStiffness": 40,
+          "bendRigidity": 0.001,
+          "compression": 0.05,
+          "stretchDamping": 0.0004,
+          "bendDamping": 0.01,
+          "stretchIterations": 6,
+          "friction": 0.6,
+          "damping": 1.6,
+          "airDrag": 1.2,
+          "gripParticles": 3,
+          "gripForce": 30,
+          "gripSpeed": 12,
+          "selfCollision": true
+        }
+      ]
+    }
+  },
+  "assumptions": [
+    "Blender Z-up metres; glTF maps (x,y,z) to (x,z,-y).",
+    "King-size mattress 2.0 by 2.1 m is a scale prior, not a measurement.",
+    "Room 6.4 by 5.8 by 2.9 m and hidden front wall are authored.",
+    "Bed, upholstered headboard, cabinetry, dresser, art and pendant silhouettes are authored from visible source cues, not imported room assets.",
+    "Two curtain layers use position-based browser cloth; no calibrated FEM or complete self/furniture collision.",
+    "Ambient bake and probe remain static when curtains or bed linen move; direct shadows respond without global dimming.",
+    "Duvet and throw are interactive position-based cloth (coarse solver grid skinned onto the authored mesh, UV1 lightmap and tangents stay attached to the surface): the duvet is a fixed static surface (never picked, never simulated, never skinned; its authored mid-surface is the collision surface the throw rests on), the throw is simulated (approximate stretch, shear and bending, Coulomb friction, thickness-aware contact with simplified box and rounded-box proxies of the bed, headboard, pillows, furniture, rug and floor, plus approximate cloth-cloth and self contact); no calibrated mass, stiffness or friction, no pillow or mattress motion, and the baked ambient light does not re-light cloth that has been moved.",
+    "Switchable pendant direct light and bulb emission are excluded from runtime ambient atlases and the reflection probe; runtime on/off changes real spot lights and emission, not exposure. No dynamic indirect lamp bounce.",
+    "Thin glazing is an explicit transmission/shadow approximation; exterior skyline is simple authored geometry.",
+    "Runtime daylight sky is an authored visual-only gradient, not measured radiance or an indoor reflection/GI replacement.",
+    "Desktop Chromium and narrow emulation are required; no real-phone proof or public deployment."
+  ]
+}

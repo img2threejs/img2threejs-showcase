@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "bundle": {
+    "url": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-modern-bedroom-assets-v1/modern-bedroom-assets.zip",
+    "sha256": "b515d6d3585b17b189aa8cd6d53df8a9586e2d33961bb2e1de097c52db83e3d9",
+    "bytes": 112719684
+  },
+  "files": [
+    {
+      "path": "assets/interior-runtime/bedroom-sky.hdr",
+      "sha256": "81b9646cfce3c5dc60ea89fb007ecdecc0f509a3f49512e9ea5185efad3469b1",
+      "bytes": 4145
+    },
+    {
+      "path": "assets/interior-runtime/lightmap-architecture.ktx2",
+      "sha256": "95272ff01d6f1ad80e1fb130287f2dd2595c29e28994823a9f7d9178926296b0",
+      "bytes": 1751661
+    },
+    {
+      "path": "assets/interior-runtime/lightmap-details.ktx2",
+      "sha256": "8dd81c5d7d65ffee2a6886ed5fd9f9a5b150927a4b51f999237f29b4a127c63b",
+      "bytes": 2536864
+    },
+    {
+      "path": "assets/interior-runtime/lightmap-furniture.ktx2",
+      "sha256": "37e77b7e491f71f1443699472ec1b5bc0571f8f5f990a165b4b6c04f279364b5",
+      "bytes": 6836405
+    },
+    {
+      "path": "assets/interior-runtime/lightmap-garden.ktx2",
+      "sha256": "6e1180b796cb8a77cc328909555510c4d483da03c90c98508391a9b97b92758d",
+      "bytes": 9094176
+    },
+    {
+      "path": "assets/interior-runtime/lightmap-samples.bin",
+      "sha256": "895c57b5a53aa194507d71eec1ed0630e6734269bd134c205b08ad33c7748978",
+      "bytes": 2527296
+    },
+    {
+      "path": "assets/interior-runtime/lightmap-samples.json",
+      "sha256": "3b009525bd7f31a51ac14a0d599b56e2e7e424f5b1bb234e2a0266743bbc9c50",
+      "bytes": 20701
+    },
+    {
+      "path": "assets/interior-runtime/lightmap-textiles.ktx2",
+      "sha256": "bca2f54f454b366d5aedfad04bc2c2405e3ccb42dbe38a86ccdec2730ff6278c",
+      "bytes": 10112975
+    },
+    {
+      "path": "assets/interior-runtime/manifest.json",
+      "sha256": "9c85ee825f2035028cf0f44a68dde3723dca964ba8ecfab0a71800c92bec3e97",
+      "bytes": 10661
+    },
+    {
+      "path": "assets/interior-runtime/optimized.json",
+      "sha256": "4824c3862c132b926c2f4c9cd18a0bb24181f49497c2605d107620e49d45fec0",
+      "bytes": 13227
+    },
+    {
+      "path": "assets/interior-runtime/room-environment.hdr",
+      "sha256": "29d4dd17637538194f31cb744b2f9e5e052982fa11771ba4fd1986b7e682ac81",
+      "bytes": 1280621
+    },
+    {
+      "path": "assets/interior-runtime/room-runtime.glb",
+      "sha256": "c2f05ca02de4d361025a90c067ba55efd6cf6ecd956e594c2b263807bc232219",
+      "bytes": 72422252
+    },
+    {
+      "path": "assets/reference.png",
+      "sha256": "cef54153070019a90541145fbba9981609c0cfb3ae52468e6ea80b89c0b605d9",
+      "bytes": 6142788
+    }
+  ],
+  "downloads": {
+    "source": {
+      "url": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-modern-bedroom-assets-v1/modern-bedroom-source.zip",
+      "sha256": "fba0774647567e9249a03cb2e68ff89c7e18241caf3b59420b637496307d9530",
+      "bytes": 72314238
+    },
+    "portableModel": {
+      "url": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-modern-bedroom-assets-v1/modern-bedroom-portable.glb",
+      "sha256": "0da7b9a38fa1a8dd114e95da47ff06b295d6ca8965a1d315519d399710365844",
+      "bytes": 60940976
+    },
+    "blender": {
+      "url": "https://github.com/img2threejs/img2threejs-showcase/releases/download/img2interior-modern-bedroom-assets-v1/modern-bedroom.blend",
+      "sha256": "f73ace48993629e616beaeb5f11a655856ec1c6634831160e43452ff520b19a8",
+      "bytes": 79563680
+    }
+  }
+}

@@ -32,6 +32,7 @@ PROJECT_FILES = [
     "assets.lock.json",
     "scripts/fetch_assets.py",
     "scripts/package_source.py",
+    "scripts/pack_runtime_assets.mjs",
     "src/interior.js",
     "src/interior-curtains.js",
     "src/interior-navigation.js",

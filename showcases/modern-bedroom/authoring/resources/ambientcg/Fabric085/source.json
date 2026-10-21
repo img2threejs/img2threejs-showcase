@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "provider": "ambientCG",
+  "providerUrl": "https://ambientcg.com",
+  "assetId": "Fabric085",
+  "assetName": "Fabric 085",
+  "assetUrl": "https://ambientcg.com/a/Fabric085",
+  "downloadUrl": "https://ambientcg.com/get?file=Fabric085_2K-JPG.zip",
+  "author": "ambientCG",
+  "technique": "Photometric Stereo (provider page)",
+  "physicalSize": "ca. 30 cm x 30 cm (provider page)",
+  "resolution": "2048x2048 JPG (2K-JPG)",
+  "retrievedUtc": "2026-10-19T13:45:45.713349+00:00",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://docs.ambientcg.com/license/",
+  "licenseText": "All ambientCG assets are provided under the Creative Commons CC0 1.0 Universal License. This applies to the downloadable asset files and the material preview renders shown for each asset on the site. Credit is not required; the provider suggests: \"Created using Fabric 085 from ambientCG.com, licensed under the Creative Commons CC0 1.0 Universal License.\"",
+  "licenseVerifiedUtc": "2026-10-19",
+  "purpose": "Throw: fibre micro-relief and micro-roughness only. The regular seed/moss-stitch lattice (beads, knit cells, plied twist, tone) is explicit procedural geometry in prepare_bedroom_fabrics.py; from this scan only the Displacement and Roughness high-pass (structure below ~1.5 mm) is used, tiled 2x2 at 0.8x size on the 0.48 m tile, at 0.10 mm height std. Native orange chroma discarded; Color, NormalGL and AmbientOcclusion are retained as the verified source set but no longer drive visible structure. Individual CC0 texture maps only, never a room/model.",
+  "selectedBy": "knit-research-r01; used as micro-detail only from matfix round 2 (the scan's irregular structure was not regular enough to read as the reference seed stitch)",
+  "files": [
+    {
+      "path": "resources/ambientcg/Fabric085/Fabric085_2K-JPG_AmbientOcclusion.jpg",
+      "bytes": 3041473,
+      "sha256": "ef024ac65d8979dd946b78e7983a3e7d5bf7361a12d1d5d2bddf46c6587e9287"
+    },
+    {
+      "path": "resources/ambientcg/Fabric085/Fabric085_2K-JPG_Color.jpg",
+      "bytes": 5276670,
+      "sha256": "5e6bf770375a48037e7941d5651b3130998115223795c5acff775aaa41a1bb6f"
+    },
+    {
+      "path": "resources/ambientcg/Fabric085/Fabric085_2K-JPG_Displacement.jpg",
+      "bytes": 2375392,
+      "sha256": "cde22058900ba78e6cff17e6fdac394bdfeb2a8ede08cf5ac525b71a6fd4e977"
+    },
+    {
+      "path": "resources/ambientcg/Fabric085/Fabric085_2K-JPG_NormalGL.jpg",
+      "bytes": 8707174,
+      "sha256": "ffde2d9021cf8e5700ed943602a5635602c40ab725d005c415c79d9bc0daeb64"
+    },
+    {
+      "path": "resources/ambientcg/Fabric085/Fabric085_2K-JPG_Roughness.jpg",
+      "bytes": 2550788,
+      "sha256": "aad07db54c3bc24d9f5ea21f103f2ee7da4440f3bca9f8e8a8d87142976c71aa"
+    }
+  ],
+  "creditNote": "Credit not required (CC0). resources.json/manifest resourceCredit currently only names Poly Haven (pipeline.py stage_export sets it from resources.json provider); suggested additional credit line: \"Created using Fabric 085 from ambientCG.com, licensed under the Creative Commons CC0 1.0 Universal License.\""
+}
