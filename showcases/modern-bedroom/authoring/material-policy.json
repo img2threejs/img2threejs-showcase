@@ -1,0 +1,27 @@
+{
+  "schemaVersion":1,
+  "materials":[
+    {"name":"Bedroom.Floorwood__architecture","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0,"texCoord":0},
+    {"name":"Bedroom.Walnut__furniture","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0,"texCoord":0},
+    {"name":"Bedroom.Walnut__details","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0,"texCoord":0},
+    {"name":"Bedroom.WalnutDark__furniture","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0,"texCoord":0},
+    {"name":"Bedroom.WalnutWarm__furniture","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0,"texCoord":0},
+    {"name":"Bedroom.Linen__furniture","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Linen__details","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.LinenRear__furniture","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.LinenRear__details","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Sheet__furniture","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Sheet__details","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Pillow__furniture","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Pillow__details","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Petrol__furniture","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Throw__furniture","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Throw__details","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Rug__textiles","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Rug__details","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Drape__textiles","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Drape__details","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Sheer__textiles","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0},
+    {"name":"Bedroom.Sheer__details","requireBaseColorTexture":true,"requireNormalTexture":true,"requireRoughnessTexture":true,"minRoughnessFactor":0.99,"maxMetallicFactor":0,"maxSheenColorFactor":0.15,"texCoord":0}
+  ]
+}

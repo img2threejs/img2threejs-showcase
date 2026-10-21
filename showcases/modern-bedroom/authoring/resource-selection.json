@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "reason": "Reference warm walnut cabinetry retains Black Walnut Veneer 02. Material-repair round additionally inspects wood_floor, wooden_floor_01 and wooden_floor_02 live previews; selects Wooden Floor 02 for distinct long grain/knots and restrained warm-brown derivative. Individual verified CC0 texture maps only, never a room/model.",
+  "models": [],
+  "textures": [
+    {"id":"black_walnut_veneer_02","resolution":"2k","format":"jpg","purpose":"Directional walnut cabinetry and bed frame; retained source maps"},
+    {"id":"wooden_floor_02","resolution":"4k","format":"jpg","purpose":"Dedicated warm wood flooring grain and knots; clean single-board crop with real Diffuse/nor_gl/Rough, distinct from cabinetry"}
+  ],
+  "hdris": [],
+  "rejected": [
+    {"id":"black_walnut_veneer_03","reason":"Inspected preview is muted grey-brown and fine, less readable directional figure than reference cabinetry."},
+    {"id":"european_walnut_veneer_05","reason":"Inspected preview is cool grey with low contrast, mismatching reference warmth."}
+  ],
+  "notInspected": ["american_walnut_veneer", "natural_walnut_veneer"],
+  "credit": "Powered by Poly Haven",
+  "assetLicense": "CC0-1.0 https://polyhaven.com/license",
+  "apiTerms": "Live service terms are separate from asset CC0: https://github.com/Poly-Haven/Public-API/blob/master/ToS.md"
+}

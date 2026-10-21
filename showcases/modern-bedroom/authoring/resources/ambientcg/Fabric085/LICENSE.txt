@@ -1,0 +1,7 @@
+ambientCG Fabric085 (Fabric 085) - CC0 1.0 Universal
+Asset:   https://ambientcg.com/a/Fabric085
+License: https://docs.ambientcg.com/license/  ->  https://creativecommons.org/publicdomain/zero/1.0/
+All ambientCG assets are provided under the Creative Commons CC0 1.0 Universal License; no attribution
+is required. Suggested credit: "Created using Fabric 085 from ambientCG.com, licensed under the Creative
+Commons CC0 1.0 Universal License."
+File hashes: see source.json. Verified against the provider licence page on 2026-10-19.

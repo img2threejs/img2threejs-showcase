@@ -1,0 +1,9 @@
+{
+  "schemaVersion":1,
+  "limits":["Authored material estimates, not measured BRDF. Run prepare_bedroom_fabrics.py after this recipe: it builds the throw/rug/linen/pillow/headboard maps, the floorwood board strips (wooden_floor_02) and the walnut / walnutdark basecolor maps (black_walnut_veneer_02 band-split, calm grain). Cloth folds and wrinkles belong to geometry."],
+  "operations":[
+    {"id":"walnut-matte","op":"roughness","input":{"texture":"black_walnut_veneer_02","channel":"roughness"},"center":"median","offset":0.48,"scale":0.22,"bounds":[0.38,0.60],"output":"public/assets/interior/bedroom-walnut-roughness.png"},
+    {"id":"drape","op":"woven","resolution":1024,"yarns":128,"tileMetres":0.18,"seed":53,"dye":{"space":"srgb255","value":[143,139,134]},"dyeBounds":[0.95,1.05],"noise":0.002,"warpHeight":0.00006,"crossHeight":0.000012,"rippleHeight":0.000003,"roughness":0.9,"roughnessScale":0.05,"outputs":{"basecolor":"public/assets/interior/bedroom-drape-basecolor.png","normal":"public/assets/interior/bedroom-drape-normal.png","roughness":"public/assets/interior/bedroom-drape-roughness.png"}},
+    {"id":"sheer","op":"woven","resolution":1024,"yarns":96,"tileMetres":0.14,"seed":59,"dye":{"space":"srgb255","value":[235,232,222]},"dyeBounds":[0.97,1.03],"noise":0.001,"warpHeight":0.000025,"crossHeight":0.000005,"rippleHeight":0.000001,"roughness":0.9,"roughnessScale":0.04,"outputs":{"basecolor":"public/assets/interior/bedroom-sheer-basecolor.png","normal":"public/assets/interior/bedroom-sheer-normal.png","roughness":"public/assets/interior/bedroom-sheer-roughness.png"}}
+  ]
+}

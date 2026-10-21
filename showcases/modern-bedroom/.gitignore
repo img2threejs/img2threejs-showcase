@@ -1,0 +1,11 @@
+node_modules/
+dist/
+public/source/
+public/assets/
+.site-public/
+.release/
+__pycache__/
+.DS_Store
+authoring/resources/**/*.jpg
+authoring/resources/**/*.jpeg
+authoring/resources/**/*.png

@@ -10,11 +10,12 @@ export default defineConfig({
   plugins: [
     sourceArchivesPlugin(),
     {
-      name: 'living-room-directory-index',
+      name: 'interior-directory-index',
       configureServer(server) {
         server.middlewares.use((request, _response, next) => {
-          if (request.url?.split('?')[0] === '/living-room/') {
-            request.url = request.url.replace('/living-room/', '/living-room/index.html');
+          const pathname = request.url?.split('?')[0];
+          if (pathname === '/living-room/' || pathname === '/modern-bedroom/') {
+            request.url = request.url!.replace(pathname, `${pathname}index.html`);
           }
           next();
         });

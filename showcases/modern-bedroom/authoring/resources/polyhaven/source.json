@@ -1,0 +1,219 @@
+{
+  "provider": "Poly Haven",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://polyhaven.com/license",
+  "apiTerms": "https://github.com/Poly-Haven/Public-API/blob/master/ToS.md",
+  "credit": "Powered by Poly Haven",
+  "schemaVersion": 1,
+  "selection": {
+    "schemaVersion": 1,
+    "reason": "Reference warm walnut cabinetry retains Black Walnut Veneer 02. Material-repair round additionally inspects wood_floor, wooden_floor_01 and wooden_floor_02 live previews; selects Wooden Floor 02 for distinct long grain/knots and restrained warm-brown derivative. Individual verified CC0 texture maps only, never a room/model.",
+    "models": [],
+    "textures": [
+      {
+        "id": "black_walnut_veneer_02",
+        "resolution": "2k",
+        "format": "jpg",
+        "purpose": "Directional walnut cabinetry and bed frame; retained source maps"
+      },
+      {
+        "id": "wooden_floor_02",
+        "resolution": "4k",
+        "format": "jpg",
+        "purpose": "Dedicated warm wood flooring grain and knots; clean single-board crop with real Diffuse/nor_gl/Rough, distinct from cabinetry"
+      }
+    ],
+    "hdris": [],
+    "rejected": [
+      {
+        "id": "black_walnut_veneer_03",
+        "reason": "Inspected preview is muted grey-brown and fine, less readable directional figure than reference cabinetry."
+      },
+      {
+        "id": "european_walnut_veneer_05",
+        "reason": "Inspected preview is cool grey with low contrast, mismatching reference warmth."
+      }
+    ],
+    "notInspected": [
+      "american_walnut_veneer",
+      "natural_walnut_veneer"
+    ],
+    "credit": "Powered by Poly Haven",
+    "assetLicense": "CC0-1.0 https://polyhaven.com/license",
+    "apiTerms": "Live service terms are separate from asset CC0: https://github.com/Poly-Haven/Public-API/blob/master/ToS.md"
+  },
+  "models": {},
+  "textures": {
+    "black_walnut_veneer_02": {
+      "color": "resources/polyhaven/black_walnut_veneer_02/black_walnut_veneer_02_diff_2k.jpg",
+      "normal": "resources/polyhaven/black_walnut_veneer_02/black_walnut_veneer_02_nor_gl_2k.jpg",
+      "roughness": "resources/polyhaven/black_walnut_veneer_02/black_walnut_veneer_02_rough_2k.jpg"
+    },
+    "wooden_floor_02": {
+      "color": "resources/polyhaven/wooden_floor_02/wooden_floor_02_diff_4k.jpg",
+      "normal": "resources/polyhaven/wooden_floor_02/wooden_floor_02_nor_gl_4k.jpg",
+      "roughness": "resources/polyhaven/wooden_floor_02/wooden_floor_02_rough_4k.jpg"
+    }
+  },
+  "hdris": {},
+  "modelIncludes": {},
+  "assetInfo": {
+    "black_walnut_veneer_02": {
+      "type": 1,
+      "name": "Black Walnut Veneer 02",
+      "tags": [
+        "walnut",
+        "walnut wood",
+        "wood",
+        "veneer",
+        "natural grain",
+        "grain",
+        "natural wood",
+        "natural wood grain",
+        "wood grain"
+      ],
+      "authors": {
+        "Jenelle van Heerden": "All"
+      },
+      "max_resolution": [
+        8192,
+        8192
+      ],
+      "dimensions": [
+        1000,
+        1000
+      ],
+      "staging": null,
+      "files_hash": "32ab1e934a1c79adc646650aae9cf9636363b19e",
+      "description": "Free black walnut veneer PBR texture with smooth natural grain, subtle satin sheen and warm tones - ideal for furniture, cabinetry, interiors and props.",
+      "category_id": "11f97979-30ff-513c-97e0-916d1b9f37ac",
+      "category": "Wood/Veneer/Walnut Veneer",
+      "attributes": {
+        "surface_use": "object",
+        "origin": "man_made",
+        "condition": [
+          "clean"
+        ]
+      },
+      "date_published": 1786448942,
+      "categories": [
+        "wood",
+        "raw wood"
+      ],
+      "vault": "wood",
+      "img_version": "d510808f",
+      "download_count": 1029,
+      "thumbnail_url": "https://cdn.polyhaven.com/asset_img/thumbs/black_walnut_veneer_02.png?width=256&height=256&format=webp&v=d510808f"
+    },
+    "wooden_floor_02": {
+      "type": 1,
+      "name": "Wooden Floor 02",
+      "tags": [
+        "wood planks",
+        "hardwood",
+        "wooden",
+        "wood",
+        "wooden flooring ",
+        "wooden plank",
+        "wooden floor",
+        "wooden knots",
+        "grain",
+        "wood grain",
+        "planks",
+        "interior flooring",
+        "hardwood flooring",
+        "timber"
+      ],
+      "authors": {
+        "Charlotte Baglioni": "Scanning",
+        "Rico Cilliers": "Processing"
+      },
+      "max_resolution": [
+        16384,
+        16384
+      ],
+      "dimensions": [
+        1942.000150680542,
+        1942.000150680542
+      ],
+      "staging": null,
+      "files_hash": "781102842eb33013e7fd7511c66fb243cd1a3fa1",
+      "description": "Free 16K texture of warm hardwood planks with visible grain, knots and soft satin sheen - ideal for interior flooring, timber scenes and realistic renders.",
+      "sponsors": [
+        "121968951"
+      ],
+      "category_id": "a7bb33c4-8575-586e-a502-7094517b10c5",
+      "category": "Wood/Boards & Planks/Finished & Varnished",
+      "attributes": {
+        "surface_use": "floor",
+        "origin": "man_made",
+        "condition": [
+          "clean"
+        ]
+      },
+      "date_published": 1786448942,
+      "categories": [
+        "floor",
+        "wood",
+        "raw wood"
+      ],
+      "vault": "wood",
+      "img_version": "fd40223d",
+      "download_count": 3349,
+      "thumbnail_url": "https://cdn.polyhaven.com/asset_img/thumbs/wooden_floor_02.png?width=256&height=256&format=webp&v=fd40223d"
+    }
+  },
+  "downloads": [
+    {
+      "assetId": "black_walnut_veneer_02",
+      "path": "resources/polyhaven/black_walnut_veneer_02/black_walnut_veneer_02_diff_2k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/black_walnut_veneer_02/black_walnut_veneer_02_diff_2k.jpg",
+      "bytes": 2365710,
+      "publisherMd5": "e4ef13d171747d6c877bec563b67d389",
+      "sha256": "ac4cd64753a55684efe4ccaf6f81b465e237a8a885fffb95377cc371924c0f88"
+    },
+    {
+      "assetId": "black_walnut_veneer_02",
+      "path": "resources/polyhaven/black_walnut_veneer_02/black_walnut_veneer_02_nor_gl_2k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/black_walnut_veneer_02/black_walnut_veneer_02_nor_gl_2k.jpg",
+      "bytes": 1877332,
+      "publisherMd5": "f2af23ce4886edcef6b1e7226183d445",
+      "sha256": "125a46a42525157cb2cf277b712c9933a76518d5a729b43caafce1aebd96bbbb"
+    },
+    {
+      "assetId": "black_walnut_veneer_02",
+      "path": "resources/polyhaven/black_walnut_veneer_02/black_walnut_veneer_02_rough_2k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/black_walnut_veneer_02/black_walnut_veneer_02_rough_2k.jpg",
+      "bytes": 2670532,
+      "publisherMd5": "c1c2f3bfc6942b516499500c60200a9a",
+      "sha256": "172832f6fa42e539e35b04f321c067b61962da7aebe106fcd7934b84aa5dc204"
+    },
+    {
+      "assetId": "wooden_floor_02",
+      "path": "resources/polyhaven/wooden_floor_02/wooden_floor_02_diff_4k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/4k/wooden_floor_02/wooden_floor_02_diff_4k.jpg",
+      "bytes": 12691365,
+      "publisherMd5": "8f8849e866275113920b5baec8eea259",
+      "sha256": "c98780d636ff883a9a515aac280b43a595f98ab5ac06d3a3f9c5a01497d2b44f"
+    },
+    {
+      "assetId": "wooden_floor_02",
+      "path": "resources/polyhaven/wooden_floor_02/wooden_floor_02_nor_gl_4k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/4k/wooden_floor_02/wooden_floor_02_nor_gl_4k.jpg",
+      "bytes": 11491062,
+      "publisherMd5": "c2411dba3be2259aa12bfadf0616b0a3",
+      "sha256": "d815fd9d8fbd29ec6a11b2b1f5b9d37de824042708f52d70c25579bb2265f4a9"
+    },
+    {
+      "assetId": "wooden_floor_02",
+      "path": "resources/polyhaven/wooden_floor_02/wooden_floor_02_rough_4k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/4k/wooden_floor_02/wooden_floor_02_rough_4k.jpg",
+      "bytes": 11141886,
+      "publisherMd5": "9d1fec52c3c2a6db11888d1804bbf0ce",
+      "sha256": "4e965c2d355d609cd5d53db8c548489f5b6a7b74ee2a3b977f2104a96ee27997"
+    }
+  ],
+  "totalBytes": 42237887,
+  "selectionPath": "resource-selection.json",
+  "selectionSha256": "1f0fcbf83424a1a63d2569f925a945712ac92b5615387441d90d58f498f75a83"
+}

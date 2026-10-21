@@ -617,6 +617,27 @@ rules. `npm ci` installs both dependency sets; Python 3 is also required.
   sources and manifest-declared assets. It preserves the gallery-specific publication
   adapter and requires matching dependency pins and the download override hook.
 
+## img2interior — standalone modern bedroom
+
+The Interior gallery card opens `/modern-bedroom/`. The 3D canvas fills the browser
+viewport; the **Panel** button opens an overlay without resizing or resetting the
+camera. The panel contains the overview, synthetic design reference, room-colour
+customisation and source / portable GLB / editable Blender downloads.
+
+- `showcases/modern-bedroom/` pins Three.js 0.180.0 and Vite 6.4.1.
+- Run `npm run dev:modern-bedroom` for the standalone viewer, or
+  `npm run build:modern-bedroom` before gallery development.
+- `npm run build` builds both interior workspaces before the gallery.
+- The runtime uses meshopt geometry, KTX2 textures/lightmaps and static lighting
+  samples. Its versioned release bundle and individual files are SHA-256-pinned in
+  `showcases/modern-bedroom/assets.lock.json`; binary assets are not Git blobs.
+- Source, portable GLB and packed Blender downloads are separate release assets,
+  not duplicated in the Pages output. The static exports do not capture live
+  palette, curtain or throw changes. Baked indirect lighting does not rebounce
+  when colours change.
+- Dimensions and unseen surfaces are authored estimates from one synthetic
+  reference, not measured reconstruction.
+
 ## Community
 
 - [Discord](https://discord.gg/8DS8RTyuR) — feedback, reconstruction discussion, and work-in-progress studies

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Explore an authored 3D interior, compare its source reference and download the editable scene." />
+    <title>Modern Bedroom — Walnut &amp; Linen</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#study">Skip to 3D view</a>
+    <div id="app" class="app">
+      <main id="study" class="study" aria-label="Interior viewer" tabindex="-1">
+        <div id="viewport" class="viewport" aria-busy="true">
+          <div id="canvas-host" class="canvas-host"></div>
+          <div id="viewer-message" class="viewer-message">
+            <div class="loader">
+              <p id="message-title" class="loader-title">Opening room</p>
+              <p id="message-detail">Reading model, materials and lightmap atlases.</p>
+              <progress id="load-progress" aria-label="Asset load progress"></progress>
+              <button id="retry-load" class="retry-button" type="button" hidden>Retry load</button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <button id="panel-toggle" class="panel-toggle" type="button" aria-expanded="false" aria-controls="panel" aria-label="Open room panel">
+        <span class="panel-toggle-icon" aria-hidden="true"></span>
+        <span id="panel-toggle-label">Panel</span>
+      </button>
+
+      <aside id="panel" class="panel" aria-labelledby="scene-title" tabindex="-1" hidden>
+        <section class="group overview" aria-labelledby="scene-title">
+          <h1 id="scene-title">Interior study</h1>
+          <p class="lead">Authored from one reference image with Blender and Three.js.</p>
+        </section>
+
+        <section class="group reference" aria-labelledby="reference-title">
+          <h2 id="reference-title">Reference</h2>
+          <figure class="source-figure">
+            <a id="source-link" target="_blank" rel="noopener" aria-label="Open source reference image at full size (new tab)">
+              <img id="source-thumbnail" src="/assets/reference.png" alt="Source reference image" />
+            </a>
+            <figcaption id="thumbnail-caption">Source reference image</figcaption>
+          </figure>
+        </section>
+
+        <section class="group customise" aria-labelledby="customise-title">
+          <h2 id="customise-title">Customise</h2>
+          <div id="camera-actions" class="camera-actions" role="group" aria-label="Camera presets"></div>
+          <div class="tool-row">
+            <button id="wireframe" type="button" aria-pressed="false" disabled>Wireframe</button>
+            <button id="pendant-lights" type="button" aria-pressed="true" disabled>Pendant lights: On</button>
+            <button id="reset-bed" type="button" disabled hidden>Reset bed linen</button>
+            <button id="reset" type="button" disabled>Reset all</button>
+          </div>
+          <fieldset id="curtain-controls" class="curtain-controls" aria-describedby="curtain-hint" hidden>
+            <legend>Curtains</legend>
+            <div class="curtain-slider">
+              <div class="curtain-slider-label"><label for="curtain-amount">Coverage</label><output id="curtain-percent" for="curtain-amount">0%</output></div>
+              <input id="curtain-amount" type="range" min="0" max="100" value="0" step="1" disabled />
+            </div>
+            <div class="curtain-actions">
+              <button id="curtain-open" type="button" disabled>Open</button>
+              <button id="curtain-close" type="button" disabled>Close</button>
+              <button id="curtain-wind" type="button" aria-pressed="true" disabled>Gentle breeze</button>
+            </div>
+            <p id="curtain-hint" class="visually-hidden">Grab a point on the fabric and drag along the window. Neighbouring cloth follows; release to settle and gently sway.</p>
+          </fieldset>
+          <section id="palette-controls" class="palette" aria-labelledby="palette-title" hidden></section>
+        </section>
+
+        <section class="group downloads" aria-labelledby="download-title">
+          <h2 id="download-title">Exports</h2>
+          <a id="download-glb" class="download-link" aria-disabled="true" tabindex="-1" download><span>GLB model</span><small>Portable, baked</small></a>
+          <a id="download-blend" class="download-link" aria-disabled="true" tabindex="-1" download><span>Blender scene</span><small>Packed .blend</small></a>
+          <a id="download-source" class="download-link" download hidden><span>Source ZIP</span><small>Runnable viewer</small></a>
+          <p id="resource-credit" class="asset-credit" hidden>Powered by <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> · knit scan <a href="https://ambientcg.com/a/Fabric085" target="_blank" rel="noopener">Fabric085</a> by ambientCG · CC0.</p>
+        </section>
+      </aside>
+
+      <!-- Nodes read or written by src/interior.js that carry no visible UI. -->
+      <div class="technical" hidden>
+        <div role="group" aria-label="View content">
+          <button id="mode-3d" type="button" aria-pressed="true" disabled>3D room</button>
+          <button id="mode-source" type="button" aria-pressed="false" disabled>Source image</button>
+        </div>
+        <span id="view-label"></span>
+        <figure id="source-panel" class="source-panel" hidden>
+          <img id="source-view" src="/assets/reference.png" alt="Source reference image" />
+          <figcaption id="source-caption"></figcaption>
+        </figure>
+        <h3 id="representation-title"></h3>
+        <p id="representation-detail"></p>
+      </div>
+      <p id="interaction-hint" class="visually-hidden">Drag to orbit the camera. Scroll or pinch to zoom, right-drag to pan inside the room. Keyboard: Tab into the 3D frame, arrow keys to rotate, + / − to zoom, Home returns to the source view.</p>
+      <p id="load-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">Reading scene manifest…</p>
+    </div>
+    <noscript><p class="noscript">JavaScript is required to load this scene's manifest, source image and interactive 3D viewer.</p></noscript>
+    <script type="module" src="/src/interior.js"></script>
+  </body>
+</html>
