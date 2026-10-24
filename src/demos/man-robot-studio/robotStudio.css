@@ -98,9 +98,10 @@
 .robot-stage-index i { margin: 0 7px; color: #4c5c57; font-style: normal; }
 .robot-source-pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(117, 232, 200, 0.19); border-radius: 99px; padding: 8px 11px; background: rgba(10, 17, 18, 0.55); color: #b4c4bf; letter-spacing: 0.11em; }
 .robot-source-dot { width: 6px; height: 6px; background: var(--robot-accent); box-shadow: 0 0 9px rgba(117, 232, 200, 0.55); }
-.robot-stage-caption { bottom: 19px; color: #73827f; font-size: 8px; font-weight: 700; letter-spacing: 0.15em; }
-.robot-stage-caption i { margin: 0 4px; color: #4c5b57; font-style: normal; }
-.robot-stage-caption span:last-child { color: var(--robot-accent); }
+.robot-stage-caption { bottom: 19px; gap: 8px; color: #d0dcd8; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; }
+.robot-stage-caption > span { min-width: 0; overflow: hidden; border: 1px solid rgba(198, 220, 215, 0.13); border-radius: 5px; padding: 5px 7px; background: rgba(10, 16, 18, 0.82); text-overflow: ellipsis; white-space: nowrap; }
+.robot-stage-caption i { margin: 0 4px; color: #a3b8b0; font-style: normal; }
+.robot-stage-caption span:last-child { flex-shrink: 0; color: var(--robot-accent); }
 .robot-view-tools { position: absolute; z-index: 4; right: 24px; bottom: 47px; display: flex; gap: 7px; }
 .robot-view-button { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; border: 1px solid rgba(198, 220, 215, 0.13); border-radius: 8px; padding: 0 10px; background: rgba(10, 16, 18, 0.68); color: #b7c4c1; cursor: pointer; font-size: 10px; transition: border-color 160ms ease, color 160ms ease, background 160ms ease; }
 .robot-view-button:hover,
@@ -173,6 +174,26 @@
 .robot-reset-all:hover { color: var(--robot-accent); }
 .robot-animation-section { margin-top: 1px; }
 .robot-animation-status { max-width: 48%; overflow: hidden; color: #84938e; font-size: 8px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+
+/* --- Street controls -------------------------------------------------------------- */
+.robot-street-section { margin-top: 1px; }
+.robot-street-help { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 9px; border: 1px solid rgba(117, 232, 200, 0.14); border-radius: 8px; padding: 8px 9px; background: rgba(117, 232, 200, 0.035); }
+.robot-street-keys { display: grid; grid-template-columns: repeat(3, 15px); grid-template-rows: repeat(2, 15px); flex: 0 0 auto; gap: 2px; }
+.robot-street-keys kbd { display: grid; place-items: center; border: 1px solid rgba(160, 200, 190, 0.28); border-radius: 4px; background: rgba(255, 255, 255, 0.06); color: #cfe2dc; font-family: inherit; font-size: 8px; line-height: 1; }
+.robot-street-keys kbd:first-child { grid-area: 1 / 2; }
+.robot-street-keys kbd:nth-child(2) { grid-area: 2 / 1; }
+.robot-street-keys kbd:nth-child(3) { grid-area: 2 / 2; }
+.robot-street-keys kbd:nth-child(4) { grid-area: 2 / 3; }
+.robot-street-help-text { color: #93a19d; font-size: 9px; line-height: 1.55; }
+.robot-street-help-text kbd { border: 1px solid rgba(160, 200, 190, 0.26); border-radius: 3px; padding: 0 3px; background: rgba(255, 255, 255, 0.05); color: #cfe2dc; font-family: inherit; font-size: 8px; }
+.robot-skill-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.robot-skill-button { display: flex; align-items: center; gap: 6px; min-width: 0; min-height: 31px; border: 1px solid rgba(201, 222, 216, 0.09); border-radius: 7px; padding: 0 7px; background: rgba(255, 255, 255, 0.018); color: #a9b7b2; cursor: pointer; text-align: left; transition: border-color 150ms ease, color 150ms ease, background 150ms ease; }
+.robot-skill-button:hover:not(:disabled) { border-color: rgba(117, 232, 200, 0.3); color: #e9f3ef; }
+.robot-skill-button.is-active { border-color: rgba(117, 232, 200, 0.52); background: rgba(117, 232, 200, 0.07); color: var(--robot-accent-strong); }
+.robot-skill-key { display: grid; flex: 0 0 auto; width: 15px; height: 15px; place-items: center; border: 1px solid rgba(160, 200, 190, 0.28); border-radius: 4px; background: rgba(255, 255, 255, 0.05); color: #b6c8c2; font-family: inherit; font-size: 8px; font-weight: 600; line-height: 1; }
+.robot-skill-button.is-active .robot-skill-key { border-color: rgba(117, 232, 200, 0.55); color: var(--robot-accent-strong); }
+.robot-skill-name { min-width: 0; overflow: hidden; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.robot-skill-button:disabled { cursor: not-allowed; opacity: 0.42; }
 .robot-clip-list { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
 .robot-clip-button { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 33px; border: 1px solid rgba(201, 222, 216, 0.09); border-radius: 7px; padding: 0 8px; background: rgba(255,255,255,0.018); color: #a9b7b2; cursor: pointer; text-align: left; transition: border-color 150ms ease, color 150ms ease, background 150ms ease; }
 .robot-clip-button:hover { border-color: rgba(117,232,200,0.3); color: #e9f3ef; }
@@ -259,10 +280,11 @@
   .robot-wordmark { display: none; }
   .robot-header-state { font-size: 8px; }
   .robot-layout { display: flex; flex-direction: column; height: auto; min-height: calc(100dvh - 58px); overflow: visible; }
-  .robot-stage { flex: 0 0 48dvh; min-height: 330px; max-height: 540px; }
+  /* Native kick framing is measured at stage aspect ratios of at least 0.9. */
+  .robot-stage { flex: 0 0 48dvh; min-height: 330px; max-height: min(540px, calc(100vw / 0.9)); }
   .robot-stage-top { top: 15px; right: 14px; left: 14px; }
   .robot-source-pill { padding: 7px 9px; font-size: 8px; }
-  .robot-stage-caption { right: 14px; bottom: 14px; left: 14px; font-size: 7px; }
+  .robot-stage-caption { right: 14px; bottom: 14px; left: 14px; font-size: 8px; }
   .robot-view-tools { right: 14px; bottom: 38px; }
   .robot-view-label { display: none; }
   .robot-view-button { width: 34px; min-width: 34px; justify-content: center; padding: 0; }
@@ -277,13 +299,19 @@
   .robot-animation-warning { margin: 0 16px 10px; }
   .robot-provenance { margin: 0 16px 16px; }
   .robot-export-section { margin: 0 16px 17px; }
+  .robot-skill-button { min-height: 44px; }
 }
 @media (max-width: 390px) {
   .robot-segment-list { grid-template-columns: 1fr; }
   .robot-segment-row { min-height: 36px; }
   .robot-clip-list { grid-template-columns: 1fr 1fr; }
+  .robot-skill-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .robot-wordmark { display: none; }
   .robot-stage { min-height: 310px; }
+}
+@media (max-width: 320px) {
+  .robot-skill-grid { grid-template-columns: minmax(0, 1fr); }
+  .robot-street-help { flex-direction: column; gap: 7px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .robot-studio *, .robot-studio *::before, .robot-studio *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }

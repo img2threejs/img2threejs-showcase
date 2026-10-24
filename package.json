@@ -25,7 +25,7 @@
     "dev:modern-bedroom": "npm run dev --workspace @img2threejs/modern-bedroom",
     "preview:modern-bedroom": "npm run preview --workspace @img2threejs/modern-bedroom -- --mode showcase --base=/modern-bedroom/ --outDir ../../public/modern-bedroom",
     "publish:source": "node scripts/publish-source-archives.mjs",
-    "test:source": "node --import tsx --test scripts/source-release.test.mjs tests/source-download.test.ts",
+    "test:source": "node --import tsx --test scripts/source-release.test.mjs scripts/source-archives.test.mjs tests/source-download.test.ts",
     "check:iphone-duo": "node scripts/check-iphone-duo-no-glb.mjs",
     "check:tropical-island": "node scripts/check-tropical-island-no-glb.mjs",
     "test:skybound": "tsx --test tests/skybound-adventure/simulation.test.ts",

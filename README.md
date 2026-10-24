@@ -203,13 +203,21 @@ of truth is [`src/demos/registry.ts`](src/demos/registry.ts).
 
 | Study | What to explore |
 | --- | --- |
-| [Man Robot · Segment Color Studio](https://img2threejs.io/#/demo/man-robot-studio) | A source-preserving 65-joint robot with six color regions, rigged clips, an electric-green scan, and a WebGPU-first renderer with an automatic WebGL2 fallback. |
+| [Man Robot · Segment Color Studio](https://img2threejs.io/#/demo/man-robot-studio) | A source-preserving 65-joint robot on a procedural street, with arrow-key walking, Shift-to-run, nine numbered skills, six paint regions, and WebGPU rendering with a WebGL2 fallback. |
 | [Tropical Island — code-only measured study](src/demos/tropical-island/createTropicalIslandModel.ts) | Ten force-measured TypeScript surfaces, procedural terrain/water/foliage, 27 selectable parts, and no runtime GLB or source texture maps. |
 | [Moonlight Cafe — PixiJS 2D study](src/demos/coffee-house/scene.ts) | Source-derived café layers, ambient sky/water/boats, the approved seated cat with tail-only sway, and a collapsible description/reference panel at `#/demo/coffee-house`. |
 | [Ocean Blue PRS Guitar](https://img2threejs.io/#/demo/prs-ocean) | Measured vertex color and PBR samples preserved in code, six addressable strings, and opt-in water-flow actions. |
 | [Groot — Heart of the Forest](https://img2threejs.io/#/demo/monster-tree) | A navigable woodland scene with retargeted movement, grounded combat, living-wood effects, and lantern spirits. |
 | [Mars Cat](https://img2threejs.io/#/demo/mars-cat) | Seventeen measured regions streamed at three quality levels without shipping the reference GLB, textures, or UV atlas. |
 | [Starship + Super Heavy](https://img2threejs.io/#/demo/starship-super-heavy) | Procedural stainless shells, heat-shield tiles, flaps, grid fins, engine arrays, and a staged separation sequence. |
+
+### Man Robot street controls
+
+Hold the **arrow keys** to walk relative to the camera; hold **Shift + arrow keys** to run, and release Shift to return to walking. Walk and Run use their original native clips; diagonal movement keeps the same speed within each gait, and the camera follows without replacing your orbit. Shift alone does not move the robot.
+
+**1–3:** Box 01–03 · **4–5:** Front Kick 01–02 · **6–7:** Muay Thai 01–02 · **8:** US Greeting · **9:** Gentleman. The number row and numpad both work, or click the matching skill button. Each numbered skill plays once; an already-held arrow resumes movement afterward (running if Shift is held), while a fresh arrow press interrupts the skill. Shortcuts do not intercept text, color, or select editing.
+
+The street starts with the robot's original white-and-green appearance. Skills do not cycle its colors; segment painting, the full 23-clip motion library, and exports remain available.
 
 <div align="center">
 
