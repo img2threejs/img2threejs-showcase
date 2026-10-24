@@ -17,7 +17,23 @@ import {
 } from '../demos/man-robot-studio/robotModel';
 import type { RobotPaintTarget, RobotSegmentId } from '../demos/man-robot-studio/robotModel';
 import { getRobotAnimationProfile } from '../demos/man-robot-studio/animationProfile';
+import {
+  createRobotStreetControls,
+  ROBOT_STREET_SKILLS,
+  type RobotStreetControls,
+} from '../demos/man-robot-studio/streetControls';
+import { createRobotStreetEnvironment } from '../demos/man-robot-studio/streetEnvironment';
 import '../demos/man-robot-studio/robotStudio.css';
+
+/** Fallback navigation anchor used before the street controller exists. */
+const STREET_ORIGIN = new THREE.Vector3(0, 0, 0);
+/** Measured to frame native kicks and greetings across eight navigation headings. */
+const STREET_CAMERA_OFFSET = new THREE.Vector3(0, 2.203, 4.131);
+
+/** Cross-fade length used when the host swaps one native clip for another. */
+const ACTION_CROSSFADE = 0.25;
+/** Cross-fade length used when the robot returns to the shared Gongshou rest pose. */
+const REST_CROSSFADE = 0.35;
 
 const STUDIO_MARKUP = [
   '<main class="robot-studio" aria-label="Man robot segment color studio">',
@@ -43,7 +59,7 @@ const STUDIO_MARKUP = [
   '        <button class="robot-view-button" id="robot-rotate" type="button" aria-pressed="false" title="Start slow turntable rotation"><span aria-hidden="true">↻</span><span class="robot-view-label">Rotate</span></button>',
   '        <button class="robot-view-button" id="robot-reset-view" type="button" title="Reset camera view"><span aria-hidden="true">⌖</span><span class="robot-view-label">Reset view</span></button>',
   '      </div>',
-  '      <div class="robot-stage-caption"><span>DRAG TO ORBIT <i>·</i> SCROLL TO ZOOM</span><span id="robot-stage-caption-right">CLICK A PART TO COLOR</span></div>',
+  '      <div class="robot-stage-caption"><span>DRAG TO ORBIT <i>·</i> SCROLL TO ZOOM</span><span id="robot-stage-caption-right">ARROWS MOVE · 1–9 SKILLS</span></div>',
   '    </section>',
   '    <aside class="robot-console" aria-label="Robot segment and animation controls">',
   '      <div class="robot-console-head"><div><span class="robot-eyebrow">COMPONENT EDITOR</span><h1 id="robot-demo-title">MAN ROBOT</h1></div><span class="robot-version">01</span></div>',
@@ -58,6 +74,11 @@ const STUDIO_MARKUP = [
   "        <p class=\"robot-selected-meta\" id=\"robot-selected-meta\">Select a skinned surface to begin.</p>",
   "        <div class=\"robot-color-row\"><div><span class=\"robot-eyebrow\">SEGMENT COLOR</span><span class=\"robot-color-value\" id=\"robot-color-value\">Original</span></div><input class=\"robot-color-orb\" id=\"robot-panel-color\" type=\"color\" value=\"#f4f4f2\" aria-label=\"Choose color for active segment\" /></div>",
   "        <button class=\"robot-reset-segment\" id=\"robot-reset-segment\" type=\"button\">Restore source color</button>",
+  "      </section>",
+  "      <section class=\"robot-section robot-street-section\" aria-labelledby=\"robot-street-title\">",
+  "        <div class=\"robot-section-heading\"><h2 id=\"robot-street-title\">Street controls</h2><output class=\"robot-animation-status\" id=\"robot-street-status\" aria-live=\"polite\">Load the source to move</output></div>",
+  "        <div class=\"robot-street-help\"><span class=\"robot-street-keys\" aria-hidden=\"true\"><kbd>&#8593;</kbd><kbd>&#8592;</kbd><kbd>&#8595;</kbd><kbd>&#8594;</kbd></span><span class=\"robot-street-help-text\">Arrow keys walk the street; hold <kbd>Shift</kbd> with a direction to run. Release the direction to stop. Keys <kbd>1</kbd> to <kbd>9</kbd> play the nine street skills once.</span></div>",
+  "        <div class=\"robot-skill-grid\" id=\"robot-skill-list\"></div>",
   "      </section>",
   "      <section class=\"robot-section robot-animation-section\" aria-labelledby=\"robot-animation-title\">",
   "        <div class=\"robot-section-heading\"><h2 id=\"robot-animation-title\">Motion library</h2><output class=\"robot-animation-status\" id=\"robot-animation-status\" aria-live=\"polite\">Ready when loaded</output></div>",
@@ -81,6 +102,20 @@ interface RobotStudioDebug {
   clips: Array<{ name: string; duration: number; tracks: number }>;
   segments: Array<{ id: string; label: string; meshCount: number; vertexCount: number; center: number[] }>;
   auditClips: () => Array<{ name: string; tracks: number; duration: number; movingBones: number; maxPositionDelta: number; maxRotationDelta: number }>;
+  /** Live street controller state; null until the native model finished loading. */
+  street: () => RobotStreetDebugState | null;
+}
+
+/** Diagnostic snapshot of the live street controller, mirroring RobotStreetControls.getState(). */
+export interface RobotStreetDebugState {
+  position: number[];
+  moving: boolean;
+  clip: string | null;
+  heldKeys: string[];
+  /** Name of the clip the host currently plays, or null while the robot rests. */
+  activeClip: string | null;
+  /** True while the asset export holds the animation frozen. */
+  exportFrozen: boolean;
 }
 
 /** Locked runtime handles the studio page exposes to its host (capture snapshot, current state, edit gate). */
@@ -183,6 +218,8 @@ export function renderRobotStudio(
   const floatingPicker = query<HTMLElement>('#robot-floating-picker');
   const floatingColor = query<HTMLInputElement>('#robot-floating-color');
   const animationStatus = query<HTMLOutputElement>('#robot-animation-status');
+  const streetStatus = query<HTMLOutputElement>('#robot-street-status');
+  const skillList = query<HTMLDivElement>('#robot-skill-list');
   const playPauseButton = query<HTMLButtonElement>('#robot-play-pause');
   const stopButton = query<HTMLButtonElement>('#robot-stop-animation');
   const resetSegmentButton = query<HTMLButtonElement>('#robot-reset-segment');
@@ -199,8 +236,8 @@ export function renderRobotStudio(
   sourceLink.title = demo.sourcePath;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(36, 1, 0.05, 80);
-  camera.position.set(0, 2.18, 4.05);
+  const camera = new THREE.PerspectiveCamera(47, 1, 0.05, 350);
+  camera.position.copy(STREET_CAMERA_OFFSET);
   const renderer = new WebGPURenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
   // The built-in library keys by constructor.name, which production minification can rename.
   const materialLibrary = renderer.nodes.library;
@@ -211,7 +248,7 @@ export function renderRobotStudio(
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.04;
   renderer.shadowMap.enabled = true;
-  renderer.domElement.setAttribute('aria-label', 'Robot model. Drag to orbit and click a surface to select its segment.');
+  renderer.domElement.setAttribute('aria-label', 'Robot on a street. Arrow keys move; keys 1 to 9 play skills. Drag to orbit and click a surface to select its segment.');
   renderer.domElement.tabIndex = 0;
   renderer.domElement.className = 'robot-renderer-canvas';
   canvasMount.appendChild(renderer.domElement);
@@ -226,39 +263,9 @@ export function renderRobotStudio(
   controls.maxPolarAngle = Math.PI * 0.88;
   controls.update();
 
-  const hemisphere = new THREE.HemisphereLight(0xe4f7f1, 0x13191d, 1.72);
-  scene.add(hemisphere);
-  const keyLight = new THREE.DirectionalLight(0xfff2df, 3.1);
-  keyLight.position.set(-3.8, 5.8, 4.2);
-  keyLight.castShadow = true;
-  keyLight.shadow.mapSize.set(1024, 1024);
-  keyLight.shadow.camera.near = 0.1;
-  keyLight.shadow.camera.far = 18;
-  keyLight.shadow.bias = -0.00025;
-  scene.add(keyLight);
-  const rimLight = new THREE.DirectionalLight(0x8fb4ff, 2.25);
-  rimLight.position.set(3.8, 3.6, -4.5);
-  scene.add(rimLight);
-  const fillLight = new THREE.DirectionalLight(0xb4e9dc, 0.8);
-  fillLight.position.set(4.2, 1.8, 3.2);
-  scene.add(fillLight);
-  // ShadowMaterial's fragment pipeline is invalid under the pinned Three r169 WebGPU backend.
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(24, 24),
-    new THREE.MeshStandardMaterial({
-      color: '#05080a',
-      roughness: 1,
-      metalness: 0,
-      opacity: 0.25,
-      transparent: true,
-      depthWrite: false,
-    }),
-  );
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -0.004;
-  floor.receiveShadow = true;
-  floor.name = 'robot-studio-shadow-floor';
-  scene.add(floor);
+  // The accepted street world replaces the old studio hemisphere/key/rim/fill rig and its shadow
+  // floor: one environment owns the sky, fog, sun and pavement, so lighting is never doubled.
+  const streetEnvironment = createRobotStreetEnvironment(scene);
 
   let disposed = false;
   let rendererReady = false;
@@ -275,16 +282,37 @@ export function renderRobotStudio(
   let activeSegment: RobotSegmentId | null = null;
   let activeAction: THREE.AnimationAction | null = null;
   let activeClipIndex: number | null = null;
+  // Rest and the reusable captured-pose bridge never enter the native clip library.
+  let restAction: THREE.AnimationAction | null = null;
+  let poseBridgeAction: THREE.AnimationAction | null = null;
+  const poseBridgeBones: Array<{
+    bone: THREE.Bone;
+    position: Float32Array;
+    quaternion: Float32Array;
+    scale: Float32Array;
+    rawPosition: THREE.Vector3;
+    rawQuaternion: THREE.Quaternion;
+  }> = [];
   let clipFinished = false;
   let pendingRestTransition = false;
   let pointerStart: { x: number; y: number } | null = null;
   const rowButtons = new Map<RobotSegmentId, HTMLButtonElement>();
   const clipButtons: HTMLButtonElement[] = [];
+  const skillButtons: HTMLButtonElement[] = [];
+  // Native clip name behind each of the nine street skills, resolved once the model is loaded.
+  const skillClipNames: string[] = [];
+  // Runtime clip index behind each of the nine street skills; the controller resolves the same
+  // prefixes, so the buttons and the keyboard always play the identical native clip.
+  const skillClipIndices: number[] = [];
+  // The street controller is created once the native model finished loading; it owns the
+  // arrow-key walk/run state, the grounded-sole navigation and the camera follow.
+  let streetControls: RobotStreetControls | null = null;
+  let elapsed = 0;
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const clock = new THREE.Clock();
   const marker = new THREE.Vector3();
-  const modelScale = 2.15;
+  const canonicalRobotInverse = new THREE.Matrix4();
   let rotationOn = false;
   let exportAnimationFrozen = false;
   // Capture the pre-freeze disabled state of every studio control so the busy gate can
@@ -297,7 +325,10 @@ export function renderRobotStudio(
     resetAllButton: boolean;
     playPauseButton: boolean;
     stopButton: boolean;
+    rotateButton: boolean;
+    resetViewButton: boolean;
     clipButtons: Map<HTMLButtonElement, boolean>;
+    skillButtons: Map<HTMLButtonElement, boolean>;
     rowButtons: Map<HTMLButtonElement, boolean>;
   } | null = null;
 
@@ -321,26 +352,46 @@ export function renderRobotStudio(
       return;
     }
     const delta = Math.min(clock.getDelta(), 0.1);
+    elapsed += delta;
     if (runtime) {
+      // The controller prepares the navigation anchor before the native mixer runs, so the
+      // source clip and its runtime correction keep their own coordinate frame.
+      streetControls?.beforeAnimation(delta);
       resetRobotAnimationCorrection(runtime);
-      runtime.mixer.update(delta);
+      // Pausing the destination also freezes the bridge time and mixer-clock fades.
+      runtime.mixer.update(activeAction?.paused ? 0 : delta);
       if (activeAction) {
-        applyRobotAnimationCorrection(runtime, activeAction.getClip().name, activeAction.time);
+        const correctionWeight = THREE.MathUtils.clamp(activeAction.getEffectiveWeight(), 0, 1);
+        if (correctionWeight > 0) {
+          if (correctionWeight < 1) {
+            for (const pose of poseBridgeBones) {
+              pose.rawPosition.copy(pose.bone.position);
+              pose.rawQuaternion.copy(pose.bone.quaternion);
+            }
+          }
+          applyRobotAnimationCorrection(runtime, activeAction.getClip().name, activeAction.time);
+          if (correctionWeight < 1) {
+            // The bridge already contains the outgoing correction. Introduce only the
+            // destination's share instead of applying its full correction at zero weight.
+            for (const pose of poseBridgeBones) {
+              pose.bone.position.lerpVectors(pose.rawPosition, pose.bone.position, correctionWeight);
+              pose.bone.quaternion.slerp(pose.rawQuaternion, 1 - correctionWeight);
+            }
+          }
+        }
       }
       if (pendingRestTransition && activeAction) {
         pendingRestTransition = false;
-        const restClip = runtime.model.userData.sharedGongshouRestClip as THREE.AnimationClip | undefined;
-        if (restClip) {
-          const restAction = runtime.mixer.clipAction(restClip, runtime.model);
-          restAction.reset()
-            .setLoop(THREE.LoopRepeat, Infinity)
-            .setEffectiveWeight(1)
-            .setEffectiveTimeScale(1)
-            .play();
-          activeAction.crossFadeTo(restAction, 0.35, false);
-        }
+        // The one-shot clip ended: fade into the shared Gongshou rest pose and let the street
+        // controller resume any held arrows.
+        fadeToRest();
       }
+      runtime.displayRoot.updateMatrixWorld(true);
+      // The controller samples the corrected soles, grounds them and moves the actor plus the
+      // camera follow after the native pose is final.
+      streetControls?.afterAnimation(delta);
     }
+    streetEnvironment.update(elapsed, camera, streetControls?.position ?? STREET_ORIGIN);
     controls.update();
     renderer.render(scene, camera);
   };
@@ -418,8 +469,9 @@ export function renderRobotStudio(
   };
 
   const placeFloatingPickerAtPoint = (point: THREE.Vector3): void => {
-    runtime?.model.updateMatrixWorld(true);
-    marker.copy(point).project(camera);
+    if (!runtime) return;
+    runtime.model.updateMatrixWorld(true);
+    marker.copy(point).applyMatrix4(canonicalRobotInverse).applyMatrix4(runtime.displayRoot.matrixWorld).project(camera);
     const rect = stage.getBoundingClientRect();
     const x = rect.left + (marker.x + 1) * 0.5 * rect.width;
     const y = rect.top + (-marker.y + 1) * 0.5 * rect.height;
@@ -461,7 +513,7 @@ export function renderRobotStudio(
 
   const clearSelection = (): void => {
     selectMesh(null, null);
-    query<HTMLElement>('#robot-stage-caption-right').textContent = 'CLICK A PART TO COLOR';
+    query<HTMLElement>('#robot-stage-caption-right').textContent = 'ARROWS MOVE · 1–9 SKILLS';
   };
 
   const pickAt = (event: PointerEvent): { mesh: THREE.SkinnedMesh; segmentId: RobotSegmentId } | null => {
@@ -534,6 +586,40 @@ export function renderRobotStudio(
     if (icon) icon.textContent = isPlaying ? 'Ⅱ' : '▶';
   };
 
+  /** Mirrors the active native clip onto the nine street skill buttons. */
+  const syncSkillButtons = (): void => {
+    const activeName = activeAction && !clipFinished ? activeAction.getClip().name : null;
+    for (let slot = 0; slot < skillButtons.length; slot++) {
+      const button = skillButtons[slot];
+      if (!activeName || slot >= skillClipNames.length) {
+        button.classList.remove('is-active');
+        button.setAttribute('aria-pressed', 'false');
+        continue;
+      }
+      const selected = activeName === skillClipNames[slot];
+      button.classList.toggle('is-active', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    }
+  };
+
+  /** Reports the live street state in the section header; called on state changes only. */
+  const syncStreetStatus = (): void => {
+    if (!streetControls) {
+      streetStatus.value = 'Load the source to move';
+      return;
+    }
+    const state = streetControls.getState();
+    if (state.moving) {
+      streetStatus.value = state.clip === 'run.001' ? 'Running the street' : 'Walking the street';
+      return;
+    }
+    if (state.clip) {
+      streetStatus.value = 'Playing · ' + (getRobotAnimationProfile(state.clip)?.label ?? state.clip);
+      return;
+    }
+    streetStatus.value = 'Arrows walk · Shift runs · 1-9 skills';
+  };
+
   const onAnimationFinished = (event: { action: THREE.AnimationAction }): void => {
     if (event.action !== activeAction) return;
     clipFinished = true;
@@ -541,69 +627,147 @@ export function renderRobotStudio(
     const clip = event.action.getClip();
     const profile = getRobotAnimationProfile(clip.name);
     animationStatus.value = 'Completed · ' + (profile?.label ?? labelForClip(clip.name, activeClipIndex ?? 0));
+    // The one-shot clip is over: release the street controller, so held arrows walk again on
+    // the next frame. The host fades into the rest pose itself.
+    streetControls?.finishPlayback();
     setPlaybackButtons();
   };
 
-  const playClip = (index: number): void => {
-    if (!runtime || !runtime.clips[index]) return;
-    const clip = runtime.clips[index];
-    const profile = getRobotAnimationProfile(clip.name);
-    if (!profile) throw new Error('Clip ' + clip.name + ' has no measured playback mode.');
+  /** Reuses one local-bone pose, rather than restarting any interrupted outgoing fade. */
+  const transitionFromDisplayedPose = (destination: THREE.AnimationAction, duration: number): void => {
+    if (!runtime || !poseBridgeAction) return;
+    // Capture before clearing correction bookkeeping or stopping actions: both restore
+    // earlier poses, whereas the bridge must contain exactly what was last displayed.
+    for (const pose of poseBridgeBones) {
+      pose.bone.position.toArray(pose.position, 0);
+      pose.bone.position.toArray(pose.position, 3);
+      pose.bone.quaternion.toArray(pose.quaternion, 0);
+      pose.bone.quaternion.toArray(pose.quaternion, 4);
+      pose.bone.scale.toArray(pose.scale, 0);
+      pose.bone.scale.toArray(pose.scale, 3);
+    }
     resetRobotAnimationCorrection(runtime);
     runtime.mixer.stopAllAction();
     runtime.mixer.timeScale = 1;
+    destination.reset().setEffectiveWeight(1).setEffectiveTimeScale(1);
+    if (duration > 0) {
+      poseBridgeAction.reset()
+        .setLoop(THREE.LoopRepeat, Infinity)
+        .setEffectiveWeight(1)
+        .setEffectiveTimeScale(1)
+        .play()
+        .fadeOut(duration);
+      destination.fadeIn(duration);
+    }
+    destination.play();
+    // stopAllAction restores saved binding values. Evaluate now, including when the
+    // deferred rest transition runs after the frame's mixer update, so none can leak.
+    runtime.mixer.update(0);
+  };
+
+  const playClip = (index: number, mode?: 'once' | 'loop'): void => {
+    if (!runtime || !runtime.clips[index]) return;
+    // The asset export captures the live pose; no clip may start while the frame is frozen.
+    if (exportAnimationFrozen) return;
+    const clip = runtime.clips[index];
+    const profile = getRobotAnimationProfile(clip.name);
+    if (!profile) throw new Error('Clip ' + clip.name + ' has no measured playback mode.');
+    // Street locomotion loops; a numbered skill overrides even a looping source profile.
+    const loops = mode ? mode === 'loop' : profile.loop;
     const action = runtime.mixer.clipAction(clip, runtime.model);
-    action.reset();
-    action.enabled = true;
-    action.setLoop(profile.loop ? THREE.LoopRepeat : THREE.LoopOnce, profile.loop ? Infinity : 1);
-    action.clampWhenFinished = !profile.loop;
-    action.setEffectiveWeight(1);
-    action.setEffectiveTimeScale(1);
-    action.play();
+    action.setLoop(loops ? THREE.LoopRepeat : THREE.LoopOnce, loops ? Infinity : 1);
+    action.clampWhenFinished = !loops;
+    transitionFromDisplayedPose(action, ACTION_CROSSFADE);
+    restAction = null;
     activeAction = action;
     activeClipIndex = index;
     clipFinished = false;
     pendingRestTransition = false;
-    animationStatus.value = profile.label + ' · ' + clip.duration.toFixed(1) + ' s · ' + (profile.loop ? 'loop' : 'play once');
+    animationStatus.value = profile.label + ' · ' + clip.duration.toFixed(1) + ' s · ' + (loops ? 'loop' : 'play once');
+    streetControls?.setPlayback(clip.name);
     for (let item = 0; item < clipButtons.length; item++) {
       const selected = item === index;
       clipButtons[item].classList.toggle('is-active', selected);
       clipButtons[item].setAttribute('aria-pressed', String(selected));
     }
+    syncSkillButtons();
+    syncStreetStatus();
+    setPlaybackButtons();
+  };
+
+  /** Fades the current action into the shared Gongshou rest pose without a hard cut. */
+  const fadeToRest = (immediate = false): void => {
+    if (!runtime) return;
+    // The export freeze owns the live pose; a rest fade would change the captured frame.
+    if (exportAnimationFrozen) return;
+    // The rest pose is already on screen; fading again would restart its cross-fade.
+    if (!immediate && restAction && !activeAction) return;
+    const restClip = runtime.model.userData.sharedGongshouRestClip as THREE.AnimationClip | undefined;
+    if (!restClip) return;
+    const nextRest = runtime.mixer.clipAction(restClip, runtime.model);
+    nextRest.setLoop(THREE.LoopRepeat, Infinity);
+    transitionFromDisplayedPose(nextRest, immediate ? 0 : REST_CROSSFADE);
+    restAction = nextRest;
+    // The robot rests now, but the Play button still offers the clip that just finished.
+    activeAction = null;
+    clipFinished = false;
+    pendingRestTransition = false;
+    // The host stopped playing a clip: the controller releases the one-shot skill lock.
+    streetControls?.setPlayback(null);
+    for (const button of clipButtons) {
+      button.classList.remove('is-active');
+      button.setAttribute('aria-pressed', 'false');
+    }
+    syncSkillButtons();
+    syncStreetStatus();
     setPlaybackButtons();
   };
 
   const stopAnimation = (): void => {
     if (!runtime) return;
-    resetRobotAnimationCorrection(runtime);
-    runtime.mixer.stopAllAction();
-    runtime.mixer.timeScale = 1;
+    // The export freeze owns the live pose; stopping would change the captured frame.
+    if (exportAnimationFrozen) return;
     activeAction = null;
     activeClipIndex = null;
+    restAction = null;
     clipFinished = false;
     pendingRestTransition = false;
     animationStatus.value = 'Rest pose';
+    // The host stopped playing a clip: the controller releases the one-shot skill lock.
+    streetControls?.setPlayback(null);
+    // An explicit stop also releases the held arrows, so the robot does not walk again.
+    streetControls?.clearInput();
+    fadeToRest(true);
     for (const button of clipButtons) {
       button.classList.remove('is-active');
       button.setAttribute('aria-pressed', 'false');
     }
+    syncSkillButtons();
+    syncStreetStatus();
     setPlaybackButtons();
   };
 
   playPauseButton.addEventListener('click', () => {
     if (!runtime) return;
+    // The export freeze owns the live pose and its action weight.
+    if (exportAnimationFrozen) return;
     if (!activeAction || clipFinished) {
       playClip(activeClipIndex ?? 0);
       return;
     }
     activeAction.paused = !activeAction.paused;
+    // A paused pose must not keep walking: release the held arrows, but keep the frozen action
+    // itself so the pose and its weight survive until the user resumes or stops.
+    if (activeAction.paused) streetControls?.clearInput();
     const profile = getRobotAnimationProfile(activeAction.getClip().name);
     animationStatus.value = (activeAction.paused ? 'Paused · ' : 'Playing · ') + (profile?.label ?? labelForClip(activeAction.getClip().name, activeClipIndex ?? 0));
+    syncStreetStatus();
     setPlaybackButtons();
   });
   stopButton.addEventListener('click', stopAnimation);
 
   const onRotate = (): void => {
+    if (exportAnimationFrozen) return;
     rotationOn = !rotationOn;
     controls.autoRotate = rotationOn;
     rotateButton.setAttribute('aria-pressed', String(rotationOn));
@@ -612,8 +776,11 @@ export function renderRobotStudio(
   };
   rotateButton.addEventListener('click', onRotate);
   resetViewButton.addEventListener('click', () => {
-    camera.position.set(0, modelScale * 1.01395, modelScale * 1.88372);
-    controls.target.set(0, 1.03, 0);
+    if (exportAnimationFrozen) return;
+    // The reset frames the robot where it actually stands on the street, not at the origin.
+    const anchor = streetControls?.position ?? STREET_ORIGIN;
+    camera.position.copy(STREET_CAMERA_OFFSET).add(anchor);
+    controls.target.set(anchor.x, 1.03, anchor.z);
     controls.update();
   });
 
@@ -683,6 +850,88 @@ export function renderRobotStudio(
     }
   };
 
+  /**
+   * Builds the nine street skill buttons. The buttons exist from the first paint so the section
+   * reads as a control surface before the source loads; they stay disabled until the runtime
+   * resolved their native clip.
+   */
+  const mountSkills = (): void => {
+    skillList.replaceChildren();
+    skillButtons.length = 0;
+    for (const skill of ROBOT_STREET_SKILLS) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'robot-skill-button';
+      button.dataset.skillKey = String(skill.key);
+      button.setAttribute('aria-pressed', 'false');
+      button.setAttribute('aria-label', 'Play ' + skill.label + ' once');
+      button.title = skill.label + ' · press ' + skill.key;
+      const key = document.createElement('kbd');
+      key.className = 'robot-skill-key';
+      key.textContent = String(skill.key);
+      const label = document.createElement('span');
+      label.className = 'robot-skill-name';
+      label.textContent = skill.label;
+      button.append(key, label);
+      button.disabled = true;
+      button.addEventListener('click', () => playSkill(skill.key));
+      skillList.appendChild(button);
+      skillButtons.push(button);
+    }
+  };
+
+  /**
+   * Resolves the native clip behind every street skill. The keyboard and the buttons use the
+   * same source prefixes, so both always play the identical native clip.
+   */
+  const resolveSkills = (modelRuntime: RobotRuntime): void => {
+    skillClipNames.length = 0;
+    skillClipIndices.length = 0;
+    for (const skill of ROBOT_STREET_SKILLS) {
+      const match = modelRuntime.clips.findIndex((clip) => clip.name.startsWith(skill.sourcePrefix));
+      if (match < 0) throw new Error('Street skill ' + skill.key + ' has no native clip for ' + skill.sourcePrefix + '.');
+      skillClipIndices.push(match);
+      skillClipNames.push(modelRuntime.clips[match].name);
+    }
+  };
+
+  /** Plays one street skill by its 1..9 key, resolving the native clip index the same way the controller does. */
+  const playSkill = (key: number): void => {
+    if (!runtime) return;
+    const slot = ROBOT_STREET_SKILLS.findIndex((skill) => skill.key === key);
+    if (slot < 0 || slot >= skillClipIndices.length) return;
+    const index = skillClipIndices[slot];
+    if (index === undefined) return;
+    playClip(index, 'once');
+  };
+
+  /**
+   * Creates the street controller once the native model is ready. The controller owns the
+   * arrow-key walk, the grounded navigation and the camera follow; the host only answers its
+   * playback requests.
+   */
+  const mountStreetControls = (modelRuntime: RobotRuntime, model: THREE.Group): void => {
+    streetControls = createRobotStreetControls({
+      runtime: modelRuntime,
+      actor: model,
+      camera,
+      controls,
+      canvas: renderer.domElement,
+      canInteract: () => !disposed && rendererReady && !exportAnimationFrozen,
+      onMove: (clipIndex: number) => {
+        playClip(clipIndex, 'loop');
+      },
+      onRest: () => {
+        // A paused action owns the pose; fading to rest would destroy the frozen frame.
+        if (activeAction && activeAction.paused) return;
+        fadeToRest();
+      },
+      onSkill: (clipIndex: number) => {
+        playClip(clipIndex, 'once');
+      },
+    });
+  };
+
   const exposeDeveloperAudit = (modelRuntime: RobotRuntime): void => {
     if (!import.meta.env.DEV) return;
     const debug: RobotStudioDebug = {
@@ -705,6 +954,18 @@ export function renderRobotStudio(
         duration: clip.duration,
         ...auditClip(modelRuntime, clip),
       })),
+      street: () => {
+        if (!streetControls) return null;
+        const state = streetControls.getState();
+        return {
+          position: state.position,
+          moving: state.moving,
+          clip: state.clip,
+          heldKeys: state.heldKeys,
+          activeClip: activeAction ? activeAction.getClip().name : null,
+          exportFrozen: exportAnimationFrozen,
+        };
+      },
     };
     (window as unknown as { __ROBOT_STUDIO__?: RobotStudioDebug }).__ROBOT_STUDIO__ = debug;
   };
@@ -746,8 +1007,13 @@ export function renderRobotStudio(
             if (exportAnimationFrozen) return;
             exportAnimationFrozen = true;
             clock.stop();
+            // The export captures the live pose, so no arrow may stay held: release the input
+            // and let the controller know the world is frozen.
+            streetControls?.clearInput();
             const clipButtonStates = new Map<HTMLButtonElement, boolean>();
             for (const button of clipButtons) clipButtonStates.set(button, button.disabled);
+            const skillButtonStates = new Map<HTMLButtonElement, boolean>();
+            for (const button of skillButtons) skillButtonStates.set(button, button.disabled);
             const rowButtonStates = new Map<HTMLButtonElement, boolean>();
             for (const button of rowButtons.values()) rowButtonStates.set(button, button.disabled);
             exportControlSnapshot = {
@@ -758,7 +1024,10 @@ export function renderRobotStudio(
               resetAllButton: resetAllButton.disabled,
               playPauseButton: playPauseButton.disabled,
               stopButton: stopButton.disabled,
+              rotateButton: rotateButton.disabled,
+              resetViewButton: resetViewButton.disabled,
               clipButtons: clipButtonStates,
+              skillButtons: skillButtonStates,
               rowButtons: rowButtonStates,
             };
             setControlDisabled(panelColor, true);
@@ -767,7 +1036,10 @@ export function renderRobotStudio(
             setControlDisabled(resetAllButton, true);
             setControlDisabled(playPauseButton, true);
             setControlDisabled(stopButton, true);
+            setControlDisabled(rotateButton, true);
+            setControlDisabled(resetViewButton, true);
             for (const button of clipButtons) setControlDisabled(button, true);
+            for (const button of skillButtons) setControlDisabled(button, true);
             for (const button of rowButtons.values()) setControlDisabled(button, true);
             controls.enabled = false;
           } else {
@@ -784,7 +1056,10 @@ export function renderRobotStudio(
               setControlDisabled(resetAllButton, saved.resetAllButton);
               setControlDisabled(playPauseButton, saved.playPauseButton);
               setControlDisabled(stopButton, saved.stopButton);
+              setControlDisabled(rotateButton, saved.rotateButton);
+              setControlDisabled(resetViewButton, saved.resetViewButton);
               for (const [button, wasDisabled] of saved.clipButtons) setControlDisabled(button, wasDisabled);
+              for (const [button, wasDisabled] of saved.skillButtons) setControlDisabled(button, wasDisabled);
               for (const [button, wasDisabled] of saved.rowButtons) setControlDisabled(button, wasDisabled);
             }
           }
@@ -793,15 +1068,42 @@ export function renderRobotStudio(
     : null;
 
   displayRoot = createRobotModel(scene, onLoadProgress);
+  // The nine street skill buttons render immediately; they stay disabled until the native
+  // runtime resolved the clip behind each skill.
+  mountSkills();
   void waitForRobotModel(displayRoot).then((loadedRuntime) => {
     if (disposed || !loadedRuntime) return;
     runtime = loadedRuntime;
+    canonicalRobotInverse.copy(runtime.displayRoot.matrixWorld).invert();
     if (rendererFailureMessage) {
       showRendererFailure(new Error(rendererFailureMessage));
       return;
     }
+    const bridgeTimes = new Float32Array([0, 1]);
+    const bridgeTracks: THREE.KeyframeTrack[] = [];
+    for (const bone of runtime.meshes[0].skeleton.bones) {
+      const position = new THREE.VectorKeyframeTrack(bone.name + '.position', bridgeTimes, new Float32Array(6));
+      const quaternion = new THREE.QuaternionKeyframeTrack(bone.name + '.quaternion', bridgeTimes, new Float32Array(8));
+      const scale = new THREE.VectorKeyframeTrack(bone.name + '.scale', bridgeTimes, new Float32Array(6));
+      bridgeTracks.push(position, quaternion, scale);
+      poseBridgeBones.push({
+        bone,
+        position: position.values,
+        quaternion: quaternion.values,
+        scale: scale.values,
+        rawPosition: new THREE.Vector3(),
+        rawQuaternion: new THREE.Quaternion(),
+      });
+    }
+    poseBridgeAction = runtime.mixer.clipAction(
+      new THREE.AnimationClip('studio-displayed-pose-bridge', 1, bridgeTracks),
+      runtime.model,
+    );
     mountSegments(runtime);
     mountClips(runtime);
+    resolveSkills(runtime);
+    mountStreetControls(runtime, runtime.displayRoot);
+    fadeToRest();
     meshCount.textContent = String(runtime.meshes.length);
     jointCount.textContent = String(runtime.meshes[0]?.skeleton.bones.length ?? 0);
     clipCount.textContent = String(runtime.clips.length);
@@ -810,9 +1112,12 @@ export function renderRobotStudio(
     progressFill.style.width = '100%';
     setHeaderState('Source surface ready', 'ready');
     animationStatus.value = 'Rest pose · select a clip';
+    syncStreetStatus();
     playPauseButton.disabled = runtime.clips.length === 0;
     stopButton.disabled = runtime.clips.length === 0;
     resetAllButton.disabled = false;
+    // The street skills stay locked until the native runtime is ready.
+    for (const button of skillButtons) button.disabled = false;
     loading.classList.add('is-complete');
     window.setTimeout(() => { if (!disposed) loading.hidden = true; }, 360);
     exposeDeveloperAudit(runtime);
@@ -841,6 +1146,11 @@ export function renderRobotStudio(
     disposed = true;
     cancelAnimationFrame(frame);
     resizeObserver.disconnect();
+    // The controller owns every window/document listener it added; disposing it here keeps the
+    // route free of ghost arrow handlers after a remount.
+    streetControls?.dispose();
+    streetControls = null;
+    streetEnvironment.dispose();
     controls.dispose();
     renderer.domElement.removeEventListener('pointerdown', onPointerDown);
     renderer.domElement.removeEventListener('pointerup', onPointerUp);
