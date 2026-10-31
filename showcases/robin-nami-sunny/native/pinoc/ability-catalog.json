@@ -1,0 +1,82 @@
+{
+  "schema": "robin-odyssey/1",
+  "fps": 60,
+  "source": "https://www.youtube.com/watch?v=v6HUyYG0K1M",
+  "authoredStanceSupport": {
+    "planeM": 0,
+    "provenance": "Repository-authored standing contact for the three retained clips; preserve pose/timing and place physical skin support on the Sunny deck.",
+    "clips": [
+      "RobinBloomAttack",
+      "RobinClutchAttack",
+      "HairTurnPreview"
+    ]
+  },
+  "abilities": [],
+  "motions": [
+    {
+      "id": "FightingStance",
+      "label": "Fighting stance",
+      "file": "fighting-stance-idle",
+      "loop": true
+    },
+    {
+      "id": "GuardBlock",
+      "label": "Guard block",
+      "file": "block",
+      "loop": false
+    },
+    {
+      "id": "CrouchIdle",
+      "label": "Crouch",
+      "file": "crouching-idle",
+      "loop": true
+    },
+    {
+      "id": "DodgeRoll",
+      "label": "Dodge roll",
+      "file": "dodge-roll-forward",
+      "loop": false,
+      "supportContacts": {
+        "phaseWindows": [[0, 0, 0.06, 0.18], [0.62, 0.78, 1, 1]],
+        "convention": "Normalized fade-in start, full-contact start, full-contact end, fade-out end; smoothstep blend. Non-hair body/feet support.",
+        "intent": "Authored planted preparation and standing recovery; preserve source clearance through the central airborne roll. Corrects hovering source endpoints, not extracted contact metadata."
+      }
+    },
+    {
+      "id": "WalkBackward",
+      "label": "Walk backward",
+      "file": "walk-backwards",
+      "loop": true
+    },
+    {
+      "id": "HardLanding",
+      "label": "Hard landing",
+      "file": "hard-landing",
+      "loop": false
+    },
+    {
+      "id": "PickUpObject",
+      "label": "Pick up object",
+      "file": "pick-up-object-from-ground",
+      "loop": false
+    },
+    {
+      "id": "CarryObject",
+      "label": "Carry object",
+      "file": "carry-object-idle",
+      "loop": true
+    },
+    {
+      "id": "TurnLeft",
+      "label": "Turn left",
+      "file": "standing-turn-left-90",
+      "loop": false
+    },
+    {
+      "id": "TurnRight",
+      "label": "Turn right",
+      "file": "standing-turn-right-90",
+      "loop": false
+    }
+  ]
+}
