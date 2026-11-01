@@ -1,0 +1,8 @@
+{
+  "name": "robin-cinematic",
+  "private": true,
+  "type": "module",
+  "scripts": {"build": "node build.mjs"},
+  "dependencies": {"three": "0.186.1"},
+  "devDependencies": {"esbuild": "0.28.2"}
+}

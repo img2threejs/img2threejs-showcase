@@ -1,0 +1,65 @@
+# Package-local ignore rules for the Robin / Nami / Thousand Sunny showcase.
+#
+# This package ships source code and runtime metadata only. The model,
+# texture and motion binaries are private and stay on this machine; they are
+# mounted into the paths below for a local smoke run and are never staged.
+#
+# Exactly two files are re-included, because the viewer fetches them:
+#   native/pinoc/ability-catalog.json  (motion / stance catalogue)
+#   cinematic/assets/manifest.json      (runtime asset manifest)
+
+# Dependencies and build output.
+node_modules/
+cinematic/dist/
+
+# Native runtime content: every export, motion library, rig and Blender file
+# under native/ is private. Only the motion catalogue is re-included, at one
+# exact path. The directory itself must be re-included as well, otherwise git
+# refuses to descend into it and cannot re-include the file inside it.
+native/*
+!native/pinoc/
+native/pinoc/*
+!native/pinoc/ability-catalog.json
+
+# Cinematic asset payload: the ship, the Halloween props and every texture
+# the viewer loads relative to cinematic/assets/. Only the manifest survives.
+cinematic/assets/*
+!cinematic/assets/manifest.json
+
+# Private textures, fabric and colour atlases.
+materials/
+models/
+
+# Recordings, film projects and rendered video.
+recordings/
+cinematic/recordings/
+film/
+evidence/
+*.mp4
+*.mov
+*.webm
+*.m4v
+
+# Development-only sources, references and generated output.
+references/
+tools/
+history/
+__pycache__/
+*.pyc
+*.blend
+*.blend1
+*.blend2
+*.glb
+*.gltf
+*.bin
+*.spz
+*.vsplat
+*.splat
+*.fbx
+*.obj
+*.abc
+*.exr
+*.hdr
+
+# Editor and OS noise.
+.DS_Store

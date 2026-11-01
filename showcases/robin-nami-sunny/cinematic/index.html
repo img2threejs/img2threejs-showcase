@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1530"><title>Robin &amp; Nami — Thousand Sunny</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="cinematic.css">
+</head>
+<body data-starting="true">
+  <main class="stage" inert><canvas id="character" tabindex="0" aria-busy="true" aria-describedby="help" aria-label="3D scene of Robin and Nami on the Thousand Sunny. Press and hold a character to squeeze or pull; drag elsewhere to orbit. Scroll or pinch to zoom. Arrow keys orbit, plus and minus zoom, Home returns to the overview."></canvas></main>
+  <section id="loading" class="loading" data-mode="startup" role="status" aria-live="polite" aria-atomic="true">
+    <div class="loading-content">
+      <h1 id="loading-title">Preparing the Sunny.</h1>
+      <p id="loading-message">Loading the ship, crew and their animations…</p>
+      <div class="loading-track" aria-hidden="true"></div>
+      <p class="loading-hint">The scene opens as soon as the local assets are ready.</p>
+    </div>
+  </section>
+  <nav class="follow-controls" aria-label="Follow a crew member">
+    <button type="button" data-focus="robin" aria-pressed="false" disabled>Follow Robin</button>
+    <button type="button" data-focus="nami" aria-pressed="false" disabled>Follow Nami</button>
+  </nav>
+  <button id="panel-toggle" class="panel-toggle" type="button" aria-expanded="true" aria-controls="panel">Hide panel</button>
+  <aside id="panel" class="panel" aria-label="Scene controls">
+    <div class="panel-heading"><h2>Robin &amp; Nami on the Sunny.</h2><p id="help">Use Follow Robin or Follow Nami to stay close while they walk. Hold a character to squeeze or pull; drag elsewhere to orbit. Open the panel for outfits, motions and touch modes.</p></div>
+    <div class="tabs" role="tablist" aria-label="Characters and scene">
+      <button role="tab" id="tab-robin" data-tab="robin" aria-controls="panel-robin" aria-selected="true">Robin</button>
+      <button role="tab" id="tab-nami" data-tab="nami" aria-controls="panel-nami" aria-selected="false" tabindex="-1">Nami</button>
+      <button role="tab" id="tab-scene" data-tab="scene" aria-controls="panel-scene" aria-selected="false" tabindex="-1">Scene</button>
+    </div>
+    <section id="panel-robin" class="tab-panel" role="tabpanel" aria-labelledby="tab-robin"></section>
+    <section id="panel-nami" class="tab-panel" role="tabpanel" aria-labelledby="tab-nami" hidden></section>
+    <section id="panel-scene" class="tab-panel" role="tabpanel" aria-labelledby="tab-scene" hidden>
+      <div class="group"><h3>Camera</h3>
+        <button data-focus="overview" class="outline-button" disabled>Overview</button>
+      </div>
+      <div class="group"><h3>Performance</h3>
+        <label for="render-quality">Render quality</label>
+        <select id="render-quality" disabled>
+          <option value="auto" selected>Auto · balanced Retina</option>
+          <option value="native">Native · maximum resolution</option>
+        </select>
+        <p class="note">Auto adapts scene resolution from 0.75× to 1.5× (maximum 3 megapixels) toward 60 fps. Native keeps maximum resolution. Both retain all geometry, waves, effects and interactions; interface text stays sharp.</p>
+      </div>
+      <div class="group"><h3>Theme</h3>
+        <div class="segmented" role="group" aria-label="Ship theme">
+          <button data-theme="sunny" aria-pressed="true" disabled>Sunny day</button>
+          <button data-theme="halloween" aria-pressed="false" disabled>Halloween</button>
+        </div>
+        <button id="preset-halloween" class="primary-button" disabled>Halloween night preset</button>
+        <button id="preset-day" class="outline-button" disabled>Back to a sunny day</button>
+      </div>
+      <div class="group"><h3>Time of day</h3>
+        <div class="timeline"><div class="label-row"><label for="time-of-day">Day to night</label><output id="time-label" for="time-of-day">Day</output></div>
+          <input id="time-of-day" type="range" min="0" max="1" value="0" step="0.001" disabled aria-label="Time of day from day to night"></div>
+        <div class="playback"><button id="time-play" class="outline-button" disabled>Play day to night</button></div>
+      </div>
+      <div class="group"><h3>Weather</h3>
+        <div class="segmented" role="group" aria-label="Weather">
+          <button data-weather="0" aria-pressed="true" disabled>Clear</button>
+          <button data-weather="0.4" aria-pressed="false" disabled>Light rain</button>
+          <button data-weather="1" aria-pressed="false" disabled>Storm</button>
+        </div>
+      </div>
+    </section>
+    <footer class="panel-foot">
+      <p id="status" role="status" aria-live="polite">Loading local assets</p>
+      <p class="meta"><span id="performance">0 fps</span> · <span id="sea-state">Sea</span> · <strong id="build-stamp">build</strong></p>
+      <p class="downloads"><a id="download-glb" href="#" download>Robin GLB</a> · <a id="download-blend" href="#" download>Robin Blender</a> · <a href="../native/nami-showcase/export/scene.glb" download>Nami GLB</a> · <a href="../native/nami-showcase/export/scene.blend" download>Nami Blender</a> · <a href="assets/thousand-sunny/scene.glb" download>Sunny GLB</a> · <a href="assets/thousand-sunny/scene.blend" download>Sunny Blender</a></p>
+    </footer>
+    <div id="error" class="error-note" role="alert" hidden><p id="error-message"></p><button id="retry" class="outline-button">Reload the scene</button></div>
+  </aside>
+  <noscript><div class="loading"><div class="loading-content"><h1>JavaScript is needed.</h1><p>Enable JavaScript and WebGL2, then reload to open the scene.</p></div></div></noscript>
+  <script type="module" src="dist/viewer.js"></script>
+</body>
+</html>
