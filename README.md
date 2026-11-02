@@ -42,18 +42,18 @@ Existing `#/x/<id>` links still open the requested Three.js study directly.
 
 **Warm Modern — Three-Storey House** is a draft interior study at `/warm-modern-house/`.
 Its 25 navigation cells include rooms, landings and stair flights across three floors.
-The references are AI-generated design concepts and the layout is authored, not surveyed.
-The gallery card uses a frame from the supplied video; it is not the source used to reconstruct
-the 3D interior and should not be treated as a match to the authored model.
+The original design studies are AI-generated concepts and the layout is authored, not surveyed.
+The gallery and viewer use the same reference image: a frame from the supplied video. The 3D
+interior was authored from separate synthetic design references and is not an exact match.
 The published r02 runtime uses the older bake cache; the corrective r03 bake remains incomplete.
 Its recorded runtime budget exceeds the P0 transfer and standard/high GPU limits, and no browser
 performance benchmark has been accepted. Native and portable downloads are not included in this
 draft; the original footage and film render are not part of the viewer package.
 
 The viewer's SHA-256-pinned runtime bundle is fetched by `npm run build:warm-modern-house` and
-built under `/warm-modern-house/`. Original reference images are served directly from the
-project's GitHub Release, outside the shared Pages artifact; the lock records their hashes but
-the browser does not verify them. For local development, run `npm run dev:warm-modern-house`.
+built under `/warm-modern-house/`. Historical source-image hashes are recorded in the asset
+lock for provenance; those images are not shown as references in the showcase.
+For local development, run `npm run dev:warm-modern-house`.
 
 ## Skybound Adventure — playable pixel-art kingdom
 

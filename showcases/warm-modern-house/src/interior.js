@@ -1,4 +1,5 @@
 import './interior.css';
+import videoReference from '../../../public/references/warm-modern-house.webp?url';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RuntimeAssetLoader } from './interior-assets.js';
@@ -12,7 +13,7 @@ import { InteriorBenchmark, benchmarkOptions, hashFetchedBytes } from './interio
 import { InteriorResidency } from './interior-residency.js';
 import { createCurtainInteraction } from './interior-curtains.js';
 import { createInteriorNavigation } from './interior-navigation.js';
-import { validateManifest, validateReferences, sourceLabel, usesPolyHavenAPI } from './interior-manifest.js';
+import { validateManifest, validateReferences, usesPolyHavenAPI } from './interior-manifest.js';
 import { bindBakedLightmap } from './interior-lightmaps.js';
 import { bindBoxProjectedProbe } from './interior-probes.js';
 import { buildRoomGraph, visibleRooms } from './interior-portals.js';
@@ -237,7 +238,7 @@ function syncControls() {
   ui['retry-load'].disabled = loading;
   ui['load-status'].dataset.state = state.status;
   ui['viewer-message'].dataset.state = state.status;
-  ui['view-label'].textContent = state.mode === 'source' && session ? sourceLabel(session.manifest)
+  ui['view-label'].textContent = state.mode === 'source' && session ? 'Reference image · video frame'
     : state.wireframe ? '3D · geometry wireframe'
       : cloth?.count ? '3D · interactive curtains' : walking ? '3D · walking' : '3D · authored interior';
   for (const [id, field] of [['download-glb', 'portable'], ['download-blend', 'native']]) {
@@ -304,51 +305,39 @@ function sourceFor(manifest, roomId) {
 }
 
 function updateSourceImage(current) {
-  const { manifest, roomDefs } = current;
-  const source = sourceFor(manifest, state.room);
-  const label = sourceLabel(manifest);
-  const roomLabel = roomDefs.get(state.room).label;
-  const blob = current.sourceBlobs.get(source.url);
-  ui.viewport.style.setProperty('--source-aspect', `${source.size[0]} / ${source.size[1]}`);
+  const url = current.sourceBlobs.get(videoReference);
+  ui.viewport.style.setProperty('--source-aspect', '1000 / 563');
   for (const id of ['source-view', 'source-thumbnail']) {
-    ui[id].width = source.size[0];
-    ui[id].height = source.size[1];
-    ui[id].alt = `${label} for ${roomLabel}`;
-    if (blob) { if (ui[id].src !== blob) ui[id].src = blob; }
+    ui[id].width = 1000;
+    ui[id].height = 563;
+    ui[id].alt = 'Reference image: exterior of a three-storey house from the supplied video';
+    if (url) { if (ui[id].src !== url) ui[id].src = url; }
     else ui[id].removeAttribute('src');
   }
-  ui['source-link'].href = sourceReferenceUrl(source);
-  ui['source-caption'].textContent = `${label} · ${roomLabel} · not a viewer render`;
-  if (ui['thumbnail-caption']) ui['thumbnail-caption'].textContent = `${label}, ${roomLabel}. Open the image to compare details.`;
-  ui['source-note'].textContent = `${label}, kept separate from the 3D scene. ${manifest.sourceLimit}`;
-}
-
-// The original design references are release-hosted to keep the shared Pages artifact under
-// its size limit. They are shown as images, not fetched as cross-origin byte streams.
-function sourceReferenceUrl(source) {
-  const name = source.url.slice('/assets/references/'.length);
-  return `https://github.com/img2threejs/img2threejs-showcase/releases/download/warm-modern-house-assets-v1/${encodeURIComponent(name)}`;
+  ui['source-link'].href = videoReference;
+  ui['source-caption'].textContent = 'Reference image · video frame · not a viewer render';
+  if (ui['thumbnail-caption']) ui['thumbnail-caption'].textContent = 'Reference image from the video. Open the image to see it full size.';
+  ui['source-note'].textContent = 'This reference is a frame from the supplied video. The 3D house was authored from separate synthetic design references; its dimensions and hidden surfaces are estimates.';
 }
 
 function ensureSource(current, roomId, priority = 'P0') {
-  const source = sourceFor(current.manifest, roomId);
-  if (!current.sourcePromises.has(source.url)) {
+  if (!current.sourcePromises.has(videoReference)) {
     const promise = (async () => {
-      const url = sourceReferenceUrl(source);
+      const url = new URL(videoReference, location.href).href;
       const image = new Image();
       image.src = url;
       await image.decode();
-      if (image.naturalWidth !== source.size[0] || image.naturalHeight !== source.size[1]) {
-        throw new Error('Declared source size does not match the decoded reference image.');
+      if (image.naturalWidth !== 1000 || image.naturalHeight !== 563) {
+        throw new Error('Video reference dimensions do not match the bundled image.');
       }
-      current.sourceBlobs.set(source.url, url);
-      if (session === current && sourceFor(current.manifest, state.room).url === source.url) updateSourceImage(current);
+      current.sourceBlobs.set(videoReference, url);
+      if (session === current) updateSourceImage(current);
       return url;
     })();
-    current.sourcePromises.set(source.url, promise);
-    promise.catch(() => current.sourcePromises.delete(source.url));
+    current.sourcePromises.set(videoReference, promise);
+    promise.catch(() => current.sourcePromises.delete(videoReference));
   }
-  return current.sourcePromises.get(source.url);
+  return current.sourcePromises.get(videoReference);
 }
 
 function announce(text) { ui['walk-live'].textContent = text; }
