@@ -322,6 +322,14 @@ npm run star-history   # regenerate the chart below; requires GITHUB_TOKEN
 The gallery uses hash routes (`#/` and `#/demo/:id`) so direct navigation remains compatible
 with static hosting.
 
+The private Robin & Nami / Thousand Sunny entry appears in the archive only when the Vite
+development site is opened on localhost. It links to the separate local scene server at
+`http://127.0.0.1:18774/thousandsunny/` and uses its preview image. The private job is not
+included in this repository: it must provide the `thousandsunny` link to `cinematic` and
+`evidence/home-robin-nami-sunny-preview.jpg`. Start its server with
+`python3 ~/.img2/jobs/robin-bikini-transfer-01/serve.py 18774`. The entry and its assets
+are not included in the public production gallery.
+
 ### Moonlight Cafe — dedicated PixiJS 2D demo
 
 This checkout includes **Moonlight Cafe** at `#/demo/coffee-house`, discoverable in the
