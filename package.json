@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "check:donate": "node scripts/check-donate-integrity.mjs",
-    "prebuild": "npm run check:donate && npm run check:iphone-duo && npm run check:tropical-island && npm run build:living-room && npm run build:modern-bedroom",
+    "prebuild": "npm run check:donate && npm run check:iphone-duo && npm run check:tropical-island && npm run build:living-room && npm run build:modern-bedroom && npm run build:warm-modern-house",
     "dev": "vite",
     "build": "tsc --noEmit && node --max-old-space-size=8192 node_modules/vite/bin/vite.js build",
     "postbuild": "npm run check:tropical-island -- --dist && npm run test:source && node scripts/check-pages-size.mjs && npm run build:demos-json",
@@ -24,6 +24,8 @@
     "build:modern-bedroom": "npm run build --workspace @img2threejs/modern-bedroom -- --mode showcase --base=/modern-bedroom/ --outDir ../../public/modern-bedroom --emptyOutDir",
     "dev:modern-bedroom": "npm run dev --workspace @img2threejs/modern-bedroom",
     "preview:modern-bedroom": "npm run preview --workspace @img2threejs/modern-bedroom -- --mode showcase --base=/modern-bedroom/ --outDir ../../public/modern-bedroom",
+    "build:warm-modern-house": "npm run build --workspace @img2threejs/warm-modern-house -- --base=/warm-modern-house/ --outDir ../../public/warm-modern-house --emptyOutDir",
+    "dev:warm-modern-house": "npm run dev --workspace @img2threejs/warm-modern-house",
     "publish:source": "node scripts/publish-source-archives.mjs",
     "test:source": "node --import tsx --test scripts/source-release.test.mjs scripts/source-archives.test.mjs tests/source-download.test.ts",
     "check:iphone-duo": "node scripts/check-iphone-duo-no-glb.mjs",
@@ -46,6 +48,7 @@
   },
   "workspaces": [
     "showcases/living-room",
-    "showcases/modern-bedroom"
+    "showcases/modern-bedroom",
+    "showcases/warm-modern-house"
   ]
 }

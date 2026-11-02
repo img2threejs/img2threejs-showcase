@@ -1,0 +1,20 @@
+{
+  "name": "@img2threejs/warm-modern-house",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch:assets": "python3 scripts/fetch_assets.py",
+    "predev": "python3 scripts/fetch_assets.py",
+    "dev": "vite",
+    "prebuild": "python3 scripts/fetch_assets.py",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "vite": "6.4.1"
+  }
+}

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Explore a complete three-storey Warm Modern house with editable native geometry, Customuse furnishings and a continuous guided journey." />
+    <title>Warm Modern · Three-storey house</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#study">Skip to 3D view</a>
+    <header class="page-header">
+      <a class="site-name" href="/">Warm Modern · Three storeys</a>
+    </header>
+    <main>
+      <div class="intro">
+        <h1 id="scene-title">Three floors in <em>warm light.</em></h1>
+        <p id="panel-lead">A complete authored house, from entrance to upper terrace.<br />Explore on foot or follow the guided journey.</p>
+      </div>
+      <div class="study-layout">
+        <section id="study" class="study" aria-label="Interior viewer" tabindex="-1">
+          <div class="viewer-toolbar">
+            <div class="mode-switch" role="group" aria-label="View content">
+              <button id="mode-3d" type="button" aria-pressed="true" disabled>3D house</button>
+              <button id="mode-source" type="button" aria-pressed="false" disabled>Source image</button>
+            </div>
+            <span id="room-label" class="room-label" aria-live="off"></span>
+            <span id="view-label" class="viewer-kind">3D · authored interior</span>
+          </div>
+          <div id="viewport" class="viewport" aria-busy="true">
+            <div id="canvas-host" class="canvas-host"></div>
+            <figure id="source-panel" class="source-panel" hidden>
+              <img id="source-view" alt="Source reference image" />
+              <figcaption id="source-caption">Source reference image · not a viewer render</figcaption>
+            </figure>
+            <div id="viewer-message" class="viewer-message">
+              <p id="message-title">Opening house</p>
+              <p id="message-detail">Reading model, materials and lightmap atlases.</p>
+              <button id="retry-load" class="retry-button" type="button" hidden>Retry load</button>
+            </div>
+            <div id="walk-joystick" class="walk-joystick" hidden aria-hidden="true"><div id="walk-joystick-knob" class="walk-joystick-knob"></div></div>
+          </div>
+          <div class="load-line" role="status" aria-live="polite" aria-atomic="true">
+            <span id="load-status">Reading scene manifest…</span>
+            <progress id="load-progress" aria-label="Asset load progress"></progress>
+          </div>
+          <p id="viewer-notice" class="viewer-notice" role="status" hidden></p>
+          <output id="performance-status" class="performance-status" aria-live="off" hidden></output>
+          <button id="retry-detail" type="button" hidden>Retry high-detail loading</button>
+          <div class="viewer-controls">
+            <div id="camera-actions" class="camera-actions" role="group" aria-label="Preset views by room"></div>
+            <button id="wireframe" type="button" aria-pressed="false" disabled>Wireframe</button>
+            <button id="reset" type="button" disabled>Reset</button>
+          </div>
+          <div id="navigation-controls" class="navigation-controls" role="group" aria-label="Navigation">
+            <div class="navigation-heading">
+              <span>Navigation</span>
+              <div class="mode-switch" role="group" aria-label="Navigation mode">
+                <button id="nav-orbit" type="button" aria-pressed="true" disabled>Orbit</button>
+                <button id="nav-walk" type="button" aria-pressed="false" disabled>Walk</button>
+              </div>
+            </div>
+            <div id="journey-controls" class="viewer-controls" role="group" aria-label="Guided journey" hidden>
+              <label class="journey-label" for="journey-path">Journey
+                <select id="journey-path" disabled></select>
+              </label>
+              <button id="journey-start" type="button" disabled>Start journey</button>
+              <button id="journey-pause" type="button" disabled>Pause journey</button>
+              <button id="journey-stop" type="button" disabled>Continue on foot</button>
+            </div>
+            <p id="journey-status" class="walk-note" role="status" aria-live="polite" hidden></p>
+            <p id="walk-note" class="walk-note" hidden></p>
+            <div id="walk-controls" class="walk-controls" role="group" aria-label="Walk controls" hidden>
+              <div id="walk-buttons" class="walk-buttons"></div>
+              <p id="walk-hint" class="walk-hint">Walk with W A S D or the arrow keys on the focused 3D frame (Shift runs, Q and E turn); drag to look. Collision uses authored floor and stair surfaces with clearance checks, not furniture-mesh certification.</p>
+            </div>
+            <div id="walk-live" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+          </div>
+          <fieldset id="curtain-controls" class="curtain-controls" aria-describedby="curtain-hint" hidden>
+            <legend>Curtains</legend>
+            <div class="curtain-slider">
+              <div class="curtain-slider-label"><label for="curtain-amount">Coverage</label><output id="curtain-percent" for="curtain-amount">0%</output></div>
+              <input id="curtain-amount" type="range" min="0" max="100" value="0" step="1" disabled />
+            </div>
+            <div class="curtain-actions">
+              <button id="curtain-open" type="button" disabled>Open curtains</button>
+              <button id="curtain-close" type="button" disabled>Close curtains</button>
+              <button id="curtain-wind" type="button" aria-pressed="true" disabled>Gentle breeze</button>
+            </div>
+            <p id="curtain-hint">Grab a point on the fabric and drag along the window. Neighbouring cloth follows; release to settle and gently sway.</p>
+          </fieldset>
+          <div id="finish-controls" class="finish-row" hidden>
+            <div class="finish-heading"><span id="finish-title">Material finish</span><strong id="finish-label">Waiting for materials</strong></div>
+            <label class="finish-group-label" for="finish-group">Finish group
+              <select id="finish-group" disabled></select>
+            </label>
+            <div id="finish-swatches" class="finish-swatches" role="group" aria-label="Material finishes"></div>
+          </div>
+          <fieldset id="object-controls" class="object-controls" disabled hidden>
+            <legend>Objects</legend>
+            <label for="object-list">Select an object</label>
+            <select id="object-list"><option value="">Choose an object</option></select>
+            <div class="object-actions">
+              <button id="object-hide" type="button" disabled>Hide selected</button>
+              <button id="object-isolate" type="button" aria-pressed="false" disabled>Isolate selected</button>
+              <button id="objects-show-all" type="button">Show all</button>
+            </div>
+            <dl id="object-details" class="object-details"></dl>
+            <p class="object-bake-limit">Hiding objects does not remove their baked shadows or indirect light.</p>
+            <div id="object-live" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+          </fieldset>
+          <p id="interaction-hint" class="interaction-hint">Drag to orbit the camera. Scroll or pinch to zoom, right-drag to pan inside the room. Keyboard: Tab into the 3D frame, arrow keys to rotate, + / − to zoom, Home returns to the source view.</p>
+        </section>
+        <aside class="story" aria-label="Source and representation">
+          <h2>One design.<br />Three connected floors.</h2>
+          <figure class="source-figure">
+            <a id="source-link" target="_blank" rel="noopener" aria-label="Open source reference image at full size (new tab)">
+              <img id="source-thumbnail" alt="Source reference image" />
+            </a>
+            <figcaption id="thumbnail-caption">Source reference. Open the image to compare details.</figcaption>
+          </figure>
+          <p id="source-note">The approved master and supplemental Customuse references guide this authored design. The floor plan resolves conflicting reference geometry; dimensions and hidden surfaces are design estimates, not surveyed data.</p>
+          <section class="representation" aria-labelledby="representation-title">
+            <h3 id="representation-title">Baked light, editable geometry</h3>
+            <p id="representation-detail">Direct sunlight and shadows are rendered in real time. Indirect bounce and reflections use the authored static bake; this is not dynamic GI. The camera stays inside the declared room bounds.</p>
+          </section>
+          <section class="downloads" aria-labelledby="download-title" hidden>
+            <h3 id="download-title">Take the scene with you</h3>
+            <a id="download-glb" class="download-link" aria-disabled="true" tabindex="-1" download>Download .GLB model</a>
+            <p id="portability-note">Standalone GLB: geometry with embedded baked lighting textures and unlit materials. Reflections differ from the PBR viewer.</p>
+            <a id="download-blend" class="download-link" aria-disabled="true" tabindex="-1" download>Download .blend scene</a>
+            <p>The packed Blender scene keeps PBR materials, geometry and lights for further editing. Downloads preserve the authored scene and original finishes, not the in-viewer changes or cloth simulation.</p>
+          </section>
+          <p id="resource-credit" class="asset-credit" hidden>Powered by <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> · CC0 assets.</p>
+        </aside>
+      </div>
+    </main>
+    <footer class="page-footer"><span>The source image is a design reference, not measured evidence.</span></footer>
+    <noscript><p class="noscript">JavaScript is required to load this scene's manifest, source image and interactive 3D viewer.</p></noscript>
+    <script type="module" src="/src/interior.js"></script>
+  </body>
+</html>

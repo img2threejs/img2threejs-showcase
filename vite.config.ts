@@ -14,7 +14,7 @@ export default defineConfig({
       configureServer(server) {
         server.middlewares.use((request, _response, next) => {
           const pathname = request.url?.split('?')[0];
-          if (pathname === '/living-room/' || pathname === '/modern-bedroom/') {
+          if (pathname === '/living-room/' || pathname === '/modern-bedroom/' || pathname === '/warm-modern-house/') {
             request.url = request.url!.replace(pathname, `${pathname}index.html`);
           }
           next();
