@@ -170,6 +170,24 @@ export function renderWorkbench(
 
   // Standalone product experiences share the archive card and filters while keeping their viewer.
   const archiveEntries = [
+    ...(import.meta.env.DEV && ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname) ? [{
+      id: 'robin-nami-sunny',
+      updatedAt: '2026-11-02',
+      title: 'Robin & Nami — Thousand Sunny',
+      subjectClass: 'character',
+      blurb: 'Explore Robin and Nami on the Thousand Sunny, change their outfits and switch the ship to Halloween. '
+        + 'This private showcase runs locally on this machine.',
+      referenceImage: 'http://127.0.0.1:18774/evidence/home-robin-nami-sunny-preview.jpg',
+      imageAlt: 'Robin and Nami on the Halloween-decorated Thousand Sunny',
+      imageLabel: 'Local scene preview',
+      href: 'http://127.0.0.1:18774/thousandsunny/',
+      status: 'working',
+      generationLabel: 'Private · Local',
+      generatedWith: 'Blender · Three.js',
+      referenceLabel: 'Local Showcase',
+      linkLabel: 'Open Local Showcase',
+      viewLabel: 'Interactive 3D on open',
+    }] : []),
     {
       id: 'skybound-adventure',
       updatedAt: '2026-10-17',
