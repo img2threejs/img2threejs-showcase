@@ -2,140 +2,234 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#282722" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="description" content="Explore a complete three-storey Warm Modern house with editable native geometry, Customuse furnishings and a continuous guided journey." />
     <title>Warm Modern · Three-storey house</title>
   </head>
   <body>
     <a class="skip-link" href="#study">Skip to 3D view</a>
-    <header class="page-header">
-      <a class="site-name" href="/">Warm Modern · Three storeys</a>
-    </header>
-    <main>
-      <div class="intro">
-        <h1 id="scene-title">Three floors in <em>warm light.</em></h1>
-        <p id="panel-lead">A complete authored house, from entrance to upper terrace.<br />Explore on foot or follow the guided journey.</p>
+    <div id="app" class="app">
+      <main id="study" class="study" aria-label="Interior viewer" tabindex="-1">
+        <div id="viewport" class="viewport" aria-busy="true">
+          <div id="canvas-host" class="canvas-host"></div>
+          <figure id="source-panel" class="source-panel" hidden>
+            <img id="source-view" alt="Reference image" />
+            <figcaption id="source-caption">Reference image · not a viewer render</figcaption>
+          </figure>
+          <div id="viewer-message" class="viewer-message" data-state="loading">
+            <div class="loader">
+              <svg class="loader-house" viewBox="0 0 200 150" aria-hidden="true" focusable="false">
+                <path class="lh-ground" d="M14 138H186" />
+                <g class="lh-floor" data-phase-step="0">
+                  <rect class="lh-slab" x="34" y="102" width="132" height="36" />
+                  <rect class="lh-window" x="46" y="112" width="22" height="20" />
+                  <rect class="lh-window" x="76" y="112" width="22" height="20" />
+                  <rect class="lh-window" x="106" y="112" width="22" height="20" />
+                  <rect class="lh-door" x="138" y="112" width="16" height="26" />
+                </g>
+                <g class="lh-floor" data-phase-step="1">
+                  <rect class="lh-slab" x="34" y="66" width="132" height="36" />
+                  <rect class="lh-window" x="46" y="76" width="34" height="20" />
+                  <rect class="lh-window" x="92" y="76" width="22" height="20" />
+                  <path class="lh-rail" d="M122 98H158M122 92V98M140 92V98M158 92V98" />
+                </g>
+                <g class="lh-floor" data-phase-step="2">
+                  <rect class="lh-slab" x="52" y="30" width="114" height="36" />
+                  <rect class="lh-window" x="64" y="40" width="22" height="20" />
+                  <rect class="lh-window" x="96" y="40" width="34" height="20" />
+                  <rect class="lh-window" x="140" y="40" width="14" height="20" />
+                </g>
+                <g class="lh-floor" data-phase-step="3">
+                  <path class="lh-roof" d="M46 30H172" />
+                  <path class="lh-pergola" d="M52 30V20H92V30M62 20V30M72 20V30M82 20V30" />
+                </g>
+              </svg>
+              <p id="message-title" class="loader-title">Opening house</p>
+              <p id="message-detail">Loading the standard room, lightmaps and reference.</p>
+              <ol class="loader-steps" aria-label="Loading steps">
+                <li data-phase-step="0" data-state="active">Scene manifest</li>
+                <li data-phase-step="1" data-state="pending">Geometry and textures</li>
+                <li data-phase-step="2" data-state="pending">Lighting and probes</li>
+                <li data-phase-step="3" data-state="pending">First frame</li>
+              </ol>
+              <progress id="load-progress" class="loader-progress" max="4" value="0" aria-label="Asset load progress"></progress>
+              <p id="loader-status" class="loader-status" aria-hidden="true">Reading scene manifest…</p>
+              <div class="loader-actions">
+                <button id="retry-load" class="retry-button" type="button" hidden>Retry load</button>
+                <button class="fullscreen-cta" type="button" data-fullscreen hidden>
+                  <span class="icon-fullscreen" aria-hidden="true"></span><span data-fullscreen-label>Open in fullscreen</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="walk-joystick" class="walk-joystick" hidden aria-hidden="true"><div id="walk-joystick-knob" class="walk-joystick-knob"></div></div>
+        </div>
+      </main>
+
+      <div class="stage-top stage-top-start">
+        <a class="stage-button gallery-link" href="/" aria-label="Back to the gallery">
+          <span class="icon-back" aria-hidden="true"></span><span class="stage-button-label">Gallery</span>
+        </a>
+        <div class="stage-status">
+          <span id="room-label" class="room-label" aria-live="off"></span>
+          <span id="view-label" class="viewer-kind">3D · authored interior</span>
+        </div>
       </div>
-      <div class="study-layout">
-        <section id="study" class="study" aria-label="Interior viewer" tabindex="-1">
-          <div class="viewer-toolbar">
-            <div class="mode-switch" role="group" aria-label="View content">
-              <button id="mode-3d" type="button" aria-pressed="true" disabled>3D house</button>
-              <button id="mode-source" type="button" aria-pressed="false" disabled>Source image</button>
+
+      <div class="stage-top stage-top-end">
+        <button class="stage-button" type="button" data-fullscreen aria-pressed="false" hidden>
+          <span class="icon-fullscreen" aria-hidden="true"></span><span class="stage-button-label" data-fullscreen-label>Fullscreen</span>
+        </button>
+        <button id="panel-toggle" class="stage-button panel-toggle" type="button" aria-expanded="false" aria-controls="panel" aria-label="Open views and controls panel">
+          <span class="panel-toggle-icon" aria-hidden="true"></span>
+          <span id="panel-toggle-label" class="stage-button-label">Panel</span>
+        </button>
+      </div>
+
+      <div class="toast" aria-live="polite">
+        <p id="viewer-notice" class="viewer-notice" role="status" hidden></p>
+        <button id="retry-detail" type="button" hidden>Retry high-detail loading</button>
+      </div>
+
+      <aside id="panel" class="panel" aria-labelledby="scene-title" tabindex="-1" hidden>
+        <header class="panel-head">
+          <h1 id="scene-title">Warm modern three-storey house</h1>
+          <p id="panel-lead" class="lead">A complete authored house, from entrance to upper terrace.</p>
+          <div class="tabs" role="tablist" aria-label="Panel sections">
+            <button id="tab-views" class="tab" type="button" role="tab" aria-selected="true" aria-controls="tabpanel-views" data-tab="views">Views</button>
+            <button id="tab-move" class="tab" type="button" role="tab" aria-selected="false" aria-controls="tabpanel-move" tabindex="-1" data-tab="move">Move</button>
+            <button id="tab-style" class="tab" type="button" role="tab" aria-selected="false" aria-controls="tabpanel-style" tabindex="-1" data-tab="style">Style</button>
+            <button id="tab-about" class="tab" type="button" role="tab" aria-selected="false" aria-controls="tabpanel-about" tabindex="-1" data-tab="about">About</button>
+          </div>
+        </header>
+
+        <div class="tabpanels">
+          <section id="tabpanel-views" class="tabpanel" role="tabpanel" aria-labelledby="tab-views" tabindex="0">
+            <div class="group">
+              <h2>Show</h2>
+              <div class="seg" role="group" aria-label="View content">
+                <button id="mode-3d" type="button" aria-pressed="true" disabled>3D house</button>
+                <button id="mode-source" type="button" aria-pressed="false" disabled>Reference image</button>
+              </div>
+              <div class="tool-row">
+                <button id="wireframe" type="button" aria-pressed="false" disabled>Wireframe</button>
+                <button id="reset" type="button" disabled>Reset</button>
+              </div>
             </div>
-            <span id="room-label" class="room-label" aria-live="off"></span>
-            <span id="view-label" class="viewer-kind">3D · authored interior</span>
-          </div>
-          <div id="viewport" class="viewport" aria-busy="true">
-            <div id="canvas-host" class="canvas-host"></div>
-            <figure id="source-panel" class="source-panel" hidden>
-              <img id="source-view" alt="Source reference image" />
-              <figcaption id="source-caption">Source reference image · not a viewer render</figcaption>
-            </figure>
-            <div id="viewer-message" class="viewer-message">
-              <p id="message-title">Opening house</p>
-              <p id="message-detail">Reading model, materials and lightmap atlases.</p>
-              <button id="retry-load" class="retry-button" type="button" hidden>Retry load</button>
+            <div class="group">
+              <h2>Rooms and views</h2>
+              <div id="camera-actions" class="camera-actions" role="group" aria-label="Preset views by room"></div>
             </div>
-            <div id="walk-joystick" class="walk-joystick" hidden aria-hidden="true"><div id="walk-joystick-knob" class="walk-joystick-knob"></div></div>
-          </div>
-          <div class="load-line" role="status" aria-live="polite" aria-atomic="true">
-            <span id="load-status">Reading scene manifest…</span>
-            <progress id="load-progress" aria-label="Asset load progress"></progress>
-          </div>
-          <p id="viewer-notice" class="viewer-notice" role="status" hidden></p>
-          <output id="performance-status" class="performance-status" aria-live="off" hidden></output>
-          <button id="retry-detail" type="button" hidden>Retry high-detail loading</button>
-          <div class="viewer-controls">
-            <div id="camera-actions" class="camera-actions" role="group" aria-label="Preset views by room"></div>
-            <button id="wireframe" type="button" aria-pressed="false" disabled>Wireframe</button>
-            <button id="reset" type="button" disabled>Reset</button>
-          </div>
-          <div id="navigation-controls" class="navigation-controls" role="group" aria-label="Navigation">
-            <div class="navigation-heading">
-              <span>Navigation</span>
-              <div class="mode-switch" role="group" aria-label="Navigation mode">
+          </section>
+
+          <section id="tabpanel-move" class="tabpanel" role="tabpanel" aria-labelledby="tab-move" tabindex="0" hidden>
+            <div id="navigation-controls" class="group" role="group" aria-label="Navigation">
+              <h2>Navigation</h2>
+              <div class="seg" role="group" aria-label="Navigation mode">
                 <button id="nav-orbit" type="button" aria-pressed="true" disabled>Orbit</button>
                 <button id="nav-walk" type="button" aria-pressed="false" disabled>Walk</button>
               </div>
+              <p id="walk-note" class="walk-note" hidden></p>
+              <div id="walk-controls" class="walk-controls" role="group" aria-label="Walk controls" hidden>
+                <div id="walk-buttons" class="walk-buttons"></div>
+                <p id="walk-hint" class="walk-hint">Walk with W A S D or the arrow keys on the focused 3D frame (Shift runs, Q and E turn); drag to look. Collision uses authored floor and stair surfaces with clearance checks, not furniture-mesh certification.</p>
+              </div>
+              <div id="walk-live" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
             </div>
-            <div id="journey-controls" class="viewer-controls" role="group" aria-label="Guided journey" hidden>
-              <label class="journey-label" for="journey-path">Journey
+            <div id="journey-controls" class="group" role="group" aria-label="Guided journey" hidden>
+              <h2>Guided journey</h2>
+              <label class="field-label" for="journey-path">Journey
                 <select id="journey-path" disabled></select>
               </label>
-              <button id="journey-start" type="button" disabled>Start journey</button>
-              <button id="journey-pause" type="button" disabled>Pause journey</button>
-              <button id="journey-stop" type="button" disabled>Continue on foot</button>
+              <div class="tool-row">
+                <button id="journey-start" type="button" disabled>Start journey</button>
+                <button id="journey-pause" type="button" disabled>Pause journey</button>
+                <button id="journey-stop" type="button" disabled>Continue on foot</button>
+              </div>
+              <p id="journey-status" class="walk-note" role="status" aria-live="polite" hidden></p>
             </div>
-            <p id="journey-status" class="walk-note" role="status" aria-live="polite" hidden></p>
-            <p id="walk-note" class="walk-note" hidden></p>
-            <div id="walk-controls" class="walk-controls" role="group" aria-label="Walk controls" hidden>
-              <div id="walk-buttons" class="walk-buttons"></div>
-              <p id="walk-hint" class="walk-hint">Walk with W A S D or the arrow keys on the focused 3D frame (Shift runs, Q and E turn); drag to look. Collision uses authored floor and stair surfaces with clearance checks, not furniture-mesh certification.</p>
-            </div>
-            <div id="walk-live" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
-          </div>
-          <fieldset id="curtain-controls" class="curtain-controls" aria-describedby="curtain-hint" hidden>
-            <legend>Curtains</legend>
-            <div class="curtain-slider">
-              <div class="curtain-slider-label"><label for="curtain-amount">Coverage</label><output id="curtain-percent" for="curtain-amount">0%</output></div>
-              <input id="curtain-amount" type="range" min="0" max="100" value="0" step="1" disabled />
-            </div>
-            <div class="curtain-actions">
-              <button id="curtain-open" type="button" disabled>Open curtains</button>
-              <button id="curtain-close" type="button" disabled>Close curtains</button>
-              <button id="curtain-wind" type="button" aria-pressed="true" disabled>Gentle breeze</button>
-            </div>
-            <p id="curtain-hint">Grab a point on the fabric and drag along the window. Neighbouring cloth follows; release to settle and gently sway.</p>
-          </fieldset>
-          <div id="finish-controls" class="finish-row" hidden>
-            <div class="finish-heading"><span id="finish-title">Material finish</span><strong id="finish-label">Waiting for materials</strong></div>
-            <label class="finish-group-label" for="finish-group">Finish group
-              <select id="finish-group" disabled></select>
-            </label>
-            <div id="finish-swatches" class="finish-swatches" role="group" aria-label="Material finishes"></div>
-          </div>
-          <fieldset id="object-controls" class="object-controls" disabled hidden>
-            <legend>Objects</legend>
-            <label for="object-list">Select an object</label>
-            <select id="object-list"><option value="">Choose an object</option></select>
-            <div class="object-actions">
-              <button id="object-hide" type="button" disabled>Hide selected</button>
-              <button id="object-isolate" type="button" aria-pressed="false" disabled>Isolate selected</button>
-              <button id="objects-show-all" type="button">Show all</button>
-            </div>
-            <dl id="object-details" class="object-details"></dl>
-            <p class="object-bake-limit">Hiding objects does not remove their baked shadows or indirect light.</p>
-            <div id="object-live" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
-          </fieldset>
-          <p id="interaction-hint" class="interaction-hint">Drag to orbit the camera. Scroll or pinch to zoom, right-drag to pan inside the room. Keyboard: Tab into the 3D frame, arrow keys to rotate, + / − to zoom, Home returns to the source view.</p>
-        </section>
-        <aside class="story" aria-label="Source and representation">
-          <h2>One design.<br />Three connected floors.</h2>
-          <figure class="source-figure">
-            <a id="source-link" target="_blank" rel="noopener" aria-label="Open source reference image at full size (new tab)">
-              <img id="source-thumbnail" alt="Source reference image" />
-            </a>
-            <figcaption id="thumbnail-caption">Source reference. Open the image to compare details.</figcaption>
-          </figure>
-          <p id="source-note">The showcase reference is a frame from the supplied video. The 3D house was authored from separate synthetic design references; its dimensions and hidden surfaces are estimates.</p>
-          <section class="representation" aria-labelledby="representation-title">
-            <h3 id="representation-title">Baked light, editable geometry</h3>
-            <p id="representation-detail">Direct sunlight and shadows are rendered in real time. Indirect bounce and reflections use the authored static bake; this is not dynamic GI. The camera stays inside the declared room bounds.</p>
           </section>
-          <section class="downloads" aria-labelledby="download-title" hidden>
-            <h3 id="download-title">Take the scene with you</h3>
-            <a id="download-glb" class="download-link" aria-disabled="true" tabindex="-1" download>Download .GLB model</a>
-            <p id="portability-note">Standalone GLB: geometry with embedded baked lighting textures and unlit materials. Reflections differ from the PBR viewer.</p>
-            <a id="download-blend" class="download-link" aria-disabled="true" tabindex="-1" download>Download .blend scene</a>
-            <p>The packed Blender scene keeps PBR materials, geometry and lights for further editing. Downloads preserve the authored scene and original finishes, not the in-viewer changes or cloth simulation.</p>
+
+          <section id="tabpanel-style" class="tabpanel" role="tabpanel" aria-labelledby="tab-style" tabindex="0" hidden>
+            <div id="finish-controls" class="group" hidden>
+              <h2 id="finish-title">Material finish</h2>
+              <p class="finish-current">Current: <strong id="finish-label">Waiting for materials</strong></p>
+              <label class="field-label" for="finish-group">Finish group
+                <select id="finish-group" disabled></select>
+              </label>
+              <div id="finish-swatches" class="finish-swatches" role="group" aria-label="Material finishes"></div>
+            </div>
+            <fieldset id="curtain-controls" class="group curtain-controls" aria-describedby="curtain-hint" hidden>
+              <legend>Curtains</legend>
+              <div class="curtain-slider">
+                <div class="curtain-slider-label"><label for="curtain-amount">Coverage</label><output id="curtain-percent" for="curtain-amount">0%</output></div>
+                <input id="curtain-amount" type="range" min="0" max="100" value="0" step="1" disabled />
+              </div>
+              <div class="curtain-actions">
+                <button id="curtain-open" type="button" disabled>Open</button>
+                <button id="curtain-close" type="button" disabled>Close</button>
+                <button id="curtain-wind" type="button" aria-pressed="true" disabled>Gentle breeze</button>
+              </div>
+              <p id="curtain-hint" class="hint">Grab a point on the fabric and drag along the window. Neighbouring cloth follows; release to settle and gently sway.</p>
+            </fieldset>
+            <fieldset id="object-controls" class="group object-controls" disabled hidden>
+              <legend>Objects</legend>
+              <label class="field-label" for="object-list">Select an object</label>
+              <select id="object-list"><option value="">Choose an object</option></select>
+              <div class="tool-row">
+                <button id="object-hide" type="button" disabled>Hide selected</button>
+                <button id="object-isolate" type="button" aria-pressed="false" disabled>Isolate selected</button>
+                <button id="objects-show-all" type="button">Show all</button>
+              </div>
+              <dl id="object-details" class="object-details"></dl>
+              <p class="hint">Hiding objects does not remove their baked shadows or indirect light.</p>
+              <div id="object-live" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+            </fieldset>
           </section>
-          <p id="resource-credit" class="asset-credit" hidden>Powered by <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> · CC0 assets.</p>
-        </aside>
-      </div>
-    </main>
-    <footer class="page-footer"><span>The reference image is a video frame, not measured evidence.</span></footer>
-    <noscript><p class="noscript">JavaScript is required to load this scene's manifest, source image and interactive 3D viewer.</p></noscript>
+
+          <section id="tabpanel-about" class="tabpanel" role="tabpanel" aria-labelledby="tab-about" tabindex="0" hidden>
+            <div class="group">
+              <h2>Reference</h2>
+              <figure class="source-figure">
+                <a id="source-link" target="_blank" rel="noopener" aria-label="Open reference image at full size (new tab)">
+                  <img id="source-thumbnail" alt="Reference image" />
+                </a>
+                <figcaption id="thumbnail-caption">Reference image. Open the image to see it full size.</figcaption>
+              </figure>
+              <p id="source-note" class="hint">The showcase reference is a frame from the supplied video. The 3D house was authored from separate synthetic design references; its dimensions and hidden surfaces are estimates.</p>
+            </div>
+            <div class="group">
+              <h2 id="representation-title">Baked light, editable geometry</h2>
+              <p id="representation-detail" class="hint">Direct sunlight and shadows are rendered in real time. Indirect bounce and reflections use the authored static bake; this is not dynamic GI. The camera stays inside the declared room bounds.</p>
+            </div>
+            <div class="group">
+              <h2>Controls</h2>
+              <p id="interaction-hint" class="hint">Drag to orbit the camera. Scroll or pinch to zoom, right-drag to pan inside the room. Keyboard: Tab into the 3D frame, arrow keys to rotate, + / − to zoom, Home returns to the source view.</p>
+              <p class="hint">Press F to toggle fullscreen. Fullscreen is the best way to explore the house.</p>
+            </div>
+            <div class="group">
+              <h2>Status</h2>
+              <p id="panel-status" class="hint status-line">Reading scene manifest…</p>
+              <output id="performance-status" class="hint status-line" aria-live="off" hidden></output>
+            </div>
+            <section class="group downloads" aria-labelledby="download-title" hidden>
+              <h2 id="download-title">Take the scene with you</h2>
+              <a id="download-glb" class="download-link" aria-disabled="true" tabindex="-1" download>Download .GLB model</a>
+              <p id="portability-note" class="hint">Standalone GLB: geometry with embedded baked lighting textures and unlit materials. Reflections differ from the PBR viewer.</p>
+              <a id="download-blend" class="download-link" aria-disabled="true" tabindex="-1" download>Download .blend scene</a>
+              <p class="hint">The packed Blender scene keeps PBR materials, geometry and lights for further editing. Downloads preserve the authored scene and original finishes, not the in-viewer changes or cloth simulation.</p>
+            </section>
+            <p id="resource-credit" class="asset-credit hint" hidden>Powered by <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> · CC0 assets.</p>
+          </section>
+        </div>
+      </aside>
+
+      <p id="load-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">Reading scene manifest…</p>
+    </div>
+    <noscript><p class="noscript">JavaScript is required to load this scene's manifest, reference image and interactive 3D viewer.</p></noscript>
     <script type="module" src="/src/interior.js"></script>
   </body>
 </html>

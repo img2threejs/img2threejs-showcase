@@ -39,7 +39,13 @@ export function viewCatalog(manifest) {
 }
 
 export function viewLabel(name, pose) {
-  return pose?.label || (name === 'source' ? 'Source view' : name.charAt(0).toUpperCase() + name.slice(1));
+  if (pose?.label) return pose.label;
+  if (name === 'source') return 'Source view';
+  // `src-l1-study` is a camera pose that matches a concept view; show it as "Concept · Study".
+  const concept = /^src-(?:l\d+-)?(.+)$/.exec(name);
+  const words = (concept ? concept[1] : name).replaceAll('-', ' ');
+  const label = words.charAt(0).toUpperCase() + words.slice(1);
+  return concept ? `Concept · ${label}` : label;
 }
 
 function boxContains(bounds, [x, y, z], tolerance = TOLERANCE) {

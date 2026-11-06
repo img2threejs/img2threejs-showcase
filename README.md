@@ -50,6 +50,11 @@ passes (largest P0 transfer 30,084,260 B against the 40,000,000 B limit, no budg
 but no browser performance benchmark has been run or accepted. Native and portable downloads are
 not included in this draft; the original footage and film render are not part of the viewer package.
 
+The viewer fills the window. Every view and control lives in the **Panel** (Views, Move, Style,
+About tabs), room views are grouped by floor, and the **Fullscreen** button or the `F` key
+toggles browser fullscreen where the browser supports it. A floor-by-floor loading screen
+follows the real loading steps.
+
 The viewer's SHA-256-pinned runtime bundle is fetched by `npm run build:warm-modern-house` and
 built under `/warm-modern-house/`. Historical source-image hashes are recorded in the asset
 lock for provenance; those images are not shown as references in the showcase.

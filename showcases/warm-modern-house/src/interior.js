@@ -24,6 +24,8 @@ import { parseViewId, viewCatalog, viewLabel, resolveCurrentRoom, attributeRoomB
   memoryBudgetOverride, tierBudget, findWalkablePoint } from './interior-house.js';
 import { WALK_BUTTONS, keyAction, intentFromActions, hasIntent, stepFromIntent, buttonStep,
   joystickIntent, lookFromDrag } from './interior-walk-input.js';
+import { revealInPanel } from './interior-panel.js';
+import './interior-fullscreen.js';
 
 const ui = Object.fromEntries([
   'viewport', 'canvas-host', 'source-panel', 'source-view', 'source-thumbnail', 'source-link',
@@ -36,9 +38,29 @@ const ui = Object.fromEntries([
   'performance-status', 'retry-detail', 'finish-title', 'finish-group', 'panel-lead', 'source-note', 'portability-note',
   'object-controls', 'object-list', 'object-hide', 'object-isolate', 'objects-show-all', 'object-details', 'object-live',
   'viewer-notice', 'nav-orbit', 'nav-walk', 'walk-note', 'walk-controls', 'walk-buttons', 'walk-live',
-  'walk-joystick', 'walk-joystick-knob',
+  'walk-joystick', 'walk-joystick-knob', 'loader-status', 'panel-status',
   'journey-controls', 'journey-path', 'journey-start', 'journey-pause', 'journey-stop', 'journey-status',
 ].map(id => [id, document.getElementById(id)]));
+
+// The load summary is shown in the loader, in the panel and in one screen-reader live region.
+function setStatus(text) {
+  for (const id of ['load-status', 'loader-status', 'panel-status']) ui[id].textContent = text;
+}
+
+let loaderHideTimer = 0;
+// Fade the loader out instead of cutting to the scene; `inert` keeps it from trapping focus meanwhile.
+function setLoaderVisible(visible) {
+  const loader = ui['viewer-message'];
+  loader.inert = !visible;
+  if (visible) {
+    clearTimeout(loaderHideTimer);
+    loader.hidden = false;
+    loader.classList.remove('is-done');
+  } else if (!loader.classList.contains('is-done') && !loader.hidden) {
+    loader.classList.add('is-done');
+    loaderHideTimer = setTimeout(() => { loader.hidden = true; }, 520);
+  }
+}
 let viewButtons = [];
 const state = { status: 'loading', error: null, mode: '3d', navMode: 'orbit', view: null, room: null, finish: null,
   finishGroup: null, selected: null, isolated: null, wireframe: false, frames: 0, pitch: 0 };
@@ -199,6 +221,7 @@ function syncControls() {
     button.disabled = !interactive;
     button.setAttribute('aria-pressed', String(state.view === button.dataset.view));
   }
+  syncViewGroups();
   for (const button of ui['finish-swatches'].children) {
     button.disabled = !interactive;
     button.setAttribute('aria-pressed', String(state.finish === button.dataset.finish));
@@ -231,7 +254,7 @@ function syncControls() {
   showNotices();
   ui['canvas-host'].hidden = state.mode !== '3d';
   ui['source-panel'].hidden = state.mode !== 'source';
-  ui['viewer-message'].hidden = ready;
+  setLoaderVisible(!ready);
   ui['load-progress'].hidden = state.status !== 'loading';
   ui['retry-load'].hidden = state.status !== 'error';
   ui.viewport.setAttribute('aria-busy', String(state.status === 'loading'));
@@ -269,7 +292,7 @@ async function fail(error) {
   setLoadPhase(Math.min(loadPhase, 3), true);
   ui['message-title'].textContent = 'Could not open the house';
   ui['message-detail'].textContent = state.error;
-  ui['load-status'].textContent = 'Scene load did not finish. Check your connection, then choose “Retry load”.';
+  setStatus('Scene load did not finish. Check your connection, then choose “Retry load”.');
   syncControls();
   try { await disposeSession(); }
   finally {
@@ -306,7 +329,6 @@ function sourceFor(manifest, roomId) {
 
 function updateSourceImage(current) {
   const url = current.sourceBlobs.get(videoReference);
-  ui.viewport.style.setProperty('--source-aspect', '1000 / 563');
   for (const id of ['source-view', 'source-thumbnail']) {
     ui[id].width = 1000;
     ui[id].height = 563;
@@ -817,8 +839,7 @@ function buildWalkButtons() {
 }
 
 function focusObjectControls() {
-  const toggle = document.getElementById('panel-toggle');
-  if (toggle?.getAttribute('aria-expanded') === 'false') toggle.click();
+  revealInPanel(ui['object-list']);
   ui['object-list'].focus();
 }
 
@@ -863,35 +884,21 @@ function configureSceneContent(current) {
   ui['scene-title'].textContent = manifest.title;
   ui['resource-credit'].hidden = !usesPolyHavenAPI(manifest);
   ui['portability-note'].textContent = manifest.portability;
-  const multiple = manifest.house.rooms.length > 1;
   viewButtons = [];
-  const groups = manifest.house.rooms.map(room => {
-    const group = document.createElement('div');
-    group.className = 'view-group';
-    group.setAttribute('role', 'group');
-    group.setAttribute('aria-label', `${room.label} views`);
-    if (multiple) {
-      const heading = document.createElement('span');
-      heading.className = 'view-group-label';
-      heading.textContent = room.label;
-      heading.setAttribute('aria-hidden', 'true');
-      group.append(heading);
+  openedRoom = null;
+  const levelName = index => ['Ground floor', 'First floor', 'Second floor'][index] ?? `Level ${index}`;
+  ui['camera-actions'].replaceChildren(...manifest.house.levels.map((level, index) => {
+    const section = document.createElement('section');
+    section.className = 'level-group';
+    const heading = document.createElement('h3');
+    heading.className = 'level-label';
+    heading.textContent = levelName(index);
+    section.append(heading);
+    for (const room of manifest.house.rooms.filter(item => item.level === level.id)) {
+      section.append(buildRoomGroup(room, current));
     }
-    for (const [name, pose] of Object.entries(room.views)) {
-      const id = `${room.id}/${name}`;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.dataset.view = id;
-      button.textContent = viewLabel(name, pose);
-      button.disabled = true;
-      button.setAttribute('aria-pressed', String(id === `${current.initialRoom}/source`));
-      button.addEventListener('click', () => setView(id));
-      viewButtons.push(button);
-      group.append(button);
-    }
-    return group;
-  });
-  ui['camera-actions'].replaceChildren(...groups);
+    return section;
+  }));
   ui['finish-group'].replaceChildren(...manifest.variants.map(group => {
     const option = document.createElement('option');
     option.value = group.group;
@@ -904,6 +911,50 @@ function configureSceneContent(current) {
   createSwatches();
 }
 
+// Each room is a disclosure that holds its preset views; the current room opens automatically.
+function buildRoomGroup(room, current) {
+  const group = document.createElement('details');
+  group.className = 'view-group';
+  group.dataset.room = room.id;
+  const summary = document.createElement('summary');
+  const name = document.createElement('span');
+  name.className = 'view-group-label';
+  name.textContent = room.label;
+  summary.append(name);
+  // A visitor's own choice to open or close a room is never undone by room changes.
+  summary.addEventListener('click', () => { group.dataset.user = 'true'; });
+  const buttons = document.createElement('div');
+  buttons.className = 'view-buttons';
+  buttons.setAttribute('role', 'group');
+  buttons.setAttribute('aria-label', `${room.label} views`);
+  for (const [viewName, pose] of Object.entries(room.views)) {
+    const id = `${room.id}/${viewName}`;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.view = id;
+    button.textContent = viewLabel(viewName, pose);
+    button.disabled = true;
+    button.setAttribute('aria-pressed', String(id === `${current.initialRoom}/source`));
+    button.addEventListener('click', () => setView(id));
+    viewButtons.push(button);
+    buttons.append(button);
+  }
+  group.append(summary, buttons);
+  return group;
+}
+
+let openedRoom = null;
+function syncViewGroups() {
+  for (const group of ui['camera-actions'].querySelectorAll('.view-group')) {
+    const current = group.dataset.room === state.room;
+    group.dataset.current = String(current);
+    if (!state.room || openedRoom === state.room) continue;
+    if (current) group.open = true;
+    else if (group.dataset.room === openedRoom && group.dataset.user !== 'true') group.open = false;
+  }
+  openedRoom = state.room;
+}
+
 function configureInteractionContent(current) {
   const cloth = [...current.rooms.values()].some(room => room.curtains?.count > 0);
   const cameraHint = 'Scroll or pinch to zoom, right-drag to pan inside the room. Keyboard: Tab into the 3D frame; Tab / Shift+Tab selects objects in the current room, Enter inspects, Escape returns to the object controls. Arrow keys rotate, + / − zoom, Home returns to the current room\'s source view. Choose Walk in Navigation to move through doorways.';
@@ -911,7 +962,7 @@ function configureInteractionContent(current) {
     ? `Drag the fabric to open or close the curtains; drag elsewhere to orbit the camera. ${cameraHint} Adjust the curtains with the Coverage slider and buttons; turn off Gentle breeze to settle the cloth.`
     : `Drag to orbit the camera. ${cameraHint}`;
   current.renderer.domElement.setAttribute('aria-label', `${current.manifest.title}. Interactive 3D interior. ${ui['interaction-hint'].textContent}`);
-  ui['panel-lead'].textContent = 'A Blender-authored interior rendered live with Three.js. Explore the rooms, inspect objects and compare the separate source reference.';
+  ui['panel-lead'].textContent = 'A complete authored house, rendered live with Three.js. Explore the rooms, inspect objects and compare the reference image.';
   ui['representation-title'].textContent = cloth && current.sun ? 'Sunlight follows the curtain' : 'Baked light, editable geometry';
   ui['representation-detail'].textContent = !current.sun
     ? 'Lighting and reflections use the authored static bake and one reflection probe per room. This scene has no runtime sun or dynamic GI; changing materials or cloth does not rebake lighting. Orbit stays inside the current room; walking uses a floor-plan polygon proxy, not furniture-mesh collision.'
@@ -1199,7 +1250,7 @@ async function bindRoomResources(current, roomId, assets, shell, initial) {
   }
   if (state.status === 'ready') {
     syncControls();
-    ui['load-status'].textContent = loadSummary(current);
+    setStatus(loadSummary(current));
     requestRender('room-ready');
     evaluatePressure(current);
   }
@@ -1328,7 +1379,7 @@ function evaluatePressure(current) {
       residentBytesAfter: step.residentBytesAfter, budgetBytes, fixedBytes, globalTier: current.globalTier, atMs: performance.now() });
   }
   if (plan.steps.length) {
-    ui['load-status'].textContent = loadSummary(current);
+    setStatus(loadSummary(current));
     syncControls();
     requestRender('eviction');
   }
@@ -1347,7 +1398,7 @@ function reportFailure(current, { room, tier, priority, error }) {
   const what = tier === 'standard' ? 'did not finish loading and is not shown' : tier === 'source' ? 'reference image failed' : 'high detail failed; the room stays at standard detail';
   current.failures.set(`${room}:${tier}`, error.message);
   current.notices.set(`fail:${room}:${tier}`, `${label} ${what}: ${error.message}`);
-  ui['load-status'].textContent = `${label} ${what}. Choose Retry high-detail loading to try again.`;
+  setStatus(`${label} ${what}. Choose Retry high-detail loading to try again.`);
   current.benchmark?.fail(error);
   syncControls();
 }
@@ -1409,6 +1460,7 @@ function setLoadPhase(index, failed = false) {
     const step = Number(item.dataset.phaseStep);
     item.dataset.state = step < index ? 'done' : step === index ? (failed ? 'error' : 'active') : 'pending';
   }
+  ui['load-progress'].value = index;
 }
 
 function fetchedRecord(record) {
@@ -1444,7 +1496,7 @@ function renderCurrent(current, accumulate) {
   state.frames++;
   if (current.highPublished) {
     current.highPublished = false;
-    ui['load-status'].textContent = loadSummary(current);
+    setStatus(loadSummary(current));
     current.refinementCheck = true;
   }
   if (current.refinementCheck && current.benchmark && !current.refinementReported) {
@@ -1526,8 +1578,7 @@ async function start() {
     finishGroup: null, selected: null, isolated: null, wireframe: false, frames: 0, pitch: 0 });
   ui['message-title'].textContent = 'Opening house';
   ui['message-detail'].textContent = 'Loading the standard room, lightmaps and reference.';
-  ui['load-status'].textContent = 'Reading scene manifest…';
-  ui['load-progress'].removeAttribute('value');
+  setStatus('Reading scene manifest…');
   syncControls();
   try {
     await disposeSession();
@@ -1600,7 +1651,7 @@ async function start() {
       onProgress() {
         if (session === current && state.status === 'loading') {
           const bytes = current.fetchedAssets.reduce((sum, item) => sum + item.bytes, 0);
-          ui['load-status'].textContent = `Loading standard room · ${(bytes / 1048576).toFixed(1)} MiB received`;
+          setStatus(`Loading standard room · ${(bytes / 1048576).toFixed(1)} MiB received`);
         }
       },
     });
@@ -1719,7 +1770,8 @@ async function start() {
       current.walkAvailable = navigation.mode !== 'orbit-only';
       ui['journey-path'].replaceChildren(...manifest.paths.map(path => {
         const option = document.createElement('option');
-        option.value = path.id; option.textContent = path.label ?? path.id;
+        option.value = path.id;
+        option.textContent = path.label ?? path.id.replaceAll('-', ' ').replace(/^./, letter => letter.toUpperCase());
         return option;
       }));
       if (!current.walkAvailable) current.walkNote = 'Walk mode is unavailable: this export declares orbit-only navigation (no walkable floor plan).';
@@ -1783,15 +1835,15 @@ async function start() {
         viewerRecords: current.viewerRecords, shaderCompilation: current.shaderCompilation,
         networkConditions: context.networkConditions ?? null, environment: context.environment ?? null, options,
         requirement: () => benchmarkRequirement(current),
-        onComplete: () => { ui['load-status'].textContent = 'Benchmark receipt ready.'; },
-        onError: error => { ui['load-status'].textContent = `Benchmark failed: ${error.message}`; },
+        onComplete: () => { setStatus('Benchmark receipt ready.'); },
+        onError: error => { setStatus(`Benchmark failed: ${error.message}`); },
       });
       for (const record of current.fetchedAssets) current.benchmark.recordAsset(record);
     }
     state.status = 'ready';
     current.interactive.resolve();
     setLoadPhase(4);
-    ui['load-status'].textContent = `${loadSummary(current)} Fetching high detail.`;
+    setStatus(`${loadSummary(current)} Fetching high detail.`);
     rebuildObjectList();
     syncObjectControls();
     syncControls();
