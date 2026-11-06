@@ -40,6 +40,21 @@ opens the dedicated `/living-room/` viewer and is no longer listed under Objects
 Its thumbnail remains explicitly labeled **Design reference**, not a captured live render.
 Existing `#/x/<id>` links still open the requested Three.js study directly.
 
+**Warm Modern — Three-Storey House** is a draft interior study at `/warm-modern-house/`.
+Its 25 navigation cells include rooms, landings and stair flights across three floors.
+The original design studies are AI-generated concepts and the layout is authored, not surveyed.
+The gallery and viewer use the same reference image: a frame from the supplied video. The 3D
+interior was authored from separate synthetic design references and is not an exact match.
+The published runtime is the `house-final-r03-encode` delivery. Its recorded runtime budget
+passes (largest P0 transfer 30,084,260 B against the 40,000,000 B limit, no budget overrides),
+but no browser performance benchmark has been run or accepted. Native and portable downloads are
+not included in this draft; the original footage and film render are not part of the viewer package.
+
+The viewer's SHA-256-pinned runtime bundle is fetched by `npm run build:warm-modern-house` and
+built under `/warm-modern-house/`. Historical source-image hashes are recorded in the asset
+lock for provenance; those images are not shown as references in the showcase.
+For local development, run `npm run dev:warm-modern-house`.
+
 ## Skybound Adventure — playable pixel-art kingdom
 
 Open **Skybound Adventure — The Floating Kingdom** in the home-page Archive, or

@@ -1,0 +1,1323 @@
+{
+  "schemaVersion": 1,
+  "bundle": {
+    "url": "https://github.com/img2threejs/img2threejs-showcase/releases/download/warm-modern-house-assets-v1/warm-modern-house-assets.zip",
+    "sha256": "f8cb3ca7b62b6ee73a557396d21015f31e28299629dc2c2f837f6f97e327ec39",
+    "bytes": 66972345
+  },
+  "files": [
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/0.webp",
+      "sha256": "4064367dd16660b0ab2fc6ba1c4c5fac78bd15effeb5396cff668fcbf2cfbfc5",
+      "bytes": 348932
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/1.webp",
+      "sha256": "4c1834a52b0901b2e53e4bd9891d0d183300d2bcc3d1f68ed211573472b5b065",
+      "bytes": 23700
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/10.webp",
+      "sha256": "93646a57638110af8b67200ed79d7656c794ead18d4ed864c6541c6ee53dc537",
+      "bytes": 29364
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/11.webp",
+      "sha256": "2f74bfbc38f52f3384bcb8fece1547ee724e9962dc0d2821eab8681a8c292e2e",
+      "bytes": 282684
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/12.webp",
+      "sha256": "88c57d3f8cd7f3baa8c675859e3c2c146cbe24e0f94b7b49b80100662f8e9159",
+      "bytes": 236462
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/13.webp",
+      "sha256": "f151a04b6355bfa0926b268b2c6ce6fc4bee8d529ebaa4cd676353418422a96c",
+      "bytes": 9612
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/14.webp",
+      "sha256": "bc60039d7eab09c3b72cb452535d87a13ab103f4861e57b7fc4cbe9099d7e163",
+      "bytes": 76034
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/15.webp",
+      "sha256": "f453fffef0634517243beba8d46a0f4cf24c3771695d0daa659a190b759c300d",
+      "bytes": 109964
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/16.webp",
+      "sha256": "de6c3782f69c6c5096e911f46c9124abf7e21e3d8f16e1b10df14a41323085b6",
+      "bytes": 36386
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/17.webp",
+      "sha256": "189588a63692e1b7a7cf7e3153258752e8e1be779567de2333579e393bfcfc5f",
+      "bytes": 182572
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/18.webp",
+      "sha256": "2a7fceb153998a2d87f6c2fd71d9352b2d730ca722f29677540d2963e282f7f8",
+      "bytes": 11360
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/19.webp",
+      "sha256": "3026e06ef8ff88d503f59fe3c7e9a41fc7aadf8228e7388c908d4308e0ab496e",
+      "bytes": 22964
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/2.webp",
+      "sha256": "ea583d892acad275b70d2fdcaf69df018a400e3b680ffbefeac4dd2b46cd4d2a",
+      "bytes": 91896
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/20.webp",
+      "sha256": "e880d5fac8419eac2cbf593df2d1b34b6c6a03c0cd4b1bda711be8652836d65d",
+      "bytes": 34454
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/21.webp",
+      "sha256": "cc1167985d2b29b1767061b316420f9b2240dae480678a57c4fbf57c16c58232",
+      "bytes": 217242
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/22.webp",
+      "sha256": "0ed4a3cf21eaf9eccfab88ac79f1da6a5441947e222914dd87903e0fc03027eb",
+      "bytes": 11132
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/23.webp",
+      "sha256": "89067a8c99dccde53aecce7ce16190516d35eabde35adea1b4271540fbac7e09",
+      "bytes": 22850
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/24.webp",
+      "sha256": "72a40355a89e2ad1c2908580cdf27a909abd919fb24762c9fcc231c21a58d9df",
+      "bytes": 38380
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/25.webp",
+      "sha256": "6d4c728ec5bf05356828461318ccb8f4e1468b42039d1b93aa10abbc64e46b22",
+      "bytes": 753454
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/26.webp",
+      "sha256": "9db12466c779a23b5d492132fee66789e188f17fa112e930a4b869c45c500fce",
+      "bytes": 4712
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/27.webp",
+      "sha256": "2873cf27344a1d15f3a368015026c14d00d47dcbcc9f202b68c6f2cb4940ba69",
+      "bytes": 501944
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/28.webp",
+      "sha256": "06317b23531897ade632d00ef55f6fb9e51587af43662dff3f5efb6c22252de6",
+      "bytes": 354166
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/29.webp",
+      "sha256": "ebbc20f71ce216e931a3e619147d8647a4f8538107b295dc80ba77abb18c739a",
+      "bytes": 58976
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/3.webp",
+      "sha256": "3fd5158c92d83250efe3f9bfb208362a86c802d06c9cc9927acc809d0ace6775",
+      "bytes": 322056
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/30.webp",
+      "sha256": "ab874183531d6611867356df238bd735f460a57e84b04eb307792295f848a4bf",
+      "bytes": 294424
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/31.webp",
+      "sha256": "bd4ae0f998724670cdd1e5a164f99c1da246727d344025cc2aefd441f6e32ed7",
+      "bytes": 9280
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/32.webp",
+      "sha256": "8c23c93e6a7cf4123d4611788a63d0c1210a7d0bc63c71c4c6f51f8c69df621f",
+      "bytes": 296276
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/33.webp",
+      "sha256": "b6c5481492af6601fa3ed682391560f4a7cb714e523ce5699b1ea0a8fc79b452",
+      "bytes": 10334
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/34.webp",
+      "sha256": "41db06a0f06bed6d29f795e8888ec4985a2fab4429a46f503f2cbe23f5a9befa",
+      "bytes": 442468
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/35.webp",
+      "sha256": "3b1787b5759a84121ca3607179caad993da7c75c678ca55b406680999dd968f3",
+      "bytes": 216024
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/36.webp",
+      "sha256": "526a11a8d0e949a1b9ca84f2109432cddf5d07758d096875766976dfde3aae7e",
+      "bytes": 323048
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/37.webp",
+      "sha256": "982f1038aa884e7c8451d3d8bd1a6d54d8776feb83867101d3364658cdd7712c",
+      "bytes": 182222
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/38.webp",
+      "sha256": "4fb3f2437b87c183f0ff2840ee43c1df3687d61ebeaea8fdbc2a6ad7176abedd",
+      "bytes": 8138
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/39.webp",
+      "sha256": "499e64286d0269c50584159fd51455a5d506447439ad93fcfa2f0a9b5c54248d",
+      "bytes": 13820
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/4.webp",
+      "sha256": "08c1657bd98e98465a056f75d97d72e149e3107d674a320874af93d24a10210d",
+      "bytes": 107676
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/40.webp",
+      "sha256": "311dc077c7732e43f288e83d85bba8b8f82b0b60126463ff5d9f83257fc166c4",
+      "bytes": 225280
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/41.webp",
+      "sha256": "e59763b0ad37416a1a6f2d514fe754a2ae215a6729a57c41001fc78db4dca9da",
+      "bytes": 6320
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/42.webp",
+      "sha256": "18f2bd136c31a0b68f4dc04094f2d3411f74576a40b316f28914fc4af0e15ba2",
+      "bytes": 331134
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/43.webp",
+      "sha256": "f9fa5aaba0afcd6ab516d4c49b999e5873a34630c05742efad784c0a7128b77f",
+      "bytes": 118160
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/44.webp",
+      "sha256": "6504c2c0e240e39312c0ad3eafe678bb368defd75026408f709f490f18a2b0dd",
+      "bytes": 769732
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/45.webp",
+      "sha256": "efe7297462aac9845053fd89750539ad10739667c707f6be8c95cbe82f336b1e",
+      "bytes": 9524
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/46.webp",
+      "sha256": "7789d45ddba2ef6c0658f403471bc01d66d65455e582e6693e21da2dfecaccff",
+      "bytes": 489100
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/47.webp",
+      "sha256": "188da2a82efe90dc2e2a2a59e17da7b0d811da45290ce2b80db6247cd1a013d7",
+      "bytes": 721650
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/48.webp",
+      "sha256": "0fab8c76a1e1f57ecbc4bc5218f4999f1237cb41b14d22554b3377c222442801",
+      "bytes": 245860
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/49.webp",
+      "sha256": "3714da98bb103c8a0c373cb807d6b97046b11473dbf87f3297e22814b3b7faaa",
+      "bytes": 579006
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/5.webp",
+      "sha256": "37e5185fbfea68efbbe0296140d6e69c2999061cb05405ce14cc1ea7b62af1e4",
+      "bytes": 459334
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/50.webp",
+      "sha256": "a16380c297bf83884dd4d19e11d85fef9db8e644d4d397fbba86b2b87570afac",
+      "bytes": 279920
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/51.webp",
+      "sha256": "398bc9967eaceb2815179cbe167772b9cfbde85905417034b8ab3db883ea5fd6",
+      "bytes": 566658
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/52.webp",
+      "sha256": "fb739185e9a0ab7b6408b42e8ad9d83cc6668f63a34534d3fb8a9f646fca097a",
+      "bytes": 40792
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/53.webp",
+      "sha256": "b8aa6926d4ac0127397ebd710d0949d3224382ddf3508de37b8d491c6c8ddee2",
+      "bytes": 156646
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/54.webp",
+      "sha256": "4e3db131f4884766ef67c4ea7316a4de778c38acc331f33d7d177882f79125ed",
+      "bytes": 282828
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/55.webp",
+      "sha256": "a49b828cf94ea834a90c2ebfa7979d10d33bbf9a537d830934fa3ba273818d67",
+      "bytes": 2016
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/56.webp",
+      "sha256": "3ff8cf41c9b3fd7e0477744db4d2eecb346ba4ff140c564bb1a1b7eb0dd3da16",
+      "bytes": 254924
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/57.webp",
+      "sha256": "af33ebdb6b6452e7a54c55d5bd446677a8af7067fa184ecde839171ea5feac31",
+      "bytes": 2096
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/58.webp",
+      "sha256": "86279ad8944cb6ffc4e771e7a368a494b59dea873644152efe403e3275f08508",
+      "bytes": 269996
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/59.webp",
+      "sha256": "d5129f002f3e27a7e56b8e98b954b2fcbab461d777f8145c90d3728820c10737",
+      "bytes": 339314
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/6.webp",
+      "sha256": "8450cc250a940937b32904c67028c3baec1c44b9c20bf85d4bbc91a49e0a4f09",
+      "bytes": 173354
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/60.webp",
+      "sha256": "eccb9587fd493f347f81799c7701f4a52254c7a79e817a82c3928cfd86f30fc4",
+      "bytes": 2058
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/61.webp",
+      "sha256": "212790ae81028a923f9f7bafba73bbd568b4802973204936db372c5c8e893a31",
+      "bytes": 266744
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/62.webp",
+      "sha256": "eb802123e072043315cb1b35380c4eeee33a078055a33d48330f6e0cd193d0ae",
+      "bytes": 2086
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/63.webp",
+      "sha256": "58f41e32d553cc0e488acc3e58083c631d1133d766a997d0a66eb78a5a6d1cad",
+      "bytes": 629794
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/64.webp",
+      "sha256": "f5c8ba71f4323d6e124d33979b760205d116ccb9ddf137ca0cc06340c0801d67",
+      "bytes": 785092
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/65.webp",
+      "sha256": "3c40e793bd80a22117db6830bd274897ca63b6795d52f9f35cbd3a8555983651",
+      "bytes": 295152
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/66.webp",
+      "sha256": "4d5e51989d851f35cb79d595cb83f224be6498c43ae143e9541e75fa2ab2e468",
+      "bytes": 38484
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/67.webp",
+      "sha256": "2bed634bb153f5ed70d8cb1f03f2b266bded2f63500c1c234c8136d032390ef5",
+      "bytes": 38198
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/68.webp",
+      "sha256": "6a1e676de88d52bcc89a4ddffbbc60430320a49ba7f1bf4729502254a9c2c99f",
+      "bytes": 305864
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/69.webp",
+      "sha256": "cdd6dc91d3478765115ab7611f5a9de278dfba20dd66a466fdbee8e775f89770",
+      "bytes": 8744
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/7.webp",
+      "sha256": "2cf211f355038d3d1e2b6f893d98fa594cf83ed3bca255c92091bd6e2fb33ffa",
+      "bytes": 827872
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/70.webp",
+      "sha256": "9b418d705b5c7a9b9572813cfbb2059bbd7d254515448b070249d86681c7d084",
+      "bytes": 88562
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/71.webp",
+      "sha256": "e2d2fbea53e8feff90a5bff9c4ed4e252a86a4633955de79970c642676f0cca6",
+      "bytes": 313164
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/72.webp",
+      "sha256": "dffbdc6bc89c7e48283e6acc8cd03380c6b884be5cdf394a1b928bbd7d0946fd",
+      "bytes": 169826
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/73.webp",
+      "sha256": "c6f0ac61b62e84f90f7ed6399d9f8e795efdb76496af3fc095965c297e3535df",
+      "bytes": 150140
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/74.webp",
+      "sha256": "0001b68d787f7dfae154f842f8eb3f2f0ff06351a277e096eab4fa511a5a7787",
+      "bytes": 303528
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/75.webp",
+      "sha256": "502e60a834e30f48e6c06c32b9ba3953c0d4bd27761bacfee719a19c500b8198",
+      "bytes": 97670
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/76.webp",
+      "sha256": "2786446f4c8b0b150a749fefd6e3aa521c5298bfbfd78570f64da7a0d6875239",
+      "bytes": 106184
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/8.webp",
+      "sha256": "2ae4968ded2cc6d9732476787e732ef8450ea3e4920377d65364dfc939ef3b57",
+      "bytes": 7300
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/lightmaps/9.webp",
+      "sha256": "62f701544ab74a7e6802d666822a396c1456e93acb188a8564e6bd0cc9a5ebd3",
+      "bytes": 708322
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/navigation.json",
+      "sha256": "f3bb02f489c67852f528946204ae6a8fb57c089182e93967d4c7e449c2194b4c",
+      "bytes": 164830
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/objects.json",
+      "sha256": "ec8b19e034e14fff778d4f7c4404cebe1cdefe122225266fe5594cbc80899f2c",
+      "bytes": 397037
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/0.hdr",
+      "sha256": "06d393dd95924f858c089c6563888f756c878ca8259c025a24b81dc4829846cf",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/1.hdr",
+      "sha256": "d32593fb13f3ebc3375c97a32612471507ea48628a966311f48fb9c87a124bf2",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/10.hdr",
+      "sha256": "2faf45ad40c377d9e48199b741779832d05b7045994558bec596b879d0496783",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/11.hdr",
+      "sha256": "6c09f78856c0371e110ed8e225096ac99e7c62ee5d1aca037cff09cec14d6ab9",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/12.hdr",
+      "sha256": "8d859aad32884ee5ad09f0f809fe569bbbdce0361b2b6cdb4d1bc9e8a1f6ea9a",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/13.hdr",
+      "sha256": "ae7bc353aafff04aa980d4b2dbb87ef373b6daa9b8e38ccb8d1363009685f60b",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/14.hdr",
+      "sha256": "b7b12b449162b4ff645f57db842afdfb55e58ab36f4382146cfae6526d091d58",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/15.hdr",
+      "sha256": "9fe760a39a6937473dd94cb021c8b743fd4d6d3ce1e028e7b57714f8a4b59d6f",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/16.hdr",
+      "sha256": "66e3af544254ee7ffbebd0dca6fc68844fbf99ad608a797d2cf47a37c7e728e3",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/17.hdr",
+      "sha256": "18fc93145ee18bb0942048119464436b23b9ea97bab31b64c5f1dbee5eda720c",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/18.hdr",
+      "sha256": "443f914e524cc19549b54a7112f8215eb98a1489cd7dfecff6cecf79ee0bd39c",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/19.hdr",
+      "sha256": "67c65f72dd4e5cb3d9d6db96fc9643e34211e9e2b7916f5d623a7019056d5e47",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/2.hdr",
+      "sha256": "7098f26af69b2118dbdcf332408f96c19cc85242ccb71fb597ba6fea35031ead",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/20.hdr",
+      "sha256": "78695a412a5a488def76c8e67f7eb78597dd39f63bc0748c02f0141197f5f891",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/21.hdr",
+      "sha256": "409a86258c64ef3157cc09adf012116e496d2bfcb3e7b2b1bae7e64e2bde73f8",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/22.hdr",
+      "sha256": "12386c1e7e6c92c7a62fd33d0dcc57be901a3d267f2d3fe511f7a43b5d1ffc0a",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/23.hdr",
+      "sha256": "50d842be699a4b4beb1b09577eacc9a53402708df402baf795a0b26c64355fce",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/24.hdr",
+      "sha256": "3686271eafca1a482ea99173004cded859536b57259c48076ab52c746c0e3fbd",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/3.hdr",
+      "sha256": "6aaeaec88acea663fa74e72ba03346633cc35896ebb8888a738796e9e280a5f5",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/4.hdr",
+      "sha256": "5cb3d6c0564ca5fa3a9349e00cc9a6db9aae6ce25d24eb4b223666ad896f9885",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/5.hdr",
+      "sha256": "9a707d4152faf76939b7d775db381dfb6d915e68821a7a096adfc7e202ecc6fd",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/6.hdr",
+      "sha256": "e6f6a1670377df3bb18a38af6957badbcd497d6e1525c2b2cc304ac77e9f6374",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/7.hdr",
+      "sha256": "fd9bbdcd638d1dd1f806cbd8b99426f531acb21c55ade76b8ab165fc14181af1",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/8.hdr",
+      "sha256": "1ce1620dc66ba43667f263e86b9b41ebef88ff7272f36580e3ae72d56fb51353",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/probes/9.hdr",
+      "sha256": "7e988ec99a61edb285d9cfc94f0e731c13570c090a4120d31f77e70e4a90ce3d",
+      "bytes": 529457
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/0.glb",
+      "sha256": "4b7eed832770398e6267aa97a32c23d75287f46f741dce28b2014b4a4b5e0d0f",
+      "bytes": 1658044
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/1.glb",
+      "sha256": "fec49b0b8ee22827ec1a79e782dc110f01864c3be13378c23468fccd7f36b643",
+      "bytes": 802732
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/10.glb",
+      "sha256": "c0ab3bbd6aa18e0346d16385da464aa577737f1d1dea5e0d24f72a9993a3378f",
+      "bytes": 704924
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/11.glb",
+      "sha256": "22db16934619ce761796aec24c52fd646a580062e63d90ab675ec7bec0f144ca",
+      "bytes": 473504
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/12.glb",
+      "sha256": "62182f5f858bf2453fc66294ee6de1958ddd63c8fe33acfd0b2b36d906ba0258",
+      "bytes": 333292
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/13.glb",
+      "sha256": "fb70bef4a9cf48bd6e97265928c2b1b4e50ba7ced7b27f2388539412a40a6586",
+      "bytes": 330364
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/14.glb",
+      "sha256": "77f8dcbc141a2d57c3657d145bd5a8089b2791d7944b0c5a1b3747b5492ed4fc",
+      "bytes": 465956
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/15.glb",
+      "sha256": "ad85c2b468cc5ca4e4b00b3d5def20201c3721d46e9e514d6d19253f87811df6",
+      "bytes": 340924
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/16.glb",
+      "sha256": "aac57adf39902391c51f2f59ed40d817a6056860ecf74c204d7308067ce7adae",
+      "bytes": 328612
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/17.glb",
+      "sha256": "f1444dfbf0937ee6e1b2b951373216bb5bd4d178d3df4006116ef750c3dd9210",
+      "bytes": 343792
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/18.glb",
+      "sha256": "2768f831001b83b2008a0c271f5eb82c3a83198f82660368d8170feb53ab68a7",
+      "bytes": 463036
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/19.glb",
+      "sha256": "5e78c875ab216cf55446ae52f34adb300cdffbe5ec41d86809e8cdd5c8753391",
+      "bytes": 1093692
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/2.glb",
+      "sha256": "743087bf44362598874b5cd88546d8e6fbe601f4bb683c19f72ea2e09d3333af",
+      "bytes": 470656
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/20.glb",
+      "sha256": "63fe5728caf998a1d6b414a4c9d8a7185d41095a2ad9440f2166cb95b11a3962",
+      "bytes": 458704
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/21.glb",
+      "sha256": "759923a0676822835ab3647ba041e557fb16cff216a202199005bb1eda102946",
+      "bytes": 341780
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/22.glb",
+      "sha256": "0ab59cac259b69a68321627744b54d3b0bb89731bb106f1eb059c62a36906ece",
+      "bytes": 339820
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/23.glb",
+      "sha256": "4328daf86f9fff1bd37f49195193161c46042b3b78be60d475ecbdab81d9a57d",
+      "bytes": 404096
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/24.glb",
+      "sha256": "05933988507e7158d88fa9b15fa17c27f40ea83903754bcaf3fe08ea5696e9a6",
+      "bytes": 389996
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/3.glb",
+      "sha256": "6ba26c748548d28796c84af1f108d041b601a0b9974b30cd9dbabaf7f4f3904a",
+      "bytes": 604028
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/4.glb",
+      "sha256": "a9833a682982d9a3e952e4eed0a92b56a1221a47f3b167b7e4ecea97035b1fcb",
+      "bytes": 478880
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/5.glb",
+      "sha256": "834674bafa1d0b2b0bad8bf85ca9829b6f804456a9772e610787616236476e5f",
+      "bytes": 489608
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/6.glb",
+      "sha256": "f4a6a7a334ff835fccdff4ce8962609b44de402e40519a8f45ab7f893cde245b",
+      "bytes": 334220
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/7.glb",
+      "sha256": "d96b620a5786995b5eea011bf31d46a569d179069b7c6c74320d328ededb3eba",
+      "bytes": 317188
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/8.glb",
+      "sha256": "521a9d403041640f40e5b87a1c8fb45a753b97d5915f6dbb3cc3f4e98932b8fc",
+      "bytes": 334048
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/rooms/9.glb",
+      "sha256": "abe4d705969747e729983bc045140c433f0406c78e775ffe431398ffc6d1b74d",
+      "bytes": 1083068
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/runtime-budget.json",
+      "sha256": "0d02f385cfd7d5e37e5d59805b0922528aa1a2af78173d57191fe5f28584b86d",
+      "bytes": 403
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-1044ea46a44dcb9c17aa5bf0ed89ceda51ae7d4f773e790eb28b20469df30e0b.ktx2",
+      "sha256": "8a2fefdc799998c1edb8b53d1a53cdc561321f71b8cb9f843f1bd41617eba1ef",
+      "bytes": 177903
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-1c00a5bc863c31f31667f657ecf4ca2e1bc2f7967b2b05c902fe8d2b9969d86f.ktx2",
+      "sha256": "512627c7d9f5865d0cdd6aa4ec03519534c9cec4364933479e2970690efea095",
+      "bytes": 189684
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-289ab953922f884adec8b54cd57f8fa7cf04e41872b16381ce2ce78752d969e6.ktx2",
+      "sha256": "5b5263547dd99daad3bf1b1ae03b30d3e5d99aba62e66881d511e08fd83b8bc0",
+      "bytes": 34081
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-2bfce0678819525222386dff16c534858d6153d07d7ff1f4912ab0e8b73bdb2f.ktx2",
+      "sha256": "82186e74477137fa34b8cb5de1f7ca06a66be43ca1959658d226a6ea568264cf",
+      "bytes": 131603
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-3a4f922087af038d4b8eb38e3efe5d601a9e10ac2d572b3ba081d1d28acc2fcb.ktx2",
+      "sha256": "c0da4fec7c0f7d3d649d5c6cb37c76198c771f8e87a30a512702e6b5bc0c3bf5",
+      "bytes": 195080
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-3ca626172857baa12c71082a9adc0a7df37a1244fe70051f27635005c49549ed.ktx2",
+      "sha256": "ce38bea3e9d66f3a7530c475110c5ee1ea482484f7101ca7e670c2fb72ea4409",
+      "bytes": 197617
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-3ea4c3c804b2483792c2ab57b7c17fb238177122b833a86f56f40614823a62da.ktx2",
+      "sha256": "2a6b2c80cdc8960db7dc37742848510da7617745373fd518dbddb2831b1fce8f",
+      "bytes": 201607
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-3fbf30df885e3fe0e07a93d194a8cf92c7dab50a0468a88aa18d8bc91c1bdbce.ktx2",
+      "sha256": "5c46ab0afab8e98708184055f44fe538bafee433808ed0d1831b8e934ec93f1f",
+      "bytes": 187890
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-565ff6e3b7f496f56ba4ccc6c8fd370ea5dc3e50effa7d5f7cf2a17b5600b233.ktx2",
+      "sha256": "10a62d4d82161ee805a8acdf455959f49fdfbd2b550ca36984416f38754f8844",
+      "bytes": 243492
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-6e68b0f6b7a50606563aa516ccb7595603d47449ff60cf413cb7c4b07146e426.ktx2",
+      "sha256": "6ca3bc6694a4831d3d17f50f7275e950ebed5e8577785ee28cf5c7a13da71837",
+      "bytes": 198712
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-844f251002daf1be0cf435216a3a3c99ddc1f250f6b14ae97f399d41ac45d164.ktx2",
+      "sha256": "e7b2bd6bc53324d0ffd939c299da0207618679199eb8e65b099ba30724e1d5ec",
+      "bytes": 29761
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-8569c87a55c6cdd5d1ec26103c4bc6e3daa5fcce33cccb8be5202bdbe7c81283.ktx2",
+      "sha256": "c68ad133ad1a6db9202bf5186dbd9e029eae79ddf230ea81ea4d85436addbf05",
+      "bytes": 58901
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-9b42e3462b76b85352cbccd26ea81eb1f4f6363dda0e2e490aaf6b3a1a3f74e8.ktx2",
+      "sha256": "777dbd48b47f55a8581ecb633df808e1c405932710bfc85d6d33d82d970e3b76",
+      "bytes": 1362850
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-a0dbd0a27c8a02f4afbe0fc07ce26f352b65ac4eb5684e01bf0ebc47872aef62.ktx2",
+      "sha256": "37383b3f567792c12474987a3a33f32d52af538c55aecc3d04afc831afbc20f9",
+      "bytes": 44914
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-bd1fa2d0927890d9a2c8d99d72b4ec63abbe59a702be50ffe91c9915a793ad69.ktx2",
+      "sha256": "f1ae716d1bbdf288de4c6e03782b77b0fc6d9fccd35d2c219f1f2de62793cd37",
+      "bytes": 31831
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-d73acc8f7cb1fb0424b4aef5bca0ab8de153a459712c9efc08f4311f18e7ec5e.ktx2",
+      "sha256": "6ae6feb89fbb790b5778009e497a3083e63403818d312d3a90521a5cf2173963",
+      "bytes": 20953
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-ea99bcf69f00e19aa5998134498b7905fbb707b8ce16f405129d7748ef408e52.ktx2",
+      "sha256": "6ea1b45cecd69e36e712d5d10e67a3dc19e74c2c28fb834bc7729d30ece62da8",
+      "bytes": 46092
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-f14ab3955299f1c4b9c76d0fe1938992733d3a5f3c5d1255dfa435c7cf1f1525.ktx2",
+      "sha256": "e9bad97cba252ea9341f39bef10f3976a72698f5290e48ca106946d34ef6222f",
+      "bytes": 35373
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/color-fc27da83d86cac31474a78fcbcf57ee4de243f6976b16e544a114b3e73313ea9.ktx2",
+      "sha256": "435b78a8a8336ef540ed900e1a0ce1fd6a9030a793a80e797463dcbcccef45fb",
+      "bytes": 573050
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-066197637027da2357cd2d302f2fc60f07ac4eaf3c8f5edc859be38db04d2560.ktx2",
+      "sha256": "4ca7dcc02e24393404771e98828fbd93652f2c0ebc412d426b9d8fe2673ff3d9",
+      "bytes": 510996
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-067978cae2dcb4bf07c681499dd6247355fe572bbfecb4c1ef1d567774f88a3f.ktx2",
+      "sha256": "7bdb6c8326c4bcacbd000e261e642170139e19a684da40974aec03404c6bd522",
+      "bytes": 385930
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-337b9fe6a61203caff54c46850efbcfbd2579d8200ef7326642c0fee3bf4f607.ktx2",
+      "sha256": "177d91c631bc64752e8b64f6772a4c10bd891f6b3e17f041b4c6952e5094f82a",
+      "bytes": 507079
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-3857c7636eba9f85763efcdd98c680c786822cd1688edb3a5a444d9d81414396.ktx2",
+      "sha256": "8ed9ee00046cbb0c50f272789aafc4eda1902cb7bafb0bf96697bb7505e3d5e5",
+      "bytes": 190533
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-43297f17ae0ed02bfb1c1d2051cf5dadedbe07e5b963d514d94b27a41275f939.ktx2",
+      "sha256": "a494f37d7236063e43050a39342279307b02e5befc079e5a3281d81f4714a79f",
+      "bytes": 240125
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-46151cb2d12255219a5eac9eddfc215f004b77688c708a612f6a7c33126d613a.ktx2",
+      "sha256": "03eadeb6de6d8457723014d361651baa3cfef851abe5036e442b477ac178152b",
+      "bytes": 534504
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-5a99fbe6e1a3036ea527311f5b1edc1347a68e04c0ff23163ced3c11f9040c18.ktx2",
+      "sha256": "376d406564b237c8cca35ec476f620abdbbe40a8bf0426d4fac79fdbf17a57aa",
+      "bytes": 193528
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-5f10139fad89a4249c8eee8f30a2594f783598678c51ec387a41431a66367dc9.ktx2",
+      "sha256": "8d8aa890c5d38937451839d1c83b0169e214fedadeb1649ccc05f764aa421fc2",
+      "bytes": 182406
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-5fb488f60f005cb34c23c9c493a37e685bbc54a1aa3c95345f77146b7d24c5ba.ktx2",
+      "sha256": "06520c6f7e6269d7efcc6ee6b17e669aae4046754028f4f8dcb8f65f292f1447",
+      "bytes": 547668
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-87670a3af3bd411376dc37afdd8b9c338222baf5ddd4df441321760aa4d469e8.ktx2",
+      "sha256": "4b0bb3a5a555b5536338389c1e29eb6620f4d5976334e69b85f4fe40bb0543e2",
+      "bytes": 65106
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-87c6936768e789465f04afdd5949c67b4e4a026ccf4af111a29b37aedc49eefd.ktx2",
+      "sha256": "ddb571a47dc464d3ebaf38865312dde6555fced45fea5c34d4bfffacb5a35de7",
+      "bytes": 198923
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-b8eda3e68c5f68c7e641af3f3f0113c5586062ba0f5c3f81597b06bce281b29b.ktx2",
+      "sha256": "6281cf29a0141657f260fea91b628d52b71358c201b9e9983c3bc24d289a207a",
+      "bytes": 1234548
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-c19680d90ddda8d8a2181f60f89b36d2b22d3b1f0591761424ed7cfdef35ea98.ktx2",
+      "sha256": "f6040328ea21d460255a7ab76fdf5e626a98177360e92fe1057d5b1b80f6edf5",
+      "bytes": 4638624
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-ca0561d5eff9c754ec25a722ba940ec3a1646979c5afda09e575de40d18b1b90.ktx2",
+      "sha256": "08e0193525e0a43ebef928915677942a180da575540edd40f97e6c1ba4c5374f",
+      "bytes": 65645
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-ca50ce3cb5e9e6a7817055bb7a8e2f7d66a8ee03e1bcb0c1c3148fc734f9bc13.ktx2",
+      "sha256": "04e27cfc4263d08d9cadd8d903191748f66121c91125d83d2889488b8da7bcfa",
+      "bytes": 385269
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-de366070653fd693e2a5496e9956f4ff154b5800a51d0a6d395c012b7a196dca.ktx2",
+      "sha256": "b81ee99d61cbdbb21266242f5e3ec3d4d1c94436ae8b65be941b1bad85a434ea",
+      "bytes": 1180211
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-decc0857ef74e124b0984bdfa9537845a718def202253349d286ac1298e85a4c.ktx2",
+      "sha256": "90495a3c7049e8ebb80b2280d0b9f8af09312daea6f815895243b25f1331bf9d",
+      "bytes": 1020085
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-e1f061ac18745cfe5b4967831d1d5bec8ee42b2e2b787e49c74894a49f76d116.ktx2",
+      "sha256": "923687e6f8ad13206d941a7f6be7b99e1aaa1b23c8919274b3fa897c70cde319",
+      "bytes": 179703
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/normal-fc0cd45a18b47e8834995a5e1e7165cd6b35378ebc5becd34740c700912f4efc.ktx2",
+      "sha256": "475e355f547ee6f8e2035098590cb1cdb4b1ea376cf9fede76f3694b15a1d8b9",
+      "bytes": 304023
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-0d6e3c1977f43f4c085bd8c11b7ad3b7f7df1693dcafb9322bc6585bcf3c9714.ktx2",
+      "sha256": "3d57a2498940314087764ea42468f58265946b6715337e8acd3a7e59debc978d",
+      "bytes": 117097
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-4150484b6c71fddbee6131b9049be09463dfda37f9ed63281b1d72ad832a96de.ktx2",
+      "sha256": "237c5e875a748fb9f0ca2bcc41b872a0e660e81b947b72f2f85f296f83fd30b3",
+      "bytes": 147362
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-6351da25dd09b3d38721c5e4bdcab81b7ff047b7989511c99f11207dc9df9919.ktx2",
+      "sha256": "60b6d5fc93d8d825199900ce0b8be194ade96acaa7e0058d05bf8e291f472fb7",
+      "bytes": 11114
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-671c18daa0588c56ca9902d0cfe764e3adb63cd32e52cf601ff84d3d6252d11c.ktx2",
+      "sha256": "185f83fe9f29edff4d0cc7dd610029d4c940f2143cb95f2a1f638af384883f6f",
+      "bytes": 196930
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-724d0535e2f3ca07c10bb32b34b2e7c7a6a85aed7eb9232c8a75d20dcf677f29.ktx2",
+      "sha256": "32af00304845d634dc84bc61fbe5739afccc5ea7b0c5056c4e6cfbc2a7a5e823",
+      "bytes": 149681
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-72eba8b6117566f5d71bb52dbcb94810ed73207bf07e30b7a387363475cee8b8.ktx2",
+      "sha256": "54353039f9bff3ebce1c6a1014106f5605b80bec63f3a74d902a6b201904c0b3",
+      "bytes": 198732
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-7d925e29151fe1641740bbe4061c7325478fa0df62820cde0c0f3784b35e3fb0.ktx2",
+      "sha256": "383e04bde9384837584113cbdebc4f3f98d6fcc4afdfaa0a398aa708e581ae73",
+      "bytes": 10621
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-90266ce0dc313b534f0c8009c1b335701a546bf71a3b2fc328f6855c20bd0180.ktx2",
+      "sha256": "49a19f5a92565f56c89133ad52a8ce11df9c58f349936bbe3383a01cd9c60b98",
+      "bytes": 19296
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-968912f0708d27e7e821da9bfbc3bae2db39de8c23d99d478069123151dfc447.ktx2",
+      "sha256": "72fa7bb9c4fbb4f99a4c7e6a152b3e4514ad35863001f4046b0f94ee68628170",
+      "bytes": 30115
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-98602c33789bb67e916889a611949731ee8df6360046e80c07ccebd10efff048.ktx2",
+      "sha256": "f513582ee6060b5bd0b1b495922ee56a045bdfd7a4ff2c04f17885b457004a2a",
+      "bytes": 4948
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-9dc0e0a937fe1bd9b9bb0192cf0ade008212d7e8453f7574f8bf0febd84c6cf4.ktx2",
+      "sha256": "594fb5eb2b15b5d0b7a3ecefc6f9aa605f997f2e50469281b8a5f5d1774fafef",
+      "bytes": 11680
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-a2fd295bc8de4431a07ed1ff944a6071c7419049ac0f0c598dfb294e70524f58.ktx2",
+      "sha256": "c6f6676371624e295c069e61bd6abc5a4ae43c339598b12dbc92f082f90e1aff",
+      "bytes": 10706
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-b53ab43fecd6125c826e0da454cfc58c1481a21cfdaaba15717274ccc79b2503.ktx2",
+      "sha256": "323efbd1f96308f731e1d026c3b76a7d34da10f0703452b288c7b17826c72fe4",
+      "bytes": 413253
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-bd811eec4f2ebc72e3441a8f05dd27be4ae769014b4519c342eda24ecb0cca01.ktx2",
+      "sha256": "4f020d6a7d2c963636cb8f39e1bd38d73acaab37c23ee5710749d36ec85fb6dd",
+      "bytes": 314427
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-be1b80dc12aea66063fb480cd48b84eda3119362c41ddfebf315740e7cf1ecc8.ktx2",
+      "sha256": "c5a6ccff47e9c613ba1347238847d629581456392a5d4b0ea86c4cc33201e8f8",
+      "bytes": 11022
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-e46b3f54bbf5bd9b59a77c8ab3248b2105890eb87396b8867b3decc2ccdf8f0f.ktx2",
+      "sha256": "fe2bd632b852da7045f88b290b8db301f0f58de501de8e25bb2bea9750e606a6",
+      "bytes": 200346
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-f029bab4562466666576a433a436fec2201d49afb72bc659edcaa3089d5ef316.ktx2",
+      "sha256": "03ad9069288689caedde1263eb67999c637d043d90f04c21411755fd4e8539df",
+      "bytes": 48886
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-f7c9952c845af2c18d3db3add027df1b672ce6058acdb5d49c7ec2d9ad4da5d1.ktx2",
+      "sha256": "80a30d10a08dd8d4b0992be5a99262dda010eb04bf41928745cfdd6a5c74a51f",
+      "bytes": 23999
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/high/orm-fd943a9a13d5d254b43cb80f6c95176468d62b0c276df82fee316734685944a4.ktx2",
+      "sha256": "1ef2220d03a0ee3e52bffe99027e65c3e4b39554a75049baa24c26ffdf4e439e",
+      "bytes": 195286
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-1044ea46a44dcb9c17aa5bf0ed89ceda51ae7d4f773e790eb28b20469df30e0b.ktx2",
+      "sha256": "6350662dc1e135a9afd48e65943aae0d8a50bd8fa1e59147d878e6db9ca73051",
+      "bytes": 57870
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-1c00a5bc863c31f31667f657ecf4ca2e1bc2f7967b2b05c902fe8d2b9969d86f.ktx2",
+      "sha256": "4157e271caf0e2adee6fbb1c39723c0a4b6dbd04dafdf9e8bc73a7f3c0ef7562",
+      "bytes": 64359
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-289ab953922f884adec8b54cd57f8fa7cf04e41872b16381ce2ce78752d969e6.ktx2",
+      "sha256": "5b5263547dd99daad3bf1b1ae03b30d3e5d99aba62e66881d511e08fd83b8bc0",
+      "bytes": 34081
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-2bfce0678819525222386dff16c534858d6153d07d7ff1f4912ab0e8b73bdb2f.ktx2",
+      "sha256": "12d19f052b84464714b0127135ceda1bc8bc50c9a6b64044589da1e1974ade95",
+      "bytes": 42246
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-3a4f922087af038d4b8eb38e3efe5d601a9e10ac2d572b3ba081d1d28acc2fcb.ktx2",
+      "sha256": "265d953903e4a6d03ebff99a1ea2a37a59abbb06a61e53d5eefd5eb91110ac9b",
+      "bytes": 61054
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-3ca626172857baa12c71082a9adc0a7df37a1244fe70051f27635005c49549ed.ktx2",
+      "sha256": "cf3160de680cebb92c2b35f35044b91bd0521858080fa1a574392a05bf71b1d3",
+      "bytes": 62865
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-3ea4c3c804b2483792c2ab57b7c17fb238177122b833a86f56f40614823a62da.ktx2",
+      "sha256": "66e25798399a3f87109a2acfadd33360e2ace03147e74dc26984b4f7b4766828",
+      "bytes": 64447
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-3fbf30df885e3fe0e07a93d194a8cf92c7dab50a0468a88aa18d8bc91c1bdbce.ktx2",
+      "sha256": "b12a993119be31202762437a8d7e465fc10fecc8970b2996ce17259cdf556f4e",
+      "bytes": 59916
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-565ff6e3b7f496f56ba4ccc6c8fd370ea5dc3e50effa7d5f7cf2a17b5600b233.ktx2",
+      "sha256": "acbcf7229ad7b3ea585ef5b5e126b6b310c476e0c670cbe727a6fa3d22754a3b",
+      "bytes": 31148
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-6e68b0f6b7a50606563aa516ccb7595603d47449ff60cf413cb7c4b07146e426.ktx2",
+      "sha256": "bf09fc2519b4812348aa754f5ee74111450587eb95044097b59ac8256940472d",
+      "bytes": 63443
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-844f251002daf1be0cf435216a3a3c99ddc1f250f6b14ae97f399d41ac45d164.ktx2",
+      "sha256": "40e5660799002aa0e3c163047854f4077d216d1978b9411465c7b7dee36a041d",
+      "bytes": 11546
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-8569c87a55c6cdd5d1ec26103c4bc6e3daa5fcce33cccb8be5202bdbe7c81283.ktx2",
+      "sha256": "c68ad133ad1a6db9202bf5186dbd9e029eae79ddf230ea81ea4d85436addbf05",
+      "bytes": 58901
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-9b42e3462b76b85352cbccd26ea81eb1f4f6363dda0e2e490aaf6b3a1a3f74e8.ktx2",
+      "sha256": "3064ddb140b0fe7f9e651dc7a02eec6483b810d6bf3311714dabef454d6d8651",
+      "bytes": 57310
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-a0dbd0a27c8a02f4afbe0fc07ce26f352b65ac4eb5684e01bf0ebc47872aef62.ktx2",
+      "sha256": "37383b3f567792c12474987a3a33f32d52af538c55aecc3d04afc831afbc20f9",
+      "bytes": 44914
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-bd1fa2d0927890d9a2c8d99d72b4ec63abbe59a702be50ffe91c9915a793ad69.ktx2",
+      "sha256": "22fe71aa97839fe91804bf609a0a1c7060523cddd0a5ffa3516289126884649d",
+      "bytes": 11645
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-d73acc8f7cb1fb0424b4aef5bca0ab8de153a459712c9efc08f4311f18e7ec5e.ktx2",
+      "sha256": "6ae6feb89fbb790b5778009e497a3083e63403818d312d3a90521a5cf2173963",
+      "bytes": 20953
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-ea99bcf69f00e19aa5998134498b7905fbb707b8ce16f405129d7748ef408e52.ktx2",
+      "sha256": "caf320b9e1ee801578899b55f75f3e86a752cf2b301a5cd592e9843261a3d2aa",
+      "bytes": 19632
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-f14ab3955299f1c4b9c76d0fe1938992733d3a5f3c5d1255dfa435c7cf1f1525.ktx2",
+      "sha256": "e9bad97cba252ea9341f39bef10f3976a72698f5290e48ca106946d34ef6222f",
+      "bytes": 35373
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/color-fc27da83d86cac31474a78fcbcf57ee4de243f6976b16e544a114b3e73313ea9.ktx2",
+      "sha256": "929715e3a3c9aeccf60f852a3fe989f0f6f97dcb6e5c90dd5e5fa7176165b444",
+      "bytes": 64400
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-066197637027da2357cd2d302f2fc60f07ac4eaf3c8f5edc859be38db04d2560.ktx2",
+      "sha256": "cbfece71b45d8baf0bc2b1f626691e10b77eec2469f14c9c813f89d2542ac384",
+      "bytes": 165987
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-067978cae2dcb4bf07c681499dd6247355fe572bbfecb4c1ef1d567774f88a3f.ktx2",
+      "sha256": "17c271630f66c48205c82e14724f4269210a1c03029c8201679b79e996ff8c91",
+      "bytes": 125281
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-337b9fe6a61203caff54c46850efbcfbd2579d8200ef7326642c0fee3bf4f607.ktx2",
+      "sha256": "1b2572375d4497e16bb7633040204fb3b5bf633d78f7783c805cb6767213d4b7",
+      "bytes": 133086
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-3857c7636eba9f85763efcdd98c680c786822cd1688edb3a5a444d9d81414396.ktx2",
+      "sha256": "2a17f1db85f84f6f2e24b16ae08a0da472fc4fd9f8cc7966bd5538589df961f2",
+      "bytes": 80905
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-43297f17ae0ed02bfb1c1d2051cf5dadedbe07e5b963d514d94b27a41275f939.ktx2",
+      "sha256": "a494f37d7236063e43050a39342279307b02e5befc079e5a3281d81f4714a79f",
+      "bytes": 240125
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-46151cb2d12255219a5eac9eddfc215f004b77688c708a612f6a7c33126d613a.ktx2",
+      "sha256": "0f2b48cd59f080b3c15b784c3eaafb45646dc5c0b8b00b615552e8811dcbf74e",
+      "bytes": 132613
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-5a99fbe6e1a3036ea527311f5b1edc1347a68e04c0ff23163ced3c11f9040c18.ktx2",
+      "sha256": "6d3474cecf3916ad8e0bbd099506d203b322115f97bd3414c97a70f032e5aa56",
+      "bytes": 63314
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-5f10139fad89a4249c8eee8f30a2594f783598678c51ec387a41431a66367dc9.ktx2",
+      "sha256": "8d8aa890c5d38937451839d1c83b0169e214fedadeb1649ccc05f764aa421fc2",
+      "bytes": 182406
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-5fb488f60f005cb34c23c9c493a37e685bbc54a1aa3c95345f77146b7d24c5ba.ktx2",
+      "sha256": "8903188cff54b5954d6406400adf72ed1c83c36e311afdd10a48dd399985e2c4",
+      "bytes": 102158
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-87670a3af3bd411376dc37afdd8b9c338222baf5ddd4df441321760aa4d469e8.ktx2",
+      "sha256": "4b0bb3a5a555b5536338389c1e29eb6620f4d5976334e69b85f4fe40bb0543e2",
+      "bytes": 65106
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-87c6936768e789465f04afdd5949c67b4e4a026ccf4af111a29b37aedc49eefd.ktx2",
+      "sha256": "7a3feb616e5aeecff2f4d5c606f09d90091781d333b3bc7506d7b50048bca608",
+      "bytes": 83888
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-b8eda3e68c5f68c7e641af3f3f0113c5586062ba0f5c3f81597b06bce281b29b.ktx2",
+      "sha256": "d677eb522e95579199dd6d781dab9870a4e5201282a41c8e0a1b74a74cb31b94",
+      "bytes": 39863
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-c19680d90ddda8d8a2181f60f89b36d2b22d3b1f0591761424ed7cfdef35ea98.ktx2",
+      "sha256": "5f395f5ec5d95da13ba48c46d7c4cfdc41787b7b52d23540bcf369f1222cd0d0",
+      "bytes": 64131
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-ca0561d5eff9c754ec25a722ba940ec3a1646979c5afda09e575de40d18b1b90.ktx2",
+      "sha256": "08e0193525e0a43ebef928915677942a180da575540edd40f97e6c1ba4c5374f",
+      "bytes": 65645
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-ca50ce3cb5e9e6a7817055bb7a8e2f7d66a8ee03e1bcb0c1c3148fc734f9bc13.ktx2",
+      "sha256": "45dbc98b0ac5d7aae832c01fbdb552d6d3d8f2bcec983a8c8edb69bd83b102a3",
+      "bytes": 124621
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-de366070653fd693e2a5496e9956f4ff154b5800a51d0a6d395c012b7a196dca.ktx2",
+      "sha256": "5c5f247ed942b449c1b8ed9b083c7cb41f1075c4b3f54e3f7d674717170debdd",
+      "bytes": 91459
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-decc0857ef74e124b0984bdfa9537845a718def202253349d286ac1298e85a4c.ktx2",
+      "sha256": "4356c88d5fc454b7fb2c4453c4874ba0cb0e66b7525da320914428dbe6c2747c",
+      "bytes": 304511
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-e1f061ac18745cfe5b4967831d1d5bec8ee42b2e2b787e49c74894a49f76d116.ktx2",
+      "sha256": "923687e6f8ad13206d941a7f6be7b99e1aaa1b23c8919274b3fa897c70cde319",
+      "bytes": 179703
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/normal-fc0cd45a18b47e8834995a5e1e7165cd6b35378ebc5becd34740c700912f4efc.ktx2",
+      "sha256": "78042453b94028801cf5cbe8f6a5c06c5052f9a851735e6dd370fab7645a8cbe",
+      "bytes": 165382
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-0d6e3c1977f43f4c085bd8c11b7ad3b7f7df1693dcafb9322bc6585bcf3c9714.ktx2",
+      "sha256": "29bb0fad3c0f9dcdda4d4c802363e7a6c18e6df5a91f83b7bf329e783e678e6f",
+      "bytes": 16115
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-4150484b6c71fddbee6131b9049be09463dfda37f9ed63281b1d72ad832a96de.ktx2",
+      "sha256": "ec4ecfa3a97888f4a00afd2f855acc6ad766c64d9a52d372d1f44a7b6f7bcb93",
+      "bytes": 52400
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-6351da25dd09b3d38721c5e4bdcab81b7ff047b7989511c99f11207dc9df9919.ktx2",
+      "sha256": "60b6d5fc93d8d825199900ce0b8be194ade96acaa7e0058d05bf8e291f472fb7",
+      "bytes": 11114
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-671c18daa0588c56ca9902d0cfe764e3adb63cd32e52cf601ff84d3d6252d11c.ktx2",
+      "sha256": "5a9d4b94d870451d8038efb5ed0d6e32e704fc5159c80f9e3319a93bc4961921",
+      "bytes": 60065
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-724d0535e2f3ca07c10bb32b34b2e7c7a6a85aed7eb9232c8a75d20dcf677f29.ktx2",
+      "sha256": "a9a3a4bbc64072c92488395a5d3515a8024d09ef5b8111870bf98b0c993b8184",
+      "bytes": 38272
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-72eba8b6117566f5d71bb52dbcb94810ed73207bf07e30b7a387363475cee8b8.ktx2",
+      "sha256": "fca01a32f8cc97680ab27caa1ea4497d30985726efd975a21bb3da26494d3fd5",
+      "bytes": 60514
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-7d925e29151fe1641740bbe4061c7325478fa0df62820cde0c0f3784b35e3fb0.ktx2",
+      "sha256": "383e04bde9384837584113cbdebc4f3f98d6fcc4afdfaa0a398aa708e581ae73",
+      "bytes": 10621
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-90266ce0dc313b534f0c8009c1b335701a546bf71a3b2fc328f6855c20bd0180.ktx2",
+      "sha256": "e18713019c3ff8986e086676803dc4f2b5083121a7713c146ce1539e4c2fc96e",
+      "bytes": 8141
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-968912f0708d27e7e821da9bfbc3bae2db39de8c23d99d478069123151dfc447.ktx2",
+      "sha256": "72fa7bb9c4fbb4f99a4c7e6a152b3e4514ad35863001f4046b0f94ee68628170",
+      "bytes": 30115
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-98602c33789bb67e916889a611949731ee8df6360046e80c07ccebd10efff048.ktx2",
+      "sha256": "f513582ee6060b5bd0b1b495922ee56a045bdfd7a4ff2c04f17885b457004a2a",
+      "bytes": 4948
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-9dc0e0a937fe1bd9b9bb0192cf0ade008212d7e8453f7574f8bf0febd84c6cf4.ktx2",
+      "sha256": "594fb5eb2b15b5d0b7a3ecefc6f9aa605f997f2e50469281b8a5f5d1774fafef",
+      "bytes": 11680
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-a2fd295bc8de4431a07ed1ff944a6071c7419049ac0f0c598dfb294e70524f58.ktx2",
+      "sha256": "af9e1d938bdd8b2b07f365b72a391ae8eee69d12e637a34f05f49912fabdcf4c",
+      "bytes": 4569
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-b53ab43fecd6125c826e0da454cfc58c1481a21cfdaaba15717274ccc79b2503.ktx2",
+      "sha256": "b7c9a183254029cecad34104e6cd66656e8c3a455e16f0c339b8add68b07588d",
+      "bytes": 16182
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-bd811eec4f2ebc72e3441a8f05dd27be4ae769014b4519c342eda24ecb0cca01.ktx2",
+      "sha256": "476b77fc02fa6523db5baaf5f6027af6da9677070104c54a450f94597678e137",
+      "bytes": 44373
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-be1b80dc12aea66063fb480cd48b84eda3119362c41ddfebf315740e7cf1ecc8.ktx2",
+      "sha256": "70251d1535013ead676a03bc38740c1ed7f378e1fed4e9cadbd52e25e08640e4",
+      "bytes": 4667
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-e46b3f54bbf5bd9b59a77c8ab3248b2105890eb87396b8867b3decc2ccdf8f0f.ktx2",
+      "sha256": "fac60a5cd1b9c40a740b9a1a1583921a2314326d26131142910d9b9fb0053416",
+      "bytes": 61454
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-f029bab4562466666576a433a436fec2201d49afb72bc659edcaa3089d5ef316.ktx2",
+      "sha256": "648b47655bb47793f9c13a79c8dbde2eacb0a4d97fb034e122637f4f4c29cb14",
+      "bytes": 16874
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-f7c9952c845af2c18d3db3add027df1b672ce6058acdb5d49c7ec2d9ad4da5d1.ktx2",
+      "sha256": "9c16d0293257d2a1359d59d6913582642dcd011a8b77798a399a4532f48b9712",
+      "bytes": 9492
+    },
+    {
+      "path": "assets/interior/encoded/house-final-r03-encode/textures/standard/orm-fd943a9a13d5d254b43cb80f6c95176468d62b0c276df82fee316734685944a4.ktx2",
+      "sha256": "9ce4c79041330e36f0ae4d0635bcc6e1e1364be151553bd2f36b5be5551e5d22",
+      "bytes": 58337
+    },
+    {
+      "path": "assets/interior/manifest.json",
+      "sha256": "bec95aef3ba94974cd2752f1a34984b99bf8430f68ae34003f0d513041161de0",
+      "bytes": 131023
+    }
+  ],
+  "downloads": {},
+  "references": [
+    {
+      "path": "/assets/references/master-cutaway.png",
+      "sha256": "92f07fa6894c1a095d7052be2458442fc38da3ee5b49ba6f8d5d9aa2b961af74",
+      "bytes": 20823394
+    },
+    {
+      "path": "/assets/references/l0-living-forward.png",
+      "sha256": "54d66b37122b88140b84c25969864d3a6ce929e640749e77f89e0a9b0e6ca83f",
+      "bytes": 20394859
+    },
+    {
+      "path": "/assets/references/l0-living-reverse.png",
+      "sha256": "4226f7c213dab9ae07f8359ceef6d5b12c99e470ec1a94e6361839aae7ea24aa",
+      "bytes": 20652500
+    },
+    {
+      "path": "/assets/references/l0-kitchen-dining.png",
+      "sha256": "f49a52bbc53b4132e3e5f4d6506dc39fc1d4ae7f5a9e69c765afad7c9c69082c",
+      "bytes": 18818947
+    },
+    {
+      "path": "/assets/references/l0-dining-kitchen.png",
+      "sha256": "95f5929ba0911d2e068d7c53dd32c1f134ff4a4d52b5434cb43c38b1d266a9c6",
+      "bytes": 19138229
+    },
+    {
+      "path": "/assets/references/l0-wc.png",
+      "sha256": "70fb623ca489a21fc6611796d234c7034f62e46b8dd0157a48f97890a44209e2",
+      "bytes": 18288653
+    },
+    {
+      "path": "/assets/references/l1-master-forward.png",
+      "sha256": "45756514e234a5842249437d92611044fd6c5b3a3b32e3a49fd07142e3edfebb",
+      "bytes": 18450701
+    },
+    {
+      "path": "/assets/references/l1-master-reverse.png",
+      "sha256": "52f9eb14589cb4d227e81ece8f8b7b8521da35c254e8b48067b028c2cd6172ea",
+      "bytes": 19446074
+    },
+    {
+      "path": "/assets/references/l1-study.png",
+      "sha256": "d6d143a13859872b212d060f0cf5848cc2e66df11d168e3a15e306dd320b8850",
+      "bytes": 17871393
+    },
+    {
+      "path": "/assets/references/l1-balcony.png",
+      "sha256": "c4332e66fa4183f446185112969cec3107d1fda637344f925ace5fa8473539a3",
+      "bytes": 22210356
+    },
+    {
+      "path": "/assets/references/l1-bath.png",
+      "sha256": "2565ab7c6ecdff4639a646516b07321daee10b10452b5417283b9f008ba6b24b",
+      "bytes": 18596417
+    },
+    {
+      "path": "/assets/references/l2-guest-forward.png",
+      "sha256": "f09f30b67f55145d734ed16c01643e3ca60c53575048b60d215697d76a08912b",
+      "bytes": 20169633
+    },
+    {
+      "path": "/assets/references/l2-guest-reverse.png",
+      "sha256": "4886930c53c523bd3245f2a23c9deb08b1324892d4d69fcf7328b4e9e6d11cc2",
+      "bytes": 19993171
+    },
+    {
+      "path": "/assets/references/l2-reading.png",
+      "sha256": "fa90d50d5536ff39aa1ce7389a0b41b738318b03def17843df66a51743e5a68e",
+      "bytes": 17573299
+    },
+    {
+      "path": "/assets/references/l2-terrace.png",
+      "sha256": "33e3e211ca9923f53eab69ef9252bc1581efba5d7ad1f9cb32050577d28b28db",
+      "bytes": 22382825
+    },
+    {
+      "path": "/assets/references/l2-bath.png",
+      "sha256": "3d37df9fc307adc1656f903b171ee6570304237b8fbd9aa40a096c3f2cd16884",
+      "bytes": 18552625
+    },
+    {
+      "path": "/assets/references/l2-laundry.png",
+      "sha256": "0e6f86bedec9cfea246d6670be6f020a7c25ab68a5aafd51afe15dbfe95a086d",
+      "bytes": 19115495
+    }
+  ]
+}
