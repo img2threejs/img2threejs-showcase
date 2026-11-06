@@ -45,10 +45,10 @@ Its 25 navigation cells include rooms, landings and stair flights across three f
 The original design studies are AI-generated concepts and the layout is authored, not surveyed.
 The gallery and viewer use the same reference image: a frame from the supplied video. The 3D
 interior was authored from separate synthetic design references and is not an exact match.
-The published r02 runtime uses the older bake cache; the corrective r03 bake remains incomplete.
-Its recorded runtime budget exceeds the P0 transfer and standard/high GPU limits, and no browser
-performance benchmark has been accepted. Native and portable downloads are not included in this
-draft; the original footage and film render are not part of the viewer package.
+The published runtime is the `house-final-r03-encode` delivery. Its recorded runtime budget
+passes (largest P0 transfer 30,084,260 B against the 40,000,000 B limit, no budget overrides),
+but no browser performance benchmark has been run or accepted. Native and portable downloads are
+not included in this draft; the original footage and film render are not part of the viewer package.
 
 The viewer's SHA-256-pinned runtime bundle is fetched by `npm run build:warm-modern-house` and
 built under `/warm-modern-house/`. Historical source-image hashes are recorded in the asset
